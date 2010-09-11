@@ -1,0 +1,103 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{BB6D9D99-D2EA-44C0-8B34-4DB5B2E9BCD5}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>EGIS.Web.Controls</RootNamespace>
+    <AssemblyName>EGIS.Web.Controls</AssemblyName>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>egis.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\EGIS.Web.Controls.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.XML" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ISFMap.cs" />
+    <Compile Include="MapPanControl.cs" />
+    <Compile Include="QuantileCustomRenderSettings.cs" />
+    <Compile Include="SFMap.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SFMapControlTypeConverter.cs" />
+    <Compile Include="TiledSFMap.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="zoomout.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="pand.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="panl.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="panr.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="panu.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="zoomin.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="egis_script.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ajax-loader4.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="globe.gif" />
+    <EmbeddedResource Include="egis_script2.js" />
+    <EmbeddedResource Include="ajax-loader2.gif" />
+    <EmbeddedResource Include="globesfm.png" />
+    <EmbeddedResource Include="globetsfm.gif" />
+    <Content Include="grab_cursor.cur" />
+    <Content Include="grab_cursor.gif" />
+    <EmbeddedResource Include="tooltip.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EGIS.ShapeFileLib\EGIS.ShapeFileLib.csproj">
+      <Project>{C89DEB9B-4DCA-4792-B216-F00808606AF7}</Project>
+      <Name>EGIS.ShapeFileLib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="egis.snk" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

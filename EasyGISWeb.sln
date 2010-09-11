@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EGIS.Web.Controls", "egis.web.controls\EGIS.Web.Controls.csproj", "{BB6D9D99-D2EA-44C0-8B34-4DB5B2E9BCD5}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebTest", "WebTest\WebTest.csproj", "{88DFE103-AA90-419F-8752-0DDB30C397AA}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EGIS.ShapeFileLib", "EGIS.ShapeFileLib\EGIS.ShapeFileLib.csproj", "{C89DEB9B-4DCA-4792-B216-F00808606AF7}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BB6D9D99-D2EA-44C0-8B34-4DB5B2E9BCD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB6D9D99-D2EA-44C0-8B34-4DB5B2E9BCD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB6D9D99-D2EA-44C0-8B34-4DB5B2E9BCD5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BB6D9D99-D2EA-44C0-8B34-4DB5B2E9BCD5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BB6D9D99-D2EA-44C0-8B34-4DB5B2E9BCD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB6D9D99-D2EA-44C0-8B34-4DB5B2E9BCD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB6D9D99-D2EA-44C0-8B34-4DB5B2E9BCD5}.Release|x64.ActiveCfg = Release|Any CPU
+		{BB6D9D99-D2EA-44C0-8B34-4DB5B2E9BCD5}.Release|x86.ActiveCfg = Release|Any CPU
+		{88DFE103-AA90-419F-8752-0DDB30C397AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88DFE103-AA90-419F-8752-0DDB30C397AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88DFE103-AA90-419F-8752-0DDB30C397AA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{88DFE103-AA90-419F-8752-0DDB30C397AA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{88DFE103-AA90-419F-8752-0DDB30C397AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88DFE103-AA90-419F-8752-0DDB30C397AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88DFE103-AA90-419F-8752-0DDB30C397AA}.Release|x64.ActiveCfg = Release|Any CPU
+		{88DFE103-AA90-419F-8752-0DDB30C397AA}.Release|x86.ActiveCfg = Release|Any CPU
+		{C89DEB9B-4DCA-4792-B216-F00808606AF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C89DEB9B-4DCA-4792-B216-F00808606AF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C89DEB9B-4DCA-4792-B216-F00808606AF7}.Debug|x64.ActiveCfg = Debug|x64
+		{C89DEB9B-4DCA-4792-B216-F00808606AF7}.Debug|x64.Build.0 = Debug|x64
+		{C89DEB9B-4DCA-4792-B216-F00808606AF7}.Debug|x86.ActiveCfg = Debug|x86
+		{C89DEB9B-4DCA-4792-B216-F00808606AF7}.Debug|x86.Build.0 = Debug|x86
+		{C89DEB9B-4DCA-4792-B216-F00808606AF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C89DEB9B-4DCA-4792-B216-F00808606AF7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C89DEB9B-4DCA-4792-B216-F00808606AF7}.Release|x64.ActiveCfg = Release|x64
+		{C89DEB9B-4DCA-4792-B216-F00808606AF7}.Release|x64.Build.0 = Release|x64
+		{C89DEB9B-4DCA-4792-B216-F00808606AF7}.Release|x86.ActiveCfg = Release|x86
+		{C89DEB9B-4DCA-4792-B216-F00808606AF7}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

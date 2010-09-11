@@ -1,0 +1,404 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{88DFE103-AA90-419F-8752-0DDB30C397AA}</ProjectGuid>
+    <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>WebTest</RootNamespace>
+    <AssemblyName>WebTest</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.Web.Mobile" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="demos\Demo1.aspx" />
+    <Content Include="Web.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Default.aspx.cs">
+      <SubType>ASPXCodeBehind</SubType>
+      <DependentUpon>Default.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Default.aspx.designer.cs">
+      <DependentUpon>Default.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\Demo1.aspx.cs">
+      <SubType>ASPXCodeBehind</SubType>
+      <DependentUpon>Demo1.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\Demo1.aspx.designer.cs">
+      <DependentUpon>Demo1.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\Demo2.aspx.cs">
+      <SubType>ASPXCodeBehind</SubType>
+      <DependentUpon>Demo2.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\Demo2.aspx.designer.cs">
+      <DependentUpon>Demo2.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\Demo3.aspx.cs">
+      <SubType>ASPXCodeBehind</SubType>
+      <DependentUpon>Demo3.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\Demo3.aspx.designer.cs">
+      <DependentUpon>Demo3.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\TileDemo1.aspx.cs">
+      <SubType>ASPXCodeBehind</SubType>
+      <DependentUpon>TileDemo1.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\TileDemo1.aspx.designer.cs">
+      <DependentUpon>TileDemo1.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\TileDemo2.aspx.cs">
+      <SubType>ASPXCodeBehind</SubType>
+      <DependentUpon>TileDemo2.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\TileDemo2.aspx.designer.cs">
+      <DependentUpon>TileDemo2.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\TileImageTest.aspx.cs">
+      <SubType>ASPXCodeBehind</SubType>
+      <DependentUpon>TileImageTest.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\TileImageTest.aspx.designer.cs">
+      <DependentUpon>TileImageTest.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\WebForm1.aspx.cs">
+      <SubType>ASPXCodeBehind</SubType>
+      <DependentUpon>WebForm1.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\WebForm1.aspx.designer.cs">
+      <DependentUpon>WebForm1.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="tests\3dtest.aspx.cs">
+      <SubType>ASPXCodeBehind</SubType>
+      <DependentUpon>3dtest.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="tests\3dtest.aspx.designer.cs">
+      <DependentUpon>3dtest.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="tests\AjaxMapTestControl.ascx.cs">
+      <DependentUpon>AjaxMapTestControl.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="tests\AjaxMapTestControl.ascx.designer.cs">
+      <DependentUpon>AjaxMapTestControl.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="tests\MapTestControl.ascx.cs">
+      <DependentUpon>MapTestControl.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="tests\MapTestControl.ascx.designer.cs">
+      <DependentUpon>MapTestControl.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="tests\Test1.aspx.cs">
+      <SubType>ASPXCodeBehind</SubType>
+      <DependentUpon>Test1.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="tests\Test1.aspx.designer.cs">
+      <DependentUpon>Test1.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="tests\UserControlTest.aspx.cs">
+      <SubType>ASPXCodeBehind</SubType>
+      <DependentUpon>UserControlTest.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="tests\UserControlTest.aspx.designer.cs">
+      <DependentUpon>UserControlTest.aspx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Default.aspx" />
+    <Content Include="demos\Demo2.aspx" />
+    <Content Include="demos\Demo3.aspx" />
+    <Content Include="demos\TileDemo1.aspx" />
+    <Content Include="demos\TileDemo2.aspx" />
+    <Content Include="demos\TileImageTest.aspx" />
+    <Content Include="demos\WebForm1.aspx" />
+    <Content Include="tests\3dtest.aspx" />
+    <Content Include="tests\AjaxMapTestControl.ascx" />
+    <Content Include="tests\MapTestControl.ascx" />
+    <Content Include="tests\Test1.aspx" />
+    <Content Include="tests\UserControlTest.aspx" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="demos\crash2.egp" />
+    <None Include="demos\demo2.egp" />
+    <None Include="demos\demo2maps\CVS\Entries" />
+    <None Include="demos\demo2maps\CVS\Repository" />
+    <None Include="demos\demo2maps\CVS\Root" />
+    <None Include="demos\demo2maps\CVS\Template" />
+    <None Include="demos\demo2maps\demo2.egp" />
+    <None Include="demos\demo2maps\Framework\CVS\Entries" />
+    <None Include="demos\demo2maps\Framework\CVS\Repository" />
+    <None Include="demos\demo2maps\Framework\CVS\Root" />
+    <None Include="demos\demo2maps\Framework\CVS\Template" />
+    <None Include="demos\demo2maps\Framework\demo2.egp" />
+    <None Include="demos\demo2maps\Framework\j5505_frameworkboundaries.dbf" />
+    <None Include="demos\demo2maps\Framework\j5505_frameworkboundaries.shp" />
+    <None Include="demos\demo2maps\Framework\j5505_frameworkboundaries.shx" />
+    <None Include="demos\demo2maps\Framework\j5505_geodataindexes.dbf" />
+    <None Include="demos\demo2maps\Framework\j5505_geodataindexes.shp" />
+    <None Include="demos\demo2maps\Framework\j5505_geodataindexes.shx" />
+    <None Include="demos\demo2maps\Framework\j5505_islands.dbf" />
+    <None Include="demos\demo2maps\Framework\j5505_islands.shp" />
+    <None Include="demos\demo2maps\Framework\j5505_islands.shx" />
+    <None Include="demos\demo2maps\Framework\j5505_largeareafeatures.dbf" />
+    <None Include="demos\demo2maps\Framework\j5505_largeareafeatures.shp" />
+    <None Include="demos\demo2maps\Framework\j5505_largeareafeatures.shx" />
+    <None Include="demos\demo2maps\Framework\j5505_locations.dbf" />
+    <None Include="demos\demo2maps\Framework\j5505_locations.shp" />
+    <None Include="demos\demo2maps\Framework\j5505_locations.shx" />
+    <None Include="demos\demo2maps\Framework\j5505_mainlands.dbf" />
+    <None Include="demos\demo2maps\Framework\j5505_mainlands.shp" />
+    <None Include="demos\demo2maps\Framework\j5505_mainlands.shpx" />
+    <None Include="demos\demo2maps\Framework\j5505_mainlands.shx" />
+    <None Include="demos\demo2maps\Framework\j5505_prohibitedareas.dbf" />
+    <None Include="demos\demo2maps\Framework\j5505_prohibitedareas.shp" />
+    <None Include="demos\demo2maps\Framework\j5505_prohibitedareas.shx" />
+    <None Include="demos\demo2maps\Framework\j5505_reserves.dbf" />
+    <None Include="demos\demo2maps\Framework\j5505_reserves.shp" />
+    <None Include="demos\demo2maps\Framework\j5505_reserves.shpx" />
+    <None Include="demos\demo2maps\Framework\j5505_reserves.shx" />
+    <None Include="demos\demo2maps\Framework\j5505_seas.dbf" />
+    <None Include="demos\demo2maps\Framework\j5505_seas.shp" />
+    <None Include="demos\demo2maps\Framework\j5505_seas.shpx" />
+    <None Include="demos\demo2maps\Framework\j5505_seas.shx" />
+    <None Include="demos\demo2maps\Habitation\CVS\Entries" />
+    <None Include="demos\demo2maps\Habitation\CVS\Repository" />
+    <None Include="demos\demo2maps\Habitation\CVS\Root" />
+    <None Include="demos\demo2maps\Habitation\CVS\Template" />
+    <None Include="demos\demo2maps\Habitation\j5505_buildingareas.dbf" />
+    <None Include="demos\demo2maps\Habitation\j5505_buildingareas.shp" />
+    <None Include="demos\demo2maps\Habitation\j5505_buildingareas.shx" />
+    <None Include="demos\demo2maps\Habitation\j5505_builtupareas.dbf" />
+    <None Include="demos\demo2maps\Habitation\j5505_builtupareas.shp" />
+    <None Include="demos\demo2maps\Habitation\j5505_builtupareas.shpx" />
+    <None Include="demos\demo2maps\Habitation\j5505_builtupareas.shx" />
+    <None Include="demos\demo2maps\Habitation\j5505_cemeteryareas.dbf" />
+    <None Include="demos\demo2maps\Habitation\j5505_cemeteryareas.shp" />
+    <None Include="demos\demo2maps\Habitation\j5505_cemeteryareas.shx" />
+    <None Include="demos\demo2maps\Habitation\j5505_cemeterypoints.dbf" />
+    <None Include="demos\demo2maps\Habitation\j5505_cemeterypoints.shp" />
+    <None Include="demos\demo2maps\Habitation\j5505_cemeterypoints.shx" />
+    <None Include="demos\demo2maps\Habitation\j5505_homesteads.dbf" />
+    <None Include="demos\demo2maps\Habitation\j5505_homesteads.shp" />
+    <None Include="demos\demo2maps\Habitation\j5505_homesteads.shx" />
+    <None Include="demos\demo2maps\Habitation\j5505_placenames.dbf" />
+    <None Include="demos\demo2maps\Habitation\j5505_placenames.shp" />
+    <None Include="demos\demo2maps\Habitation\j5505_placenames.shx" />
+    <None Include="demos\demo2maps\Habitation\j5505_populatedplaces.dbf" />
+    <None Include="demos\demo2maps\Habitation\j5505_populatedplaces.shp" />
+    <None Include="demos\demo2maps\Habitation\j5505_populatedplaces.shx" />
+    <None Include="demos\demo2maps\Habitation\j5505_recreationareas.dbf" />
+    <None Include="demos\demo2maps\Habitation\j5505_recreationareas.shp" />
+    <None Include="demos\demo2maps\Habitation\j5505_recreationareas.shpx" />
+    <None Include="demos\demo2maps\Habitation\j5505_recreationareas.shx" />
+    <None Include="demos\demo2maps\Hydrography\CVS\Entries" />
+    <None Include="demos\demo2maps\Hydrography\CVS\Repository" />
+    <None Include="demos\demo2maps\Hydrography\CVS\Root" />
+    <None Include="demos\demo2maps\Hydrography\CVS\Template" />
+    <None Include="demos\demo2maps\Hydrography\j5505_bores.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_bores.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_bores.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_canalareas.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_canalareas.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_canalareas.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_canallines.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_canallines.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_canallines.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_flats.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_flats.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_flats.shpx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_flats.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_foreshoreflats.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_foreshoreflats.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_foreshoreflats.shpx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_foreshoreflats.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_lakes.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_lakes.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_lakes.shpx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_lakes.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_locks.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_locks.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_locks.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_marinehazardareas.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_marinehazardareas.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_marinehazardareas.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_marinehazardpoints.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_marinehazardpoints.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_marinehazardpoints.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_pondageareas.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_pondageareas.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_pondageareas.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_rapidareas.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_rapidareas.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_rapidareas.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_rapidlines.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_rapidlines.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_rapidlines.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_reservoirs.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_reservoirs.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_reservoirs.shpx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_reservoirs.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_spillways.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_spillways.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_spillways.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_springs.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_springs.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_springs.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_watercourseareas.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_watercourseareas.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_watercourseareas.shpx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_watercourseareas.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_watercourselines.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_watercourselines.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_watercourselines.shpx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_watercourselines.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_waterfallpoints.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_waterfallpoints.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_waterfallpoints.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_waterholes.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_waterholes.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_waterholes.shx" />
+    <None Include="demos\demo2maps\Hydrography\j5505_waterpoints.dbf" />
+    <None Include="demos\demo2maps\Hydrography\j5505_waterpoints.shp" />
+    <None Include="demos\demo2maps\Hydrography\j5505_waterpoints.shx" />
+    <None Include="demos\demo2maps\Infrastructure\CVS\Entries" />
+    <None Include="demos\demo2maps\Infrastructure\CVS\Repository" />
+    <None Include="demos\demo2maps\Infrastructure\CVS\Root" />
+    <None Include="demos\demo2maps\Infrastructure\CVS\Template" />
+    <None Include="demos\demo2maps\Infrastructure\j5505_damwalls.dbf" />
+    <None Include="demos\demo2maps\Infrastructure\j5505_damwalls.shp" />
+    <None Include="demos\demo2maps\Infrastructure\j5505_damwalls.shpx" />
+    <None Include="demos\demo2maps\Infrastructure\j5505_damwalls.shx" />
+    <None Include="demos\demo2maps\Transport\CVS\Entries" />
+    <None Include="demos\demo2maps\Transport\CVS\Repository" />
+    <None Include="demos\demo2maps\Transport\CVS\Root" />
+    <None Include="demos\demo2maps\Transport\CVS\Template" />
+    <None Include="demos\demo2maps\Transport\j5505_aircraftfacilitypoints.dbf" />
+    <None Include="demos\demo2maps\Transport\j5505_aircraftfacilitypoints.shp" />
+    <None Include="demos\demo2maps\Transport\j5505_aircraftfacilitypoints.shx" />
+    <None Include="demos\demo2maps\Transport\j5505_barrierpoints.dbf" />
+    <None Include="demos\demo2maps\Transport\j5505_barrierpoints.shp" />
+    <None Include="demos\demo2maps\Transport\j5505_barrierpoints.shx" />
+    <None Include="demos\demo2maps\Transport\j5505_ferryroutelines.dbf" />
+    <None Include="demos\demo2maps\Transport\j5505_ferryroutelines.shp" />
+    <None Include="demos\demo2maps\Transport\j5505_ferryroutelines.shx" />
+    <None Include="demos\demo2maps\Transport\j5505_foottracks.dbf" />
+    <None Include="demos\demo2maps\Transport\j5505_foottracks.shp" />
+    <None Include="demos\demo2maps\Transport\j5505_foottracks.shx" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaybridgepoints.dbf" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaybridgepoints.shp" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaybridgepoints.shx" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaycrossinglines.dbf" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaycrossinglines.shp" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaycrossinglines.shx" />
+    <None Include="demos\demo2maps\Transport\j5505_railways.dbf" />
+    <None Include="demos\demo2maps\Transport\j5505_railways.shp" />
+    <None Include="demos\demo2maps\Transport\j5505_railways.shpx" />
+    <None Include="demos\demo2maps\Transport\j5505_railways.shx" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaystoppoints.dbf" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaystoppoints.shp" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaystoppoints.shpx" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaystoppoints.shx" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaytunnellines.dbf" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaytunnellines.shp" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaytunnellines.shx" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaytunnelpoints.dbf" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaytunnelpoints.shp" />
+    <None Include="demos\demo2maps\Transport\j5505_railwaytunnelpoints.shx" />
+    <None Include="demos\demo2maps\Transport\j5505_roadcrossinglines.dbf" />
+    <None Include="demos\demo2maps\Transport\j5505_roadcrossinglines.shp" />
+    <None Include="demos\demo2maps\Transport\j5505_roadcrossinglines.shx" />
+    <None Include="demos\demo2maps\Transport\j5505_roadcrossingpoints.dbf" />
+    <None Include="demos\demo2maps\Transport\j5505_roadcrossingpoints.shp" />
+    <None Include="demos\demo2maps\Transport\j5505_roadcrossingpoints.shx" />
+    <None Include="demos\demo2maps\Transport\j5505_roads.dbf" />
+    <None Include="demos\demo2maps\Transport\j5505_roads.shp" />
+    <None Include="demos\demo2maps\Transport\j5505_roads.shpx" />
+    <None Include="demos\demo2maps\Transport\j5505_roads.shx" />
+    <None Include="demos\demo2maps\Vegetation\CVS\Entries" />
+    <None Include="demos\demo2maps\Vegetation\CVS\Repository" />
+    <None Include="demos\demo2maps\Vegetation\CVS\Root" />
+    <None Include="demos\demo2maps\Vegetation\CVS\Template" />
+    <None Include="demos\demo2maps\Vegetation\j5505_cultivatedareas.dbf" />
+    <None Include="demos\demo2maps\Vegetation\j5505_cultivatedareas.shp" />
+    <None Include="demos\demo2maps\Vegetation\j5505_cultivatedareas.shpx" />
+    <None Include="demos\demo2maps\Vegetation\j5505_cultivatedareas.shx" />
+    <None Include="demos\demo2maps\Vegetation\j5505_nativevegetationareas.dbf" />
+    <None Include="demos\demo2maps\Vegetation\j5505_nativevegetationareas.shp" />
+    <None Include="demos\demo2maps\Vegetation\j5505_nativevegetationareas.shpx" />
+    <None Include="demos\demo2maps\Vegetation\j5505_nativevegetationareas.shx" />
+    <None Include="demos\melb3d.egp" />
+    <None Include="demos\us_demo.egp" />
+    <None Include="demos\victorian_accidents.egp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EGIS.ShapeFileLib\EGIS.ShapeFileLib.csproj">
+      <Project>{C89DEB9B-4DCA-4792-B216-F00808606AF7}</Project>
+      <Name>EGIS.ShapeFileLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\egis.web.controls\EGIS.Web.Controls.csproj">
+      <Project>{BB6D9D99-D2EA-44C0-8B34-4DB5B2E9BCD5}</Project>
+      <Name>EGIS.Web.Controls</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="demos\cache\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v8.0\WebApplications\Microsoft.WebApplication.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <UseIIS>False</UseIIS>
+          <AutoAssignPort>True</AutoAssignPort>
+          <DevelopmentServerPort>2104</DevelopmentServerPort>
+          <DevelopmentServerVPath>/</DevelopmentServerVPath>
+          <IISUrl>
+          </IISUrl>
+          <NTLMAuthentication>False</NTLMAuthentication>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>
