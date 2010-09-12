@@ -162,7 +162,10 @@ namespace EGIS.Controls
         /// Event fired when a tooltip is displayed for a shapefile with the RenderSettings.UseTooltip property
         /// set to true
         /// </summary>
+        /// <remarks>The event is also fired when the tooltip is hidden. In this case the TooltipEventArgs ShapeFileIndex and RecordIndex will return -1
+        /// This allows receivers to be notified when the mouse is no longer over a shape</remarks>
         /// <see cref="EGIS.ShapeFileLib.RenderSettings.UseToolTip"/>
+        /// <seealso cref="GetShapeIndexAtPixelCoord"/>
         public event EventHandler<TooltipEventArgs> TooltipDisplayed;
 
         protected void OnTooltipDisplayed(int shapeIndex, int recordIndex, Point mousePt, PointD gisPt)
@@ -544,8 +547,14 @@ namespace EGIS.Controls
             return GisPointToPixelCoord(pt.X, pt.Y);
         }
 
-
-        public int GetShapeAtPixelCoord(int shapeIndex, Point pt, int pixelDelta)
+        /// <summary>
+        /// Returns the shape index for a given shapefile located at a point (in pixel/mouse coordinates)
+        /// </summary>
+        /// <param name="shapeIndex">The zero based index of the shapefile layer</param>
+        /// <param name="pt">The pixel point</param>
+        /// <param name="pixelDelta">The pixel delta value added to pt. I.E return shape under pt +/- delta pixels. A suitable value for delta is 5 to 8 pixels</param>
+        /// <returns>The zero based shape index, or -1 if no shape is located at pt</returns>
+        public int GetShapeIndexAtPixelCoord(int shapeIndex, Point pt, int pixelDelta)
         {
             float delta = pixelDelta / (float)ZoomLevel;
             PointD ptd = PixelCoordToGisPoint(pt);                               

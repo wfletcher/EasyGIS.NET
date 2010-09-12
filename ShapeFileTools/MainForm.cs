@@ -1000,6 +1000,9 @@ namespace egis
                     string[] values = sfMap1[e.ShapeFileIndex].GetAttributeFieldValues(e.RecordIndex);
                     recordAttributesForm.SetRecordData(e.ShapeFileIndex, sfMap1[e.ShapeFileIndex].Name,e.RecordIndex,names, values); 
                 }
+                //PointD ptd = sfMap1.PixelCoordToGisPoint(e.MousePosition);
+                //int recIndex = sfMap1[e.ShapeFileIndex].GetShapeIndexContainingPoint(new PointF((float)ptd.X, (float)ptd.Y), 0.00001F);
+                //Console.Out.WriteLine("rec: " + recIndex);
             }
             else
             {
