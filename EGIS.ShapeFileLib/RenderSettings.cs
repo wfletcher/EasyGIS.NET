@@ -10,7 +10,19 @@ namespace EGIS.ShapeFileLib
     /// <summary>
     /// Enumeration defining a LineType when rendering PolyLine ShapeFiles
     /// </summary>
-    public enum LineType { Solid, Outline, Railway };
+    public enum LineType { 
+        /// <summary>
+        /// Solid line
+        /// </summary>
+        Solid, 
+        /// <summary>
+        /// A line with an outlined color
+        /// </summary>
+        Outline, 
+        /// <summary>
+        /// A line representing a railway
+        /// </summary>
+        Railway };
 
     /// <summary>
     /// Encapsulates settings used when rendering a ShapeFile
@@ -32,6 +44,9 @@ namespace EGIS.ShapeFileLib
         private Color _fillColor = Color.FromArgb(252, 252, 252);
         private Color _outlineColor = Color.FromArgb(150, 150, 150);
 
+        private Color _selectFillColor = Color.SlateBlue;
+        private Color _selectOutlineColor = Color.Yellow;
+        
         private float _penWidthScale = 0.001f;
 
         private int maxPixelPenWidth = -1;
@@ -201,12 +216,12 @@ namespace EGIS.ShapeFileLib
 
         /// <summary>
         /// Gets / Sets the Max Zoom level before the layer is not rendered
+        /// </summary>
         /// <remarks>Use this property in conjunction with MinRenderZoomLevel to control whether
         /// a layer is rendered as a map is zoomed in and out
         /// <para>
         /// This property will be ignored if it is set to a number less than 0</para>
-        /// </remarks>
-        /// </summary>
+        /// </remarks>        
         /// <seealso cref="RenderSettings.MinZoomLevel"/>
         [Category("Layer Render Settings"), Description("Max zoom level before the layer is no longer rendered. (This property is ignored if less than zero.)")]
         public float MaxZoomLevel
@@ -454,6 +469,37 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        /// <summary>
+        /// Gets / Sets the color used to draw the outline of selected shapes.
+        /// </summary>
+        [Category("Layer Render Settings"), Description("The color used to draw the outline of selected shapes.")]
+        public Color SelectOutlineColor
+        {
+            get
+            {
+                return _selectOutlineColor;
+            }
+            set
+            {
+                _selectOutlineColor = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets / Sets the Fill Color to use when rendering the interior of selected shapes
+        /// </summary>
+        [Category("Layer Render Settings"), Description("The color used to fill the interior selected shapes.")]
+        public Color SelectFillColor
+        {
+            get
+            {
+                return _selectFillColor;
+            }
+            set
+            {
+                _selectFillColor = value;
+            }
+        }
 
         /// <summary>
         /// Gets / Sets the name of the Field in the DBF file that will be used for the ToolTip text
@@ -540,6 +586,10 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        /// <summary>
+        /// Returns the symbol Image if PointImageSymbol has been set
+        /// </summary>
+        /// <returns></returns>
         public Image GetImageSymbol()
         {
             return this.symbolImage;
@@ -662,6 +712,22 @@ namespace EGIS.ShapeFileLib
 
             writer.WriteStartElement("Selectable");
             writer.WriteString(this.IsSelectable.ToString());
+            writer.WriteEndElement();
+
+            writer.WriteStartElement("SelectOutlineColor");
+            if (SelectOutlineColor.A < 255)
+            {
+                writer.WriteAttributeString("alpha", SelectOutlineColor.A.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+            writer.WriteString(ColorTranslator.ToHtml(SelectOutlineColor));
+            writer.WriteEndElement();
+
+            writer.WriteStartElement("SelectFillColor");
+            if (SelectFillColor.A < 255)
+            {
+                writer.WriteAttributeString("alpha", SelectFillColor.A.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+            writer.WriteString(ColorTranslator.ToHtml(SelectFillColor));
             writer.WriteEndElement();
 
             writer.WriteStartElement("LineType");
@@ -874,8 +940,36 @@ namespace EGIS.ShapeFileLib
                         this.StringEncoding = enc;
                     }
                 
-            }            
+            }
 
+            nl = element.GetElementsByTagName("SelectFillColor");
+            if (nl != null && nl.Count > 0)
+            {
+                SelectFillColor = ColorTranslator.FromHtml(nl[0].InnerText);
+                if (nl[0].Attributes["alpha"] != null)
+                {
+                    int alpha;
+                    if (int.TryParse(((XmlElement)nl[0]).GetAttribute("alpha"), out alpha))
+                    {
+                        SelectFillColor = Color.FromArgb(alpha, SelectFillColor);
+                    }
+                }                
+            }
+
+            nl = element.GetElementsByTagName("SelectOutlineColor");
+            if (nl != null && nl.Count > 0)
+            {
+                SelectOutlineColor = ColorTranslator.FromHtml(nl[0].InnerText);
+                if (nl[0].Attributes["alpha"] != null)
+                {
+                    int alpha;
+                    if (int.TryParse(((XmlElement)nl[0]).GetAttribute("alpha"), out alpha))
+                    {
+                        SelectOutlineColor = Color.FromArgb(alpha, SelectOutlineColor);
+                    }
+                }
+            }
+                        
         }
 
         #endregion

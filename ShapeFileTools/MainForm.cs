@@ -27,21 +27,21 @@ namespace egis
 
             EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = false;
             this.miMercatorProjection.Checked = EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection;
-
+            this.useNativeFileMappingToolStripMenuItem.Checked = EGIS.ShapeFileLib.ShapeFile.MapFilesInMemory;
             LoadRecentProjects();
 
-            EGIS.ShapeFileLib.UtmCoordinate utm =  EGIS.ShapeFileLib.ConversionFunctions.LLToUtm(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, -37.45678, 145.123456);
-            Console.Out.WriteLine("{0},{1}", utm.Northing, utm.Easting);
-            Console.Out.WriteLine("{0},{1}", (float)utm.Northing, (float)utm.Easting);
+            //EGIS.ShapeFileLib.UtmCoordinate utm =  EGIS.ShapeFileLib.ConversionFunctions.LLToUtm(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, -37.45678, 145.123456);
+            //Console.Out.WriteLine("{0},{1}", utm.Northing, utm.Easting);
+            //Console.Out.WriteLine("{0},{1}", (float)utm.Northing, (float)utm.Easting);
 
-            EGIS.ShapeFileLib.LatLongCoordinate ll = EGIS.ShapeFileLib.ConversionFunctions.UtmToLL(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, utm);
-            Console.Out.WriteLine("{0},{1}", ll.Latitude, ll.Longitude);
-            Console.Out.WriteLine("{0},{1}", (float)ll.Latitude, (float)ll.Longitude);
-            EGIS.ShapeFileLib.LatLongCoordinate ll2 = new LatLongCoordinate();
-            ll2.Latitude = (float)ll.Latitude;
-            ll2.Longitude = (float)ll.Longitude;
-            double dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, ll, ll2);
-            Console.Out.WriteLine("dist = " + dist);
+            //EGIS.ShapeFileLib.LatLongCoordinate ll = EGIS.ShapeFileLib.ConversionFunctions.UtmToLL(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, utm);
+            //Console.Out.WriteLine("{0},{1}", ll.Latitude, ll.Longitude);
+            //Console.Out.WriteLine("{0},{1}", (float)ll.Latitude, (float)ll.Longitude);
+            //EGIS.ShapeFileLib.LatLongCoordinate ll2 = new LatLongCoordinate();
+            //ll2.Latitude = (float)ll.Latitude;
+            //ll2.Longitude = (float)ll.Longitude;
+            //double dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, ll, ll2);
+            //Console.Out.WriteLine("dist = " + dist);
 
             recordAttributesForm = new RecordAttributesForm();
             //recordAttributesForm.Show(this);
@@ -96,6 +96,7 @@ namespace egis
                     {                        
                         OpenShapeFile(file);
                     }
+                    /*
                     int tzl = TileUtil.ScaleToZoomLevel(sfMap1.ZoomLevel);
                     if (tzl >= 0)
                     {
@@ -105,6 +106,7 @@ namespace egis
                     {
                         //not using lat long 
                     }
+                     **/
                 }
                 catch (Exception ex)
                 {
@@ -709,7 +711,9 @@ namespace egis
                 RectangleF bounds = shapeFileListControl1.SelectedShapeFile.GetShapeBounds(index);
                 if (bounds != RectangleF.Empty)
                 {
-                    shapeFileListControl1.SelectedShapeFile.SelectedRecordIndex = index;
+                    //shapeFileListControl1.SelectedShapeFile.SelectedRecordIndex = index;
+                    shapeFileListControl1.SelectedShapeFile.ClearSelectedRecords();
+                    shapeFileListControl1.SelectedShapeFile.SelectRecord(index, true);
                     sfMap1.CentrePoint2D = new PointD((bounds.Left + bounds.Right) / 2, (bounds.Top + bounds.Bottom) / 2);                    
                 }
             }
@@ -1019,6 +1023,12 @@ namespace egis
         void recordAttributesForm_VisibleChanged(object sender, EventArgs e)
         {
             this.displayShapeAttributesWindowToolStripMenuItem.Checked = recordAttributesForm.Visible;            
+        }
+
+        private void useNativeFileMappingToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.useNativeFileMappingToolStripMenuItem.Checked = !this.useNativeFileMappingToolStripMenuItem.Checked;
+            EGIS.ShapeFileLib.ShapeFile.MapFilesInMemory = useNativeFileMappingToolStripMenuItem.Checked;
         }
 
 

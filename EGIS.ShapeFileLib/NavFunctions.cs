@@ -808,7 +808,7 @@ namespace EGIS.ShapeFileLib
     /// <remarks>
     /// <para>
     /// </para>
-    /// <para></para>
+    /// <para>
     /// Note that in most SPHEROID parameters of the WKT format contained in a ".prj" projection file, 
     /// the flattening is expressed as 1/f. For example, in 
     /// SPHEROID["GRS_1980",6378137.0,298.257222101] 1/f = 298.257222101. 6378137.0 is the EquatorialRadius
@@ -817,8 +817,8 @@ namespace EGIS.ShapeFileLib
     /// See remarks on EccentricitySquared for explanation on how to convert "f" to "E^2"
     /// </para>
     /// </remarks>
-    /// <seealso cref="Ellipsoid..EccentricitySquared"/>
-    /// <seealso cref="Ellipsoid..EquatorialRadius"/>        
+    /// <seealso cref="Ellipsoid.EccentricitySquared"/>
+    /// <seealso cref="Ellipsoid.EquatorialRadius"/>        
 	public class Ellipsoid
 	{
 		private int _id;

@@ -15,9 +15,17 @@ namespace EGIS.ShapeFileLib
             rootNode = new QTNode(bounds, 0);
         }
 
-        public void Insert(int recordIndex, QTNodeHelper helper)
+        public void Insert(int recordIndex, QTNodeHelper helper, System.IO.Stream shapeFileStream)
         {
-            rootNode.Insert(recordIndex, helper);
+            if (helper.IsPointData())
+            {
+                rootNode.Insert(recordIndex, helper, shapeFileStream);
+            }
+            else
+            {
+                RectangleF recBounds = helper.GetRecordBounds(recordIndex, shapeFileStream);
+                rootNode.Insert(recordIndex, helper, ref recBounds, shapeFileStream);
+            }
         }
 
 
@@ -91,7 +99,7 @@ namespace EGIS.ShapeFileLib
             children[BR] = new QTNode(RectangleF.FromLTRB(0.5f * (_bounds.Left + _bounds.Right), 0.5f * (_bounds.Top + _bounds.Bottom), _bounds.Right, _bounds.Bottom), Level + 1);
         }
 
-        public void Insert(int recordIndex, QTNodeHelper helper)
+        public void Insert(int recordIndex, QTNodeHelper helper, System.IO.Stream shapeFileStream)
         {
             if (Level == MaxLevels)
             {                
@@ -101,7 +109,7 @@ namespace EGIS.ShapeFileLib
             {                
                 if(helper.IsPointData())
                 {
-                    PointF pt = helper.GetRecordPoint(recordIndex);
+                    PointF pt = helper.GetRecordPoint(recordIndex, shapeFileStream);
                     
                     if(children == null)
                     {
@@ -110,19 +118,19 @@ namespace EGIS.ShapeFileLib
                     
                     if (children[TL].Bounds.Contains(pt))
                     {
-                        children[TL].Insert(recordIndex, helper);
+                        children[TL].Insert(recordIndex, helper, shapeFileStream);
                     }
                     else if (children[TR].Bounds.Contains(pt))
                     {
-                        children[TR].Insert(recordIndex, helper);
+                        children[TR].Insert(recordIndex, helper, shapeFileStream);
                     }
                     else if (children[BL].Bounds.Contains(pt))
                     {
-                        children[BL].Insert(recordIndex, helper);
+                        children[BL].Insert(recordIndex, helper, shapeFileStream);
                     }
                     else if (children[BR].Bounds.Contains(pt))
                     {
-                        children[BR].Insert(recordIndex, helper);
+                        children[BR].Insert(recordIndex, helper, shapeFileStream);
                     }
                     else
                     {
@@ -131,7 +139,7 @@ namespace EGIS.ShapeFileLib
                 }
                 else
                 {
-                    RectangleF recBounds = helper.GetRecordBounds(recordIndex);
+                    RectangleF recBounds = helper.GetRecordBounds(recordIndex, shapeFileStream);
 
                     if (children == null)
                     {
@@ -141,26 +149,72 @@ namespace EGIS.ShapeFileLib
                     if (children[TL].Bounds.IntersectsWith(recBounds))
                     {
                         c++;
-                        children[TL].Insert(recordIndex, helper);
+                        children[TL].Insert(recordIndex, helper, shapeFileStream);
                     }
                     if (children[TR].Bounds.IntersectsWith(recBounds))
                     {
                         c++;
-                        children[TR].Insert(recordIndex, helper);
+                        children[TR].Insert(recordIndex, helper, shapeFileStream);
                     }
                     if (children[BL].Bounds.IntersectsWith(recBounds))
                     {
                         c++;
-                        children[BL].Insert(recordIndex, helper);
+                        children[BL].Insert(recordIndex, helper, shapeFileStream);
                     }
                     if (children[BR].Bounds.IntersectsWith(recBounds))
                     {
                         c++;
-                        children[BR].Insert(recordIndex, helper);
+                        children[BR].Insert(recordIndex, helper, shapeFileStream);
                     }                    
                 }
             }
             
+
+        }
+
+        internal void Insert(int recordIndex, QTNodeHelper helper, ref RectangleF recBounds, System.IO.Stream shapeFileStream)
+        {
+            if (Level == MaxLevels)
+            {
+                indexList.Add(recordIndex);
+            }
+            else
+            {
+                if (helper.IsPointData())
+                {
+                }
+                else
+                {
+                    //RectangleF recBounds = helper.GetRecordBounds(recordIndex, shapeFileStream);
+
+                    if (children == null)
+                    {
+                        CreateChildren();
+                    }
+                    int c = 0;
+                    if (children[TL].Bounds.IntersectsWith(recBounds))
+                    {
+                        c++;
+                        children[TL].Insert(recordIndex, helper, ref recBounds, shapeFileStream);
+                    }
+                    if (children[TR].Bounds.IntersectsWith(recBounds))
+                    {
+                        c++;
+                        children[TR].Insert(recordIndex, helper,ref recBounds, shapeFileStream);
+                    }
+                    if (children[BL].Bounds.IntersectsWith(recBounds))
+                    {
+                        c++;
+                        children[BL].Insert(recordIndex, helper,ref recBounds, shapeFileStream);
+                    }
+                    if (children[BR].Bounds.IntersectsWith(recBounds))
+                    {
+                        c++;
+                        children[BR].Insert(recordIndex, helper,ref recBounds, shapeFileStream);
+                    }
+                }
+            }
+
 
         }
 
@@ -203,7 +257,7 @@ namespace EGIS.ShapeFileLib
     interface QTNodeHelper
     {
         bool IsPointData();
-        PointF GetRecordPoint(int recordIndex);
-        RectangleF GetRecordBounds(int recordIndex);
+        PointF GetRecordPoint(int recordIndex, System.IO.Stream shapeFileStream);
+        RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream);
     }
 }

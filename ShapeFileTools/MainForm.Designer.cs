@@ -46,10 +46,14 @@ namespace egis
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.miMapBackgroundColor = new System.Windows.Forms.ToolStripMenuItem();
             this.miMercatorProjection = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
             this.renderQualityToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.highToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.lowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.autoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.useNativeFileMappingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
+            this.displayShapeAttributesWindowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ofdShapeFile = new System.Windows.Forms.OpenFileDialog();
@@ -86,7 +90,6 @@ namespace egis
             this.shapeFileListControl1 = new EGIS.Controls.ShapeFileListControl();
             this.sfMap1 = new EGIS.Controls.SFMap();
             this.sfdMapImage = new System.Windows.Forms.SaveFileDialog();
-            this.displayShapeAttributesWindowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.mainToolStrip.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -203,7 +206,10 @@ namespace egis
             this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miMapBackgroundColor,
             this.miMercatorProjection,
+            this.toolStripSeparator8,
             this.renderQualityToolStripMenuItem,
+            this.useNativeFileMappingToolStripMenuItem,
+            this.toolStripSeparator9,
             this.displayShapeAttributesWindowToolStripMenuItem});
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
             this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
@@ -222,6 +228,11 @@ namespace egis
             this.miMercatorProjection.Size = new System.Drawing.Size(248, 22);
             this.miMercatorProjection.Text = "Mercator Projection";
             this.miMercatorProjection.Click += new System.EventHandler(this.miMercatorProjection_Click);
+            // 
+            // toolStripSeparator8
+            // 
+            this.toolStripSeparator8.Name = "toolStripSeparator8";
+            this.toolStripSeparator8.Size = new System.Drawing.Size(245, 6);
             // 
             // renderQualityToolStripMenuItem
             // 
@@ -255,6 +266,25 @@ namespace egis
             this.autoToolStripMenuItem.Size = new System.Drawing.Size(100, 22);
             this.autoToolStripMenuItem.Text = "Auto";
             this.autoToolStripMenuItem.Click += new System.EventHandler(this.autoToolStripMenuItem_Click);
+            // 
+            // useNativeFileMappingToolStripMenuItem
+            // 
+            this.useNativeFileMappingToolStripMenuItem.Name = "useNativeFileMappingToolStripMenuItem";
+            this.useNativeFileMappingToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
+            this.useNativeFileMappingToolStripMenuItem.Text = "Use Native File Mapping";
+            this.useNativeFileMappingToolStripMenuItem.Click += new System.EventHandler(this.useNativeFileMappingToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator9
+            // 
+            this.toolStripSeparator9.Name = "toolStripSeparator9";
+            this.toolStripSeparator9.Size = new System.Drawing.Size(245, 6);
+            // 
+            // displayShapeAttributesWindowToolStripMenuItem
+            // 
+            this.displayShapeAttributesWindowToolStripMenuItem.Name = "displayShapeAttributesWindowToolStripMenuItem";
+            this.displayShapeAttributesWindowToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
+            this.displayShapeAttributesWindowToolStripMenuItem.Text = "Display shape Attributes Window";
+            this.displayShapeAttributesWindowToolStripMenuItem.Click += new System.EventHandler(this.displayShapeAttributesWindowToolStripMenuItem_Click);
             // 
             // helpToolStripMenuItem
             // 
@@ -570,7 +600,6 @@ namespace egis
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.sfMap1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.sfMap1.CentrePoint = ((System.Drawing.PointF)(resources.GetObject("sfMap1.CentrePoint")));
             this.sfMap1.CentrePoint2D = ((EGIS.ShapeFileLib.PointD)(resources.GetObject("sfMap1.CentrePoint2D")));
             this.sfMap1.Location = new System.Drawing.Point(267, 68);
             this.sfMap1.MapBackColor = System.Drawing.SystemColors.Control;
@@ -589,13 +618,6 @@ namespace egis
             // sfdMapImage
             // 
             this.sfdMapImage.Filter = "PNG|*.PNG";
-            // 
-            // displayShapeAttributesWindowToolStripMenuItem
-            // 
-            this.displayShapeAttributesWindowToolStripMenuItem.Name = "displayShapeAttributesWindowToolStripMenuItem";
-            this.displayShapeAttributesWindowToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
-            this.displayShapeAttributesWindowToolStripMenuItem.Text = "Display shape Attributes Window";
-            this.displayShapeAttributesWindowToolStripMenuItem.Click += new System.EventHandler(this.displayShapeAttributesWindowToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -689,6 +711,9 @@ namespace egis
         private System.Windows.Forms.ToolStripMenuItem saveMapImageToolStripMenuItem;
         private System.Windows.Forms.SaveFileDialog sfdMapImage;
         private System.Windows.Forms.ToolStripMenuItem displayShapeAttributesWindowToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
+        private System.Windows.Forms.ToolStripMenuItem useNativeFileMappingToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator9;
     }
 }
 

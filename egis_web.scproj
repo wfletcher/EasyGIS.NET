@@ -6,12 +6,12 @@
         <LanguageId>1033</LanguageId>
     </PropertyGroup>
     <ItemGroup>
-        <Dlls Include="C:\users\wfletcher\working\egis\egis.web.controls\bin\Debug\EGIS.Web.Controls.dll" />
-        <Dlls Include="C:\users\wfletcher\working\egis\egis.web.controls\bin\Debug\EGIS.ShapeFileLib.dll" />
-        <Dlls Include="C:\users\wfletcher\working\egis\EGIS.Controls\bin\Debug\EGIS.Controls.dll" />
-        <Comments Include="C:\users\wfletcher\working\egis\egis.web.controls\bin\Debug\EGIS.Web.Controls.XML" />
-        <Comments Include="C:\users\wfletcher\working\egis\egis.web.controls\bin\Debug\EGIS.ShapeFileLib.xml" />
-        <Comments Include="C:\users\wfletcher\working\egis\EGIS.Controls\bin\Debug\EGIS.Controls.XML" />
+        <Dlls Include="C:\Users\wfletcher\working\egis\code\egis.web.controls\bin\Debug\EGIS.Web.Controls.dll" />
+        <Dlls Include="C:\Users\wfletcher\working\egis\code\egis.web.controls\bin\Debug\EGIS.ShapeFileLib.dll" />
+        <Dlls Include="C:\Users\wfletcher\working\egis\code\EGIS.Controls\bin\Debug\EGIS.Controls.dll" />
+        <Comments Include="C:\Users\wfletcher\working\egis\code\EGIS.Controls\bin\Debug\EGIS.Controls.XML" />
+        <Comments Include="C:\Users\wfletcher\working\egis\code\egis.web.controls\bin\Debug\EGIS.Web.Controls.XML" />
+        <Comments Include="C:\Users\wfletcher\working\egis\code\egis.web.controls\bin\Debug\EGIS.ShapeFileLib.xml" />
     </ItemGroup>
     <Import Project="$(DXROOT)\Examples\Generic\generic.targets" />
 </Project>

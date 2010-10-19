@@ -168,6 +168,13 @@ namespace EGIS.Controls
         /// <seealso cref="GetShapeIndexAtPixelCoord"/>
         public event EventHandler<TooltipEventArgs> TooltipDisplayed;
 
+        /// <summary>
+        /// Fires the TooltipDisplayed event
+        /// </summary>
+        /// <param name="shapeIndex"></param>
+        /// <param name="recordIndex"></param>
+        /// <param name="mousePt"></param>
+        /// <param name="gisPt"></param>
         protected void OnTooltipDisplayed(int shapeIndex, int recordIndex, Point mousePt, PointD gisPt)
         {
             if (TooltipDisplayed != null)
@@ -464,7 +471,17 @@ namespace EGIS.Controls
         {
             RectangleF r = this.Extent;
             this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
-            this._zoomLevel = this.ClientSize.Width / r.Width;
+            double r1 = ClientSize.Width*r.Height;
+            double r2 = ClientSize.Height * r.Width;
+            if (r1 < r2)
+            {
+                this._zoomLevel = this.ClientSize.Width / r.Width;                
+            }
+            else
+            {
+                this._zoomLevel = this.ClientSize.Height / r.Height;
+            }
+                
             dirtyScreenBuf = true;
             Refresh();
             OnZoomLevelChanged();                
@@ -556,9 +573,9 @@ namespace EGIS.Controls
         /// <returns>The zero based shape index, or -1 if no shape is located at pt</returns>
         public int GetShapeIndexAtPixelCoord(int shapeIndex, Point pt, int pixelDelta)
         {
-            float delta = pixelDelta / (float)ZoomLevel;
+            double delta = pixelDelta / ZoomLevel;
             PointD ptd = PixelCoordToGisPoint(pt);                               
-            return this[shapeIndex].GetShapeIndexContainingPoint(new PointF((float)ptd.X, (float)ptd.Y), delta);            
+            return this[shapeIndex].GetShapeIndexContainingPoint(ptd, delta);            
         }
 
         /// <summary>
@@ -652,13 +669,22 @@ namespace EGIS.Controls
         public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName)
         {            
             EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(path, name, labelFieldName);
-
+            
             //set centre point to centre of shapefile and adjust zoom level to fit entire shapefile            
             RectangleF r = sf.Extent;
             if (!r.IsEmpty)
-            {
+            {                
                 this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
-                ZoomLevel = this.ClientSize.Width / r.Width;
+                double r1 = ClientSize.Width * r.Height;
+                double r2 = ClientSize.Height * r.Width;
+                if (r1 < r2)
+                {
+                    this.ZoomLevel = this.ClientSize.Width / r.Width;
+                }
+                else
+                {
+                    this.ZoomLevel = this.ClientSize.Height / r.Height;
+                }
                 dirtyScreenBuf = true;
             }
             OnShapeFilesChanged();            
@@ -709,8 +735,7 @@ namespace EGIS.Controls
 
         /// <summary>
         /// Gets the ShapeFile with the specified file path
-        /// </summary>
-        /// <param name="index"></param>
+        /// </summary>        
         /// <returns></returns>
         public EGIS.ShapeFileLib.ShapeFile this[string shapeFilePath]
         {
@@ -1001,7 +1026,7 @@ namespace EGIS.Controls
                 {
                     //PointD pt =MousePosToGisPoint(e.X, e.Y);
                     PointD pt = PixelCoordToGisPoint(e.X, e.Y);
-                    LocateShape(new PointF((float)pt.X, (float)pt.Y), new Point(e.X,e.Y));                    
+                    LocateShape(pt, new Point(e.X,e.Y));                    
                 }
             }
         }
@@ -1048,7 +1073,7 @@ namespace EGIS.Controls
         private bool layerTooltipVisible = false;
         private Point toolTipOffset = new Point(15, 3);
         private Point lastLocateMousePos = Point.Empty;
-        private void LocateShape(PointF pt, Point mousePos)
+        private void LocateShape(PointD pt, Point mousePos)
         {
             if (lastLocateMousePos.Equals(mousePos))
             {
@@ -1057,20 +1082,20 @@ namespace EGIS.Controls
                 return;
             }
             lastLocateMousePos = mousePos;
-            float delta = 8f / (float)ZoomLevel;
-            
+            double delta = 8.0 / ZoomLevel;
+            PointF ptf = new PointF((float)pt.X, (float)pt.Y);
             for (int l = ShapeFileCount - 1; l >= 0; l--)
             {
                 bool useToolTip = (_useHints && this[l].RenderSettings != null && this[l].RenderSettings.UseToolTip);
                 bool useCustomToolTip = (useToolTip && this[l].RenderSettings.CustomRenderSettings != null && this[l].RenderSettings.CustomRenderSettings.UseCustomTooltips);
-
-                if ((this[l].IsSelectable || useToolTip) && this[l].GetActualExtent().Contains(pt) && this[l].IsVisibleAtZoomLevel((float)ZoomLevel))
+                RectangleF layerExtent = this[l].GetActualExtent();
+                layerExtent.Inflate((float)delta, (float)delta);
+                if ((this[l].IsSelectable || useToolTip) && layerExtent.Contains(ptf) && this[l].IsVisibleAtZoomLevel((float)ZoomLevel))
                 {
                     int selectedIndex = this[l].GetShapeIndexContainingPoint(pt, delta);
-                    if ( selectedIndex >= 0)
+                    if (selectedIndex >= 0)
                     {
-                        
-                        if(this[l].IsSelectable) Cursor = Cursors.Hand;
+                        if (this[l].IsSelectable) Cursor = Cursors.Hand;
                         if (_useHints)
                         {
                             if (useCustomToolTip)
@@ -1083,15 +1108,14 @@ namespace EGIS.Controls
                                     OnTooltipDisplayed(l, selectedIndex, mousePos, pt);
                                     return;
                                 }
-                                
                             }
                             else
-                            {                            
+                            {
                                 string s = "record : " + selectedIndex.ToString(System.Globalization.CultureInfo.InvariantCulture);
                                 if (this[l].RenderSettings.ToolTipFieldIndex >= 0)
                                 {
                                     string temp = this[l].RenderSettings.DbfReader.GetField(selectedIndex, this[l].RenderSettings.ToolTipFieldIndex).Trim();
-                                    if(temp.Length > 0)
+                                    if (temp.Length > 0)
                                     {
                                         s += "\n" + temp;
                                     }
@@ -1103,7 +1127,7 @@ namespace EGIS.Controls
                         }
                         return;
                     }
-                }                                
+                }                
             }
             Cursor = Cursors.Default;
             if (_useHints)
