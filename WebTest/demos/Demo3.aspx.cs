@@ -18,6 +18,7 @@ namespace WebTest.demos
         protected void Page_Load(object sender, EventArgs e)
         {
             //link the map to the pan control 
+            EGIS.ShapeFileLib.ShapeFile.MapFilesInMemory = false;
             MapPanControl1.SetMap(SFMap1);
         }
 
