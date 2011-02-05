@@ -6,21 +6,25 @@
 <html xmlns="http://www.w3.org/1999/xhtml" >
 
 <head id="Head1" runat="server">
-    <title>Untitled Page</title>
+    <title>TiledSFMap Control Demo</title>
     
 </head>
 <body>
     <form id="form1" runat="server">
-    <div>
-    <p style="font-size:0.75em">
+    <div style="width:800px; font-size:0.9em; margin:8px">
+    <p>
         This Demo shows an example Easy GIS .NET project loaded and run in a web page.
         The project was created in the desktop version of Easy GIS .NET and then loaded
         in an EGIS.Web.Controls TiledSFMap web control.
-        <br />
-        Data sourced from the
-        <a target ="_blank" href="http://www.vicroads.vic.gov.au">VicRoads</a> CrashStats web site.
-        <br />
-        </p>
+    </p>
+    <p>
+        The displayed map is a map of Melbourne, Australia.
+        The map data was sourced from the Australian Government GeoScience Australia Website*,
+         and consists of 17 layers, including local roads, railways, reserves, lakes and rivers.                        
+    </p>
+    </div>
+    <div >
+    
         <script type="text/javascript" language="javascript" >
         function MapZoomChanged(type, args, obj)
         {        
@@ -43,26 +47,24 @@
         
         </script>
         
+         <cc1:TiledSFMap ID="SFMap1" runat="server" BackColor="#C0C0FF" Height="435px" Width="750px" BorderColor="LightGray" BorderStyle="Dashed" BorderWidth="2px"
+         ProjectName="~/demos/demo2.egp"  CacheOnServer="true" ServerCacheDirectoryUrl="cache" CacheOnClient="True"  MinZoomLevel="20" MaxZoomLevel="50000" Style="margin:5px"
+         OnClientBoundsChanged="MapBoundsChanged" OnClientZoomChanged="MapZoomChanged"/>
         
-        <%--<cc1:TiledSFMap ID="SFMap1" runat="server" BackColor="#C0C0FF" Height="435px" Width="650px" BorderColor="LightGray" BorderStyle="Dashed" BorderWidth="2px"
-         ProjectName="~/demos/victorian_accidents.egp"  CacheOnServer="true" ServerCacheDirectoryUrl="cache" CacheOnClient="False"  MinZoomLevel="20" MaxZoomLevel="50000" OnClientBoundsChanged="MapBoundsChanged" OnClientZoomChanged="MapZoomChanged"> />--%>
-         <cc1:TiledSFMap ID="SFMap1" runat="server" BackColor="#C0C0FF" Height="435px" Width="650px" BorderColor="LightGray" BorderStyle="Dashed" BorderWidth="2px"
-         ProjectName="~/demos/victorian_accidents.egp"  CacheOnServer="true" ServerCacheDirectoryUrl="cache" CacheOnClient="False"  MinZoomLevel="20" MaxZoomLevel="50000" />
+        <%--ZoomInImageUrl property allows changing the controls button images--%>
+        <cc1:MapPanControl  MapReferenceId="SFMap1" CssClass="test" ID="MapPanControl1" runat="server" Style="z-index: 102; position:absolute; top: 125px; left:25px; width:75px;text-align: center; padding-right: 2px; padding-left: 2px; padding-bottom: 2px; padding-top: 2px;" ZoomInImageUrl="zoomin.png"  BorderColor="White" BorderWidth="2px" />
         
-         <%--OnClientZoomChanged="alert('zoom changed: ' + args[0]);"--%>
-        &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
-        &nbsp; &nbsp;&nbsp;
-        &nbsp;&nbsp;<asp:Button ID="Button1" runat="server" OnClick="Button1_Click"
-            Text="test 1" />
-        <asp:Button ID="Button2" runat="server" OnClick="Button2_Click" Text="test2"  />
-        <div id = "debugpanel" style="width: 769px; height: 86px; border:solid 2px #404040; overflow:auto; font-size:0.75em">
-        </div>
-        <br />
-        &nbsp;&nbsp;<br />
-        &nbsp; &nbsp;<br />
-        <cc1:MapPanControl  MapReferenceId="SFMap1" CssClass="test" ID="MapPanControl1" runat="server" Style="z-index: 102;  position: absolute; top: 100px; left:25px; text-align: center; padding-right: 2px; padding-left: 2px; padding-bottom: 2px; padding-top: 2px;" ZoomInImageUrl="zoomin.png"  BorderColor="White" BorderWidth="2px" />
         
     </div>
+    <div id = "debugpanel" style="width: 750px; height: 86px; border:solid 2px #404040;  overflow:auto; font-size:0.75em; margin:5px">
+        </div>
+        
+    <p style="font-size:0.75em">
+    * This Map incorporates Data which is Copyright Commonwealth of Australia 2005. The Data has been used with the 
+      permission of the Commonwealth.  The Commonwealth has not evaluated the data as altered and incorporated within Easy GIS .NET,
+      and therefore gives no warranty regarding its accuracy, completeness, currency or suitability for any particular purpose.<br />
+
+    </p>
     </form>
 </body>
 </html>

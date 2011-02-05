@@ -1,8 +1,37 @@
+#region Copyright and License
+
+/****************************************************************************
+**
+** Copyright (C) 2008 - 2011 Winston Fletcher.
+** All rights reserved.
+**
+** This file is part of the EGIS.ShapeFileLib class library of Easy GIS .NET.
+** 
+** Easy GIS .NET is free software: you can redistribute it and/or modify
+** it under the terms of the GNU Lesser General Public License version 3 as
+** published by the Free Software Foundation and appearing in the file
+** lgpl-license.txt included in the packaging of this file.
+**
+** Easy GIS .NET is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License and
+** GNU Lesser General Public License along with Easy GIS .NET.
+** If not, see <http://www.gnu.org/licenses/>.
+**
+****************************************************************************/
+
+#endregion
+
+
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Drawing;
+using System.Reflection;
 
 namespace EGIS.ShapeFileLib
 {
@@ -61,6 +90,7 @@ namespace EGIS.ShapeFileLib
     /// </example>
     /// <seealso cref="AddRecord"/>
     /// <seealso cref="Close"/>
+    [ObfuscationAttribute(Exclude = true, ApplyToMembers = true)]
     public abstract class ShapeFileWriter
     {
 
@@ -575,6 +605,7 @@ namespace EGIS.ShapeFileLib
         /// Implementing subclasses override this method to write the appropriate data
         /// depending on the ShapeType being used.
         /// </remarks>
+        [ObfuscationAttribute(Exclude=true)]
         public abstract void AddRecord(System.Collections.ObjectModel.Collection<PointD[]> parts, string[] fieldData);
 
         /// <summary>
@@ -656,7 +687,7 @@ namespace EGIS.ShapeFileLib
     
 }
 
-
+    [ObfuscationAttribute(Exclude = true, ApplyToMembers = true)]
     class PolygonShapeFileWriter : ShapeFileWriter
 {
 
@@ -670,35 +701,35 @@ namespace EGIS.ShapeFileLib
     public override void AddRecord(double[] points, int pointCount, String[] fieldData)
     {
         RecordCount++;
-        writeShapeRecord(points, pointCount);
+        writeShapeRecord5(points, pointCount);
         WriteDbfRecord(fieldData);
     }
 
     public override void AddRecord(PointF[] pts, int numPoints, string[] fieldData)
     {
         RecordCount++;
-        writeShapeRecord(pts, numPoints);
+        writeShapeRecord2(pts, numPoints);
         WriteDbfRecord(fieldData);
     }
 
         public override void AddRecord(PointD[] pts, int numPoints, string[] fieldData)
         {
             RecordCount++;
-            writeShapeRecord(pts, numPoints);
+            writeShapeRecord4(pts, numPoints);
             WriteDbfRecord(fieldData);
         }
 
     public override void AddRecord(System.Collections.ObjectModel.Collection<PointF[]> parts, string[] fieldData)
     {
         RecordCount++;
-        writeShapeRecord(parts);
+        writeShapeRecord1(parts);
         WriteDbfRecord(fieldData);
     }
 
         public override void AddRecord(System.Collections.ObjectModel.Collection<PointD[]> parts, string[] fieldData)
         {
             RecordCount++;
-            writeShapeRecord(parts);
+            writeShapeRecord3(parts);
             WriteDbfRecord(fieldData);
         }
 
@@ -710,7 +741,7 @@ namespace EGIS.ShapeFileLib
     private const int ShapeTypeLE = ((0x05)<<24);
 
 
-    private void writeShapeRecord(System.Collections.ObjectModel.Collection<PointF[]> parts)
+    private void writeShapeRecord1(System.Collections.ObjectModel.Collection<PointF[]> parts)
         {
 
             int numPoints = 0;
@@ -791,7 +822,7 @@ namespace EGIS.ShapeFileLib
             IndexStream.Write(EndianUtils.GetBytesBE(contentLength), 0, 4);
         }
 
-    private void writeShapeRecord(PointF[] pts, int numPoints)
+    private void writeShapeRecord2(PointF[] pts, int numPoints)
     {
         
         int recordOffset = (int)ShapeStream.Position/2;
@@ -851,9 +882,8 @@ namespace EGIS.ShapeFileLib
         IndexStream.Write(EndianUtils.GetBytesBE(contentLength), 0, 4);        
     }
 
-    private void writeShapeRecord(System.Collections.ObjectModel.Collection<PointD[]> parts)
+    private void writeShapeRecord3(System.Collections.ObjectModel.Collection<PointD[]> parts)
     {
-
         int numPoints = 0;
         for (int n = 0; n < parts.Count; n++)
         {
@@ -894,7 +924,6 @@ namespace EGIS.ShapeFileLib
         ShapeStream.Write(BitConverter.GetBytes(minY), 0, 8);
         ShapeStream.Write(BitConverter.GetBytes(maxX), 0, 8);
         ShapeStream.Write(BitConverter.GetBytes(maxY), 0, 8);
-
         //update the entire shapefile bounds
         if (RecordCount == 1)
         {
@@ -932,7 +961,7 @@ namespace EGIS.ShapeFileLib
         IndexStream.Write(EndianUtils.GetBytesBE(contentLength), 0, 4);
     }
 
-        private void writeShapeRecord(PointD[] pts, int numPoints)
+        private void writeShapeRecord4(PointD[] pts, int numPoints)
         {
 
             int recordOffset = (int)ShapeStream.Position / 2;
@@ -993,7 +1022,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        private void writeShapeRecord(double[] pts, int numPoints)
+        private void writeShapeRecord5(double[] pts, int numPoints)
         {
 
             int recordOffset = (int)ShapeStream.Position / 2;
@@ -1057,7 +1086,7 @@ namespace EGIS.ShapeFileLib
     
 }
 
-
+    [ObfuscationAttribute(Exclude = true, ApplyToMembers = true)]
     class PolyLineShapeFileWriter : ShapeFileWriter
     {
 
@@ -1071,35 +1100,37 @@ namespace EGIS.ShapeFileLib
         public override void AddRecord(double[] pts, int numPoints, String[] fieldData)
     {
         RecordCount++;
-        writeShapeRecord(pts, numPoints);
+        writeShapeRecord3(pts, numPoints);
         WriteDbfRecord(fieldData);
     }
 
         public override void AddRecord(PointF[] pts, int numPoints, string[] fieldData)
         {
             RecordCount++;
-            writeShapeRecord(pts, numPoints);
+            writeShapeRecord1(pts, numPoints);
             WriteDbfRecord(fieldData);
         }
 
         public override void AddRecord(PointD[] pts, int numPoints, string[] fieldData)
         {
             RecordCount++;
-            writeShapeRecord(pts, numPoints);
+            writeShapeRecord2(pts, numPoints);
             WriteDbfRecord(fieldData);
         }
 
         public override void AddRecord(System.Collections.ObjectModel.Collection<PointF[]> parts, string[] fieldData)
         {
             RecordCount++;
-            writeShapeRecord(parts);
+            writeShapeRecord4(parts);
             WriteDbfRecord(fieldData);
         }
 
         public override void AddRecord(System.Collections.ObjectModel.Collection<PointD[]> parts, string[] fieldData)
         {
             RecordCount++;
-            writeShapeRecord(parts);
+            //obfuscation was casting parts to following line - renamed private methods
+            //writeShapeRecord4((System.Collections.ObjectModel.Collection<PointF[]>)parts);            
+            writeShapeRecord5(parts);
             WriteDbfRecord(fieldData);
         }
 
@@ -1108,7 +1139,7 @@ namespace EGIS.ShapeFileLib
             throw new NotImplementedException();
         }
 
-        private void writeShapeRecord(PointF[] pts, int numPoints)
+        private void writeShapeRecord1(PointF[] pts, int numPoints)
         {
 
             int recordOffset = (int)ShapeStream.Position / 2;
@@ -1169,7 +1200,7 @@ namespace EGIS.ShapeFileLib
 
         }
 
-        private void writeShapeRecord(PointD[] pts, int numPoints)
+        private void writeShapeRecord2(PointD[] pts, int numPoints)
         {
 
             int recordOffset = (int)ShapeStream.Position / 2;
@@ -1229,9 +1260,8 @@ namespace EGIS.ShapeFileLib
             IndexStream.Write(EndianUtils.GetBytesBE(contentLength), 0, 4);
 
         }
-
     
-        private void writeShapeRecord(double[] pts, int numPoints) 
+        private void writeShapeRecord3(double[] pts, int numPoints) 
     {
 
         int recordOffset = (int)ShapeStream.Position / 2;
@@ -1292,7 +1322,7 @@ namespace EGIS.ShapeFileLib
         
     }
 
-        private void writeShapeRecord(System.Collections.ObjectModel.Collection<PointF[]> parts)
+        private void writeShapeRecord4(System.Collections.ObjectModel.Collection<PointF[]> parts)
         {
 
             int numPoints = 0;
@@ -1374,7 +1404,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        private void writeShapeRecord(System.Collections.ObjectModel.Collection<PointD[]> parts)
+        private void writeShapeRecord5(System.Collections.ObjectModel.Collection<PointD[]> parts)
         {
 
             int numPoints = 0;
@@ -1458,7 +1488,7 @@ namespace EGIS.ShapeFileLib
    
 }
 
-
+    [ObfuscationAttribute(Exclude = true, ApplyToMembers = true)]
     class PointShapeFileWriter : ShapeFileWriter
 {
 
@@ -1473,7 +1503,7 @@ namespace EGIS.ShapeFileLib
     public override void AddRecord(double[] pts, int numPoints, String[] fieldData)
     {
         RecordCount++;
-        WriteShapeRecord(pts, numPoints);
+        WriteShapeRecord1(pts, numPoints);
         WriteDbfRecord(fieldData);
     }
 
@@ -1482,14 +1512,14 @@ namespace EGIS.ShapeFileLib
         public override void AddRecord(PointF[] pts, int numPoints, string[] fieldData)
         {
             RecordCount++;
-            WriteShapeRecord(pts, numPoints);
+            WriteShapeRecord2(pts, numPoints);
             WriteDbfRecord(fieldData);
         }
 
         public override void AddRecord(PointD[] pts, int numPoints, string[] fieldData)
         {
             RecordCount++;
-            WriteShapeRecord(pts, numPoints);
+            WriteShapeRecord3(pts, numPoints);
             WriteDbfRecord(fieldData);
         }
 
@@ -1508,7 +1538,7 @@ namespace EGIS.ShapeFileLib
             throw new NotSupportedException("Point Shapes do not support multi parts");
         }
 
-    private void WriteShapeRecord(double[] pts, int numPoints)
+    private void WriteShapeRecord1(double[] pts, int numPoints)
     {
 
         int recordOffset = (int)ShapeStream.Position / 2;
@@ -1549,7 +1579,7 @@ namespace EGIS.ShapeFileLib
 
     }
 
-        private void WriteShapeRecord(PointF[] pts, int numPoints)
+        private void WriteShapeRecord2(PointF[] pts, int numPoints)
         {
 
             int recordOffset = (int)ShapeStream.Position / 2;
@@ -1590,7 +1620,7 @@ namespace EGIS.ShapeFileLib
 
         }
 
-        private void WriteShapeRecord(PointD[] pts, int numPoints)
+        private void WriteShapeRecord3(PointD[] pts, int numPoints)
         {
 
             int recordOffset = (int)ShapeStream.Position / 2;

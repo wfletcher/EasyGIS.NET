@@ -24,20 +24,6 @@ namespace WebTest.demos
 
            
         }
-
-
-
-        protected void Button1_Click(object sender, EventArgs e)
-        {
-        
-        }
-
-        protected void Button2_Click(object sender, EventArgs e)
-        {
-        //    AddCustomRenderSettingsToLayers(500);
-
-        }
-
         
     }
 }

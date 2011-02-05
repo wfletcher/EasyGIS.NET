@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Easy GIS .NET")]
 [assembly: AssemblyProduct("EGIS.Web.Controls")]
-[assembly: AssemblyCopyright("Copyright © Easy GIS .NET 2008-2010")]
+[assembly: AssemblyCopyright("Copyright © 2008-2011 Winston Fletcher")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -31,8 +31,8 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("3.0.0.0")]
-[assembly: AssemblyFileVersion("3.0.0.0")]
+[assembly: AssemblyVersion("3.1.0.0")]
+[assembly: AssemblyFileVersion("3.1.0.0")]
 
 
 [assembly: System.Web.UI.WebResource("EGIS.Web.Controls.panu.gif", "img/gif")]

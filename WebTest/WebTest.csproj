@@ -58,13 +58,6 @@
     <Compile Include="demos\Demo1.aspx.designer.cs">
       <DependentUpon>Demo1.aspx</DependentUpon>
     </Compile>
-    <Compile Include="demos\Demo2.aspx.cs">
-      <SubType>ASPXCodeBehind</SubType>
-      <DependentUpon>Demo2.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\Demo2.aspx.designer.cs">
-      <DependentUpon>Demo2.aspx</DependentUpon>
-    </Compile>
     <Compile Include="demos\Demo3.aspx.cs">
       <SubType>ASPXCodeBehind</SubType>
       <DependentUpon>Demo3.aspx</DependentUpon>
@@ -79,77 +72,12 @@
     <Compile Include="demos\TileDemo1.aspx.designer.cs">
       <DependentUpon>TileDemo1.aspx</DependentUpon>
     </Compile>
-    <Compile Include="demos\TileDemo2.aspx.cs">
-      <SubType>ASPXCodeBehind</SubType>
-      <DependentUpon>TileDemo2.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\TileDemo2.aspx.designer.cs">
-      <DependentUpon>TileDemo2.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\TileImageTest.aspx.cs">
-      <SubType>ASPXCodeBehind</SubType>
-      <DependentUpon>TileImageTest.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\TileImageTest.aspx.designer.cs">
-      <DependentUpon>TileImageTest.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\WebForm1.aspx.cs">
-      <SubType>ASPXCodeBehind</SubType>
-      <DependentUpon>WebForm1.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\WebForm1.aspx.designer.cs">
-      <DependentUpon>WebForm1.aspx</DependentUpon>
-    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="tests\3dtest.aspx.cs">
-      <SubType>ASPXCodeBehind</SubType>
-      <DependentUpon>3dtest.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="tests\3dtest.aspx.designer.cs">
-      <DependentUpon>3dtest.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="tests\AjaxMapTestControl.ascx.cs">
-      <DependentUpon>AjaxMapTestControl.ascx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="tests\AjaxMapTestControl.ascx.designer.cs">
-      <DependentUpon>AjaxMapTestControl.ascx</DependentUpon>
-    </Compile>
-    <Compile Include="tests\MapTestControl.ascx.cs">
-      <DependentUpon>MapTestControl.ascx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="tests\MapTestControl.ascx.designer.cs">
-      <DependentUpon>MapTestControl.ascx</DependentUpon>
-    </Compile>
-    <Compile Include="tests\Test1.aspx.cs">
-      <SubType>ASPXCodeBehind</SubType>
-      <DependentUpon>Test1.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="tests\Test1.aspx.designer.cs">
-      <DependentUpon>Test1.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="tests\UserControlTest.aspx.cs">
-      <SubType>ASPXCodeBehind</SubType>
-      <DependentUpon>UserControlTest.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="tests\UserControlTest.aspx.designer.cs">
-      <DependentUpon>UserControlTest.aspx</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Default.aspx" />
-    <Content Include="demos\Demo2.aspx" />
     <Content Include="demos\Demo3.aspx" />
     <Content Include="demos\TileDemo1.aspx" />
-    <Content Include="demos\TileDemo2.aspx" />
-    <Content Include="demos\TileImageTest.aspx" />
-    <Content Include="demos\WebForm1.aspx" />
-    <Content Include="tests\3dtest.aspx" />
-    <Content Include="tests\AjaxMapTestControl.ascx" />
-    <Content Include="tests\MapTestControl.ascx" />
-    <Content Include="tests\Test1.aspx" />
-    <Content Include="tests\UserControlTest.aspx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="demos\crash2.egp" />
@@ -360,9 +288,7 @@
     <None Include="demos\demo2maps\Vegetation\j5505_nativevegetationareas.shp" />
     <None Include="demos\demo2maps\Vegetation\j5505_nativevegetationareas.shpx" />
     <None Include="demos\demo2maps\Vegetation\j5505_nativevegetationareas.shx" />
-    <None Include="demos\melb3d.egp" />
     <None Include="demos\us_demo.egp" />
-    <None Include="demos\victorian_accidents.egp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EGIS.ShapeFileLib\EGIS.ShapeFileLib.csproj">

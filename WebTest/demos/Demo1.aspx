@@ -20,13 +20,6 @@
         Note that the map looks and behaves the same in both the desktop and web version
         of the SFMap control.<br />
         <br />
-        The map displays the entire road network in the state of Victoria, Australia. The
-        red points displayed when zoomed in are the locations<br />
-        of acidents that have ocurred between 2000 - 2007. The data has been sourced from
-        the
-        <a target ="_blank" href="http://www.vicroads.vic.gov.au">VicRoads</a> CrashStats web site.
-        <br />
-        <br />
         <script type="text/javascript" language="javascript" >
         function MapZoomChanged(type, args, obj)
         {        
@@ -51,22 +44,14 @@
         <asp:Panel ID="panel1" runat="server">
         <cc1:MapPanControl  MapReferenceId="SFMap1" CssClass="test" ID="MapPanControl1" runat="server" Style="z-index: 102;  position: absolute; top: 164px; left:25px; text-align: center; padding-right: 2px; padding-left: 2px; padding-bottom: 2px; padding-top: 2px;" ZoomInImageUrl="zoomin.png"  BorderColor="White" BorderWidth="2px" />
         
-        <cc1:SFMap ID="SFMap1" runat="server" BackColor="#C0C0FF" Height="535px" Width="770px" BorderColor="LightGray" BorderStyle="Dashed" BorderWidth="2px"
-         ProjectName="~/demos/victorian_accidents.egp" CacheOnClient="False"  MinZoomLevel="20" MaxZoomLevel="50000" OnClientBoundsChanged="MapBoundsChanged" OnClientZoomChanged="MapZoomChanged" />
-         <%--OnClientZoomChanged="alert('zoom changed: ' + args[0]);"--%>
-        &nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
-        </asp:Panel>
-        &nbsp; &nbsp;&nbsp;
-        &nbsp;&nbsp;<asp:Button ID="Button1" runat="server" OnClick="Button1_Click"
-            Text="test 1" />
-        <asp:Button ID="Button2" runat="server" OnClick="Button2_Click" Text="test2"  /></p>
+        <cc1:SFMap ID="SFMap1" runat="server" BackColor="#C0C0FF" Height="420px" Width="750px" BorderColor="LightGray" BorderStyle="Dashed" BorderWidth="2px"
+         ProjectName="~/demos/demo2.egp" CacheOnClient="False"  MinZoomLevel="20" MaxZoomLevel="50000" OnClientBoundsChanged="MapBoundsChanged" OnClientZoomChanged="MapZoomChanged" />
+                 
+        </asp:Panel>        
+        </p>
         <div id = "debugpanel" style="width: 769px; height: 86px; border:solid 2px #404040; overflow:auto; font-size:0.75em">
         </div>
-        <p><br />
-        &nbsp;&nbsp;<br />
-        &nbsp; &nbsp;<br />
-<%--        <cc1:MapPanControl  CssClass="test" ID="MapPanControl1" runat="server" Style="z-index: 102;  position: absolute; top: 164px; left:25px; text-align: center; padding-right: 2px; padding-left: 2px; padding-bottom: 2px; padding-top: 2px;" ZoomInImageUrl="zoomin.png"  BorderColor="White" BorderWidth="2px" />--%>
-        </p>
+        
     </div>
     </form>
 </body>

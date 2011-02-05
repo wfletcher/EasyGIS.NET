@@ -1,3 +1,31 @@
+#region Copyright and License
+
+/****************************************************************************
+**
+** Copyright (C) 2008 - 2011 Winston Fletcher.
+** All rights reserved.
+**
+** This file is part of the EGIS.Controls class library of Easy GIS .NET.
+** 
+** Easy GIS .NET is free software: you can redistribute it and/or modify
+** it under the terms of the GNU Lesser General Public License version 3 as
+** published by the Free Software Foundation and appearing in the file
+** lgpl-license.txt included in the packaging of this file.
+**
+** Easy GIS .NET is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License and
+** GNU Lesser General Public License along with Easy GIS .NET.
+** If not, see <http://www.gnu.org/licenses/>.
+**
+****************************************************************************/
+
+#endregion
+
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -293,6 +321,7 @@ namespace EGIS.Controls
         /// </remarks>
         /// <seealso cref="CentrePoint"/>
         /// <exception cref="System.ArgumentException"> if ZoomLevel less than or equal to zero</exception>        
+        [Browsable(false)] 
         public double ZoomLevel
         {
             get
@@ -353,6 +382,7 @@ namespace EGIS.Controls
         /// </para>
         /// </remarks>
         /// <seealso cref="ZoomLevel"/>
+        [Browsable(false)] 
         public PointD CentrePoint2D
         {
             get
@@ -584,6 +614,7 @@ namespace EGIS.Controls
         /// <remarks>Extent is the rectangular extent of the ENTIRE map, regardless of the current ZoomLevel or CentrePoint.
         /// To get the extent of the current visible area of the map call VisibleExtent</remarks>
         /// <seealso cref="VisibleExtent"/>
+        [Browsable(false)] 
         public RectangleF Extent
         {
             get
@@ -610,6 +641,7 @@ namespace EGIS.Controls
         /// <remarks>VisibleExtent is the current visible area of the map, as determind by the current ZoomLevel, CentrePoint and ClientSize of the SFMap control.
         /// To get the extent of the ENTIRE map call Extent</remarks>
         /// <seealso cref="Extent"/>
+        [Browsable(false)] 
         public RectangleF VisibleExtent        
         {
             get
@@ -750,6 +782,7 @@ namespace EGIS.Controls
         /// <summary>
         /// Gets the number of ShapeFile layers in the SFMap Control
         /// </summary>
+        [Browsable(false)] 
         public int ShapeFileCount
         {
             get
@@ -870,7 +903,7 @@ namespace EGIS.Controls
                 g.Clear(MapBackColor);
                 foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
                 {
-                    sf.RenderInternal(g, screenBuf.Size, this._centrePoint, this._zoomLevel);
+                    sf.Render(g, screenBuf.Size, this._centrePoint, this._zoomLevel);
                 }
 
             }

@@ -1,3 +1,31 @@
+#region Copyright and License
+
+/****************************************************************************
+**
+** Copyright (C) 2008 - 2011 Winston Fletcher.
+** All rights reserved.
+**
+** This file is part of the EGIS.Web.controls class library of Easy GIS .NET.
+** 
+** Easy GIS .NET is free software: you can redistribute it and/or modify
+** it under the terms of the GNU Lesser General Public License version 3 as
+** published by the Free Software Foundation and appearing in the file
+** lgpl-license.txt included in the packaging of this file.
+**
+** Easy GIS .NET is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License and
+** GNU Lesser General Public License along with Easy GIS .NET.
+** If not, see <http://www.gnu.org/licenses/>.
+**
+****************************************************************************/
+
+#endregion
+
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -142,19 +170,8 @@ namespace EGIS.Web.Controls
         /// </summary>
         protected override void CreateChildControls()
         {
-            bool licensed = false;
-            if ((!this.DesignMode) && Page != null)
-            {
-                string strLicense = ReadLicense(Page.Server);
-
-                if (!string.IsNullOrEmpty(strLicense))
-                {
-                    string domainName = GetDomainName(Page.Request);
-                    licensed = SFMap.C(strLicense, domainName);
-                }
-            }
-            int ho = 15;
-            if (true||licensed) ho = 0;
+           
+            int ho = 0;
             Unit h = new Unit(Math.Max(this.Height.Value - ho, 0));
             
             cntrlPanel = new Panel();
@@ -211,25 +228,7 @@ namespace EGIS.Web.Controls
             hftooltipUrl.ID = "hftooltipurl";
             hftooltipUrl.Value = Page.ClientScript.GetWebResourceUrl(this.GetType(), "EGIS.Web.Controls.tooltip.png");
             this.Controls.Add(hftooltipUrl);
-            
-            if (!licensed)
-            {
-                Label lbl = new Label();
-                lbl.Text = "Mapping powered by ";
-                fPnl.Controls.Add(lbl);
-                HyperLink hl = new HyperLink();
-                hl.Text = "Easy GIS .NET";
-                hl.Target = "_blank";
-                hl.NavigateUrl = "http://www.easygisdotnet.com";
-                hl.Style.Value = "margin-right:5px";
-
-                fPnl.Controls.Add(hl);
-                fPnl.Width = this.Width;
-                fPnl.Height = new Unit(15);
-                fPnl.Style.Value = "position:relative;top:-15;text-align:right;font-size:8pt; margin:0px; padding-right:10px; color:#505050;";//left:0px;top:" + (int)(this.Height.Value-25) + "px";
-                this.cntrlPanel.Controls.Add(fPnl);
-            }
-
+                        
             base.CreateChildControls();
         }
 
@@ -1123,67 +1122,7 @@ namespace EGIS.Web.Controls
                     {
                         RenderMap(g, layers, bitmap.Width, bitmap.Height, this.CenterPoint, this.Zoom, null);
                     }
-                }
-
-                string strLicense = SFMap.ReadLicense(context.Server);
-                bool licensed = false;
-                if (!string.IsNullOrEmpty(strLicense))
-                {
-                    string domainName = SFMap.GetDomainName(context.Request);
-                    licensed = SFMap.C(strLicense, domainName);
-                }
-                if (!licensed)
-                {
-                    //Stream s = this.GetType().Assembly.GetManifestResourceStream("EGIS.Web.Controls.globe.gif");
-                    try
-                    {
-                        //System.Drawing.Bitmap img = new Bitmap(s);
-                        try
-                        {
-                            //float[][] ptsArray ={ 
-                            //        new float[] {1, 0, 0, 0, 0},
-                            //        new float[] {0, 1, 0, 0, 0},
-                            //        new float[] {0, 0, 1, 0, 0},
-                            //        new float[] {0, 0, 0, 0.18f, 0}, 
-                            //        new float[] {0, 0, 0, 0, 1}};
-                            //ColorMatrix clrMatrix = new ColorMatrix(ptsArray);
-                            //ImageAttributes imgAttributes = new ImageAttributes();
-                            //imgAttributes.SetColorMatrix(clrMatrix,
-                            //ColorMatrixFlag.Default,
-                            //ColorAdjustType.Bitmap);
-
-                            //g.DrawImage(img, new Rectangle((bitmap.Width - img.Width) / 2, (bitmap.Height - img.Height) / 2, img.Width, img.Height),
-                            //0, 0, img.Width, img.Height, GraphicsUnit.Pixel, imgAttributes);
-
-                            Font f = new Font("Georgia", 12f, FontStyle.Bold);
-                            Brush b = new SolidBrush(Color.FromArgb(100, Color.Black));
-                            StringFormat sf = new StringFormat();
-                            try
-                            {
-                                sf.LineAlignment = StringAlignment.Far;
-                                sf.Alignment = StringAlignment.Center;
-                                g.DrawString("Easy GIS .NET\nWeb Edition\nEvaluation Purposes Only", f, b, RectangleF.FromLTRB(0, 0, bitmap.Width, bitmap.Height - 20), sf);
-                            }
-                            finally
-                            {
-                                b.Dispose();
-                                f.Dispose();
-                                sf.Dispose();
-                            }
-                        }
-                        finally
-                        {
-                        //    img.Dispose();
-                        }
-                    }
-                    finally
-                    {
-                       // s.Close();
-                    }
-                }
-
-
-                
+                }                                
             }
             finally
             {
@@ -1236,7 +1175,7 @@ namespace EGIS.Web.Controls
                 for (int n = 0; n < layers.Count; n++)
                 {
                     EGIS.ShapeFileLib.ShapeFile sf = layers[n];
-                    sf.RenderInternal(g, new Size(w, h), centerPt, zoom);
+                    sf.Render(g, new Size(w, h), centerPt, zoom);
                 }
                 //restore any existing ICustomRenderSettings
                 if (customRenderSettingsList != null)
@@ -1249,26 +1188,7 @@ namespace EGIS.Web.Controls
             }
         }
 
-
-        internal static bool C(string lic, string domain)
-        {
-
-            string public_key = "<RSAKeyValue><Modulus>czP7oWXpZoVc6hlAEMQXXKm1MiDcIz9cZ3P7s3B/NoqIKQKRa5tGbiAYT6CKGeD2nqoDa2t74yZWA2XwVHP4VQ==</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
-
-            RSACryptoServiceProvider msrsa_public = new RSACryptoServiceProvider(512);
-            msrsa_public.FromXmlString(public_key);
-
-            // Now let'bytes sign a string; note that what we actually sign is an array of bytes
-            SHA1CryptoServiceProvider hasher = new SHA1CryptoServiceProvider();
-            byte[] signature = ParseStringByteArray(lic);
-
-            ASCIIEncoding ByteConverter = new ASCIIEncoding();
-            byte[] b = ByteConverter.GetBytes(domain);
-
-            return msrsa_public.VerifyData(b, hasher, signature);
-
-        }
-
+        
         private static byte[] ParseStringByteArray(string s)
         {
             string[] hexChars = s.Split(new char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
@@ -1303,27 +1223,7 @@ namespace EGIS.Web.Controls
             return domainName;
         }
 
-        internal static string ReadLicense(HttpServerUtility server)
-        {
-            string f =  server.MapPath("egis.lic");
-            string s = "";
-            if (File.Exists(f))
-            {
-                StreamReader sw = new StreamReader(f);
-                try
-                {
-
-                    s = sw.ReadLine();
-                }
-                finally
-                {
-                    sw.Close();
-                }
-            }
-            return s;
-
-        }
-
+        
         #endregion
 
     }
@@ -1584,67 +1484,7 @@ namespace EGIS.Web.Controls
                     else
                     {
                         SFMap.RenderMap(g, mapProject.Layers, w, h, centerPoint, zoom, null);
-                    }
-                    
-                    string strLicense = SFMap.ReadLicense(context.Server);
-                    bool licensed = false;
-                    if (!string.IsNullOrEmpty(strLicense))
-                    {
-                        string domainName = SFMap.GetDomainName(context.Request);
-                        //Console.Out.WriteLine("domain name: " + domainName);
-                        licensed = SFMap.C(strLicense, domainName);
-                    }
-                    if (!licensed)
-                    {
-                        //Stream s = this.GetType().Assembly.GetManifestResourceStream("EGIS.Web.Controls.globe.gif");
-                        try
-                        {
-                            //System.Drawing.Bitmap img = new Bitmap(s);
-                            try
-                            {
-                            //    float[][] ptsArray ={ 
-                            //        new float[] {1, 0, 0, 0, 0},
-                            //        new float[] {0, 1, 0, 0, 0},
-                            //        new float[] {0, 0, 1, 0, 0},
-                            //        new float[] {0, 0, 0, 0.08f, 0}, 
-                            //        new float[] {0, 0, 0, 0, 1}};
-                            //    ColorMatrix clrMatrix = new ColorMatrix(ptsArray);
-                            //    ImageAttributes imgAttributes = new ImageAttributes();
-                            //    imgAttributes.SetColorMatrix(clrMatrix,
-                            //    ColorMatrixFlag.Default,
-                            //    ColorAdjustType.Bitmap);
-
-                            //    g.DrawImage(img, new Rectangle((w - img.Width) / 2, (h - img.Height) / 2, img.Width, img.Height),
-                            //    0, 0, img.Width, img.Height, GraphicsUnit.Pixel, imgAttributes);
-
-                                Font f = new Font("Georgia", 12f, FontStyle.Bold);
-                                Brush b = new SolidBrush(Color.FromArgb(100, Color.Black));
-                                StringFormat sf = new StringFormat();
-                                try
-                                {
-                                    sf.LineAlignment = StringAlignment.Far;
-                                    sf.Alignment = StringAlignment.Center;
-                                    g.DrawString("Easy GIS .NET\nWeb Edition\nEvaluation Purposes Only", f, b, RectangleF.FromLTRB(0, 0, w, h - 20), sf);
-                                }
-                                finally
-                                {
-                                    b.Dispose();
-                                    f.Dispose();
-                                    sf.Dispose();
-                                }
-                            }
-                            finally
-                            {
-                               // img.Dispose();
-                            }
-                        }
-                        finally
-                        {
-                            //s.Close();
-                        }
-                    }
-
-                    
+                    }                                                            
                 }
                 finally
                 {

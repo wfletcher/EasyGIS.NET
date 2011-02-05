@@ -600,7 +600,6 @@ namespace egis
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.sfMap1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.sfMap1.CentrePoint2D = ((EGIS.ShapeFileLib.PointD)(resources.GetObject("sfMap1.CentrePoint2D")));
             this.sfMap1.Location = new System.Drawing.Point(267, 68);
             this.sfMap1.MapBackColor = System.Drawing.SystemColors.Control;
             this.sfMap1.Name = "sfMap1";
@@ -608,7 +607,6 @@ namespace egis
             this.sfMap1.Size = new System.Drawing.Size(674, 468);
             this.sfMap1.TabIndex = 7;
             this.sfMap1.UseMercatorProjection = true;
-            this.sfMap1.ZoomLevel = 1;
             this.sfMap1.ZoomLevelChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_ZoomLevelChanged);
             this.sfMap1.ShapeFilesChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_ShapeFilesChanged);
             this.sfMap1.TooltipDisplayed += new System.EventHandler<EGIS.Controls.SFMap.TooltipEventArgs>(this.sfMap1_TooltipDisplayed);

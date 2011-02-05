@@ -4,17 +4,17 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml" >
 <head runat="server">
-    <title>Untitled Page</title>
+    <title>Web Test Default Page</title>
 </head>
 <body>
     <form id="form1" runat="server">
     <div>
-        <asp:HyperLink ID="HyperLink1" runat="server" NavigateUrl="~/demos/Demo1.aspx">Demo 1</asp:HyperLink></div>
+        <asp:HyperLink ID="HyperLink1" runat="server" NavigateUrl="~/demos/Demo1.aspx">Demo 1</asp:HyperLink> - Demo of using the SFMap control in a webpage</div>
     <div>
-        <asp:HyperLink ID="HyperLink2" runat="server" NavigateUrl="~/demos/Demo2.aspx">Demo 1</asp:HyperLink></div>
+        <asp:HyperLink ID="HyperLink2" runat="server" NavigateUrl="~/demos/Demo3.aspx">Demo 2</asp:HyperLink> - Demo of using the SFMap control in a webpage with custom render settings</div>
     
     <div>
-        <asp:HyperLink ID="HyperLink3" runat="server" NavigateUrl="~/demos/TileDemo1.aspx">Time Demo 1</asp:HyperLink>
+        <asp:HyperLink ID="HyperLink3" runat="server" NavigateUrl="~/demos/TileDemo1.aspx">Tile Demo 1</asp:HyperLink> - Demo of using the TiledSFMap control in a webpage
         </div>
     
     </form>

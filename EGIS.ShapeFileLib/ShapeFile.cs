@@ -1,3 +1,30 @@
+#region Copyright and License
+
+/****************************************************************************
+**
+** Copyright (C) 2008 - 2011 Winston Fletcher.
+** All rights reserved.
+**
+** This file is part of the EGIS.ShapeFileLib class library of Easy GIS .NET.
+** 
+** Easy GIS .NET is free software: you can redistribute it and/or modify
+** it under the terms of the GNU Lesser General Public License version 3 as
+** published by the Free Software Foundation and appearing in the file
+** lgpl-license.txt included in the packaging of this file.
+**
+** Easy GIS .NET is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License and
+** GNU Lesser General Public License along with Easy GIS .NET.
+** If not, see <http://www.gnu.org/licenses/>.
+**
+****************************************************************************/
+
+#endregion
+
 using System;
 using System.Runtime.InteropServices;
 using System.Collections;
@@ -9,8 +36,8 @@ using System.Security.Permissions;
 
 [assembly: CLSCompliant(true)]
 //give the EGIS.Controls access to the internal methods
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("EGIS.Controls,     PublicKey=0024000004800000940000000602000000240000525341310004000001000100ad413f7f4a7f27fbb045d205cfc65fe64665694533fc72b0d82433368f98f7bd82c18b98ee2f5fe417ed1427a9e6ff84e5dce034638bb7761ea22c9881b8fa09ac621ad78ebb3002b3dbb876f479fa0b2bccd95fc1d54c7fc87b5dc084d575fb304387c9bbd4ce6a5bf91328ae3ecc3f5472a14ce8e572d7d01d01483fe1f2d0")]
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("EGIS.Web.Controls, PublicKey=0024000004800000940000000602000000240000525341310004000001000100ad413f7f4a7f27fbb045d205cfc65fe64665694533fc72b0d82433368f98f7bd82c18b98ee2f5fe417ed1427a9e6ff84e5dce034638bb7761ea22c9881b8fa09ac621ad78ebb3002b3dbb876f479fa0b2bccd95fc1d54c7fc87b5dc084d575fb304387c9bbd4ce6a5bf91328ae3ecc3f5472a14ce8e572d7d01d01483fe1f2d0")]
+//[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("EGIS.Controls,     PublicKey=0024000004800000940000000602000000240000525341310004000001000100ad413f7f4a7f27fbb045d205cfc65fe64665694533fc72b0d82433368f98f7bd82c18b98ee2f5fe417ed1427a9e6ff84e5dce034638bb7761ea22c9881b8fa09ac621ad78ebb3002b3dbb876f479fa0b2bccd95fc1d54c7fc87b5dc084d575fb304387c9bbd4ce6a5bf91328ae3ecc3f5472a14ce8e572d7d01d01483fe1f2d0")]
+//[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("EGIS.Web.Controls, PublicKey=0024000004800000940000000602000000240000525341310004000001000100ad413f7f4a7f27fbb045d205cfc65fe64665694533fc72b0d82433368f98f7bd82c18b98ee2f5fe417ed1427a9e6ff84e5dce034638bb7761ea22c9881b8fa09ac621ad78ebb3002b3dbb876f479fa0b2bccd95fc1d54c7fc87b5dc084d575fb304387c9bbd4ce6a5bf91328ae3ecc3f5472a14ce8e572d7d01d01483fe1f2d0")]
 namespace EGIS.ShapeFileLib
 {
     /// <summary>
@@ -634,12 +661,12 @@ namespace EGIS.ShapeFileLib
             this.Render(graphics, clientArea, centre, zoom, this.RenderSettings);
         }        
 
-        internal void RenderInternal(Graphics graphics, Size clientArea, PointF centre, float zoom)
+        public void RenderInternal(Graphics graphics, Size clientArea, PointF centre, float zoom)
         {
             this.RenderInternal(graphics, clientArea, centre, zoom, this.RenderSettings);
         }
 
-        internal void RenderInternal(Graphics graphics, Size clientArea, PointD centre, double zoom)
+        public void Render(Graphics graphics, Size clientArea, PointD centre, double zoom)
         {
             this.RenderInternal(graphics, clientArea, centre, zoom, this.RenderSettings);
         }

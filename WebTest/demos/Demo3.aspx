@@ -11,8 +11,7 @@
 <body>
     <form id="form1" runat="server">
     <div>
-        This is demo 3<br />
-        <br />
+        Demo 3<br />        
         Select Custom Render Settings<br />
         <asp:DropDownList ID="DropDownList1" runat="server" Width="175px">
             <asp:ListItem>Please Select..</asp:ListItem>
