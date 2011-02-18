@@ -799,6 +799,10 @@ namespace EGIS.ShapeFileLib
                 case ShapeType.PointZ:
                     this.sfRecordCol = new SFPointZCol(recordHeaders, ref mainHeader);
                     break;
+                case ShapeType.PolyLineZ:
+                    this.sfRecordCol = new SFPolyLineZCol(recordHeaders, ref mainHeader);
+                    break;
+                
                 default:
                     this.Close();
                     throw new NotSupportedException("ShapeType: " + mainHeader.ShapeType + " not supported");
@@ -1092,12 +1096,14 @@ namespace EGIS.ShapeFileLib
         /// <returns></returns>
         /// <remarks>If you are reading every record in a large shape file then the preferred method is to call GetShapeFileEnumerator</remarks>
         /// <seealso cref="GetShapeFileEnumerator()"/>
-        public System.Collections.ObjectModel.Collection<PointF[]> GetShapeData(int recordIndex)
+        public System.Collections.ObjectModel.ReadOnlyCollection<PointF[]> GetShapeData(int recordIndex)
         {
 #if SinglePrecision
-            return new System.Collections.ObjectModel.Collection<PointF[]>(sfRecordColEx.GetShapeData(recordIndex, this.shapeFileExStream.BaseStream));
+            return new System.Collections.ObjectModel.ReadOnlyCollection<PointF[]>(sfRecordColEx.GetShapeData(recordIndex, this.shapeFileExStream.BaseStream));
 #else
-            return new System.Collections.ObjectModel.Collection<PointF[]>(sfRecordCol.GetShapeData(recordIndex, this.shapeFileStream));
+            List<PointF[]> data = sfRecordCol.GetShapeData(recordIndex, this.shapeFileStream);
+            if (data == null) return null;
+            return new System.Collections.ObjectModel.ReadOnlyCollection<PointF[]>(data);
 #endif
         }
 
@@ -1110,12 +1116,14 @@ namespace EGIS.ShapeFileLib
         /// <returns></returns>
         /// <remarks>If you are reading every record in a large shape file then the preferred method is to call GetShapeFileEnumerator</remarks>
         /// <seealso cref="GetShapeFileEnumerator()"/>
-        public System.Collections.ObjectModel.Collection<PointF[]> GetShapeData(int recordIndex, byte[] dataBuffer)
+        public System.Collections.ObjectModel.ReadOnlyCollection<PointF[]> GetShapeData(int recordIndex, byte[] dataBuffer)
         {
 #if SinglePrecision
-            return new System.Collections.ObjectModel.Collection<PointF[]>(sfRecordColEx.GetShapeData(recordIndex, this.shapeFileExStream.BaseStream, dataBuffer));
+            return new System.Collections.ObjectModel.ReadOnlyCollection<PointF[]>(sfRecordColEx.GetShapeData(recordIndex, this.shapeFileExStream.BaseStream, dataBuffer));
 #else
-            return new System.Collections.ObjectModel.Collection<PointF[]>(sfRecordCol.GetShapeData(recordIndex, this.shapeFileStream, dataBuffer));
+            List<PointF[]> data = sfRecordCol.GetShapeData(recordIndex, this.shapeFileStream, dataBuffer);
+            if (data == null) return null;
+            return new System.Collections.ObjectModel.ReadOnlyCollection<PointF[]>(data);
 #endif
         }
 
@@ -1126,9 +1134,11 @@ namespace EGIS.ShapeFileLib
         /// <returns></returns>
         /// <remarks>If you are reading every record in a large shape file then the preferred method is to call GetShapeFileEnumerator</remarks>
         /// <seealso cref="GetShapeFileEnumerator()"/>
-        public System.Collections.ObjectModel.Collection<PointD[]> GetShapeDataD(int recordIndex)
+        public System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> GetShapeDataD(int recordIndex)
         {
-            return new System.Collections.ObjectModel.Collection<PointD[]>(sfRecordCol.GetShapeDataD(recordIndex, this.shapeFileStream));
+            List<PointD[]> data = sfRecordCol.GetShapeDataD(recordIndex, this.shapeFileStream);
+            if (data == null) return null;
+            return new System.Collections.ObjectModel.ReadOnlyCollection<PointD[]>(data);
         }
 
         /// <summary>
@@ -1140,9 +1150,11 @@ namespace EGIS.ShapeFileLib
         /// <returns></returns>
         /// <remarks>If you are reading every record in a large shape file then the preferred method is to call GetShapeFileEnumerator</remarks>
         /// <seealso cref="GetShapeFileEnumerator()"/>
-        public System.Collections.ObjectModel.Collection<PointD[]> GetShapeDataD(int recordIndex, byte[] dataBuffer)
+        public System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> GetShapeDataD(int recordIndex, byte[] dataBuffer)
         {
-            return new System.Collections.ObjectModel.Collection<PointD[]>(sfRecordCol.GetShapeDataD(recordIndex, this.shapeFileStream, dataBuffer));
+            List<PointD[]> data = sfRecordCol.GetShapeDataD(recordIndex, this.shapeFileStream, dataBuffer);
+            if (data == null) return null;
+            return new System.Collections.ObjectModel.ReadOnlyCollection<PointD[]>(data);
         }
 
 
@@ -1155,12 +1167,14 @@ namespace EGIS.ShapeFileLib
         /// <para>If the shapefile does not contain any Z values then this method will return null</para>
         /// </remarks>
         /// <seealso cref="GetShapeFileEnumerator()"/>
-        public System.Collections.ObjectModel.Collection<float[]> GetShapeZData(int recordIndex)
+        public System.Collections.ObjectModel.ReadOnlyCollection<float[]> GetShapeZData(int recordIndex)
         {
 #if SinglePrecision
-            return new System.Collections.ObjectModel.Collection<float[]>(sfRecordColEx.GetShapeHeightData(recordIndex, this.shapeFileExStream.BaseStream));
+            return new System.Collections.ObjectModel.ReadOnlyCollection<float[]>(sfRecordColEx.GetShapeHeightData(recordIndex, this.shapeFileExStream.BaseStream));
 #else
-            return new System.Collections.ObjectModel.Collection<float[]>(sfRecordCol.GetShapeHeightData(recordIndex, this.shapeFileStream));
+            List<float[]> data = sfRecordCol.GetShapeHeightData(recordIndex, this.shapeFileStream);
+            if (data == null) return null;
+            return new System.Collections.ObjectModel.ReadOnlyCollection<float[]>(data);
 #endif
         }
 
@@ -1175,12 +1189,15 @@ namespace EGIS.ShapeFileLib
         /// <para>If the shapefile does not contain any Z values then this method will return null</para>
         /// </remarks>
         /// <seealso cref="GetShapeFileEnumerator()"/>
-        public System.Collections.ObjectModel.Collection<float[]> GetShapeZData(int recordIndex, byte[] dataBuffer)
+        public System.Collections.ObjectModel.ReadOnlyCollection<float[]> GetShapeZData(int recordIndex, byte[] dataBuffer)
         {
 #if SinglePrecision
-            return new System.Collections.ObjectModel.Collection<float[]>(sfRecordColEx.GetShapeHeightData(recordIndex, this.shapeFileExStream.BaseStream, dataBuffer));
+            return new System.Collections.ObjectModel.ReadOnlyCollection<float[]>(sfRecordColEx.GetShapeHeightData(recordIndex, this.shapeFileExStream.BaseStream, dataBuffer));
 #else
-            return new System.Collections.ObjectModel.Collection<float[]>(sfRecordCol.GetShapeHeightData(recordIndex, this.shapeFileStream, dataBuffer));
+
+            List<float[]> data = sfRecordCol.GetShapeHeightData(recordIndex, this.shapeFileStream, dataBuffer);
+            if (data == null) return null;
+            return new System.Collections.ObjectModel.ReadOnlyCollection<float[]>(data);
 #endif
         }
 
@@ -1195,9 +1212,11 @@ namespace EGIS.ShapeFileLib
         /// <para>If the shapefile does not contain any Z values then this method will return null</para>
         /// </remarks>
         /// <seealso cref="GetShapeFileEnumerator()"/>
-        public System.Collections.ObjectModel.Collection<double[]> GetShapeZDataD(int recordIndex, byte[] dataBuffer)
+        public System.Collections.ObjectModel.ReadOnlyCollection<double[]> GetShapeZDataD(int recordIndex, byte[] dataBuffer)
         {
-            return new System.Collections.ObjectModel.Collection<double[]>(sfRecordCol.GetShapeHeightDataD(recordIndex, this.shapeFileStream, dataBuffer));
+            List<double[]> data = sfRecordCol.GetShapeHeightDataD(recordIndex, this.shapeFileStream, dataBuffer);
+            if (data == null) return null;
+            return new System.Collections.ObjectModel.ReadOnlyCollection<double[]>(data);
         }
 
 
@@ -1246,7 +1265,7 @@ namespace EGIS.ShapeFileLib
 #if SinglePrecision
             return sfRecordColEx.GetRecordBounds(recordIndex, shapeFileStream);
 #else
-            return sfRecordCol.GetRecordBounds(recordIndex, shapeFileStream);
+            return sfRecordCol.GetRecordBoundsD(recordIndex, shapeFileStream);
 #endif
         }
 
@@ -1298,6 +1317,9 @@ namespace EGIS.ShapeFileLib
                         return GetShapeIndexContainingPoint(pt, minDistance, sfRecordCol as SFPolyLineCol);
                     case ShapeType.PolyLineM:
                         return GetShapeIndexContainingPoint(pt, minDistance, sfRecordCol as SFPolyLineMCol);
+                    case ShapeType.PolyLineZ:
+                        return GetShapeIndexContainingPoint(pt, minDistance, sfRecordCol as SFPolyLineZCol);
+                    
                     default:
                         return -1;
                 }                
@@ -1434,62 +1456,73 @@ namespace EGIS.ShapeFileLib
 
 #endif
 
-        private void CreateQuadTree(SFPolygonCol col)
-        {
-            shapeQuadTree = new QuadTree(GetActualExtent());
-            for (int n = 0; n < col.RecordHeaders.Length; n++)
-            {
-                shapeQuadTree.Insert(n, col, this.shapeFileStream);
-            }
-        }
+        //private void CreateQuadTree(SFPolygonCol col)
+        //{
+        //    shapeQuadTree = new QuadTree(GetActualExtent());
+        //    for (int n = 0; n < col.RecordHeaders.Length; n++)
+        //    {
+        //        shapeQuadTree.Insert(n, col, this.shapeFileStream);
+        //    }
+        //}
 
-        private void CreateQuadTree(SFPolygonZCol col)
-        {
-            shapeQuadTree = new QuadTree(GetActualExtent());
-            for (int n = 0; n < col.RecordHeaders.Length; n++)
-            {
-                shapeQuadTree.Insert(n, col, this.shapeFileStream);
-            }
-        }
+        //private void CreateQuadTree(SFPolygonZCol col)
+        //{
+        //    shapeQuadTree = new QuadTree(GetActualExtent());
+        //    for (int n = 0; n < col.RecordHeaders.Length; n++)
+        //    {
+        //        shapeQuadTree.Insert(n, col, this.shapeFileStream);
+        //    }
+        //}
 
-        private void CreateQuadTree(SFPolyLineMCol col)
-        {
-            shapeQuadTree = new QuadTree(GetActualExtent());
-            for (int n = 0; n < col.RecordHeaders.Length; n++)
-            {
-                shapeQuadTree.Insert(n, col, this.shapeFileStream);
-            }
+        //private void CreateQuadTree(SFPolyLineMCol col)
+        //{
+        //    shapeQuadTree = new QuadTree(GetActualExtent());
+        //    for (int n = 0; n < col.RecordHeaders.Length; n++)
+        //    {
+        //        shapeQuadTree.Insert(n, col, this.shapeFileStream);
+        //    }
 
-        }
+        //}
 
-        private void CreateQuadTree(SFPolyLineCol col)
-        {
-            shapeQuadTree = new QuadTree(GetActualExtent());
-            for (int n = 0; n < col.RecordHeaders.Length; n++)
-            {
-                shapeQuadTree.Insert(n, col, this.shapeFileStream);
-            }
-        }
+        //private void CreateQuadTree(SFPolyLineCol col)
+        //{
+        //    shapeQuadTree = new QuadTree(GetActualExtent());
+        //    for (int n = 0; n < col.RecordHeaders.Length; n++)
+        //    {
+        //        shapeQuadTree.Insert(n, col, this.shapeFileStream);
+        //    }
+        //}
 
-        private void CreateQuadTree(SFPointCol col)
+
+        //private void CreateQuadTree(SFPolyLineZCol col)
+        //{
+        //    shapeQuadTree = new QuadTree(GetActualExtent());
+        //    for (int n = 0; n < col.RecordHeaders.Length; n++)
+        //    {
+        //        shapeQuadTree.Insert(n, col, this.shapeFileStream);
+        //    }
+        //}
+
+        //private void CreateQuadTree(SFPointCol col)
+        //{
+        //    RectangleF r = GetActualExtent();
+        //    r.Inflate(r.Width * 0.05f, r.Height * 0.05f);
+        //    shapeQuadTree = new QuadTree(r);
+        //    for (int n = 0; n < col.RecordHeaders.Length; n++)
+        //    {
+        //        shapeQuadTree.Insert(n, col, this.shapeFileStream);
+        //    }
+        //}
+
+        private void CreateQuadTree(SFRecordCol col)
         {
             RectangleF r = GetActualExtent();
             r.Inflate(r.Width * 0.05f, r.Height * 0.05f);
             shapeQuadTree = new QuadTree(r);
+            QTNodeHelper helper = (QTNodeHelper)col;
             for (int n = 0; n < col.RecordHeaders.Length; n++)
             {
-                shapeQuadTree.Insert(n, col, this.shapeFileStream);
-            }
-        }
-
-        private void CreateQuadTree(SFPointZCol col)
-        {
-            RectangleF r = GetActualExtent();
-            r.Inflate(r.Width * 0.05f, r.Height * 0.05f);
-            shapeQuadTree = new QuadTree(r);
-            for (int n = 0; n < col.RecordHeaders.Length; n++)
-            {
-                shapeQuadTree.Insert(n, col, this.shapeFileStream);
+                shapeQuadTree.Insert(n, helper, this.shapeFileStream);
             }
         }
 
@@ -1677,6 +1710,33 @@ namespace EGIS.ShapeFileLib
             {
                 byte[] buffer = SFRecordCol.SharedBuffer;
                 RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
+                for (int n = 0; n < indices.Count; n++)
+                {
+                    if (col.GetRecordBounds(indices[n], this.shapeFileStream).IntersectsWith(r))
+                    {
+                        if (col.ContainsPoint(indices[n], pt, shapeFileStream, buffer, minDistance))
+                        {
+                            return indices[n];
+                        }
+                    }
+                }
+            }
+            return -1;
+        }
+
+
+        private int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFPolyLineZCol col)
+        {
+            if (shapeQuadTree == null)
+            {
+                CreateQuadTree(col);
+            }
+
+            List<int> indices = shapeQuadTree.GetIndices(new PointF((float)pt.X, (float)pt.Y));
+            if (indices != null)
+            {
+                byte[] buffer = SFRecordCol.SharedBuffer;
+                RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2f, minDistance * 2f);
                 for (int n = 0; n < indices.Count; n++)
                 {
                     if (col.GetRecordBounds(indices[n], this.shapeFileStream).IntersectsWith(r))
@@ -2945,6 +3005,11 @@ namespace EGIS.ShapeFileLib
         public int NumParts;
         public int NumPoints;
         public fixed int PartOffsets[1];
+        //points
+        //bounding z range
+        //z values
+        //m range (optional)
+        //measures (optional)
 
         public int PointDataOffset
         {
@@ -2958,7 +3023,40 @@ namespace EGIS.ShapeFileLib
         {
             get
             {
-                return PointDataOffset + (NumPoints << 4);
+                //16 =>bounding z range
+                return PointDataOffset + 16 + (NumPoints << 4);
+            }
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    unsafe struct PolyLineZRecordP
+    {
+        public ShapeType ShapeType;
+        public Box bounds;
+        public int NumParts;
+        public int NumPoints;
+        public fixed int PartOffsets[1];
+        //points
+        //bounding z range
+        //z values
+        //m range (optional)
+        //measures (optional)
+
+        public int PointDataOffset
+        {
+            get
+            {
+                return 44 + (NumParts << 2);
+            }
+        }
+
+        public int ZDataOffset
+        {
+            get
+            {
+                //16 =>bounding z range
+                return PointDataOffset + 16 + (NumPoints << 4);
             }
         }
     }
@@ -10973,8 +11071,8 @@ namespace EGIS.ShapeFileLib
                 shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
                 fixed (byte* dataPtr = data)
                 {
-                    PolyLineRecordP* nextRec = (PolyLineRecordP*)(dataPtr + 8);
-                    int dataOffset = nextRec->DataOffset+8;
+                    PolygonZRecordP* nextRec = (PolygonZRecordP*)(dataPtr + 8);
+                    int dataOffset = nextRec->PointDataOffset+8;
                     int numParts = nextRec->NumParts;
                     PointF[] pts;
                     for (int partNum = 0; partNum < numParts; partNum++)
@@ -11000,8 +11098,8 @@ namespace EGIS.ShapeFileLib
                 shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
                 fixed (byte* dataPtr = data)
                 {
-                    PolyLineRecordP* nextRec = (PolyLineRecordP*)(dataPtr + 8);
-                    int dataOffset = nextRec->DataOffset;
+                    PolygonZRecordP* nextRec = (PolygonZRecordP*)(dataPtr + 8);
+                    int dataOffset = nextRec->PointDataOffset;
                     int numParts = nextRec->NumParts;
                     PointD[] pts;
                     for (int partNum = 0; partNum < numParts; partNum++)
@@ -11024,8 +11122,7 @@ namespace EGIS.ShapeFileLib
         }
 
         public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            
+        {            
             List<float[]> dataList = new List<float[]>();
             unsafe
             {
@@ -11787,6 +11884,1019 @@ namespace EGIS.ShapeFileLib
                 Bounds = r;
             }
         }
+    }
+
+    class SFPolyLineZCol : SFRecordCol, QTNodeHelper
+    {
+
+        public SFPolyLineZCol(RecordHeader[] recs, ref ShapeFileMainHeader head)
+            : base(ref head, recs)
+        {
+            //this.RecordHeaders = recs;
+            SFRecordCol.EnsureBufferSize(SFRecordCol.GetMaxRecordLength(recs) + 100);
+        }
+
+        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
+        {
+            return GetShapeData(recordIndex, shapeFileStream, SFRecordCol.SharedBuffer/*new byte[ShapeFileExConstants.MAX_REC_LENGTH]*/);
+        }
+
+        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            List<PointF[]> dataList = new List<PointF[]>();
+            unsafe
+            {
+                byte[] data = dataBuffer;
+                shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);//8bytes for the rec num + length
+                fixed (byte* dataPtr = data)
+                {
+                    PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
+                    int dataOffset = nextRec->PointDataOffset+8; //8bytes for the rec num + length
+                    int numParts = nextRec->NumParts;
+                    PointF[] pts;
+                    for (int partNum = 0; partNum < numParts; partNum++)
+                    {
+                        int numPoints;
+                        if ((numParts - partNum) > 1) numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                        else numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                        pts = GetPointsDAsPointF(dataPtr, dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints);
+                        dataList.Add(pts);
+                    }
+                }
+            }
+            return dataList;
+        }
+
+        public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            List<PointD[]> dataList = new List<PointD[]>();
+            unsafe
+            {
+                byte[] data = dataBuffer;
+                shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
+                fixed (byte* dataPtr = data)
+                {
+                    PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
+                    int dataOffset = nextRec->PointDataOffset + 8;
+                    int numParts = nextRec->NumParts;
+                    PointD[] pts;
+                    for (int partNum = 0; partNum < numParts; partNum++)
+                    {
+                        int numPoints;
+                        if ((numParts - partNum) > 1) numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                        else numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                        pts = GetPointsD(dataPtr, dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints);
+                        dataList.Add(pts);
+                    }
+                }
+            }
+            return dataList;
+        }
+
+        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream)
+        {
+            return GetShapeHeightData(recordIndex, shapeFileStream, SFRecordCol.SharedBuffer);
+        }
+
+        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            List<float[]> dataList = new List<float[]>();
+            unsafe
+            {
+                byte[] data = dataBuffer;
+                shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
+                fixed (byte* dataPtr = data)
+                {
+                    PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
+                    int dataOffset = nextRec->ZDataOffset + 8;
+                    int numParts = nextRec->NumParts;
+                    float[] heights;
+                    for (int partNum = 0; partNum < numParts; partNum++)
+                    {
+                        int numPoints;
+                        if ((numParts - partNum) > 1) numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                        else numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                        heights = GetFloatDataD(dataPtr, dataOffset, numPoints);
+                        dataOffset += numPoints << 3;
+                        dataList.Add(heights);
+                    }
+                }
+            }
+            return dataList;
+        }
+
+        public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            List<double[]> dataList = new List<double[]>();
+            unsafe
+            {
+                byte[] data = dataBuffer;
+                shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
+                fixed (byte* dataPtr = data)
+                {
+                    PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
+                    int dataOffset = nextRec->ZDataOffset + 8;
+                    int numParts = nextRec->NumParts;
+                    double[] heights;
+                    for (int partNum = 0; partNum < numParts; partNum++)
+                    {
+                        int numPoints;
+                        if ((numParts - partNum) > 1) numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                        else numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                        heights = GetDoubleData(dataPtr, dataOffset, numPoints);
+                        dataOffset += numPoints << 3;
+                        dataList.Add(heights);
+                    }
+                }
+            }
+            return dataList;
+        }
+
+
+        #region Paint methods
+
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream)
+        {
+            paint(g, clientArea, extent, shapeFileStream, null);
+        }
+
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer)
+        {
+            if (this.UseGDI(extent))
+            {
+                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderer);
+            }
+            else
+            {
+                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderer);
+            }
+
+        }
+
+        private unsafe void PaintHighQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        {
+            Pen gdiplusPen = null;
+            Pen rwPen = null;
+            bool renderRailway = false;
+
+            Pen selectPen = null;
+
+            IntPtr fileMappingPtr = IntPtr.Zero;
+            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            IntPtr mapView = IntPtr.Zero;
+            byte* dataPtr = null;
+            if (fileMappingPtr != IntPtr.Zero)
+            {
+                mapView = NativeMethods.MapViewOfFile(fileMappingPtr, NativeMethods.FileMapAccess.FILE_MAP_READ, 0, 0, 0);
+            }
+            bool fileMapped = (mapView != IntPtr.Zero);
+
+            try
+            {
+                double scaleX = (double)(clientArea.Width / extent.Width);
+                double scaleY = -scaleX;
+
+                RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+                double offX = -projectedExtent.Left;
+                double offY = -projectedExtent.Bottom;
+                RectangleD actualExtent = projectedExtent;
+
+                if (MercProj)
+                {
+                    //if we're using a Mercator Projection then convert the actual Extent to LL coords
+                    PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
+                    PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
+                    actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+                }
+                ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+                bool useCustomRenderSettings = (renderSettings != null && customRenderSettings != null);
+
+                bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+                bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
+                List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
+
+                float renderPenWidth = (float)(renderSettings.PenWidthScale * scaleX);
+
+                if (renderSettings.MaxPixelPenWidth > 0 && renderPenWidth > renderSettings.MaxPixelPenWidth)
+                {
+                    renderPenWidth = renderSettings.MaxPixelPenWidth;
+                }
+                if (renderSettings.MinPixelPenWidth > 0 && renderPenWidth < renderSettings.MinPixelPenWidth)
+                {
+                    renderPenWidth = renderSettings.MinPixelPenWidth;
+                }
+
+                if (renderSettings.LineType == LineType.Railway)
+                {
+                    renderPenWidth = Math.Min(renderPenWidth, 7f);
+                }
+
+
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+                int maxPaintCount = 2;
+                if ((renderSettings.LineType == LineType.Solid) || (Math.Round(renderPenWidth) < 3))
+                {
+                    maxPaintCount = 1;
+                }
+                try
+                {
+
+                    for (int paintCount = 0; paintCount < maxPaintCount; paintCount++)
+                    {
+
+                        try
+                        {
+                            Color currentPenColor = renderSettings.OutlineColor;
+                            int penWidth = (int)Math.Round(renderPenWidth);
+
+                            if (paintCount == 1)
+                            {
+                                currentPenColor = renderSettings.FillColor;
+                                penWidth -= 2;
+                            }
+
+                            if (paintCount == 0)
+                            {
+                                Color c = renderSettings.OutlineColor;
+                                gdiplusPen = new Pen(renderSettings.OutlineColor, penWidth);
+                                selectPen = new Pen(renderSettings.SelectOutlineColor, penWidth + 4);
+                            }
+                            else if (paintCount == 1)
+                            {
+                                gdiplusPen = new Pen(renderSettings.FillColor, penWidth);
+                                selectPen = new Pen(renderSettings.SelectFillColor, penWidth);
+                                if (penWidth > 1)
+                                {
+                                    renderRailway = (renderSettings.LineType == LineType.Railway);
+                                    if (renderRailway)
+                                    {
+                                        rwPen = new Pen(renderSettings.OutlineColor, 1);
+                                    }
+                                }
+                            }
+                            gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+                            gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                            gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                            selectPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+                            selectPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                            selectPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                            byte* dataPtrZero = (byte*)IntPtr.Zero.ToPointer();
+                            if (fileMapped)
+                            {
+                                dataPtrZero = (byte*)mapView.ToPointer();
+                                dataPtr = (byte*)(((byte*)mapView.ToPointer()) + ShapeFileMainHeader.MAIN_HEADER_LENGTH);
+                            }
+                            else
+                            {
+                                shapeFileStream.Seek(ShapeFileMainHeader.MAIN_HEADER_LENGTH, SeekOrigin.Begin);
+                            }
+
+                            PointF pt = new PointF(0, 0);
+                            RecordHeader[] pgRecs = this.RecordHeaders;
+
+                            int index = 0;
+                            byte[] data = SFRecordCol.SharedBuffer;
+                            float minLabelLength = (float)(6 / scaleX);
+                            fixed (byte* dataBufPtr = data)
+                            {
+                                if (!fileMapped) dataPtr = dataBufPtr;
+                                while (index < pgRecs.Length)
+                                {
+                                    if (fileMapped)
+                                    {
+                                        dataPtr = dataPtrZero + pgRecs[index].Offset;
+                                    }
+                                    else
+                                    {
+                                        if (shapeFileStream.Position != pgRecs[index].Offset)
+                                        {
+                                            Console.Out.WriteLine("offset wrong");
+                                            shapeFileStream.Seek(pgRecs[index].Offset, SeekOrigin.Begin);
+                                        }
+                                        shapeFileStream.Read(data, 0, pgRecs[index].ContentLength + 8);
+                                    }
+                                    PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
+                                    int dataOffset = nextRec->PointDataOffset+8;
+                                    if (actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                                    {
+                                        int numParts = nextRec->NumParts;
+                                        Point[] pts;
+
+                                        //if labelling fields then add a renderPtObj
+                                        if (labelFields && paintCount == 0)
+                                        {
+                                            //check what the scaled bounds of this part are
+                                            if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                            {
+                                                if (renderDuplicateFields)
+                                                {
+                                                    List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, dataOffset, nextRec->NumPoints, minLabelLength);
+                                                    for (int li = iapList.Count - 1; li >= 0; li--)
+                                                    {
+                                                        pts = GetPointsD(dataPtr, dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                        float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
+                                                        if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
+                                                        {
+                                                            renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f, Point.Empty, 0, 0, index));
+                                                        }
+                                                        else
+                                                        {
+                                                            renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, Point.Empty, 0, 0, index));
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    int pointIndex = 0;
+                                                    float angle = GetPointsDAngle(dataPtr, dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent);
+                                                    if (!angle.Equals(float.NaN))
+                                                    {
+                                                        pts = GetPointsD(dataPtr, dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                        float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
+                                                        if (d0 > 6)
+                                                        {
+                                                            if (Math.Abs(angle) > 90f && Math.Abs(angle) <= 270f)
+                                                            {
+                                                                renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f, Point.Empty, 0, 0, index));
+                                                            }
+                                                            else
+                                                            {
+                                                                renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, Point.Empty, 0, 0, index));
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if (useCustomRenderSettings)
+                                        {
+                                            Color customColor = (paintCount == 0) ? customRenderSettings.GetRecordOutlineColor(index) : customRenderSettings.GetRecordFillColor(index);
+                                            if (customColor.ToArgb() != currentPenColor.ToArgb())
+                                            {
+                                                gdiplusPen = new Pen(customColor, penWidth);
+                                                currentPenColor = customColor;
+                                                gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+                                                gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                                                gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                                            }
+                                        }
+
+                                        for (int partNum = 0; partNum < numParts; partNum++)
+                                        {
+                                            int numPoints;
+                                            if ((numParts - partNum) > 1)
+                                            {
+                                                numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                                            }
+                                            else
+                                            {
+                                                numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                                            }
+                                            if (numPoints <= 1)
+                                            {
+                                                continue;
+                                            }
+                                            pts = GetPointsD(dataPtr, dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY);
+                                            if (recordSelected[index] && selectPen != null)
+                                            {
+                                                g.DrawLines(selectPen, pts);
+                                            }
+                                            else
+                                            {
+                                                g.DrawLines(gdiplusPen, pts);
+                                            }
+                                            if (renderRailway)
+                                            {
+                                                int th = (int)Math.Ceiling((renderPenWidth + 2) / 2);
+                                                int tw = (int)Math.Max(Math.Round((7f * th) / 7), 5);
+                                                int pIndx = 0;
+                                                int lx = 0;
+                                                while (pIndx < pts.Length - 1)
+                                                {
+                                                    //draw the next line segment
+
+                                                    int dy = pts[pIndx + 1].Y - pts[pIndx].Y;
+                                                    int dx = pts[pIndx + 1].X - pts[pIndx].X;
+                                                    float a = (float)(Math.Atan2(dy, dx) * 180f / Math.PI);
+                                                    int d = (int)Math.Round(Math.Sqrt(dy * dy + dx * dx));
+                                                    if (d > 0)
+                                                    {
+                                                        g.ResetTransform();
+                                                        if (Math.Abs(a) > 90f && Math.Abs(a) <= 270f)
+                                                        {
+                                                            a -= 180f;
+                                                            g.TranslateTransform(pts[pIndx + 1].X, pts[pIndx + 1].Y);
+                                                            g.RotateTransform(a);
+                                                            while (lx < d)
+                                                            {
+                                                                g.DrawLine(rwPen, lx, -th, lx, th);
+                                                                lx += tw;
+                                                            }
+                                                            lx -= d;
+                                                        }
+                                                        else
+                                                        {
+                                                            g.TranslateTransform(pts[pIndx].X, pts[pIndx].Y);
+                                                            g.RotateTransform(a);
+                                                            while (lx < d)
+                                                            {
+                                                                g.DrawLine(rwPen, lx, -th, lx, th);
+                                                                lx += tw;
+                                                            }
+                                                            lx -= d;
+                                                        }
+                                                    }
+
+                                                    pIndx++;
+                                                }
+                                                g.ResetTransform();
+                                            }
+                                        }
+                                    }
+                                    //if (fileMapped)
+                                    //{
+                                    //    dataPtr += this.RecordHeaders[index].ContentLength + 8;
+                                    //}
+                                    ++index;
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            if (gdiplusPen != null) gdiplusPen.Dispose();
+                            if (rwPen != null) rwPen.Dispose();
+                            if (selectPen != null) selectPen.Dispose();
+                        }
+                    }
+                }
+                finally
+                {
+                    //if (gdiplusGraphics != IntPtr.Zero) NativeMethods.ReleaseGraphics(gdiplusGraphics);
+                    //if (dc != IntPtr.Zero) g.ReleaseHdc(dc);
+                    // if(gdiplusPenPtr != IntPtr.Zero)NativeMethods.ReleaseGdiplusPen(gdiplusPenPtr);                                                
+                }
+                try
+                {
+                    if (labelFields)
+                    {
+                        bool shadowText = (renderSettings != null && renderSettings.ShadowText);
+                        Brush fontBrush = new SolidBrush(renderSettings.FontColor);
+                        Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                        pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                        int count = renderPtObjList.Count;
+                        Color currentFontColor = renderSettings.FontColor;
+                        bool useCustomFontColor = customRenderSettings != null;
+                        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+                        float ws = 1.2f;
+                        if (renderDuplicateFields) ws = 1f;
+                        float ssm = shadowText ? 0.8f : 1f;
+                        for (int n = 0; n < count; n++)
+                        {
+                            string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                            if (strLabel.Length > 0)// && string.Compare(strLabel, lastLabel) != 0)
+                            {
+                                SizeF strSize = g.MeasureString(strLabel, renderSettings.Font);
+                                strSize = new SizeF(strSize.Width * ssm, strSize.Height * ssm);
+                                if (strSize.Width <= (renderPtObjList[n].Point0Dist) * ws)
+                                {
+                                    g.ResetTransform();
+                                    g.TranslateTransform(renderPtObjList[n].Point0.X, renderPtObjList[n].Point0.Y);
+                                    g.RotateTransform(-renderPtObjList[n].Angle0);
+
+                                    if (useCustomFontColor)
+                                    {
+                                        Color customColor = customRenderSettings.GetRecordFontColor(renderPtObjList[n].RecordIndex);
+                                        if (customColor.ToArgb() != currentFontColor.ToArgb())
+                                        {
+                                            fontBrush.Dispose();
+                                            fontBrush = new SolidBrush(customColor);
+                                            currentFontColor = customColor;
+                                        }
+                                    }
+
+                                    if (shadowText)
+                                    {
+                                        System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
+                                        gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, new PointF((renderPtObjList[n].Point0Dist - strSize.Width) / 2, -(strSize.Height) / 2), StringFormat.GenericDefault);//new StringFormat());
+                                        g.DrawPath(pen, gp);
+                                        g.FillPath(fontBrush, gp);
+                                    }
+                                    else
+                                    {
+                                        g.DrawString(strLabel, renderSettings.Font, fontBrush, (renderPtObjList[n].Point0Dist - strSize.Width) / 2, -strSize.Height / 2);
+                                    }
+                                }
+                            }
+                        }
+                        fontBrush.Dispose();
+                        pen.Dispose();
+                    }
+                }
+                finally
+                {
+                    g.ResetTransform();
+                }
+            }
+            finally
+            {
+                if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
+                if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
+            }
+        }
+
+        private unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        {
+            IntPtr dc = IntPtr.Zero;
+            IntPtr gdiPen = IntPtr.Zero;
+            IntPtr oldGdiObj = IntPtr.Zero;
+
+            IntPtr selectPen = IntPtr.Zero;
+
+            IntPtr fileMappingPtr = IntPtr.Zero;
+            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            IntPtr mapView = IntPtr.Zero;
+            byte* dataPtr = null;
+            if (fileMappingPtr != IntPtr.Zero)
+            {
+                mapView = NativeMethods.MapViewOfFile(fileMappingPtr, NativeMethods.FileMapAccess.FILE_MAP_READ, 0, 0, 0);
+            }
+            bool fileMapped = (mapView != IntPtr.Zero);
+
+            double scaleX = (double)(clientArea.Width / extent.Width);
+            double scaleY = -scaleX;
+
+            RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+            double offX = -projectedExtent.Left;
+            double offY = -projectedExtent.Bottom;
+            RectangleD actualExtent = projectedExtent;
+
+            if (MercProj)
+            {
+                //if we're using a Mercator Projection then convert the actual Extent to LL coords
+                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
+                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
+                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+            }
+            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+            bool useCustomRenderSettings = (renderSettings != null && customRenderSettings != null);
+
+            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
+            List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
+
+            float renderPenWidth = (float)(renderSettings.PenWidthScale * scaleX);
+
+            if (renderSettings.MaxPixelPenWidth > 0 && renderPenWidth > renderSettings.MaxPixelPenWidth)
+            {
+                renderPenWidth = renderSettings.MaxPixelPenWidth;
+            }
+            if (renderSettings.MinPixelPenWidth > 0 && renderPenWidth < renderSettings.MinPixelPenWidth)
+            {
+                renderPenWidth = renderSettings.MinPixelPenWidth;
+            }
+
+            if (renderSettings.LineType == LineType.Railway)
+            {
+                renderPenWidth = Math.Min(renderPenWidth, 7f);
+            }
+
+            // obtain a handle to the Device Context so we can use GDI to perform the painting.            
+            dc = g.GetHdc();
+
+            try
+            {
+                int maxPaintCount = 2;
+                if ((renderSettings.LineType == LineType.Solid) || (Math.Round(renderPenWidth) < 3))
+                {
+                    maxPaintCount = 1;
+                }
+
+                for (int paintCount = 0; paintCount < maxPaintCount; paintCount++)
+                {
+
+                    try
+                    {
+                        Color currentPenColor = renderSettings.OutlineColor;
+                        int penWidth = (int)Math.Round(renderPenWidth);
+                        int color = 0x1d1030;
+                        color = renderSettings.OutlineColor.B & 0xff;
+                        color = (color << 8) | (renderSettings.OutlineColor.G & 0xff);
+                        color = (color << 8) | (renderSettings.OutlineColor.R & 0xff);
+
+                        if (paintCount == 1)
+                        {
+                            currentPenColor = renderSettings.FillColor;
+                            color = renderSettings.FillColor.B & 0xff;
+                            color = (color << 8) | (renderSettings.FillColor.G & 0xff);
+                            color = (color << 8) | (renderSettings.FillColor.R & 0xff);
+                            penWidth -= 2;
+                        }
+
+                        gdiPen = NativeMethods.CreatePen(0, penWidth, color);
+                        oldGdiObj = NativeMethods.SelectObject(dc, gdiPen);
+
+                        if (paintCount == 0)
+                        {
+                            selectPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, penWidth + 4, ColorToGDIColor(renderSettings.SelectOutlineColor));
+                        }
+                        else
+                        {
+                            selectPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, penWidth, ColorToGDIColor(renderSettings.SelectFillColor));
+                        }
+                        byte* dataPtrZero = (byte*)IntPtr.Zero.ToPointer();
+                        if (fileMapped)
+                        {
+                            dataPtrZero = (byte*)mapView.ToPointer();
+                            dataPtr = (byte*)(((byte*)mapView.ToPointer()) + ShapeFileMainHeader.MAIN_HEADER_LENGTH);
+                        }
+                        else
+                        {
+                            shapeFileStream.Seek(ShapeFileMainHeader.MAIN_HEADER_LENGTH, SeekOrigin.Begin);
+                        }
+
+                        RecordHeader[] pgRecs = this.RecordHeaders;
+
+                        int index = 0;
+                        byte[] data = SFRecordCol.SharedBuffer;
+                        Point[] sharedPoints = SFRecordCol.SharedPointBuffer;
+                        float minLabelLength = (float)(6 / scaleX);
+                        fixed (byte* dataBufPtr = data)
+                        {
+                            if (!fileMapped) dataPtr = dataBufPtr;
+                            while (index < pgRecs.Length)
+                            {
+                                if (fileMapped)
+                                {
+                                    dataPtr = dataPtrZero + pgRecs[index].Offset;
+                                }
+                                else
+                                {
+                                    if (shapeFileStream.Position != pgRecs[index].Offset)
+                                    {
+                                        Console.Out.WriteLine("offset wrong");
+                                        shapeFileStream.Seek(pgRecs[index].Offset, SeekOrigin.Begin);
+                                    }
+                                    shapeFileStream.Read(data, 0, pgRecs[index].ContentLength + 8);
+                                }
+                                PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
+                                int dataOffset = nextRec->PointDataOffset + 8;
+                                if (actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                                {
+                                    //++numPainted;
+                                    int numParts = nextRec->NumParts;
+                                    Point[] pts;
+
+                                    //if labelling fields then add a renderPtObj
+                                    if (labelFields && paintCount == 0)
+                                    {
+                                        //check what the scaled bounds of this part are
+                                        if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                        {
+                                            if (renderDuplicateFields)
+                                            {
+                                                List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, dataOffset, nextRec->NumPoints, minLabelLength);
+                                                for (int li = iapList.Count - 1; li >= 0; li--)
+                                                {
+                                                    pts = GetPointsD(dataPtr, dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                    float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
+                                                    if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
+                                                    {
+                                                        renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f, Point.Empty, 0, 0, index));
+                                                    }
+                                                    else
+                                                    {
+                                                        renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, Point.Empty, 0, 0, index));
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                int pointIndex = 0;
+                                                float angle = GetPointsDAngle(dataPtr, dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent);
+                                                if (!angle.Equals(float.NaN))
+                                                {
+                                                    pts = GetPointsD(dataPtr,dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                    float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
+                                                    if (d0 > 6)
+                                                    {
+                                                        if (Math.Abs(angle) > 90f && Math.Abs(angle) <= 270f)
+                                                        {
+                                                            renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f, Point.Empty, 0, 0, index));
+                                                        }
+                                                        else
+                                                        {
+                                                            renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, Point.Empty, 0, 0, index));
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (useCustomRenderSettings)
+                                    {
+                                        Color customColor = (paintCount == 0) ? customRenderSettings.GetRecordOutlineColor(index) : customRenderSettings.GetRecordFillColor(index);
+                                        if (customColor.ToArgb() != currentPenColor.ToArgb())
+                                        {
+                                            gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, penWidth, ColorToGDIColor(customColor));
+                                            NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
+                                            currentPenColor = customColor;
+                                        }
+                                    }
+
+                                    for (int partNum = 0; partNum < numParts; ++partNum)
+                                    {
+                                        int numPoints;
+                                        if ((numParts - partNum) > 1)
+                                        {
+                                            numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                                        }
+                                        else
+                                        {
+                                            numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                                        }
+                                        if (numPoints <= 1)
+                                        {
+                                            //Console.Out.WriteLine("Skipping Record {0}, Part {1} - {2} point(s)", index, partNum, numPoints);
+                                            continue;
+                                        }
+                                        int usedPoints = 0;
+                                        GetPointsRemoveDuplicatesD(dataPtr, dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPoints, ref usedPoints);
+
+                                        if (recordSelected[index])
+                                        {
+                                            IntPtr tempPen = IntPtr.Zero;
+                                            try
+                                            {
+                                                tempPen = NativeMethods.SelectObject(dc, selectPen);
+                                                NativeMethods.DrawPolyline(dc, sharedPoints, usedPoints);
+                                            }
+                                            finally
+                                            {
+                                                if (tempPen != IntPtr.Zero) NativeMethods.SelectObject(dc, tempPen);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            NativeMethods.DrawPolyline(dc, sharedPoints, usedPoints);
+                                        }
+                                    }
+                                }
+                                //if (fileMapped)
+                                //{
+                                //    dataPtr += this.RecordHeaders[index].ContentLength + 8; 
+                                //}
+                                ++index;
+                            }
+                        }
+                        //Console.Out.WriteLine("numPainted:" + numPainted);
+                    }
+                    finally
+                    {
+                        if (gdiPen != IntPtr.Zero) NativeMethods.DeleteObject(gdiPen);
+                        if (oldGdiObj != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiObj);
+                        if (selectPen != IntPtr.Zero) NativeMethods.DeleteObject(selectPen);
+                        selectPen = IntPtr.Zero;
+                    }
+                }
+            }
+
+            finally
+            {
+                if (dc != IntPtr.Zero) g.ReleaseHdc(dc);
+                if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
+                if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
+            }
+
+            try
+            {
+                if (labelFields)
+                {
+                    bool shadowText = (renderSettings != null && renderSettings.ShadowText);
+                    Brush fontBrush = new SolidBrush(renderSettings.FontColor);
+                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                    int count = renderPtObjList.Count;
+                    Color currentFontColor = renderSettings.FontColor;
+                    bool useCustomFontColor = customRenderSettings != null;
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+                    float ws = 1.2f;
+                    if (renderDuplicateFields) ws = 1f;
+                    float ssm = shadowText ? 0.8f : 1f;
+                    for (int n = 0; n < count; n++)
+                    {
+                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (strLabel.Length > 0)// && string.Compare(strLabel, lastLabel) != 0)
+                        {
+                            SizeF strSize = g.MeasureString(strLabel, renderSettings.Font);
+                            strSize = new SizeF(strSize.Width * ssm, strSize.Height * ssm);
+                            if (strSize.Width <= (renderPtObjList[n].Point0Dist) * ws)
+                            {
+                                g.ResetTransform();
+                                g.TranslateTransform(renderPtObjList[n].Point0.X, renderPtObjList[n].Point0.Y);
+                                g.RotateTransform(-renderPtObjList[n].Angle0);
+
+                                if (useCustomFontColor)
+                                {
+                                    Color customColor = customRenderSettings.GetRecordFontColor(renderPtObjList[n].RecordIndex);
+                                    if (customColor.ToArgb() != currentFontColor.ToArgb())
+                                    {
+                                        fontBrush.Dispose();
+                                        fontBrush = new SolidBrush(customColor);
+                                        currentFontColor = customColor;
+                                    }
+                                }
+
+                                if (shadowText)
+                                {
+                                    System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
+                                    gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, new PointF((renderPtObjList[n].Point0Dist - strSize.Width) / 2, -(strSize.Height) / 2), StringFormat.GenericDefault);//new StringFormat());
+                                    g.DrawPath(pen, gp);
+                                    g.FillPath(fontBrush, gp);
+                                }
+                                else
+                                {
+                                    g.DrawString(strLabel, renderSettings.Font, fontBrush, (renderPtObjList[n].Point0Dist - strSize.Width) / 2, -strSize.Height / 2);
+                                }
+                            }
+                        }
+                    }
+                    fontBrush.Dispose();
+                    pen.Dispose();
+                }
+            }
+            finally
+            {
+                g.ResetTransform();
+                //g.DrawString("Test", renderer.Font, Brushes.Black, 0, 0);
+            }
+
+        }
+
+        private struct RenderPtObj
+        {
+            public Point Point0;
+            public float Point0Dist;
+            public float Angle0;
+            public Point Point1;
+            public float Point1Dist;
+            public float Angle1;
+
+            public int RecordIndex;
+
+            public RenderPtObj(Point p0, float poDist, float p0Angle, Point p1, float p1Dist, float p1Angle, int recordIndexParam)
+            {
+                Point0 = p0;
+                Point0Dist = poDist;
+                Angle0 = p0Angle;
+                RecordIndex = recordIndexParam;
+                Point1 = p1;
+                Point1Dist = p1Dist;
+                Angle1 = p1Angle;
+            }
+
+        }
+
+        #endregion
+
+
+        public bool ContainsPoint(int shapeIndex, PointD pt, System.IO.FileStream shapeFileStream, byte[] dataBuf, double minDist)
+        {
+            unsafe
+            {
+                byte[] data = SFRecordCol.SharedBuffer;
+                shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+                fixed (byte* dataPtr = data)
+                {
+                    PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
+                    int dataOffset = nextRec->PointDataOffset;
+                    int numParts = nextRec->NumParts;
+                    for (int partNum = 0; partNum < numParts; partNum++)
+                    {
+                        int numPoints;
+                        if ((numParts - partNum) > 1)
+                        {
+                            numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                        }
+                        else
+                        {
+                            numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                        }
+                        if (PointOnPolyLine(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, pt, minDist))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        private static unsafe bool PointOnPolyLine(byte[] data, int offset, int numPoints, PointD pt, double minDist)
+        {
+            fixed (byte* bPtr = data)
+            {
+                PointD* points = (PointD*)(bPtr + offset);
+
+                for (int i = 0; i < numPoints - 1; i++)
+                {
+                    if (lineSegPointDist(ref points[i], ref points[i + 1], ref pt) <= minDist)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        //compute the dot product AB*BC         
+        static double dot(ref PointD a, ref PointD b, ref PointD c)
+        {
+            PointD ab = new PointD(b.X - a.X, b.Y - a.Y);
+            PointD bc = new PointD(c.X - b.X, c.Y - b.Y);
+            return (ab.X * bc.X) + (ab.Y * bc.Y);
+        }
+
+        //Compute the cross product AB x AC
+        static double cross(ref PointD a, ref PointD b, ref PointD c)
+        {
+            PointD ab = new PointD(b.X - a.X, b.Y - a.Y);
+            PointD ac = new PointD(c.X - a.X, c.Y - a.Y);
+            return (ab.X * ac.Y) - (ab.Y * ac.X);
+        }
+
+        private static double distance(ref PointD a, ref PointD b)
+        {
+            double d1 = a.X - b.X;
+            double d2 = a.Y - b.Y;
+            return Math.Sqrt((d1 * d1) + (d2 * d2));
+        }
+
+        //Compute the distance from AB to C
+        //if isSegment is true, AB is a segment, not a line.
+        private static double lineSegPointDist(ref PointD a, ref PointD b, ref PointD c)
+        {
+            //float dist = cross(a,b,c) / distance(a,b);
+
+            if (dot(ref a, ref b, ref c) > 0)
+            {
+                return distance(ref b, ref c);
+            }
+            if (dot(ref b, ref a, ref c) > 0)
+            {
+                return distance(ref a, ref c);
+            }
+            return Math.Abs(cross(ref a, ref b, ref c) / distance(ref a, ref b));
+        }
+
+        #region QTNodeHelper Members
+
+        public bool IsPointData()
+        {
+            return false;
+        }
+
+        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+        {
+            //throw new Exception("The method or operation is not implemented.");
+            return PointF.Empty;
+        }
+
+        public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
+        {
+            if (recordIndex < 0 || recordIndex >= this.RecordHeaders.Length) return RectangleF.Empty;
+            shapeFileStream.Seek(RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Read(data, 0, 32 + 12);
+            Box bounds = new Box(data, 12);
+
+            return bounds.ToRectangleF();
+        }
+
+        public override RectangleD GetRecordBoundsD(int recordIndex, System.IO.Stream shapeFileStream)
+        {
+            if (recordIndex < 0 || recordIndex >= this.RecordHeaders.Length) return RectangleF.Empty;
+            shapeFileStream.Seek(RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Read(data, 0, 32 + 12);
+            Box bounds = new Box(data, 12);
+            return bounds.ToRectangleD();
+        }
+
+
+
+        #endregion
+
     }
 
 
@@ -13017,7 +14127,7 @@ namespace EGIS.ShapeFileLib
     /// The ShapeFileEnumerator provides a fast, low memory, forward only means of iterating over all of the 
     /// records in a shapefile.
     /// </summary>
-    public sealed class ShapeFileEnumerator : IEnumerator<System.Collections.ObjectModel.Collection<PointD[]>>
+    public sealed class ShapeFileEnumerator : IEnumerator<System.Collections.ObjectModel.ReadOnlyCollection<PointD[]>>
     {
         /// <summary>
         /// Defines how shapes will be evaluated when moving to the next record when enumerating through a shapefile.
@@ -13086,7 +14196,7 @@ namespace EGIS.ShapeFileLib
         /// <summary>
         /// Gets the raw PointD data of the current shape
         /// </summary>
-        public System.Collections.ObjectModel.Collection<PointD[]> Current
+        public System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> Current
         {
             get 
             {
@@ -13109,7 +14219,7 @@ namespace EGIS.ShapeFileLib
         /// <summary>
         /// Gets the raw Z data of the current shape (3D shapefiles only)
         /// </summary>        
-        public System.Collections.ObjectModel.Collection<double[]> GetCurrentZValues()
+        public System.Collections.ObjectModel.ReadOnlyCollection<double[]> GetCurrentZValues()
         {
             //return myShapeFile.GetShapeData
             return myShapeFile.GetShapeZDataD(currentIndex, dataBuffer);
@@ -13119,7 +14229,7 @@ namespace EGIS.ShapeFileLib
         /// Gets the Measure data of the current shape.
         /// This method is currently not implemented
         /// </summary>
-        public System.Collections.ObjectModel.Collection<double[]> GetCurrentMValues()
+        public System.Collections.ObjectModel.ReadOnlyCollection<double[]> GetCurrentMValues()
         {
             throw new NotImplementedException();
         }

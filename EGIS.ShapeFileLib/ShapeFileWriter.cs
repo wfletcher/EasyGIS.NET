@@ -576,7 +576,7 @@ namespace EGIS.ShapeFileLib
         /// Implementing subclasses override this method to write the appropriate data
         /// depending on the ShapeType being used.
         /// </remarks>
-        public abstract void AddRecord(System.Collections.ObjectModel.Collection<double[]> parts, string[] fieldData);
+        public abstract void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<double[]> parts, string[] fieldData);
 
         /// <summary>
         /// abstract method used to add a new record to the shapefile    
@@ -590,7 +590,7 @@ namespace EGIS.ShapeFileLib
         /// Implementing subclasses override this method to write the appropriate data
         /// depending on the ShapeType being used.
         /// </remarks>
-        public abstract void AddRecord(System.Collections.ObjectModel.Collection<PointF[]> parts, string[] fieldData);
+        public abstract void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointF[]> parts, string[] fieldData);
 
 
         /// <summary>
@@ -606,7 +606,7 @@ namespace EGIS.ShapeFileLib
         /// depending on the ShapeType being used.
         /// </remarks>
         [ObfuscationAttribute(Exclude=true)]
-        public abstract void AddRecord(System.Collections.ObjectModel.Collection<PointD[]> parts, string[] fieldData);
+        public abstract void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts, string[] fieldData);
 
         /// <summary>
         /// Creates a ShapeFileWriter class
@@ -719,21 +719,21 @@ namespace EGIS.ShapeFileLib
             WriteDbfRecord(fieldData);
         }
 
-    public override void AddRecord(System.Collections.ObjectModel.Collection<PointF[]> parts, string[] fieldData)
+    public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointF[]> parts, string[] fieldData)
     {
         RecordCount++;
         writeShapeRecord1(parts);
         WriteDbfRecord(fieldData);
     }
 
-        public override void AddRecord(System.Collections.ObjectModel.Collection<PointD[]> parts, string[] fieldData)
+        public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts, string[] fieldData)
         {
             RecordCount++;
             writeShapeRecord3(parts);
             WriteDbfRecord(fieldData);
         }
 
-    public override void AddRecord(System.Collections.ObjectModel.Collection<double[]> parts, string[] fieldData)
+    public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<double[]> parts, string[] fieldData)
     {
         throw new NotImplementedException();
     }
@@ -741,7 +741,7 @@ namespace EGIS.ShapeFileLib
     private const int ShapeTypeLE = ((0x05)<<24);
 
 
-    private void writeShapeRecord1(System.Collections.ObjectModel.Collection<PointF[]> parts)
+    private void writeShapeRecord1(System.Collections.ObjectModel.ReadOnlyCollection<PointF[]> parts)
         {
 
             int numPoints = 0;
@@ -882,7 +882,7 @@ namespace EGIS.ShapeFileLib
         IndexStream.Write(EndianUtils.GetBytesBE(contentLength), 0, 4);        
     }
 
-    private void writeShapeRecord3(System.Collections.ObjectModel.Collection<PointD[]> parts)
+    private void writeShapeRecord3(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts)
     {
         int numPoints = 0;
         for (int n = 0; n < parts.Count; n++)
@@ -1118,23 +1118,23 @@ namespace EGIS.ShapeFileLib
             WriteDbfRecord(fieldData);
         }
 
-        public override void AddRecord(System.Collections.ObjectModel.Collection<PointF[]> parts, string[] fieldData)
+        public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointF[]> parts, string[] fieldData)
         {
             RecordCount++;
             writeShapeRecord4(parts);
             WriteDbfRecord(fieldData);
         }
 
-        public override void AddRecord(System.Collections.ObjectModel.Collection<PointD[]> parts, string[] fieldData)
+        public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts, string[] fieldData)
         {
             RecordCount++;
             //obfuscation was casting parts to following line - renamed private methods
-            //writeShapeRecord4((System.Collections.ObjectModel.Collection<PointF[]>)parts);            
+            //writeShapeRecord4((System.Collections.ObjectModel.ReadOnlyCollection<PointF[]>)parts);            
             writeShapeRecord5(parts);
             WriteDbfRecord(fieldData);
         }
 
-        public override void AddRecord(System.Collections.ObjectModel.Collection<double[]> parts, string[] fieldData)
+        public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<double[]> parts, string[] fieldData)
         {
             throw new NotImplementedException();
         }
@@ -1322,7 +1322,7 @@ namespace EGIS.ShapeFileLib
         
     }
 
-        private void writeShapeRecord4(System.Collections.ObjectModel.Collection<PointF[]> parts)
+        private void writeShapeRecord4(System.Collections.ObjectModel.ReadOnlyCollection<PointF[]> parts)
         {
 
             int numPoints = 0;
@@ -1404,7 +1404,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        private void writeShapeRecord5(System.Collections.ObjectModel.Collection<PointD[]> parts)
+        private void writeShapeRecord5(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts)
         {
 
             int numPoints = 0;
@@ -1523,17 +1523,17 @@ namespace EGIS.ShapeFileLib
             WriteDbfRecord(fieldData);
         }
 
-        public override void AddRecord(System.Collections.ObjectModel.Collection<PointF[]> parts, string[] fieldData)
+        public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointF[]> parts, string[] fieldData)
         {
             throw new NotSupportedException("Point Shapes do not support multi parts");
         }
 
-        public override void AddRecord(System.Collections.ObjectModel.Collection<PointD[]> parts, string[] fieldData)
+        public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts, string[] fieldData)
         {
             throw new NotSupportedException("Point Shapes do not support multi parts");
         }
 
-        public override void AddRecord(System.Collections.ObjectModel.Collection<double[]> parts, string[] fieldData)
+        public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<double[]> parts, string[] fieldData)
         {
             throw new NotSupportedException("Point Shapes do not support multi parts");
         }
