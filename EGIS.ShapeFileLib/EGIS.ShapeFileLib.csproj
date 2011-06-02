@@ -86,8 +86,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CustomRenderSettingsUtil.cs" />
     <Compile Include="DbfWriter.cs" />
     <Compile Include="ICustomRenderSettings.cs" />
+    <Compile Include="MapProjectionCreator.cs" />
     <Compile Include="NavFunctions.cs" />
     <Compile Include="PointD.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

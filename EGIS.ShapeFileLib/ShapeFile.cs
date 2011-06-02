@@ -57,6 +57,10 @@ namespace EGIS.ShapeFileLib
         /// </summary>        
         Auto };
 
+
+    
+
+
 	/// <summary>    
 	/// .NET ShapeFile class used to load, render and query data in an ESRI Shape File.
     /// The ShapeFile class is the main class of the EGIS.ShapeFileLib namespace    
@@ -158,7 +162,7 @@ namespace EGIS.ShapeFileLib
         /// Gets an object that can be used to synchronize access to the ShapeFile
         /// </summary>
         /// <remarks>
-        /// NOTE: Many of the methods in theis class are not Thread Safe (due to internal shared buffers). If multiple threads require access to ShapeFile objects
+        /// NOTE: Many of the methods in this class are not Thread Safe (due to internal shared buffers). If multiple threads require access to ShapeFile objects
         /// then the static (Shared in VB) Sync object should be used to provide mutual access to the shapefiles
         /// </remarks>
         public static object Sync
@@ -217,11 +221,27 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        public static RectangleD LLExtentToProjectedExtent(RectangleD rectLL, ProjectionType projectionType)
+        {
+            switch(projectionType)
+            {
+                case ProjectionType.None:
+                    return rectLL; 
+                case ProjectionType.Mercator:
+                    PointD tl = SFRecordCol.LLToProjection(new PointD(rectLL.Left, rectLL.Top));
+                    PointD br = SFRecordCol.LLToProjection(new PointD(rectLL.Right,rectLL.Bottom));
+                    return RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+                
+                default:
+                    throw new NotSupportedException("Unknown or unsupported ProjectionType");
+            }
+            
+        }
+
         /// <summary>
         /// Gets the Rectangular extent of the shapefile
         /// </summary>
-        /// <remarks>If the UseMercatorProjection is true then the returned Extent will be in the projected Mercator coordinates </remarks>
-		public RectangleF Extent
+       	public RectangleD Extent
 		{
 			get
 			{
@@ -245,25 +265,14 @@ namespace EGIS.ShapeFileLib
 				}
 #else
                 if (sfRecordCol != null)
-                {
-                    if (SFRecordCol.MercProj)
-                    {
-                        PointD tl = SFRecordCol.LLToProjection(new PointD(sfRecordCol.MainHeader.Xmin, sfRecordCol.MainHeader.Ymin));
-                        PointD br = SFRecordCol.LLToProjection(new PointD(sfRecordCol.MainHeader.Xmax, sfRecordCol.MainHeader.Ymax));
-                        RectangleF r = RectangleF.FromLTRB((float)tl.X, (float)tl.Y, (float)br.X, (float)br.Y);
-                        return r;
-
-                    }
-                    else
-                    {
-                        RectangleF r = RectangleF.FromLTRB((float)sfRecordCol.MainHeader.Xmin, (float)sfRecordCol.MainHeader.Ymin, (float)sfRecordCol.MainHeader.Xmax, (float)sfRecordCol.MainHeader.Ymax);
-                        return r;
-                    }
+                {                   
+                    RectangleD r = RectangleD.FromLTRB(sfRecordCol.MainHeader.Xmin, sfRecordCol.MainHeader.Ymin, sfRecordCol.MainHeader.Xmax, sfRecordCol.MainHeader.Ymax);
+                    return r;                    
                 }
 #endif
 				else
 				{
-					return RectangleF.Empty;
+					return RectangleD.Empty;
 				}
 			}
 		}
@@ -557,34 +566,34 @@ namespace EGIS.ShapeFileLib
 
         #region Render Methods
 
-        void Render(Graphics g, Size clientArea, RectangleF extent)
+        void Render(Graphics g, Size clientArea, RectangleF extent, ProjectionType projectionType)
         {
-            Render(g, clientArea, extent, RenderSettings);
+            Render(g, clientArea, extent, RenderSettings, projectionType);
         }
 
-		void Render(Graphics g, Size clientArea, RectangleF extent, RenderSettings renderSettings)
-		{
-            //DateTime dts = DateTime.Now;
-            if (!Extent.IntersectsWith(extent)) return;
-#if SinglePrecision
-            if (sfRecordColEx != null)
-            {
-                sfRecordColEx.paint(g, clientArea, extent, shapeFileExStream.BaseStream, RenderSettings);
-            }
-#else
-            if (sfRecordCol != null)
-            {
-                sfRecordCol.paint(g, clientArea, extent, shapeFileStream, RenderSettings);
-            }
-#endif
-            //Console.Out.WriteLine("render time: " + ((TimeSpan)DateTime.Now.Subtract(dts)));
-		}
+//        void Render(Graphics g, Size clientArea, RectangleF extent, RenderSettings renderSettings, ProjectionType projectionType)
+//        {
+//            //DateTime dts = DateTime.Now;
+//            if (!Extent.IntersectsWith(extent)) return;
+//#if SinglePrecision
+//            if (sfRecordColEx != null)
+//            {
+//                sfRecordColEx.paint(g, clientArea, extent, shapeFileExStream.BaseStream, RenderSettings);
+//            }
+//#else
+//            if (sfRecordCol != null)
+//            {
+//                sfRecordCol.paint(g, clientArea, extent, shapeFileStream, RenderSettings, projectionType);
+//            }
+//#endif
+//            //Console.Out.WriteLine("render time: " + ((TimeSpan)DateTime.Now.Subtract(dts)));
+//        }
 
-        void Render(Graphics g, Size clientArea, RectangleD extent, RenderSettings renderSettings)
+        void Render(Graphics g, Size clientArea, RectangleD extent, RenderSettings renderSettings, ProjectionType projectionType)
         {
             DateTime dts = DateTime.Now;
-            //if (!Extent.IntersectsWith(extent)) return;
-            if (!extent.IntersectsWith(Extent)) return;
+            
+            if (!extent.IntersectsWith(ShapeFile.LLExtentToProjectedExtent(Extent, projectionType))) return;
 #if SinglePrecision
 
             if (sfRecordColEx != null)
@@ -594,7 +603,7 @@ namespace EGIS.ShapeFileLib
 #else
             if (sfRecordCol != null)
             {
-                sfRecordCol.paint(g, clientArea, extent, shapeFileStream, RenderSettings);
+                sfRecordCol.paint(g, clientArea, extent, shapeFileStream, RenderSettings, projectionType);
             }
 #endif
             //Console.Out.WriteLine("render time: " + ((TimeSpan)DateTime.Now.Subtract(dts)));
@@ -614,7 +623,7 @@ namespace EGIS.ShapeFileLib
         /// If zoom is 1 and the width of the ShapeFile's extent is N units wide, then the
         /// ShapeFile wil be rendered N pixels wide. If zoom is 2 then shapefile will be rendered 2N pixels wide
         /// </remarks>
-        public void Render(Graphics graphics, Size clientArea, PointF centre, float zoom, RenderSettings renderSetings)
+        public void Render(Graphics graphics, Size clientArea, PointF centre, float zoom, RenderSettings renderSetings, ProjectionType projectionType)
         {
             if (!IsVisibleAtZoomLevel(zoom))
             {
@@ -625,25 +634,31 @@ namespace EGIS.ShapeFileLib
             float sx = clientArea.Width*zoom;
             float sy = clientArea.Height*zoom;
             RectangleF r = RectangleF.FromLTRB(centre.X - (sx *0.5f), centre.Y - (sy * 0.5f), centre.X + (sx *0.5f), centre.Y + (sy *0.5f));
-            Render(graphics, clientArea, r, renderSetings);
+            Render(graphics, clientArea, r, renderSetings, projectionType);
 
-            Font f = new Font("Arial", 8);
-            StringFormat sf = new StringFormat();
-            Brush brush = new SolidBrush(Color.FromArgb(100, Color.Black));
-            try
-            {                
-                sf.Alignment = StringAlignment.Far;
-                sf.LineAlignment = StringAlignment.Far;
-                graphics.DrawString("Map Generated by Easy GIS .NET", f, brush, new PointF(clientArea.Width - 10, clientArea.Height - 10), sf);                
-            }
-            finally
-            {
-                f.Dispose();
-                sf.Dispose();
-                brush.Dispose();
-            }
+            //Font f = new Font("Arial", 8);
+            //StringFormat sf = new StringFormat();
+            //Brush brush = new SolidBrush(Color.FromArgb(100, Color.Black));
+            //try
+            //{                
+            //    sf.Alignment = StringAlignment.Far;
+            //    sf.LineAlignment = StringAlignment.Far;
+            //    graphics.DrawString("Map Generated by Easy GIS .NET", f, brush, new PointF(clientArea.Width - 10, clientArea.Height - 10), sf);                
+            //}
+            //finally
+            //{
+            //    f.Dispose();
+            //    sf.Dispose();
+            //    brush.Dispose();
+            //}
 
         }
+
+        
+        //public void RenderInternal(Graphics graphics, Size clientArea, PointF centre, float zoom, ProjectionType projectionType)
+        //{
+        //    this.RenderInternal(graphics, clientArea, centre, zoom, this.RenderSettings, projectionType);
+        //}
 
         /// <summary>
         /// Renders the shapefile centered at given point and zoom
@@ -652,27 +667,18 @@ namespace EGIS.ShapeFileLib
         /// <param name="clientArea">The client area in pixels to draw </param>
         /// <param name="centre">The centre point in the ShapeFiles coordinates</param>
         /// <param name="zoom">The scaling to apply</param>
+        /// <param name="projectionType">The Map Projection to use when rendering the shapefile</param>
         /// <remarks>
         /// If zoom is 1 and the width of the ShapeFile's extent is N units wide, then the
         /// ShapeFile wil be rendered N pixels wide. If zoom is 2 then shapefile will be rendered 2N pixels wide
         /// </remarks>
-        public void Render(Graphics graphics, Size clientArea, PointF centre, float zoom)
+        public void Render(Graphics graphics, Size clientArea, PointD centre, double zoom, ProjectionType projectionType)
         {
-            this.Render(graphics, clientArea, centre, zoom, this.RenderSettings);
-        }        
-
-        public void RenderInternal(Graphics graphics, Size clientArea, PointF centre, float zoom)
-        {
-            this.RenderInternal(graphics, clientArea, centre, zoom, this.RenderSettings);
-        }
-
-        public void Render(Graphics graphics, Size clientArea, PointD centre, double zoom)
-        {
-            this.RenderInternal(graphics, clientArea, centre, zoom, this.RenderSettings);
+            this.RenderInternal(graphics, clientArea, centre, zoom, this.RenderSettings, projectionType);
         }
 
 
-        internal void RenderInternal(Graphics graphics, Size clientArea, PointF centre, float zoom, RenderSettings renderSetings)
+        internal void RenderInternal(Graphics graphics, Size clientArea, PointF centre, float zoom, RenderSettings renderSetings, ProjectionType projectionType)
         {
             if (!IsVisibleAtZoomLevel(zoom))
             {
@@ -683,10 +689,10 @@ namespace EGIS.ShapeFileLib
             float sx = clientArea.Width * zoom;
             float sy = clientArea.Height * zoom;
             RectangleF r = RectangleF.FromLTRB(centre.X - (sx * 0.5f), centre.Y - (sy * 0.5f), centre.X + (sx * 0.5f), centre.Y + (sy * 0.5f));
-            Render(graphics, clientArea, r, renderSetings);
+            Render(graphics, clientArea, r, renderSetings, projectionType);
         }
 
-        internal void RenderInternal(Graphics graphics, Size clientArea, PointD centre, double zoom, RenderSettings renderSetings)
+        internal void RenderInternal(Graphics graphics, Size clientArea, PointD centre, double zoom, RenderSettings renderSetings, ProjectionType projectionType)
         {
             if (!IsVisibleAtZoomLevel((float)zoom))
             {
@@ -697,7 +703,7 @@ namespace EGIS.ShapeFileLib
             double sx = clientArea.Width * zoom;
             double sy = clientArea.Height * zoom;
             RectangleD r = RectangleD.FromLTRB((centre.X - (sx * 0.5f)), (centre.Y - (sy * 0.5f)), (centre.X + (sx * 0.5f)), (centre.Y + (sy * 0.5f)));
-            Render(graphics, clientArea, r, renderSetings);
+            Render(graphics, clientArea, r, renderSetings, projectionType);
         }
 
 
@@ -752,6 +758,29 @@ namespace EGIS.ShapeFileLib
                 bReader = null;
             }
             return recordHeaders;
+        }
+
+
+        private RenderSettings CreateRenderSettings(string fieldName)
+        {
+            RectangleF r = this.Extent;
+            RenderSettings renderSettings = new RenderSettings(this.filePath, fieldName, new Font("Arial", 10)); 
+            //create the PenWidthScale to be approx 15m
+            if (r.Top > 90 || r.Bottom < -90)
+            {
+                //assume UTM
+                renderSettings.PenWidthScale = 15;
+            }
+            else
+            {
+                PointF pt = new PointF(r.Left + r.Width / 2, r.Top + r.Height / 2);
+                EGIS.ShapeFileLib.UtmCoordinate utm1 = EGIS.ShapeFileLib.ConversionFunctions.LLToUtm(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, pt.Y, pt.X);
+                EGIS.ShapeFileLib.UtmCoordinate utm2 = utm1;
+                utm2.Northing += 15;
+                EGIS.ShapeFileLib.LatLongCoordinate ll = EGIS.ShapeFileLib.ConversionFunctions.UtmToLL(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, utm2);
+                renderSettings.PenWidthScale = (float)Math.Abs(ll.Latitude - pt.Y);
+            }
+            return renderSettings;
         }
 
 
@@ -974,6 +1003,8 @@ namespace EGIS.ShapeFileLib
 #else
             LoadFromFile2(shapeFilePath);            
 #endif
+            //create a default RenderSettings object
+            this.RenderSettings = CreateRenderSettings(shapeFilePath);
         }
 
        
@@ -2408,21 +2439,23 @@ namespace EGIS.ShapeFileLib
 
         #endregion
 
+       //// private ProjectionType projectionType = ProjectionType.None;
 
-        /// <summary>
-        /// Gets/Sets whether ShapeFiles should be rendered using the Mercator Projection.
-        /// </summary>
-        public static bool UseMercatorProjection
-        {
-            get
-            {
-                return SFRecordCol.MercProj;
-            }
-            set
-            {
-                SFRecordCol.MercProj = value;
-            }
-        }
+       // /// <summary>
+       // /// Gets/Sets whether ShapeFiles should be rendered using the Mercator Projection.
+       // /// </summary>
+       // public ProjectionType MapProjectionType
+       // {
+       //     get
+       //     {
+       //         //return projectionType;
+       //         return ProjectionType.None;
+       //     }
+       //     set
+       //     {
+       //         //projectionType = value;
+       //     }
+       // }
 
         private const float MaxLLMercProjF = 85.0511287798066f;
         /// <summary>
@@ -3565,9 +3598,9 @@ namespace EGIS.ShapeFileLib
             Array.Clear(recordSelected, 0, recordSelected.Length);
         }
 
-		public abstract void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream);
+		public abstract void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType);
 
-		public abstract void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings);
+		public abstract void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType);
 
         public abstract List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream);
         public abstract List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer);
@@ -3625,7 +3658,7 @@ namespace EGIS.ShapeFileLib
 		/// <param name="pointIndex"> reference to the index in data containing the first point of the segment</param>
 		/// <param name="extent"></param>
 		/// <returns></returns>
-		protected static unsafe float GetPointsFAngle(byte[] data, int offset, int numPoints, ref int pointIndex, RectangleF extent)
+		protected static unsafe float GetPointsFAngle(byte[] data, int offset, int numPoints, ref int pointIndex, RectangleF extent, bool mercProjection)
 		{
 			PointF[] pts = new PointF[numPoints];
 			int maxIndex = -1;
@@ -3636,8 +3669,8 @@ namespace EGIS.ShapeFileLib
 				float maxDistSquared=0f;
 				
 				while(ptIndex < numPoints)
-				{			
-					pts[ptIndex] = LLToProjection(*(pPtr++));					
+				{
+                    pts[ptIndex] = mercProjection ? LLToProjection(*(pPtr++)) : *(pPtr++);					
 					if(ptIndex > 0  && (extent.Contains(pts[ptIndex]) || extent.Contains(pts[ptIndex-1]) ))
 					{
 						float xdif = pts[ptIndex].X - pts[ptIndex-1].X;
@@ -3663,7 +3696,7 @@ namespace EGIS.ShapeFileLib
 			}			 
 		}
 
-        protected static unsafe float GetPointsDAngle(byte[] data, int offset, int numPoints, ref int pointIndex, RectangleD extent)
+        protected static unsafe float GetPointsDAngle(byte[] data, int offset, int numPoints, ref int pointIndex, RectangleD extent, bool mercProj)
         {
             PointD[] pts = new PointD[numPoints];
             
@@ -3676,7 +3709,7 @@ namespace EGIS.ShapeFileLib
 
                 while (ptIndex < numPoints)
                 {
-                    pts[ptIndex] = LLToProjection(*(pPtr++));
+                    pts[ptIndex] = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
                     if (ptIndex > 0 && (extent.Contains(pts[ptIndex]) || extent.Contains(pts[ptIndex - 1])))
                     {
                         double xdif = pts[ptIndex].X - pts[ptIndex - 1].X;
@@ -3702,7 +3735,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        protected static unsafe float GetPointsDAngle(byte* buf, int offset, int numPoints, ref int pointIndex, RectangleD extent)
+        protected static unsafe float GetPointsDAngle(byte* buf, int offset, int numPoints, ref int pointIndex, RectangleD extent, bool mercProj)
         {
             PointD[] pts = new PointD[numPoints];
 
@@ -3714,7 +3747,7 @@ namespace EGIS.ShapeFileLib
 
             while (ptIndex < numPoints)
             {
-                pts[ptIndex] = LLToProjection(*(pPtr++));
+                pts[ptIndex] = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
                 if (ptIndex > 0 && (extent.Contains(pts[ptIndex]) || extent.Contains(pts[ptIndex - 1])))
                 {
                     double xdif = pts[ptIndex].X - pts[ptIndex - 1].X;
@@ -3740,7 +3773,7 @@ namespace EGIS.ShapeFileLib
         }
         
 
-        protected static unsafe List<IndexAnglePair> GetPointsFAngle(byte[] data, int offset, int numPoints, float minDist)
+        protected static unsafe List<IndexAnglePair> GetPointsFAngle(byte[] data, int offset, int numPoints, float minDist, bool mercProj)
         {
             List<IndexAnglePair> indexAngleList = new List<IndexAnglePair>();
             PointF[] pts = new PointF[numPoints];
@@ -3752,7 +3785,7 @@ namespace EGIS.ShapeFileLib
 
                 while (ptIndex < numPoints)
                 {
-                    pts[ptIndex] = LLToProjection(*(pPtr++));
+                    pts[ptIndex] = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
                     if (ptIndex > 0)
                     {
                         float xdif = pts[ptIndex].X - pts[ptIndex - 1].X;
@@ -3770,7 +3803,7 @@ namespace EGIS.ShapeFileLib
             return indexAngleList;
         }
 
-        protected static unsafe List<IndexAnglePair> GetPointsDAngle(byte[] data, int offset, int numPoints, float minDist)
+        protected static unsafe List<IndexAnglePair> GetPointsDAngle(byte[] data, int offset, int numPoints, float minDist, bool mercProj)
         {
             List<IndexAnglePair> indexAngleList = new List<IndexAnglePair>();
             PointD[] pts = new PointD[numPoints];
@@ -3782,7 +3815,7 @@ namespace EGIS.ShapeFileLib
 
                 while (ptIndex < numPoints)
                 {
-                    pts[ptIndex] = LLToProjection(*(pPtr++));
+                    pts[ptIndex] = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
                     if (ptIndex > 0)
                     {
                         double xdif = pts[ptIndex].X - pts[ptIndex - 1].X;
@@ -3800,7 +3833,7 @@ namespace EGIS.ShapeFileLib
             return indexAngleList;
         }
 
-        protected static unsafe List<IndexAnglePair> GetPointsDAngle(byte* buf, int offset, int numPoints, float minDist)
+        protected static unsafe List<IndexAnglePair> GetPointsDAngle(byte* buf, int offset, int numPoints, float minDist, bool mercProj)
         {
             List<IndexAnglePair> indexAngleList = new List<IndexAnglePair>();
             PointD[] pts = new PointD[numPoints];
@@ -3811,7 +3844,7 @@ namespace EGIS.ShapeFileLib
 
             while (ptIndex < numPoints)
             {
-                pts[ptIndex] = LLToProjection(*(pPtr++));
+                pts[ptIndex] = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
                 if (ptIndex > 0)
                 {
                     double xdif = pts[ptIndex].X - pts[ptIndex - 1].X;
@@ -3828,14 +3861,14 @@ namespace EGIS.ShapeFileLib
             return indexAngleList;
         }
 
-        internal static bool MercProj = false;
+        //internal static bool MercProj = false;
 
         private const double MaxLLMercProjD = 85.0511287798066;
         private const float MaxLLMercProjF = 85.0511287798066f;
 
         internal static PointF LLToProjection(PointF pt)
         {
-            if (MercProj)
+            //if (MercProj)
             {
                 if (pt.Y > MaxLLMercProjF)
                 {
@@ -3851,13 +3884,13 @@ namespace EGIS.ShapeFileLib
                 d = (90 / Math.PI) * Math.Log((1 + sd) / (1 - sd));
                 return new PointF(pt.X, (float)d);
             }
-            return pt;
+            //return pt;
         }
 
         internal static PointD LLToProjection(PointD pt)
         {
-            if (MercProj)
-            {
+            //if (MercProj)
+            //{
                 if (pt.Y > MaxLLMercProjD)
                 {
                     pt.Y = MaxLLMercProjD;
@@ -3871,14 +3904,14 @@ namespace EGIS.ShapeFileLib
 
                 d = (90 / Math.PI) * Math.Log((1 + sd) / (1 - sd));
                 return new PointD(pt.X, d);
-            }
-            return pt;
+            //}
+            //return pt;
         }
 
         internal static void LLToProjection(ref double ptx, ref double pty, out double px, out double py)
         {
             px = ptx;
-            if (MercProj)
+            //if (MercProj)
             {
                 double d;
                 if (pty > MaxLLMercProjD)
@@ -3898,22 +3931,22 @@ namespace EGIS.ShapeFileLib
                 py = (90 / Math.PI) * Math.Log((1 + sd) / (1 - sd));
                 return;
             }
-            py = pty;            
+            //py = pty;            
         }
         
         internal static PointD ProjectionToLL(PointD pt)
         {
-            if (MercProj)
+            //if (MercProj)
             {
                 double d = (Math.PI / 180) * pt.Y;
                 d = Math.Atan(Math.Sinh(d));
                 d = d * (180 / Math.PI);
                 return new PointD(pt.X, d);
             }
-            return pt;
+            //return pt;
         }
 
-        protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, float offX, float offY, float scaleX, float scaleY)
+        protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, float offX, float offY, float scaleX, float scaleY, bool mercProj)
         {
             Point[] pts = new Point[numPoints];
             fixed (byte* bPtr = data)
@@ -3922,7 +3955,7 @@ namespace EGIS.ShapeFileLib
                 PointF* pPtr = (PointF*)(bPtr + offset);
                 while (ptIndex < numPoints)
                 {
-                    PointF ptf = LLToProjection(*(pPtr++));
+                    PointF ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
                     pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
                     pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
                     ++ptIndex;
@@ -3931,7 +3964,7 @@ namespace EGIS.ShapeFileLib
             return pts;
         }
         
-        protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY)
+        protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, bool mercProj)
         {
             //if (numPoints > 10) return GetPointsRemoveDuplicates(data, offset, numPoints, offX, offY, scaleX, scaleY);
             Point[] pts = new Point[numPoints];
@@ -3941,7 +3974,7 @@ namespace EGIS.ShapeFileLib
                 PointF* pPtr = (PointF*)(bPtr + offset);
                 while (ptIndex < numPoints)
                 {
-                    PointD ptd = LLToProjection((PointD)(*(pPtr++)));
+                    PointD ptd = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); ;// LLToProjection((PointD)(*(pPtr++)));
                     pts[ptIndex].X = (int)Math.Round((ptd.X + offX) * scaleX);
                     pts[ptIndex].Y = (int)Math.Round((ptd.Y + offY) * scaleY);
                     ++ptIndex;
@@ -3950,7 +3983,7 @@ namespace EGIS.ShapeFileLib
             return pts;
         }
 
-        protected static unsafe Point[] GetPointsD(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY)
+        protected static unsafe Point[] GetPointsD(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, bool mercProj)
         {
             Point[] pts = new Point[numPoints];
             fixed (byte* bPtr = data)
@@ -3959,7 +3992,7 @@ namespace EGIS.ShapeFileLib
                 PointD* pPtr = (PointD*)(bPtr + offset);
                 while (ptIndex < numPoints)
                 {
-                    PointD ptd = LLToProjection(*(pPtr++));
+                    PointD ptd = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
                     pts[ptIndex].X = (int)Math.Round((ptd.X + offX) * scaleX);
                     pts[ptIndex].Y = (int)Math.Round((ptd.Y + offY) * scaleY);
                     ++ptIndex;
@@ -3968,7 +4001,7 @@ namespace EGIS.ShapeFileLib
             return pts;
         }
 
-        protected static unsafe Point[] GetPointsD(byte* buf, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY)
+        protected static unsafe Point[] GetPointsD(byte* buf, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, bool mercProj)
         {
             Point[] pts = new Point[numPoints];
             
@@ -3976,7 +4009,7 @@ namespace EGIS.ShapeFileLib
             PointD* pPtr = (PointD*)(buf + offset);
             while (ptIndex < numPoints)
             {
-                PointD ptd = LLToProjection(*(pPtr++));
+                PointD ptd = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
                 pts[ptIndex].X = (int)Math.Round((ptd.X + offX) * scaleX);
                 pts[ptIndex].Y = (int)Math.Round((ptd.Y + offY) * scaleY);
                 ++ptIndex;
@@ -3985,7 +4018,7 @@ namespace EGIS.ShapeFileLib
         }
 
        
-        protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, float offX, float offY, float scaleX, float scaleY, ref Rectangle pixBounds)
+        protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, float offX, float offY, float scaleX, float scaleY, ref Rectangle pixBounds, bool mercProj)
         {
             Point[] pts = new Point[numPoints];
             int left = int.MaxValue;
@@ -3998,7 +4031,7 @@ namespace EGIS.ShapeFileLib
                 PointF* pPtr = (PointF*)(bPtr + offset);
                 while (ptIndex < numPoints)
                 {
-                    PointF ptf = LLToProjection(*(pPtr++));
+                    PointF ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
                     pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
                     pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
                     left = Math.Min(pts[ptIndex].X, left);
@@ -4013,7 +4046,7 @@ namespace EGIS.ShapeFileLib
             return pts;
         }
 
-        protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds)
+        protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, bool mercProj)
         {
             Point[] pts = new Point[numPoints];
             int left = int.MaxValue;
@@ -4026,7 +4059,7 @@ namespace EGIS.ShapeFileLib
                 PointF* pPtr = (PointF*)(bPtr + offset);
                 while (ptIndex < numPoints)
                 {
-                    PointD ptf = LLToProjection((PointD)(*(pPtr++)));
+                    PointD ptf = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); ;// LLToProjection((PointD)(*(pPtr++)));
                     pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
                     pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
                     left = Math.Min(pts[ptIndex].X, left);
@@ -4041,7 +4074,7 @@ namespace EGIS.ShapeFileLib
             return pts;
         }
 
-        protected static unsafe Point[] GetPointsD(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds)
+        protected static unsafe Point[] GetPointsD(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, bool mercProj)
         {
             Point[] pts = new Point[numPoints];
             int left = int.MaxValue;
@@ -4054,7 +4087,7 @@ namespace EGIS.ShapeFileLib
                 PointD* pPtr = (PointD*)(bPtr + offset);
                 while (ptIndex < numPoints)
                 {
-                    PointD ptf = LLToProjection(*(pPtr++));
+                    PointD ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
                     pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
                     pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
                     left = Math.Min(pts[ptIndex].X, left);
@@ -4069,7 +4102,7 @@ namespace EGIS.ShapeFileLib
             return pts;
         }
 
-        protected static unsafe Point[] GetPointsD(byte* buf, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds)
+        protected static unsafe Point[] GetPointsD(byte* buf, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, bool mercProj)
         {
             Point[] pts = new Point[numPoints];
             int left = int.MaxValue;
@@ -4081,7 +4114,7 @@ namespace EGIS.ShapeFileLib
             PointD* pPtr = (PointD*)(buf + offset);
             while (ptIndex < numPoints)
             {
-                PointD ptf = LLToProjection(*(pPtr++));
+                PointD ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
                 pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
                 pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
                 left = Math.Min(pts[ptIndex].X, left);
@@ -4095,7 +4128,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        protected static unsafe void GetPointsRemoveDuplicates(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, Point[] pts, ref int usedPoints)
+        protected static unsafe void GetPointsRemoveDuplicates(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, Point[] pts, ref int usedPoints, bool mercProj)
         {
             //Point[] pts = new Point[numPoints];
             int left = int.MaxValue;
@@ -4108,14 +4141,14 @@ namespace EGIS.ShapeFileLib
                 int ptIndex = 0;
                 PointF* pPtr = (PointF*)(bPtr + offset);
 
-                PointD ptda = LLToProjection((PointD)(*(pPtr++)));
+                PointD ptda = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); ;// LLToProjection((PointD)(*(pPtr++)));
                 pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scaleX);
                 pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * scaleY);
                 ++ptIndex;
                 
                 while (ptIndex < numPoints)
                 {
-                    PointD ptf = LLToProjection((PointD)(*(pPtr++)));
+                    PointD ptf = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); ;// LLToProjection((PointD)(*(pPtr++)));
                     pts[usedPoints].X = (int)Math.Round((ptf.X + offX) * scaleX);
                     pts[usedPoints].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
                     if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
@@ -4137,7 +4170,7 @@ namespace EGIS.ShapeFileLib
            // return pts;
         }
 
-        protected static unsafe void GetPointsRemoveDuplicatesD(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, Point[] pts, ref int usedPoints)
+        protected static unsafe void GetPointsRemoveDuplicatesD(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, Point[] pts, ref int usedPoints, bool mercProj)
         {
             //Point[] pts = new Point[numPoints];
             int left = int.MaxValue;
@@ -4150,14 +4183,14 @@ namespace EGIS.ShapeFileLib
                 int ptIndex = 0;
                 PointD* pPtr = (PointD*)(bPtr + offset);
 
-                PointD ptda = LLToProjection((*(pPtr++)));
+                PointD ptda = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
                 pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scaleX);
                 pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * scaleY);
                 ++ptIndex;
 
                 while (ptIndex < numPoints)
                 {
-                    PointD ptf = LLToProjection((*(pPtr++)));
+                    PointD ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
                     pts[usedPoints].X = (int)Math.Round((ptf.X + offX) * scaleX);
                     pts[usedPoints].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
                     if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
@@ -4180,7 +4213,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        protected static unsafe void GetPointsRemoveDuplicatesD(byte* buf, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, Point[] pts, ref int usedPoints)
+        protected static unsafe void GetPointsRemoveDuplicatesD(byte* buf, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, Point[] pts, ref int usedPoints, bool mercProj)
         {
             //Point[] pts = new Point[numPoints];
             int left = int.MaxValue;
@@ -4192,14 +4225,14 @@ namespace EGIS.ShapeFileLib
             int ptIndex = 0;
             PointD* pPtr = (PointD*)(buf + offset);
 
-            PointD ptda = LLToProjection((*(pPtr++)));
+            PointD ptda = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
             pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scaleX);
             pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * scaleY);
             ++ptIndex;
 
             while (ptIndex < numPoints)
             {
-                PointD ptf = LLToProjection((*(pPtr++)));
+                PointD ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
                 pts[usedPoints].X = (int)Math.Round((ptf.X + offX) * scaleX);
                 pts[usedPoints].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
                 if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
@@ -4221,7 +4254,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        protected static unsafe void GetPointsRemoveDuplicates(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, Point[] pts, ref int usedPoints)
+        protected static unsafe void GetPointsRemoveDuplicates(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, Point[] pts, ref int usedPoints, bool mercProj)
         {
             //if (numPoints == 2)
             //{
@@ -4233,14 +4266,14 @@ namespace EGIS.ShapeFileLib
             fixed (byte* bPtr = data)
             {                
                 PointF* pPtr = (PointF*)(bPtr + offset);
-                PointD ptda = LLToProjection((PointD)(*(pPtr++)));
+                PointD ptda = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); //LLToProjection((PointD)(*(pPtr++)));
                 pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scaleX);
                 pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * scaleY);
                 ++ptIndex;
 
                 while (ptIndex < numPoints)
                 {
-                    PointD ptd = LLToProjection((PointD)(*(pPtr++)));
+                    PointD ptd = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); //LLToProjection((PointD)(*(pPtr++)));
                     pts[usedPoints].X = (int)Math.Round((ptd.X + offX) * scaleX);
                     pts[usedPoints].Y = (int)Math.Round((ptd.Y + offY) * scaleY);
                     if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
@@ -4257,7 +4290,7 @@ namespace EGIS.ShapeFileLib
             //return pts;
         }
 
-        protected static unsafe void GetPointsRemoveDuplicatesD(byte[] data, int offset, int numPoints, ref double offX, ref double offY, ref double scale, Point[] pts, ref int usedPoints)
+        protected static unsafe void GetPointsRemoveDuplicatesD(byte[] data, int offset, int numPoints, ref double offX, ref double offY, ref double scale, Point[] pts, ref int usedPoints, bool MercProj)
         {
             //if (numPoints == 2)
             //{
@@ -4269,14 +4302,14 @@ namespace EGIS.ShapeFileLib
             fixed (byte* bPtr = data)
             {
                 PointD* pPtr = (PointD*)(bPtr + offset);
-                PointD ptda = LLToProjection(*(pPtr++));
+                PointD ptda = MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
                 pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scale);
                 pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * -scale);
                 ++ptIndex;
 
                 while (ptIndex < numPoints)
                 {
-                    PointD ptd = LLToProjection((*(pPtr++)));
+                    PointD ptd = MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
                     pts[usedPoints].X = (int)Math.Round((ptd.X + offX) * scale);
                     pts[usedPoints].Y = (int)Math.Round((ptd.Y + offY) * -scale);
                     if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
@@ -4293,7 +4326,7 @@ namespace EGIS.ShapeFileLib
             //return pts;
         }
 
-        protected static unsafe void GetPointsRemoveDuplicatesD(byte* dataPtr, int offset, int numPoints, ref double offX, ref double offY, ref double scale, Point[] pts, ref int usedPoints)
+        protected static unsafe void GetPointsRemoveDuplicatesD(byte* dataPtr, int offset, int numPoints, ref double offX, ref double offY, ref double scale, Point[] pts, ref int usedPoints, bool MercProj)
         {
             //if (numPoints == 2)
             //{
@@ -4304,14 +4337,14 @@ namespace EGIS.ShapeFileLib
             usedPoints = 1;
             
             PointD* pPtr = (PointD*)(dataPtr + offset);
-            PointD ptda = LLToProjection(*(pPtr++));
+            PointD ptda = MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
             pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scale);
             pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * -scale);
             ++ptIndex;
 
             while (ptIndex < numPoints)
             {
-                PointD ptd = LLToProjection((*(pPtr++)));
+                PointD ptd = MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
                 pts[usedPoints].X = (int)Math.Round((ptd.X + offX) * scale);
                 pts[usedPoints].Y = (int)Math.Round((ptd.Y + offY) * -scale);
                 if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
@@ -4506,7 +4539,8 @@ namespace EGIS.ShapeFileLib
             color = (color << 8) | (c.R & 0xff);
             return color;
         }
-        #endregion 
+        
+#endregion 
     }
 
     internal struct IndexAnglePair
@@ -4603,23 +4637,23 @@ namespace EGIS.ShapeFileLib
         }
 
 
-		public override void paint(Graphics g, Size clientArea, RectangleD extent,Stream shapeFileStream)
+		public override void paint(Graphics g, Size clientArea, RectangleD extent,Stream shapeFileStream, ProjectionType projectionType)
 		{
-			paint(g, clientArea, extent, shapeFileStream, null);
+			paint(g, clientArea, extent, shapeFileStream, null, projectionType);
 		}
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer, ProjectionType projectionType)
         {
             float zoom = (float)(clientArea.Width / extent.Width);
 
             if (SFRecordCol.RenderAllRecordsAtZoomLevel(zoom, renderer))
             {
-                paintAllRecords(g, clientArea, extent, shapeFileStream, renderer);
+                paintAllRecords(g, clientArea, extent, shapeFileStream, renderer, projectionType);
             }
             
         }
 
-        private void paintAllRecords(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        private void paintAllRecords(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
 		{
             bool UseGDI = this.UseGDI(extent);
             
@@ -4639,6 +4673,8 @@ namespace EGIS.ShapeFileLib
             double offX = -projectedExtent.Left;
             double offY = -projectedExtent.Bottom;
             RectangleD actualExtent = projectedExtent;
+
+            bool MercProj = (projectionType == ProjectionType.Mercator);
             
             if (MercProj)
             {
@@ -4779,10 +4815,10 @@ namespace EGIS.ShapeFileLib
                                     {
                                         if (renderDuplicateFields)
                                         {
-                                            List<IndexAnglePair> iapList = GetPointsFAngle(data, 0, nextRec.NumPoints, minLabelLength);
+                                            List<IndexAnglePair> iapList = GetPointsFAngle(data, 0, nextRec.NumPoints, minLabelLength, MercProj);
                                             for (int li = iapList.Count - 1; li >= 0; li--)
                                             {
-                                                pts = GetPoints(data, iapList[li].PointIndex << 3, 2, offX, offY, scaleX, -scaleX);
+                                                pts = GetPoints(data, iapList[li].PointIndex << 3, 2, offX, offY, scaleX, -scaleX, MercProj);
                                                 float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                 if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
                                                 {
@@ -4797,10 +4833,10 @@ namespace EGIS.ShapeFileLib
                                         else
                                         {
                                             int pointIndex = 0;
-                                            float angle = GetPointsFAngle(data, 0, nextRec.NumPoints, ref pointIndex, projectedExtent);
+                                            float angle = GetPointsFAngle(data, 0, nextRec.NumPoints, ref pointIndex, projectedExtent, MercProj);
                                             if (!angle.Equals(float.NaN))
                                             {
-                                                pts = GetPoints(data, pointIndex << 3, 2, offX, offY, scaleX, -scaleX);
+                                                pts = GetPoints(data, pointIndex << 3, 2, offX, offY, scaleX, -scaleX, MercProj);
                                                 float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                 if (d0 > 6)
                                                 {
@@ -4865,12 +4901,12 @@ namespace EGIS.ShapeFileLib
                                     if(UseGDI)
                                     {                                        
                                         int usedPoints = 0;
-                                        GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, -scaleX, sharedPoints, ref usedPoints);
+                                        GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, -scaleX, sharedPoints, ref usedPoints, MercProj);
                                         NativeMethods.DrawPolyline(dc,sharedPoints, usedPoints);
                                     }
                                     else
                                     {                                        
-                                        pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY);                                        
+                                        pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, MercProj);                                        
                                         //if (index == selectedRecordIndex && selectPen != null)
                                         if(recordSelected[index] && selectPen != null)
                                         {
@@ -5162,9 +5198,9 @@ namespace EGIS.ShapeFileLib
 			this.Recs = recs;
 		}
 
-		public override void paint(Graphics g, Size clientArea, RectangleD extent,Stream shapeFileStream)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
 		{
-			paint(g, clientArea, extent, shapeFileStream, null);
+			paint(g, clientArea, extent, shapeFileStream, null, projectionType);
 		}
 
         public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
@@ -5197,7 +5233,7 @@ namespace EGIS.ShapeFileLib
             throw new NotImplementedException();
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer, ProjectionType projectionType)
         {
             bool UseGDI = this.UseGDI(extent);
             //DateTime start = DateTime.Now;
@@ -5217,6 +5253,8 @@ namespace EGIS.ShapeFileLib
             double offX = -projectedExtent.Left;
             double offY = -projectedExtent.Bottom;
             RectangleD actualExtent = projectedExtent;
+
+            bool MercProj = projectionType == ProjectionType.Mercator;
 
             if (MercProj)
             {
@@ -5345,10 +5383,10 @@ namespace EGIS.ShapeFileLib
                                     {
                                         if (renderDuplicateFields)
                                         {
-                                            List<IndexAnglePair> iapList = GetPointsFAngle(data, 0, nextRec.NumPoints, minLabelLength);
+                                            List<IndexAnglePair> iapList = GetPointsFAngle(data, 0, nextRec.NumPoints, minLabelLength, MercProj);
                                             for (int li = iapList.Count - 1; li >= 0; li--)
                                             {
-                                                pts = GetPoints(data, iapList[li].PointIndex << 3, 2, offX, offY, scaleX, -scaleX);
+                                                pts = GetPoints(data, iapList[li].PointIndex << 3, 2, offX, offY, scaleX, -scaleX, MercProj);
                                                 float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                 if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
                                                 {
@@ -5364,10 +5402,10 @@ namespace EGIS.ShapeFileLib
                                         {
 
                                             int pointIndex = 0;
-                                            float angle = GetPointsFAngle(data, 0, nextRec.NumPoints, ref pointIndex, actualExtent);
+                                            float angle = GetPointsFAngle(data, 0, nextRec.NumPoints, ref pointIndex, actualExtent, MercProj);
                                             if (!angle.Equals(float.NaN))
                                             {                                               
-                                                pts = GetPoints(data, pointIndex << 3, 2, offX, offY, scaleX, -scaleX);
+                                                pts = GetPoints(data, pointIndex << 3, 2, offX, offY, scaleX, -scaleX, MercProj);
                                                 float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                 if (Math.Abs(angle) > 90f && Math.Abs(angle) <= 270f)
                                                 {
@@ -5400,12 +5438,12 @@ namespace EGIS.ShapeFileLib
                                     }
                                     if (UseGDI)
                                     {
-                                        pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, -scaleX);
+                                        pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, -scaleX, MercProj);
                                         NativeMethods.DrawPolyline(dc, pts, numPoints);
                                     }
                                     else
                                     {
-                                        pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY);
+                                        pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, MercProj);
                                         g.DrawLines(gdiplusPen, pts);
 
                                         if (renderRailway)
@@ -5597,24 +5635,24 @@ namespace EGIS.ShapeFileLib
             throw new NotImplementedException();
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
 		{
-			paint(g, clientArea, extent, shapeFileStream, null);
+			paint(g, clientArea, extent, shapeFileStream, null, projectionType);
 		}
-        
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             if (this.UseGDI(extent))
             {
-                paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings);
+                paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
             else
             {
-                paintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings);
+                paintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
         }
 
-        private void paintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        private void paintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {                      
             Pen gdiplusPen = null;
             Brush gdiplusBrush = null;
@@ -5631,6 +5669,8 @@ namespace EGIS.ShapeFileLib
             bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
 
             Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
+
+            bool MercProj = projectionType == ProjectionType.Mercator;
 
             if (MercProj)
             {
@@ -5715,7 +5755,7 @@ namespace EGIS.ShapeFileLib
                             }                           
                             if (labelfields)
                             {
-                                pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds);
+                                pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
                                 if (partBounds.Width > 5 && partBounds.Height > 5)
                                 {
                                     partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
@@ -5723,7 +5763,7 @@ namespace EGIS.ShapeFileLib
                             }
                             else
                             {
-                                pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY);
+                                pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, MercProj);
                             }
                             //if (renderInterior)
                             //{
@@ -5801,7 +5841,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        private void paintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        private void paintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {           
             IntPtr dc = IntPtr.Zero;
             IntPtr gdiBrush = IntPtr.Zero;
@@ -5821,7 +5861,7 @@ namespace EGIS.ShapeFileLib
             bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
 
             Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
-
+            bool MercProj = projectionType == ProjectionType.Mercator;
             if (MercProj)
             {
                 //if we're using a Mercator Projection then convert the actual Extent to LL coords
@@ -5921,7 +5961,7 @@ namespace EGIS.ShapeFileLib
                             int usedPoints = 0;
                             if (labelfields)
                             {
-                                GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints);
+                                GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints, MercProj);
                                 if (partBounds.Width > 5 && partBounds.Height > 5)
                                 {
                                     partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
@@ -5929,7 +5969,7 @@ namespace EGIS.ShapeFileLib
                             }
                             else
                             {
-                                GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, sharedPointBuffer, ref usedPoints);
+                                GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, sharedPointBuffer, ref usedPoints, MercProj);
                             }
                             NativeMethods.DrawPolygon(dc, sharedPointBuffer, usedPoints);
                                                         
@@ -6215,12 +6255,12 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
-            paint(g, clientArea, extent, shapeFileStream, null);
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             bool UseGDI = this.UseGDI(extent);
 
@@ -6245,7 +6285,7 @@ namespace EGIS.ShapeFileLib
             bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
 
             Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
-
+            bool MercProj = projectionType == ProjectionType.Mercator;
             if (MercProj)
             {
                 //if we're using a Mercator Projection then convert the actual Extent to LL coords
@@ -6392,7 +6432,7 @@ namespace EGIS.ShapeFileLib
                                 int usedPoints = 0;
                                 if (labelfields)
                                 {
-                                    GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints);
+                                    GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints, MercProj);
                                     if (partBounds.Width > 5 && partBounds.Height > 5)
                                     {
                                         partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
@@ -6400,7 +6440,7 @@ namespace EGIS.ShapeFileLib
                                 }
                                 else
                                 {
-                                    GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, sharedPointBuffer, ref usedPoints);
+                                    GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, sharedPointBuffer, ref usedPoints, MercProj);
                                 }
                                 NativeMethods.DrawPolygon(dc, sharedPointBuffer, usedPoints);
                             }
@@ -6408,7 +6448,7 @@ namespace EGIS.ShapeFileLib
                             {
                                 if (labelfields)
                                 {
-                                    pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds);
+                                    pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
                                     if (partBounds.Width > 5 && partBounds.Height > 5)
                                     {
                                         partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
@@ -6416,7 +6456,7 @@ namespace EGIS.ShapeFileLib
                                 }
                                 else
                                 {
-                                    pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY);
+                                    pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, MercProj);
                                 }
                                 if (renderInterior)
                                 {
@@ -6624,12 +6664,12 @@ namespace EGIS.ShapeFileLib
             throw new NotImplementedException();
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
 		{
-			paint(g, clientArea, extent, shapeFileStream, null);
+			paint(g, clientArea, extent, shapeFileStream, null, projectionType);
 		}
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
 		{
             bool useGDI = this.UseGDI(extent);
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);			
@@ -6672,7 +6712,7 @@ namespace EGIS.ShapeFileLib
             bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
             
             bool drawPoint = (symbol == null && !useCustomImageSymbols);
-            
+            bool MercProj = projectionType == ProjectionType.Mercator;
             if (MercProj)
             {
                 //if we're using a Mercator Projection then convert the actual Extent to LL coords
@@ -6750,7 +6790,7 @@ namespace EGIS.ShapeFileLib
                                 }                                
                             }
 
-                            PointD ptf = LLToProjection((PointD)nextRec.pt);
+                            PointD ptf = MercProj ? LLToProjection((PointD)nextRec.pt) : (PointD)nextRec.pt; //LLToProjection((PointD)nextRec.pt);
                             pt.X = (int)Math.Round((ptf.X + offX) * scaleX);
                             pt.Y = (int)Math.Round((ptf.Y + offY) * scaleY);
 
@@ -6831,7 +6871,7 @@ namespace EGIS.ShapeFileLib
                                 }
                             }
 
-                            PointD ptD = LLToProjection((PointD)nextRec.pt);
+                            PointD ptD = MercProj ? LLToProjection((PointD)nextRec.pt) : (PointD)nextRec.pt; //LLToProjection((PointD)nextRec.pt);
                         
                             PointF pt = new PointF((float)((ptD.X + offX) * scaleX), (float)((ptD.Y + offY) * scaleY));
                             if (drawPoint)
@@ -7032,25 +7072,25 @@ namespace EGIS.ShapeFileLib
             return null;
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
-            paint(g, clientArea, extent, shapeFileStream, null);
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             if (this.UseGDI(extent))
             {
-                paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings);
+                paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
             else
             {
-                paintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings);
+                paintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
             //paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings);
         }
 
-        private unsafe void paintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        private unsafe void paintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             Pen gdiplusPen = null;
             Brush gdiplusBrush = null;
@@ -7080,6 +7120,7 @@ namespace EGIS.ShapeFileLib
             bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
 
             Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
+            bool MercProj = projectionType == ProjectionType.Mercator;
 
             if (MercProj)
             {
@@ -7188,7 +7229,7 @@ namespace EGIS.ShapeFileLib
 
                                 if (labelfields)
                                 {
-                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, ref partBounds);
+                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
                                     if (partBounds.Width > 5 && partBounds.Height > 5)
                                     {
                                         partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
@@ -7196,7 +7237,7 @@ namespace EGIS.ShapeFileLib
                                 }
                                 else
                                 {
-                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY);
+                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, MercProj);
                                 }                            
                                 gp.AddPolygon(pts);
                             }
@@ -7281,7 +7322,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        private unsafe void paintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        private unsafe void paintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             IntPtr dc = IntPtr.Zero;
             IntPtr gdiBrush = IntPtr.Zero;
@@ -7313,6 +7354,7 @@ namespace EGIS.ShapeFileLib
             bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
 
             Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
+            bool MercProj=projectionType == ProjectionType.Mercator;
 
             if (MercProj)
             {
@@ -7436,7 +7478,7 @@ namespace EGIS.ShapeFileLib
                                 int usedPoints = 0;
                                 if (labelfields)
                                 {
-                                    GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints);
+                                    GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints, MercProj);
                                     if (partBounds.Width > 5 && partBounds.Height > 5)
                                     {
                                         partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
@@ -7444,7 +7486,7 @@ namespace EGIS.ShapeFileLib
                                 }
                                 else
                                 {
-                                    GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPointBuffer, ref usedPoints);
+                                    GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPointBuffer, ref usedPoints, MercProj);
                                 }
                                 if (recordSelected[index])
                                 {
@@ -7823,26 +7865,26 @@ namespace EGIS.ShapeFileLib
             return null;
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
-            paint(g, clientArea, extent, shapeFileStream, null);
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             bool useGDI = (this.UseGDI(extent) && renderSettings.GetImageSymbol()==null);
 
             if (useGDI)
             {
-                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings);
+                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
             else
             {
-                PaintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings);
+                PaintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
         }
 
-        public unsafe void PaintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        public unsafe void PaintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             //bool useGDI = this.UseGDI(extent);
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
@@ -7895,7 +7937,7 @@ namespace EGIS.ShapeFileLib
                 bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
 
                 bool drawPoint = (symbol == null && !useCustomImageSymbols);
-
+                bool MercProj=projectionType == ProjectionType.Mercator;
                 if (MercProj)
                 {
                     //if we're using a Mercator Projection then convert the actual Extent to LL coords
@@ -7987,7 +8029,15 @@ namespace EGIS.ShapeFileLib
                                     }
                                 }
                                 double px, py;
-                                LLToProjection(ref nextRec->X, ref nextRec->Y, out px, out py);
+                                if (MercProj)
+                                {
+                                    LLToProjection(ref nextRec->X, ref nextRec->Y, out px, out py);
+                                }
+                                else
+                                {
+                                    px = nextRec->X;
+                                    py = nextRec->Y;
+                                }
                                 
                                 PointF pt = new PointF((float)((px + offX) * scaleX), (float)((py + offY) * scaleY));
                                 if (drawPoint)
@@ -8112,7 +8162,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        public unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        public unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
             double scaleX = (double)(clientArea.Width / extent.Width);
@@ -8146,7 +8196,7 @@ namespace EGIS.ShapeFileLib
 
                 Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
                 bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
-                
+                bool MercProj = projectionType == ProjectionType.Mercator;
                 if (MercProj)
                 {
                     //if we're using a Mercator Projection then convert the actual Extent to LL coords
@@ -8250,7 +8300,15 @@ namespace EGIS.ShapeFileLib
                                 }
                                 double px, py;
                                 //PointD ptf = LLToProjection(new PointD(nextRec.X,nextRec.Y));
-                                LLToProjection(ref nextRec->X, ref nextRec->Y, out px, out py);
+                                if (MercProj)
+                                {
+                                    LLToProjection(ref nextRec->X, ref nextRec->Y, out px, out py);
+                                }
+                                else
+                                {
+                                    px = nextRec->X;
+                                    py = nextRec->Y;
+                                }
                                 pt.X = (int)Math.Round((px + offX) * scaleX);
                                 pt.Y = (int)Math.Round((py + offY) * scaleY);
 
@@ -8520,27 +8578,27 @@ namespace EGIS.ShapeFileLib
             return dataList;
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
-            paint(g, clientArea, extent, shapeFileStream, null);
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             bool useGDI = (this.UseGDI(extent) && renderSettings.GetImageSymbol() == null);
 
             if (useGDI)
             {
-                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings);
+                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
             else
             {
-                PaintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings);
+                PaintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
         }
 
-        
-        public unsafe void PaintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+
+        public unsafe void PaintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
             double scaleX = (double)(clientArea.Width / extent.Width);
@@ -8591,7 +8649,7 @@ namespace EGIS.ShapeFileLib
                 bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
 
                 bool drawPoint = (symbol == null && !useCustomImageSymbols);
-
+                bool MercProj = projectionType == ProjectionType.Mercator;
                 if (MercProj)
                 {
                     //if we're using a Mercator Projection then convert the actual Extent to LL coords
@@ -8683,7 +8741,15 @@ namespace EGIS.ShapeFileLib
                                     }
                                 }
                                 double px, py;
-                                LLToProjection(ref nextRec->X, ref nextRec->Y, out px, out py);
+                                if (MercProj)
+                                {
+                                    LLToProjection(ref nextRec->X, ref nextRec->Y, out px, out py);
+                                }
+                                else
+                                {
+                                    px = nextRec->X;
+                                    py = nextRec->Y;
+                                }
 
                                 PointF pt = new PointF((float)((px + offX) * scaleX), (float)((py + offY) * scaleY));
                                 if (drawPoint)
@@ -8808,7 +8874,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        public unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        public unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
             double scaleX = (double)(clientArea.Width / extent.Width);
@@ -8842,7 +8908,7 @@ namespace EGIS.ShapeFileLib
 
                 Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
                 bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
-
+                bool MercProj = projectionType == ProjectionType.Mercator;
                 if (MercProj)
                 {
                     //if we're using a Mercator Projection then convert the actual Extent to LL coords
@@ -8944,7 +9010,15 @@ namespace EGIS.ShapeFileLib
                                     }
                                 }
                                 double px, py;
-                                LLToProjection(ref nextRec->X, ref nextRec->Y, out px, out py);
+                                if (MercProj)
+                                {
+                                    LLToProjection(ref nextRec->X, ref nextRec->Y, out px, out py);
+                                }
+                                else
+                                {
+                                    px = nextRec->X;
+                                    py = nextRec->Y;
+                                }
                                 pt.X = (int)Math.Round((px + offX) * scaleX);
                                 pt.Y = (int)Math.Round((py + offY) * scaleY);
 
@@ -9198,25 +9272,25 @@ namespace EGIS.ShapeFileLib
 
         #region Paint methods
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
-            paint(g, clientArea, extent, shapeFileStream, null);
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer, ProjectionType projectionType)
         {
             if (this.UseGDI(extent))
             {
-                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderer);
+                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderer, projectionType);
             }
             else
             {
-                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderer);
+                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderer, projectionType);
             }
 
         }
-        
-        private unsafe void PaintHighQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+
+        private unsafe void PaintHighQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             Pen gdiplusPen = null;
             Pen rwPen = null;
@@ -9234,6 +9308,7 @@ namespace EGIS.ShapeFileLib
             }
             bool fileMapped = (mapView != IntPtr.Zero);
 
+            bool MercProj = projectionType == ProjectionType.Mercator;
             //Bitmap bm = new Bitmap(clientArea.Width, clientArea.Height, g);
             //IntPtr dc = g.GetHdc();            
             //IntPtr gdiplusGraphics = NativeMethods.CreateGraphics(dc);
@@ -9381,10 +9456,10 @@ namespace EGIS.ShapeFileLib
                                             {
                                                 if (renderDuplicateFields)
                                                 {
-                                                    List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, minLabelLength);
+                                                    List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, minLabelLength, MercProj);
                                                     for (int li = iapList.Count - 1; li >= 0; li--)
                                                     {
-                                                        pts = GetPointsD(dataPtr, 8 + dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                        pts = GetPointsD(dataPtr, 8 + dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                         float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                         if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
                                                         {
@@ -9399,10 +9474,10 @@ namespace EGIS.ShapeFileLib
                                                 else
                                                 {
                                                     int pointIndex = 0;
-                                                    float angle = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent);
+                                                    float angle = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent, MercProj);
                                                     if (!angle.Equals(float.NaN))
                                                     {
-                                                        pts = GetPointsD(dataPtr, 8 + dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                        pts = GetPointsD(dataPtr, 8 + dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                         float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                         if (d0 > 6)
                                                         {
@@ -9448,7 +9523,7 @@ namespace EGIS.ShapeFileLib
                                             {
                                                 continue;
                                             }
-                                            pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY);
+                                            pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY,MercProj);
                                             //if (index == selectedRecordIndex && selectPen != null)
                                             if(recordSelected[index] && selectPen !=null)
                                             {
@@ -9598,7 +9673,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        private unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        private unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {            
             IntPtr dc = IntPtr.Zero;
             IntPtr gdiPen = IntPtr.Zero;
@@ -9623,6 +9698,8 @@ namespace EGIS.ShapeFileLib
             double offX = -projectedExtent.Left;
             double offY = -projectedExtent.Bottom;
             RectangleD actualExtent = projectedExtent;
+
+            bool MercProj = projectionType == ProjectionType.Mercator;
 
             if (MercProj)
             {
@@ -9748,10 +9825,10 @@ namespace EGIS.ShapeFileLib
                                         {
                                             if (renderDuplicateFields)
                                             {
-                                                List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, minLabelLength);
+                                                List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, minLabelLength, MercProj);
                                                 for (int li = iapList.Count - 1; li >= 0; li--)
                                                 {
-                                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                     float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                     if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
                                                     {
@@ -9766,10 +9843,10 @@ namespace EGIS.ShapeFileLib
                                             else
                                             {
                                                 int pointIndex = 0;
-                                                float angle = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent);
+                                                float angle = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent, MercProj);
                                                 if (!angle.Equals(float.NaN))
                                                 {
-                                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                     float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                     if (d0 > 6)
                                                     {
@@ -9815,7 +9892,7 @@ namespace EGIS.ShapeFileLib
                                             continue;
                                         }                                        
                                         int usedPoints = 0;
-                                        GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPoints, ref usedPoints);
+                                        GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPoints, ref usedPoints, MercProj);
 
                                         if (recordSelected[index])
                                         {
@@ -10171,25 +10248,25 @@ namespace EGIS.ShapeFileLib
 
         #region Paint methods
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
-            paint(g, clientArea, extent, shapeFileStream, null);
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer, ProjectionType projectionType)
         {
             if (this.UseGDI(extent))
             {
-                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderer);
+                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderer, projectionType);
             }
             else
             {
-                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderer);
+                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderer, projectionType);
             }
 
         }
 
-        private unsafe void PaintHighQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        private unsafe void PaintHighQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             Pen gdiplusPen = null;
             Pen rwPen = null;
@@ -10206,6 +10283,8 @@ namespace EGIS.ShapeFileLib
                 mapView = NativeMethods.MapViewOfFile(fileMappingPtr, NativeMethods.FileMapAccess.FILE_MAP_READ, 0, 0, 0);
             }
             bool fileMapped = (mapView != IntPtr.Zero);
+
+            bool MercProj = projectionType == ProjectionType.Mercator;
 
             try
             {
@@ -10349,10 +10428,10 @@ namespace EGIS.ShapeFileLib
                                             {
                                                 if (renderDuplicateFields)
                                                 {
-                                                    List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, minLabelLength);
+                                                    List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, minLabelLength, MercProj);
                                                     for (int li = iapList.Count - 1; li >= 0; li--)
                                                     {
-                                                        pts = GetPointsD(dataPtr, 8 + dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                        pts = GetPointsD(dataPtr, 8 + dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                         float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                         if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
                                                         {
@@ -10367,10 +10446,10 @@ namespace EGIS.ShapeFileLib
                                                 else
                                                 {
                                                     int pointIndex = 0;
-                                                    float angle = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent);
+                                                    float angle = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent, MercProj);
                                                     if (!angle.Equals(float.NaN))
                                                     {
-                                                        pts = GetPointsD(dataPtr, 8 + dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                        pts = GetPointsD(dataPtr, 8 + dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                         float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                         if (d0 > 6)
                                                         {
@@ -10417,7 +10496,7 @@ namespace EGIS.ShapeFileLib
                                                 continue;
                                             }
                                            
-                                            pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY);
+                                            pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, MercProj);
                                             //if (index == selectedRecordIndex && selectPen != null)
                                             if(recordSelected[index] && selectPen != null)
                                             {
@@ -10564,7 +10643,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        private unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        private unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             IntPtr dc = IntPtr.Zero;
             IntPtr gdiPen = IntPtr.Zero;
@@ -10588,6 +10667,8 @@ namespace EGIS.ShapeFileLib
             double offX = -projectedExtent.Left;
             double offY = -projectedExtent.Bottom;
             RectangleD actualExtent = projectedExtent;
+
+            bool MercProj = projectionType == ProjectionType.Mercator;
 
             if (MercProj)
             {
@@ -10713,10 +10794,10 @@ namespace EGIS.ShapeFileLib
                                         {
                                             if (renderDuplicateFields)
                                             {
-                                                List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, minLabelLength);
+                                                List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, minLabelLength, MercProj);
                                                 for (int li = iapList.Count - 1; li >= 0; li--)
                                                 {
-                                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                     float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                     if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
                                                     {
@@ -10731,10 +10812,10 @@ namespace EGIS.ShapeFileLib
                                             else
                                             {
                                                 int pointIndex = 0;
-                                                float angle = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent);
+                                                float angle = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent, MercProj);
                                                 if (!angle.Equals(float.NaN))
                                                 {
-                                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                     float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                     if (d0 > 6)
                                                     {
@@ -10780,7 +10861,7 @@ namespace EGIS.ShapeFileLib
                                             continue;
                                         }
                                         int usedPoints = 0;
-                                        GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPoints, ref usedPoints);
+                                        GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPoints, ref usedPoints, MercProj);
                                         if (recordSelected[index])
                                         {
                                             IntPtr tempPen = IntPtr.Zero;
@@ -11177,24 +11258,24 @@ namespace EGIS.ShapeFileLib
             return dataList;
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
-            paint(g, clientArea, extent, shapeFileStream, null);
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             if (this.UseGDI(extent))
             {
-                paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings);
+                paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
             else
             {
-                paintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings);
+                paintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
         }
 
-        private unsafe void paintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        private unsafe void paintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             Pen gdiplusPen = null;
             Brush gdiplusBrush = null;
@@ -11223,6 +11304,8 @@ namespace EGIS.ShapeFileLib
             bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
 
             Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
+
+            bool MercProj = projectionType == ProjectionType.Mercator;
 
             if (MercProj)
             {
@@ -11333,7 +11416,7 @@ namespace EGIS.ShapeFileLib
 
                                 if (labelfields)
                                 {
-                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, ref partBounds);
+                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
                                     if (partBounds.Width > 5 && partBounds.Height > 5)
                                     {
                                         partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
@@ -11341,7 +11424,7 @@ namespace EGIS.ShapeFileLib
                                 }
                                 else
                                 {
-                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY);
+                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, MercProj);
                                 }
                                 gp.AddPolygon(pts);
                             }
@@ -11428,7 +11511,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        private unsafe void paintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        private unsafe void paintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             IntPtr dc = IntPtr.Zero;
             IntPtr gdiBrush = IntPtr.Zero;
@@ -11461,7 +11544,7 @@ namespace EGIS.ShapeFileLib
             bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
 
             Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
-
+            bool MercProj = projectionType == ProjectionType.Mercator;
             if (MercProj)
             {
                 //if we're using a Mercator Projection then convert the actual Extent to LL coords
@@ -11583,7 +11666,7 @@ namespace EGIS.ShapeFileLib
                                 int usedPoints = 0;
                                 if (labelfields)
                                 {
-                                    GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints);
+                                    GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints, MercProj);
                                     if (partBounds.Width > 5 && partBounds.Height > 5)
                                     {
                                         partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
@@ -11591,7 +11674,7 @@ namespace EGIS.ShapeFileLib
                                 }
                                 else
                                 {
-                                    GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPointBuffer, ref usedPoints);
+                                    GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPointBuffer, ref usedPoints, MercProj);
                                 }
                                 if (recordSelected[index])
                                 {
@@ -12019,25 +12102,25 @@ namespace EGIS.ShapeFileLib
 
         #region Paint methods
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
-            paint(g, clientArea, extent, shapeFileStream, null);
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer, ProjectionType projectionType)
         {
             if (this.UseGDI(extent))
             {
-                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderer);
+                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderer, projectionType);
             }
             else
             {
-                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderer);
+                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderer, projectionType);
             }
 
         }
 
-        private unsafe void PaintHighQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        private unsafe void PaintHighQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             Pen gdiplusPen = null;
             Pen rwPen = null;
@@ -12064,6 +12147,8 @@ namespace EGIS.ShapeFileLib
                 double offX = -projectedExtent.Left;
                 double offY = -projectedExtent.Bottom;
                 RectangleD actualExtent = projectedExtent;
+
+                bool MercProj = projectionType == ProjectionType.Mercator;
 
                 if (MercProj)
                 {
@@ -12196,10 +12281,10 @@ namespace EGIS.ShapeFileLib
                                             {
                                                 if (renderDuplicateFields)
                                                 {
-                                                    List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, dataOffset, nextRec->NumPoints, minLabelLength);
+                                                    List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, dataOffset, nextRec->NumPoints, minLabelLength, MercProj);
                                                     for (int li = iapList.Count - 1; li >= 0; li--)
                                                     {
-                                                        pts = GetPointsD(dataPtr, dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                        pts = GetPointsD(dataPtr, dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                         float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                         if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
                                                         {
@@ -12214,10 +12299,10 @@ namespace EGIS.ShapeFileLib
                                                 else
                                                 {
                                                     int pointIndex = 0;
-                                                    float angle = GetPointsDAngle(dataPtr, dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent);
+                                                    float angle = GetPointsDAngle(dataPtr, dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent, MercProj);
                                                     if (!angle.Equals(float.NaN))
                                                     {
-                                                        pts = GetPointsD(dataPtr, dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                        pts = GetPointsD(dataPtr, dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                         float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                         if (d0 > 6)
                                                         {
@@ -12263,7 +12348,7 @@ namespace EGIS.ShapeFileLib
                                             {
                                                 continue;
                                             }
-                                            pts = GetPointsD(dataPtr, dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY);
+                                            pts = GetPointsD(dataPtr, dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, MercProj);
                                             if (recordSelected[index] && selectPen != null)
                                             {
                                                 g.DrawLines(selectPen, pts);
@@ -12412,7 +12497,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        private unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings)
+        private unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             IntPtr dc = IntPtr.Zero;
             IntPtr gdiPen = IntPtr.Zero;
@@ -12437,6 +12522,8 @@ namespace EGIS.ShapeFileLib
             double offX = -projectedExtent.Left;
             double offY = -projectedExtent.Bottom;
             RectangleD actualExtent = projectedExtent;
+
+            bool MercProj = projectionType == ProjectionType.Mercator;
 
             if (MercProj)
             {
@@ -12562,10 +12649,10 @@ namespace EGIS.ShapeFileLib
                                         {
                                             if (renderDuplicateFields)
                                             {
-                                                List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, dataOffset, nextRec->NumPoints, minLabelLength);
+                                                List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, dataOffset, nextRec->NumPoints, minLabelLength, MercProj);
                                                 for (int li = iapList.Count - 1; li >= 0; li--)
                                                 {
-                                                    pts = GetPointsD(dataPtr, dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                    pts = GetPointsD(dataPtr, dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                     float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                     if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
                                                     {
@@ -12580,10 +12667,10 @@ namespace EGIS.ShapeFileLib
                                             else
                                             {
                                                 int pointIndex = 0;
-                                                float angle = GetPointsDAngle(dataPtr, dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent);
+                                                float angle = GetPointsDAngle(dataPtr, dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent, MercProj);
                                                 if (!angle.Equals(float.NaN))
                                                 {
-                                                    pts = GetPointsD(dataPtr,dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX);
+                                                    pts = GetPointsD(dataPtr,dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                     float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                     if (d0 > 6)
                                                     {
@@ -12629,7 +12716,7 @@ namespace EGIS.ShapeFileLib
                                             continue;
                                         }
                                         int usedPoints = 0;
-                                        GetPointsRemoveDuplicatesD(dataPtr, dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPoints, ref usedPoints);
+                                        GetPointsRemoveDuplicatesD(dataPtr, dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPoints, ref usedPoints, MercProj);
 
                                         if (recordSelected[index])
                                         {

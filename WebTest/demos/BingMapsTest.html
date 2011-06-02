@@ -1,0 +1,90 @@
+﻿
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+   
+<head>
+ 
+<title></title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<!--<script type="text/javascript" src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.2"></script>-->
+
+
+<script type="text/javascript" src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.3"></script>
+
+<script type="text/javascript">
+
+    var map = null;
+      
+	var layer;
+	var layerID = "egislid";
+
+
+    function GetMap()
+    {
+        map = new VEMap('myMap');
+	    map.LoadMap();         
+        CreateLayer();
+		map.SetCenterAndZoom(new VELatLong(35, -100), 4);
+    }
+
+
+	function GetEGISTile(context,obj)
+	{
+		var x = context.XPos;
+		var y = context.YPos;
+		var z = context.ZoomLevel;
+        var renderType = document.getElementById('rendertype').selectedIndex;
+		var s = "ExampleMapHandler.ashx?tx="+x+"&ty="+y+"&zoom="+z+"&mapid=none" + "&version=6.4&rendertype="+renderType;
+		return s;		
+	}
+
+	
+      
+    function CreateLayer()
+    {         
+		layer = new VEShapeLayer();
+	    map.AddShapeLayer(layer);
+        var bounds = [new VELatLongRectangle(new VELatLong(80,-180),new VELatLong(-80,180))];
+        var tileSource = "1";
+        var tileSourceSpec =  new VETileSourceSpecification(layerID, tileSource, 1, bounds, 4,18,GetEGISTile,0.5,100);
+        tileSourceSpec.NumServers = 1;
+        tileSourceSpec.Bounds     = bounds;
+        tileSourceSpec.Opacity    = 0.5;
+        tileSourceSpec.ZIndex     = 100;
+        map.AddTileLayer(tileSourceSpec, true);
+	}
+
+    function rendertypechanged()
+    {
+        if(layer != null)
+        {
+            //hide and show the layer to refresh the layer (tiles will be re-fetched with new render settings)
+            map.HideTileLayer(layerID);
+            map.ShowTileLayer(layerID);
+        }        
+    }
+</script>
+
+</head>
+
+<body onload="GetMap();">
+<div>
+<p>This example demonstrates loading a shapefile layer in Bing Maps</p>
+Choose CustomRenderType <select id="rendertype" onchange="rendertypechanged()">
+<option value="popultation">Population</option>
+<option value="popultation">None</option>
+<option value="popultation">Random Color</option>
+
+</select>
+<br />
+<br />
+</div>
+<div id='myMap' style="position:relative; width:950px; height:500px;">
+</div>
+
+</body>
+
+</html>
+      

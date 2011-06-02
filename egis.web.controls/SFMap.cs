@@ -359,6 +359,22 @@ namespace EGIS.Web.Controls
             
         }
 
+        /// <summary>
+        /// static method to read a .egp project file
+        /// </summary>
+        /// <param name="absPath">Absolute path of the .egp file</param>
+        /// <returns>A MapProject object containing the project layers and map background color</returns>
+        /// <remarks>This method provides an easy means of creating a List of ShapeFiles to be used
+        /// in a MapHandler</remarks>
+        public static MapProject ReadEGPProject(string absPath)
+        {
+            string basePath = absPath.Substring(0, absPath.LastIndexOf('\\') + 1);
+            XmlDocument doc = new XmlDocument();
+            doc.Load(absPath);
+            XmlElement prjElement = (XmlElement)doc.GetElementsByTagName("sfproject").Item(0);
+            return ReadXml(prjElement, basePath, null);
+        }
+
         internal static MapProject ReadProject(string absPath, SFMap mapRef)
         {
             string basePath = absPath.Substring(0, absPath.LastIndexOf('\\') + 1);
@@ -403,7 +419,7 @@ namespace EGIS.Web.Controls
                 }                
             }
 
-            EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = false;
+            //EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = false;
             mapProject.Layers = myShapefiles;
             return mapProject;
         }
@@ -1133,6 +1149,8 @@ namespace EGIS.Web.Controls
 
         #region static methods
 
+
+        
         internal static MapProject CreateMapLayers(HttpApplicationState application, string mapid, string mapPath)
         {
             MapProject mapProject = application[mapid] as MapProject;
@@ -1175,7 +1193,7 @@ namespace EGIS.Web.Controls
                 for (int n = 0; n < layers.Count; n++)
                 {
                     EGIS.ShapeFileLib.ShapeFile sf = layers[n];
-                    sf.Render(g, new Size(w, h), centerPt, zoom);
+                    sf.Render(g, new Size(w, h), centerPt, zoom, ProjectionType.None);
                 }
                 //restore any existing ICustomRenderSettings
                 if (customRenderSettingsList != null)
@@ -1240,10 +1258,10 @@ namespace EGIS.Web.Controls
         }
     }
 
-    internal class MapProject
+    public class MapProject
     {
-        internal List<EGIS.ShapeFileLib.ShapeFile> Layers;
-        internal Color BackgroundColor;
+        public List<EGIS.ShapeFileLib.ShapeFile> Layers;
+        public Color BackgroundColor;
     }
 
     internal class SFMapImageProvider : IHttpHandler, System.Web.SessionState.IRequiresSessionState

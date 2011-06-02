@@ -215,7 +215,6 @@ _GisUtil.prototype.MercProjectionToLL = function(x, y)
 
 var GisUtil = new _GisUtil();
 
-
 function panLeft(imgid)
 {
     var index = IndexOfMapObject(mapObjectsArray, document.getElementById(imgid));
@@ -600,7 +599,11 @@ function MapObject(handlerUrl, mapid, hfx, hfy, hfz, evtpnl, dcrs, coc)
         var d = new Date();
         if(this.ShowTooltip && d.getTime() >= this.ShowTooltipTime)
         {
-            this.SendTooltipRequest(this.handlerUrl,this.TooltipX,this.TooltipY, this.hfz.value, this.mapId);
+            //convert the projected coordinates to lat long
+            var ll = GisUtil.MercProjectionToLL(this.TooltipX,this.TooltipY);            
+             
+            this.SendTooltipRequest(this.handlerUrl,ll[0],ll[1], GisUtil.ScaleToZoomLevel(1.0*this.hfz.value), this.mapId);
+            //this.SendTooltipRequest(this.handlerUrl,this.TooltipX,this.TooltipY, this.hfz.value, this.mapId);
         }        
  }
  
@@ -637,7 +640,8 @@ function MapObject(handlerUrl, mapid, hfx, hfy, hfz, evtpnl, dcrs, coc)
             var point = lines[1].split(',');
             var x = 1.0 * point[0];
             var y = 1.0 * point[1];
-            var mousePos = this.GisPointToMousePos(x,y);
+            var mercXY = GisUtil.LLToMercator(x,y);
+            var mousePos = this.GisPointToMousePos(mercXY[0],mercXY[1]);
             this.DisplayTooltip(lines[2], mousePos[0], mousePos[1]);
         }
         else
@@ -753,6 +757,7 @@ MapObject.prototype.MousePosToGisPoint = function(x,y)
     var dy = ((h/2) - 1.0*y)*scale;        
     return [(1.0*this.hfx.value)-dx, (1.0*this.hfy.value)+dy];      
 }
+
 
 MapObject.prototype.GisPointToMousePos = function(x,y)
 {

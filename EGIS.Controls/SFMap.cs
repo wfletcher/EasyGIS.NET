@@ -280,6 +280,7 @@ namespace EGIS.Controls
                     EGIS.ShapeFileLib.ShapeFile sf = new EGIS.ShapeFileLib.ShapeFile();
 
                     sf.ReadXml((XmlElement)sfList[n]);
+                    //sf.MapProjectionType = this.projectionType;
 
                     myShapefiles.Add(sf);
 
@@ -290,7 +291,8 @@ namespace EGIS.Controls
 
                 }
                 //set centre point to centre of shapefile and adjust zoom level to fit entire shapefile
-                RectangleF r = this.Extent;
+                RectangleF r = ShapeFile.LLExtentToProjectedExtent(this.Extent, this.projectionType);
+                
                 this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
                 this._zoomLevel = this.ClientSize.Width / r.Width;
                 dirtyScreenBuf = true;
@@ -387,12 +389,13 @@ namespace EGIS.Controls
         {
             get
             {
-                return ShapeFile.ProjectionToLatLong(_centrePoint);
+                if(UseMercatorProjection) return ShapeFile.ProjectionToLatLong(_centrePoint);
+                return _centrePoint;
             }
             set
             {
                 _centrePoint = value;
-                _centrePoint = ShapeFile.LatLongToProjection(_centrePoint);
+                if(UseMercatorProjection) _centrePoint = ShapeFile.LatLongToProjection(_centrePoint);
                 dirtyScreenBuf = true;
                 Invalidate();
             }
@@ -450,6 +453,9 @@ namespace EGIS.Controls
             }
         }
 
+        //private bool useMercProjection = false;
+        private EGIS.ShapeFileLib.ProjectionType projectionType = ProjectionType.None;
+
         /// <summary>
         /// Gets or sets whether to render the map using the MercatorProjection
         /// </summary>
@@ -457,13 +463,16 @@ namespace EGIS.Controls
         {
             get
             {
-                return EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection;
+               // return EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection;
+                return projectionType == ProjectionType.Mercator;
             }
             set
             {
-                if (EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection == value) return;
-                EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = value;
-                if (value)
+                //if (EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection == value) return;
+                //EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = value;
+                if (value == (projectionType == ProjectionType.Mercator)) return;
+                projectionType = value?ProjectionType.Mercator:ProjectionType.None;
+                if (projectionType == ProjectionType.Mercator)
                 {
                     _centrePoint = EGIS.ShapeFileLib.ShapeFile.LLToMercator(_centrePoint);
                 }
@@ -471,9 +480,18 @@ namespace EGIS.Controls
                 {
                     _centrePoint = EGIS.ShapeFileLib.ShapeFile.MercatorToLL(_centrePoint);
                 }
+                //UpdateLayersProjectionType(projectionType);
                 Refresh(true);
             }
         }
+
+        //private void UpdateLayersProjectionType(ProjectionType projectionType)
+        //{
+        //    foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
+        //    {
+        //        sf.MapProjectionType = projectionType;                
+        //    }
+        //}
 
         /// <summary>
         /// Convenience method to set the ZoomLevel and CentrePoint in one method
@@ -486,7 +504,7 @@ namespace EGIS.Controls
         {
             if (zoom < double.Epsilon) throw new ArgumentException("ZoomLevel can not be <= Zero");
             _centrePoint = centre;
-            _centrePoint = ShapeFile.LatLongToProjection(_centrePoint); // v2.5
+            if(UseMercatorProjection) _centrePoint = ShapeFile.LatLongToProjection(_centrePoint); // v2.5
             _zoomLevel = zoom;
             dirtyScreenBuf = true;
             Invalidate();
@@ -499,7 +517,7 @@ namespace EGIS.Controls
         /// <remarks>Call this method to apply a "zoom 100%"</remarks>
         public void ZoomToFullExtent()
         {
-            RectangleF r = this.Extent;
+            RectangleF r = ShapeFile.LLExtentToProjectedExtent(this.Extent,this.projectionType);
             this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
             double r1 = ClientSize.Width*r.Height;
             double r2 = ClientSize.Height * r.Width;
@@ -556,7 +574,11 @@ namespace EGIS.Controls
         public PointD PixelCoordToGisPoint(int pixX, int pixY)
         {
             double s = 1.0 / ZoomLevel;
-            return ShapeFile.ProjectionToLatLong(new PointD(_centrePoint.X - (s * ((ClientSize.Width >> 1) - pixX)), _centrePoint.Y + (s * ((ClientSize.Height >> 1) - pixY))));
+            if (UseMercatorProjection)
+            {
+                return ShapeFile.ProjectionToLatLong(new PointD(_centrePoint.X - (s * ((ClientSize.Width >> 1) - pixX)), _centrePoint.Y + (s * ((ClientSize.Height >> 1) - pixY))));
+            }
+            return new PointD(_centrePoint.X - (s * ((ClientSize.Width >> 1) - pixX)), _centrePoint.Y + (s * ((ClientSize.Height >> 1) - pixY)));
         }
 
         /// <summary>
@@ -578,7 +600,8 @@ namespace EGIS.Controls
         /// <returns></returns>
         public Point GisPointToPixelCoord(double x, double y)
         {
-            PointD p = ShapeFile.LatLongToProjection(new PointD(x, y));
+            PointD p = new PointD(x, y);
+            if(UseMercatorProjection) p = ShapeFile.LatLongToProjection(p);
             int mx = (ClientSize.Width >> 1) - (int)Math.Round((_centrePoint.X - p.X) * ZoomLevel);
             int my = (ClientSize.Height >> 1) + (int)Math.Round((_centrePoint.Y - p.Y) * ZoomLevel);
             return new Point(mx, my);
@@ -615,25 +638,42 @@ namespace EGIS.Controls
         /// To get the extent of the current visible area of the map call VisibleExtent</remarks>
         /// <seealso cref="VisibleExtent"/>
         [Browsable(false)] 
-        public RectangleF Extent
+        public RectangleD Extent
         {
             get
             {
                 if (myShapefiles.Count == 0)
                 {
-                    return RectangleF.Empty;
+                    return RectangleD.Empty;
                 }
                 else
                 {
-                    RectangleF r = myShapefiles[0].Extent;
+                    RectangleD r = myShapefiles[0].Extent;
                     foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
                     {
-                        r = RectangleF.Union(r, sf.Extent);
+                        r = RectangleD.Union(r, sf.Extent);
                     }
                     return r;
                 }
             }
         }
+
+
+        /// <summary>
+        /// Gets the rectangular extent of the entire map in projected coordinates
+        /// </summary>
+        /// <remarks>ProjectedExtent is the rectangular extent of the ENTIRE map, regardless of the current ZoomLevel or CentrePoint.
+        /// If MapProjectionType is ProjectionType.none the returned RectangleD is the same as Extent</remarks>
+        /// <seealso cref="VisibleExtent"/>
+        [Browsable(false)]
+        public RectangleD ProjectedExtent
+        {
+            get
+            {
+                return ShapeFile.LLExtentToProjectedExtent(Extent, projectionType);
+            }
+        }
+
 
         /// <summary>
         /// Gets the rectangular extent of the current visible area of the map being displayed in the SFMap control
@@ -701,9 +741,10 @@ namespace EGIS.Controls
         public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName)
         {            
             EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(path, name, labelFieldName);
+
             
             //set centre point to centre of shapefile and adjust zoom level to fit entire shapefile            
-            RectangleF r = sf.Extent;
+            RectangleF r = ShapeFile.LLExtentToProjectedExtent(sf.Extent, this.projectionType);
             if (!r.IsEmpty)
             {                
                 this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
@@ -858,7 +899,7 @@ namespace EGIS.Controls
            
             sf.LoadFromFile(path);
             sf.Name = name;
-            
+            //sf.MapProjectionType = this.projectionType;
             sf.RenderSettings = new EGIS.ShapeFileLib.RenderSettings(path, renderFieldName, new Font(this.Font.FontFamily, 6f));
             LoadOptimalRenderSettings(sf);
             myShapefiles.Add(sf);
@@ -903,7 +944,7 @@ namespace EGIS.Controls
                 g.Clear(MapBackColor);
                 foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
                 {
-                    sf.Render(g, screenBuf.Size, this._centrePoint, this._zoomLevel);
+                    sf.Render(g, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType);
                 }
 
             }
@@ -1189,7 +1230,10 @@ namespace EGIS.Controls
                 double z = ZoomLevel;
                 pt.Y -= (mouseDownPt.Y-(ClientSize.Height >> 1)) / z;
                 pt.X += (mouseDownPt.X - (ClientSize.Width >> 1)) / z;
-                pt = ShapeFile.ProjectionToLatLong(pt);
+                if (UseMercatorProjection)
+                {
+                    pt = ShapeFile.ProjectionToLatLong(pt);
+                }
                 SetZoomAndCentre(z * 2, pt);
             }
             else if (mouseDownButton == MouseButtons.Right)
@@ -1199,7 +1243,10 @@ namespace EGIS.Controls
                 double z = ZoomLevel;
                 pt.Y -= (mouseDownPt.Y - (ClientSize.Height >> 1)) / z;
                 pt.X += (mouseDownPt.X - (ClientSize.Width >> 1)) / z;
-                pt = ShapeFile.ProjectionToLatLong(pt);
+                if (UseMercatorProjection)
+                {
+                    pt = ShapeFile.ProjectionToLatLong(pt);
+                }
                 SetZoomAndCentre(z / 2, pt);
             }
         }

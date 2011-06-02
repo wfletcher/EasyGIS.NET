@@ -427,7 +427,7 @@ namespace EGIS.Web.Controls
                 }                
             }
 
-            EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = false;
+            //EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = false;
             mapProject.Layers = myShapefiles;
             return mapProject;
         }
@@ -530,15 +530,15 @@ namespace EGIS.Web.Controls
         }
 
 
-        internal static RectangleF LayerExtent(List<EGIS.ShapeFileLib.ShapeFile> layers)
+        internal static RectangleD LayerExtent(List<EGIS.ShapeFileLib.ShapeFile> layers)
         {
             if (layers == null || layers.Count == 0)
             {
-                return RectangleF.Empty;
+                return RectangleD.Empty;
             }
             else
             {
-                RectangleF r = layers[0].Extent;
+                RectangleD r = layers[0].Extent;
                 foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
                 {
                     r = RectangleF.Union(r, sf.Extent);
@@ -784,12 +784,24 @@ namespace EGIS.Web.Controls
         /// <summary>
         /// Gets the name of the http handler used to render the map on the server.
         /// </summary>
-        [Browsable(true)]
+        [Browsable(true),
+        Category("data"),
+        Description("The name of the IHttpHandler used to handle map requests")
+        ]
         public string HttpHandlerName
         {
+            //get
+            //{
+            //    return "egismaptiled.axd";
+            //}
             get
             {
-                return "egismaptiled.axd";
+                if (ViewState["TiledSFMapHandler"] == null) return "egismaptiled.axd";
+                return (String)ViewState["TiledSFMapHandler"];
+            }
+            set
+            {                
+                ViewState["TiledSFMapHandler"] = value;                                
             }
         }
 
@@ -811,10 +823,8 @@ namespace EGIS.Web.Controls
                 return (String)ViewState["ProjectName"];
             }
             set
-            {
-                
-                ViewState["ProjectName"] = value;
-                                
+            {                
+                ViewState["ProjectName"] = value;                                
             }
         }
 
@@ -1264,49 +1274,42 @@ namespace EGIS.Web.Controls
         internal static void RenderMap(Graphics g, List<EGIS.ShapeFileLib.ShapeFile> layers, int w, int h, PointD centerPt, double zoom, List<SessionCustomRenderSettingsEntry> customRenderSettingsList)
         {
             lock (EGIS.ShapeFileLib.ShapeFile.Sync)
-            {
-                bool merc = EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection;
-                EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = true;
-                try
+            {                                
+                RectangleF r = SFMap.LayerExtent(layers);
+                if (zoom <= 0) zoom = w / r.Width;
+                if (centerPt.IsEmpty)
                 {
-                    RectangleF r = SFMap.LayerExtent(layers);
-                    if (zoom <= 0) zoom = w / r.Width;
-                    if (centerPt.IsEmpty)
+                    centerPt = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
+                }
+                //save the existing ICustomRenderSettings and set the dynamicCustomRenderSettings
+                List<SessionCustomRenderSettingsEntry> defaultcustomRenderSettingsList = new List<SessionCustomRenderSettingsEntry>();
+                if (customRenderSettingsList != null)
+                {
+                    for (int n = 0; n < customRenderSettingsList.Count; n++)
                     {
-                        centerPt = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
-                    }
-                    //save the existing ICustomRenderSettings and set the dynamicCustomRenderSettings
-                    List<SessionCustomRenderSettingsEntry> defaultcustomRenderSettingsList = new List<SessionCustomRenderSettingsEntry>();
-                    if (customRenderSettingsList != null)
-                    {
-                        for (int n = 0; n < customRenderSettingsList.Count; n++)
+                        int layerIndex = customRenderSettingsList[n].LayerIndex;
+                        if (layerIndex < layers.Count)
                         {
-                            int layerIndex = customRenderSettingsList[n].LayerIndex;
-                            if (layerIndex < layers.Count)
-                            {
-                                defaultcustomRenderSettingsList.Add(new SessionCustomRenderSettingsEntry(layerIndex, layers[layerIndex].RenderSettings.CustomRenderSettings));
-                                layers[layerIndex].RenderSettings.CustomRenderSettings = customRenderSettingsList[n].CustomRenderSettings;
-                            }
-                        }
-                    }
-                    for (int n = 0; n < layers.Count; n++)
-                    {
-                        EGIS.ShapeFileLib.ShapeFile sf = layers[n];
-                        sf.Render(g, new Size(w, h), centerPt, zoom);
-                    }
-                    //restore any existing ICustomRenderSettings
-                    if (customRenderSettingsList != null)
-                    {
-                        for (int n = 0; n < defaultcustomRenderSettingsList.Count; n++)
-                        {
-                            layers[defaultcustomRenderSettingsList[n].LayerIndex].RenderSettings.CustomRenderSettings = defaultcustomRenderSettingsList[n].CustomRenderSettings;
+                            defaultcustomRenderSettingsList.Add(new SessionCustomRenderSettingsEntry(layerIndex, layers[layerIndex].RenderSettings.CustomRenderSettings));
+                            layers[layerIndex].RenderSettings.CustomRenderSettings = customRenderSettingsList[n].CustomRenderSettings;
                         }
                     }
                 }
-                finally
+                for (int n = 0; n < layers.Count; n++)
                 {
-                    EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = merc;
+                    EGIS.ShapeFileLib.ShapeFile sf = layers[n];
+                    //render the layer - TiledSFMap always uses Mercator Projection
+                    sf.Render(g, new Size(w, h), centerPt, zoom, ProjectionType.Mercator);
                 }
+                //restore any existing ICustomRenderSettings
+                if (customRenderSettingsList != null)
+                {
+                    for (int n = 0; n < defaultcustomRenderSettingsList.Count; n++)
+                    {
+                        layers[defaultcustomRenderSettingsList[n].LayerIndex].RenderSettings.CustomRenderSettings = defaultcustomRenderSettingsList[n].CustomRenderSettings;
+                    }
+                }
+            
             }
         }
         
@@ -1380,7 +1383,8 @@ namespace EGIS.Web.Controls
         
         private static MapProject CreateMapLayers(HttpContext context, string mapid)
         {            
-            return SFMap.CreateMapLayers(context.Application, mapid, context.Server.MapPath(mapid));    
+            MapProject m = SFMap.CreateMapLayers(context.Application, mapid, context.Server.MapPath(mapid));            
+            return m;
         }        
 
         public void ProcessRequest(HttpContext context)
@@ -1389,10 +1393,14 @@ namespace EGIS.Web.Controls
         }
 
 
-        private static string LocateShape(PointD pt, List<EGIS.ShapeFileLib.ShapeFile> layers, double zoom, List<SessionCustomRenderSettingsEntry> customRenderSettingsList)
+        private static string LocateShape(PointD pt, List<EGIS.ShapeFileLib.ShapeFile> layers, int zoomLevel, List<SessionCustomRenderSettingsEntry> customRenderSettingsList)
         {
+            //changed V3.3 - coords now sent in lat/long
             //convert pt to lat long from merc
-            pt = ShapeFile.MercatorToLL(pt);
+            //pt = ShapeFile.MercatorToLL(pt);
+            //changed V3.3 - zoom now sent as zoom level
+            double zoom = TileUtil.ZoomLevelToScale(zoomLevel);
+                        
             float delta = 8f / (float)zoom;
             PointF ptf = new PointF((float)pt.X, (float)pt.Y);
             //save the existing ICustomRenderSettings and set the dynamicCustomRenderSettings
@@ -1463,7 +1471,7 @@ namespace EGIS.Web.Controls
         {
             double x, y;
             PointD centerPoint = PointD.Empty;
-            double zoom = -1;
+            int zoomLevel = -1;
             string dcrsSessionKey;
             string tooltipText = "";
 
@@ -1478,7 +1486,8 @@ namespace EGIS.Web.Controls
             }
             centerPoint = new PointD(x, y);
 
-            if (!double.TryParse(context.Request["zoom"], out zoom))
+            //V3.3 zoom now sent as zoom level
+            if (!int.TryParse(context.Request["zoom"], out zoomLevel))
             {
                 throw new ArgumentException("zoom");
             }
@@ -1502,7 +1511,7 @@ namespace EGIS.Web.Controls
                     //}
                     //else
                     {
-                        tooltipText = LocateShape(centerPoint, mapProject.Layers, zoom, null);
+                        tooltipText = LocateShape(centerPoint, mapProject.Layers, zoomLevel, null);
                     }
 
                 }

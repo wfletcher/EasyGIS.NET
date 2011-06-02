@@ -53,8 +53,10 @@ namespace egis
 
             tscbSearchLayers.SelectedIndex = 0;
 
-            EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = false;
-            this.miMercatorProjection.Checked = EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection;
+            //EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = false;
+            //this.miMercatorProjection.Checked = EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection;
+            this.sfMap1.UseMercatorProjection = false;
+            this.miMercatorProjection.Checked = false;
             this.useNativeFileMappingToolStripMenuItem.Checked = EGIS.ShapeFileLib.ShapeFile.MapFilesInMemory;
             LoadRecentProjects();
 
@@ -167,7 +169,7 @@ namespace egis
 
         private void PanLeft()
         {
-            RectangleF r = sfMap1.Extent;
+            RectangleD r = sfMap1.ProjectedExtent;
             PointD pt = sfMap1.CentrePoint2D;
             pt.X -= (sfMap1.ClientSize.Width >> 2) / sfMap1.ZoomLevel; ;// (0.0025f * r.Width);
             sfMap1.CentrePoint2D = pt;
@@ -175,7 +177,7 @@ namespace egis
        
         private void PanRight()
         {
-            RectangleF r = sfMap1.Extent;
+            RectangleD r = sfMap1.ProjectedExtent;
             PointD pt = sfMap1.CentrePoint2D;
             pt.X += (sfMap1.ClientSize.Width >> 2) / sfMap1.ZoomLevel;// (0.0025f * r.Width);
             sfMap1.CentrePoint2D = pt;
@@ -184,7 +186,7 @@ namespace egis
 
         private void PanUp()
         {
-            RectangleF r = sfMap1.Extent;
+            RectangleD r = sfMap1.ProjectedExtent;
             PointD pt = sfMap1.CentrePoint2D;
             pt.Y += (sfMap1.ClientSize.Height >> 2) / sfMap1.ZoomLevel; //(0.0025f * r.Height);
             sfMap1.CentrePoint2D = pt;
@@ -192,7 +194,7 @@ namespace egis
         
         private void PanDown()
         {
-            RectangleF r = sfMap1.Extent;
+            RectangleD r = sfMap1.ProjectedExtent;
             PointD pt = sfMap1.CentrePoint2D;
             pt.Y -= (sfMap1.ClientSize.Height >> 2) / sfMap1.ZoomLevel;
             sfMap1.CentrePoint2D = pt;
@@ -749,7 +751,7 @@ namespace egis
 
         private bool IsMapFitForMercator()
         {
-            RectangleF ext = sfMap1.Extent;
+            RectangleD ext = sfMap1.Extent;
             return (ext.Top <= 90 && ext.Bottom >= -90);
         }
 

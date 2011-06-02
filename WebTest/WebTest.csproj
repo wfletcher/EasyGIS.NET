@@ -65,6 +65,15 @@
     <Compile Include="demos\Demo3.aspx.designer.cs">
       <DependentUpon>Demo3.aspx</DependentUpon>
     </Compile>
+    <Compile Include="demos\EGPExampleMapHandler.ashx.cs">
+      <DependentUpon>EGPExampleMapHandler.ashx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\EGPMapTileHandler.ashx.cs">
+      <DependentUpon>EGPMapTileHandler.ashx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\ExampleMapHandler.ashx.cs">
+      <DependentUpon>ExampleMapHandler.ashx</DependentUpon>
+    </Compile>
     <Compile Include="demos\TileDemo1.aspx.cs">
       <SubType>ASPXCodeBehind</SubType>
       <DependentUpon>TileDemo1.aspx</DependentUpon>
@@ -72,10 +81,18 @@
     <Compile Include="demos\TileDemo1.aspx.designer.cs">
       <DependentUpon>TileDemo1.aspx</DependentUpon>
     </Compile>
+    <Compile Include="demos\TileDemo2.aspx.cs">
+      <SubType>ASPXCodeBehind</SubType>
+      <DependentUpon>TileDemo2.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\TileDemo2.aspx.designer.cs">
+      <DependentUpon>TileDemo2.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Default.aspx" />
+    <Content Include="demos\BingMapsTest.html" />
     <Content Include="demos\Demo3.aspx" />
     <Content Include="demos\TileDemo1.aspx" />
   </ItemGroup>
@@ -288,6 +305,11 @@
     <None Include="demos\demo2maps\Vegetation\j5505_nativevegetationareas.shp" />
     <None Include="demos\demo2maps\Vegetation\j5505_nativevegetationareas.shpx" />
     <None Include="demos\demo2maps\Vegetation\j5505_nativevegetationareas.shx" />
+    <Content Include="demos\BingMapsTest2.html" />
+    <Content Include="demos\ExampleMapHandler.ashx" />
+    <Content Include="demos\EGPExampleMapHandler.ashx" />
+    <Content Include="demos\TileDemo2.aspx" />
+    <Content Include="demos\EGPMapTileHandler.ashx" />
     <None Include="demos\us_demo.egp" />
   </ItemGroup>
   <ItemGroup>
