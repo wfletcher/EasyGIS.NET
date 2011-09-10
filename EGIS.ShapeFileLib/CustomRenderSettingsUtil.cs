@@ -5,12 +5,28 @@ using System.Drawing;
 
 namespace EGIS.ShapeFileLib
 {
+    /// <summary>
+    /// Utility factory class which creates ICustomRenderSettings objects
+    /// </summary>
     public class CustomRenderSettingsUtil
     {
 
         private CustomRenderSettingsUtil() { }
 
-
+        /// <summary>
+        /// Creates an ICustomRenderSettings object which renders shape colors using quantiles
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// QuantileCustomRenderSettings are used to render individual shape colors in a shapefile layer according to a specified range of values. For example,
+        /// the color of the rendered shape could be green if field1 is between 0 and 100, yellow if field 1 is between 100 and 200, or red if
+        /// it is greater than 200.
+        /// </para>
+        /// </remarks>    
+        /// <param name="renderSettings"></param>
+        /// <param name="quantileColors">The colors used for each quantile. If 5 colors are used then 5 quantiles will be setup </param>
+        /// <param name="shapeFieldName">The field name to use for the quantiles</param>
+        /// <returns></returns>
         public static ICustomRenderSettings CreateQuantileCustomRenderSettings(RenderSettings renderSettings, System.Drawing.Color[] quantileColors, string shapeFieldName)
         {
             int numRecords = renderSettings.DbfReader.DbfRecordHeader.RecordCount;
@@ -27,11 +43,15 @@ namespace EGIS.ShapeFileLib
             return new QuantileRenderSettings(renderSettings, quantileColors, ranges, shapeFieldName);
         }
 
+        /// <summary>
+        /// Creates an ICustomRenderSettings object which renders shapes with a random color
+        /// </summary>
+        /// <param name="renderSettings">The shapefile's RenderSettings object</param>
+        /// <param name="seed">Random seed used to create the colors. By supplying a seed the same colors will be used when rendering the shapefile in successive drawing operations </param>
+        /// <returns></returns>
         public static ICustomRenderSettings CreateRandomColorCustomRenderSettings(RenderSettings renderSettings, int seed)
-        {
-            
-            return new RandomColorRenderSettings(renderSettings, seed);
-            
+        {            
+            return new RandomColorRenderSettings(renderSettings, seed);            
         }
 
        

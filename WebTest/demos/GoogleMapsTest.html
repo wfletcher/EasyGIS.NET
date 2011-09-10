@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" >
+<head>
+ 
+<title></title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<script type="text/javascript"  src="http://maps.google.com/maps/api/js?sensor=false"> </script>
+<script type="text/javascript">
+    
+   var map = null;
+      	
+   function GetMap()
+   {
+        var latlng = new google.maps.LatLng(35, -100);
+        var myOptions = {zoom: 4, minZoom:3, maxZoom:14, center: latlng, mapTypeId: google.maps.MapTypeId.ROADMAP };
+        map = new google.maps.Map(document.getElementById("myMap"), myOptions);
+        map.overlayMapTypes.insertAt(0, CreateLayer()); 
+    }
+    
+    function GetEGISTile(XPos,YPos,ZoomLevel)
+	{
+		var x = XPos;
+		var y = YPos;
+		var z = ZoomLevel;
+        var renderType = document.getElementById('rendertype').selectedIndex;
+		var s = "ExampleMapHandler.ashx?tx="+x+"&ty="+y+"&zoom="+z+"&mapid=none" + "&version=6.4&rendertype="+renderType;
+		return s;			
+	}
+    
+    function CreateLayer()
+    {
+        //Create an ImageMapType overlay object
+        var layerOptions = {
+           getTileUrl: function(coord, zoom)
+            {
+                 return GetEGISTile(coord.x, coord.y, zoom);                 
+            },
+            tileSize: new google.maps.Size(256, 256),
+            isPng: true,
+            opacity: 0.5           
+            
+        };
+        var egisLayer = new google.maps.ImageMapType(layerOptions); 
+        return egisLayer;     		
+	}
+   
+    function rendertypechanged()
+    {
+        if(map != null)
+        {
+            //remove and re-insert the layer (tiles will be re-fetched with new render settings)
+            map.overlayMapTypes.removeAt(0);
+            map.overlayMapTypes.insertAt(0, CreateLayer());  
+            
+        }        
+    }
+</script>
+
+</head>
+
+<body onload="GetMap();">
+<div>
+<p>This example demonstrates loading a shapefile layer in Google Maps</p>
+Choose CustomRenderType <select id="rendertype" onchange="rendertypechanged()">
+<option value="popultation">Population</option>
+<option value="popultation">None</option>
+<option value="popultation">Random Color</option>
+
+</select>
+<br />
+<br />
+</div>
+<div id='myMap' style="position:relative; width:950px; height:500px;">
+</div>
+
+</body>
+
+</html>
+      

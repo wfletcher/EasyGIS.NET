@@ -3657,6 +3657,7 @@ namespace EGIS.ShapeFileLib
 		/// <param name="numPoints"></param>
 		/// <param name="pointIndex"> reference to the index in data containing the first point of the segment</param>
 		/// <param name="extent"></param>
+        /// <param name="mercProjection"></param>
 		/// <returns></returns>
 		protected static unsafe float GetPointsFAngle(byte[] data, int offset, int numPoints, ref int pointIndex, RectangleF extent, bool mercProjection)
 		{
@@ -13852,6 +13853,8 @@ namespace EGIS.ShapeFileLib
 		private DbfFieldType _fieldType;
 		private int _fieldLength;
 
+        private int _decimalCount;
+
 		/// <summary>
 		/// RecordOffset = the offset of the field in a record.
 		/// For Field 0, RecordOffset = 0,
@@ -13876,7 +13879,9 @@ namespace EGIS.ShapeFileLib
 			}
 			_fieldType = (DbfFieldType)data[dataOffset+11];
             _fieldLength = (int)data[dataOffset+16];
-			_recordOffset = recordOffset;
+            _decimalCount = (int)data[dataOffset + 17];
+            _recordOffset = recordOffset;
+             
 		}
 
         /// <summary>
@@ -13924,6 +13929,25 @@ namespace EGIS.ShapeFileLib
             set
             {
                 _fieldLength = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets/Sets the decimal count for numeric data types.
+        /// </summary>
+        /// <remarks>
+        /// <para>DecimalCount must be &gt;=0 and &lt;16</para>
+        /// </remarks>
+        public int DecimalCount
+        {
+            get
+            {
+                return _decimalCount;
+            }
+            set
+            {
+                if (value < 0 || value > 15) throw new ArgumentOutOfRangeException("DecimalCount must be >=0 and <=15");
+                _decimalCount = value;
             }
         }
 

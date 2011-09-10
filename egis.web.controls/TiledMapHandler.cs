@@ -191,48 +191,102 @@ namespace EGIS.Web.Controls
             }
 
             //render the tile
-            Bitmap bm = new Bitmap(256, 256, PixelFormat.Format24bppRgb);
-            Bitmap bm2 = new Bitmap(w, h, PixelFormat.Format24bppRgb);
-            try
+            List<ShapeFile> mapLayers = CreateMapLayers(context);
+            if (mapLayers == null) throw new InvalidOperationException("No Map Layers");
+            //check if any layers are Point layers
+            bool containsPointLayer = false;
+            for (int n = mapLayers.Count - 1; n >= 0; --n)
             {
-                Graphics g = Graphics.FromImage(bm);
-                Graphics g2 = Graphics.FromImage(bm2);
+                if (mapLayers[n].ShapeType == ShapeType.Point || mapLayers[n].ShapeType == ShapeType.PointM || mapLayers[n].ShapeType == ShapeType.PointZ)
+                {
+                    containsPointLayer = true;
+                }
+            }
+            if (containsPointLayer)
+            {
+                //draw to an image w x h so that labels overlapping tiles are rendered
+                Bitmap bm = new Bitmap(256, 256, PixelFormat.Format24bppRgb);
+                Bitmap bm2 = new Bitmap(w, h, PixelFormat.Format24bppRgb);
                 try
                 {
-                    List<ShapeFile> mapLayers = CreateMapLayers(context);
-                    if (mapLayers == null) throw new InvalidOperationException("No Map Layers");
-                    g2.Clear(MapBackgroundColor);
-                    RenderMap(g2, mapLayers, w, h, centerPoint, zoom);
-                    g.DrawImage(bm2, Rectangle.FromLTRB(0, 0, 256, 256), Rectangle.FromLTRB(256, 256, 512, 512), GraphicsUnit.Pixel);
+                    Graphics g = Graphics.FromImage(bm);
+                    Graphics g2 = Graphics.FromImage(bm2);
+                    try
+                    {
 
-                    //perform custom painting
+                        g2.Clear(MapBackgroundColor);
+                        RenderMap(g2, mapLayers, w, h, centerPoint, zoom);
+                        g.DrawImage(bm2, Rectangle.FromLTRB(0, 0, 256, 256), Rectangle.FromLTRB(256, 256, 512, 512), GraphicsUnit.Pixel);
+
+                        //perform custom painting
+                    }
+                    finally
+                    {
+                        g.Dispose();
+                        g2.Dispose();
+                    }
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        if (useCache)
+                        {
+                            try
+                            {
+                                bm.Save(cachePath, ImageFormat.Png);
+                            }
+                            catch { }
+                        }
+                        bm.Save(ms, ImageFormat.Png);
+
+                        context.Response.Cache.SetCacheability(HttpCacheability.Public);
+                        context.Response.Cache.SetExpires(DateTime.Now.AddDays(7));
+                        ms.WriteTo(context.Response.OutputStream);
+                    }
                 }
                 finally
                 {
-                    g.Dispose();
-                    g2.Dispose();
-                }
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    if (useCache)
-                    {
-                        try
-                        {
-                            bm.Save(cachePath, ImageFormat.Png);
-                        }
-                        catch { }
-                    }
-                    bm.Save(ms, ImageFormat.Png);
-
-                    context.Response.Cache.SetCacheability(HttpCacheability.Public);
-                    context.Response.Cache.SetExpires(DateTime.Now.AddDays(7));
-                    ms.WriteTo(context.Response.OutputStream);
+                    bm.Dispose();
+                    bm2.Dispose();
                 }
             }
-            finally
+            else
             {
-                bm.Dispose();
-                bm2.Dispose();
+                Bitmap bm = new Bitmap(256, 256, PixelFormat.Format24bppRgb);
+                try
+                {
+                    Graphics g = Graphics.FromImage(bm);
+                    try
+                    {
+
+                        g.Clear(MapBackgroundColor);
+                        RenderMap(g, mapLayers, 256,256, centerPoint, zoom);
+                        
+                        //perform custom painting
+                    }
+                    finally
+                    {
+                        g.Dispose();                        
+                    }
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        if (useCache)
+                        {
+                            try
+                            {
+                                bm.Save(cachePath, ImageFormat.Png);
+                            }
+                            catch { }
+                        }
+                        bm.Save(ms, ImageFormat.Png);
+
+                        context.Response.Cache.SetCacheability(HttpCacheability.Public);
+                        context.Response.Cache.SetExpires(DateTime.Now.AddDays(7));
+                        ms.WriteTo(context.Response.OutputStream);
+                    }
+                }
+                finally
+                {
+                    bm.Dispose();                   
+                }
             }
             context.Response.Flush();
         }
@@ -287,7 +341,10 @@ namespace EGIS.Web.Controls
                 context.Response.Write(string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0},{1}\n", x, y));
                 if (layerIndex >= 0 && recordIndex >= 0)
                 {
-                    GetCustomTooltipText(context, layers[layerIndex], recordIndex, ref tooltipText);
+                    lock (EGIS.ShapeFileLib.ShapeFile.Sync)
+                    {
+                        GetCustomTooltipText(context, layers[layerIndex], recordIndex, ref tooltipText);
+                    }
                 }
                 context.Response.Write(tooltipText);
             }

@@ -21,6 +21,10 @@
         <asp:HyperLink ID="HyperLink4" runat="server" NavigateUrl="~/demos/BingMapsTest.html">Bing Maps Demo</asp:HyperLink> - Demo of overlaying tiles on Bing Maps
     </div>
     
+    <div>
+        <asp:HyperLink ID="HyperLink5" runat="server" NavigateUrl="~/demos/GoogleMapsTest.html">Google Maps Demo</asp:HyperLink> - Demo of overlaying tiles on Google Maps
+    </div>
+    
     </form>
 </body>
 </html>
