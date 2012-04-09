@@ -726,9 +726,9 @@ namespace EGIS.Web.Controls
                 EGIS.ShapeFileLib.PointD pt = this.CenterPoint;
                 if (pt != PointD.Empty)
                 {
-                    src += "&x=" + pt.X + "&y=" + pt.Y;
+                    src += "&x=" + pt.X.ToString(System.Globalization.CultureInfo.InvariantCulture) + "&y=" + pt.Y.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 }
-                src += "&zoom=" + this.Zoom;
+                src += "&zoom=" + this.Zoom.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 src += "&mapid=" + Page.ResolveUrl(ProjectName);
 
                 if (!CacheOnClient) src += "&coc=" + DateTime.Now.ToString("yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture);

@@ -1782,6 +1782,21 @@ namespace EGIS.ShapeFileLib
             return -1;
         }
 
+        public bool ShapeIntersectsRect(int shapeIndex, RectangleD rect)
+        {
+            switch (sfRecordCol.MainHeader.ShapeType)
+            {
+                case ShapeType.Polygon:
+                    return (sfRecordCol as SFPolygonCol).IntersectRect(shapeIndex, ref rect, shapeFileStream);
+                case ShapeType.PolygonZ:
+                    return (sfRecordCol as SFPolygonZCol).IntersectRect(shapeIndex, ref rect, shapeFileStream);
+                case ShapeType.PolyLine:
+                    return (sfRecordCol as SFPolyLineCol).IntersectRect(shapeIndex, ref rect, shapeFileStream);
+                
+                default:
+                    throw new NotImplementedException("ShapeIntersectsRect");
+            }
+        }
 
         #endregion
 
@@ -2439,24 +2454,7 @@ namespace EGIS.ShapeFileLib
 
         #endregion
 
-       //// private ProjectionType projectionType = ProjectionType.None;
-
-       // /// <summary>
-       // /// Gets/Sets whether ShapeFiles should be rendered using the Mercator Projection.
-       // /// </summary>
-       // public ProjectionType MapProjectionType
-       // {
-       //     get
-       //     {
-       //         //return projectionType;
-       //         return ProjectionType.None;
-       //     }
-       //     set
-       //     {
-       //         //projectionType = value;
-       //     }
-       // }
-
+     
         private const float MaxLLMercProjF = 85.0511287798066f;
         /// <summary>
         /// Utillity method to translate a Lat/Long Point to its Mercator Projection representation.
@@ -3845,7 +3843,7 @@ namespace EGIS.ShapeFileLib
 
             while (ptIndex < numPoints)
             {
-                pts[ptIndex] = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
+                pts[ptIndex] = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++);
                 if (ptIndex > 0)
                 {
                     double xdif = pts[ptIndex].X - pts[ptIndex - 1].X;
@@ -3860,9 +3858,7 @@ namespace EGIS.ShapeFileLib
                 ptIndex++;
             }
             return indexAngleList;
-        }
-
-        //internal static bool MercProj = false;
+        }        
 
         private const double MaxLLMercProjD = 85.0511287798066;
         private const float MaxLLMercProjF = 85.0511287798066f;
@@ -4010,7 +4006,7 @@ namespace EGIS.ShapeFileLib
             PointD* pPtr = (PointD*)(buf + offset);
             while (ptIndex < numPoints)
             {
-                PointD ptd = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
+                PointD ptd = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++);
                 pts[ptIndex].X = (int)Math.Round((ptd.X + offX) * scaleX);
                 pts[ptIndex].Y = (int)Math.Round((ptd.Y + offY) * scaleY);
                 ++ptIndex;
@@ -4329,23 +4325,18 @@ namespace EGIS.ShapeFileLib
 
         protected static unsafe void GetPointsRemoveDuplicatesD(byte* dataPtr, int offset, int numPoints, ref double offX, ref double offY, ref double scale, Point[] pts, ref int usedPoints, bool MercProj)
         {
-            //if (numPoints == 2)
-            //{
-            //    GetPointsRemoveDuplicates2p(data, offset, numPoints, offX, offY, scaleX, scaleY, pts, ref usedPoints);
-            //    return;
-            //}
             int ptIndex = 0;
             usedPoints = 1;
             
             PointD* pPtr = (PointD*)(dataPtr + offset);
-            PointD ptda = MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
+            PointD ptda = MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++);
             pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scale);
             pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * -scale);
             ++ptIndex;
 
             while (ptIndex < numPoints)
             {
-                PointD ptd = MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
+                PointD ptd = MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++);
                 pts[usedPoints].X = (int)Math.Round((ptd.X + offX) * scale);
                 pts[usedPoints].Y = (int)Math.Round((ptd.Y + offY) * -scale);
                 if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
@@ -4358,7 +4349,53 @@ namespace EGIS.ShapeFileLib
             {
                 pts[1] = pts[0];
             }
-            //return pts;
+        }
+
+        protected struct GPRDParams
+        {
+            public double offX;
+            public double offY;
+            public double scale;
+            public int usedPoints;
+            public bool MercProj;
+
+            public GPRDParams(double offX, double offY, double scale, int usedPoints, bool MercProj)
+            {
+                this.offX = offX;
+                this.offY = offY;
+                this.scale = scale;
+                this.usedPoints = usedPoints;
+                this.MercProj = MercProj;
+            }
+
+        }
+
+        protected static unsafe void GetPointsRemoveDuplicatesD(byte* dataPtr, int offset, int numPoints, Point[] pts, ref GPRDParams param)
+        {
+            int ptIndex = 0;
+            param.usedPoints = 1;
+
+            PointD* pPtr = (PointD*)(dataPtr + offset);
+            PointD ptda = param.MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++);
+            pts[ptIndex].X = (int)Math.Round((ptda.X + param.offX) * param.scale);
+            pts[ptIndex].Y = (int)Math.Round((ptda.Y + param.offY) * -param.scale);
+            ++ptIndex;
+
+            while (ptIndex < numPoints)
+            {
+                PointD ptd = param.MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++);
+                pts[param.usedPoints].X = (int)Math.Round((ptd.X + param.offX) * param.scale);
+                pts[param.usedPoints].Y = (int)Math.Round((ptd.Y + param.offY) * -param.scale);
+                if ((pts[param.usedPoints].X != pts[param.usedPoints - 1].X) || (pts[param.usedPoints].Y != pts[param.usedPoints - 1].Y))
+                {
+                    ++param.usedPoints;
+                }
+                ++ptIndex;
+            }
+            if (param.usedPoints == 1)
+            {
+                pts[1] = pts[0];
+            }
         }
        
          
@@ -6988,6 +7025,11 @@ namespace EGIS.ShapeFileLib
         
     }
 
+#endregion
+
+
+    #region Derived SFRecordCol classes
+
     class SFPolygonCol : SFRecordCol, QTNodeHelper
     {
         
@@ -7589,6 +7631,8 @@ namespace EGIS.ShapeFileLib
         }
 
 
+
+
         internal unsafe bool ContainsPoint(int shapeIndex, PointD pt, System.IO.FileStream shapeFileStream)
         {
             byte[] data = SFRecordCol.SharedBuffer;
@@ -7733,6 +7777,73 @@ namespace EGIS.ShapeFileLib
             }
             return inPoly;
         }
+
+
+        internal unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        {
+            //first check if the record's bounds intersects with rect
+            if (!GetRecordBoundsD(shapeIndex, shapeFileStream).IntersectsWith(rect)) return false;
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolygonRecordP* nextRec = (PolygonRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->DataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+                    if (IntersectsRect(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref rect))
+                    {
+                        return true;
+                    }                    
+                }
+            }
+            return false;
+        }
+
+        private static unsafe bool IsHole(byte[] data, int offset, int numPoints)
+        {           
+            //if we are detecting holes then we need to calculate the area
+            double area = 0;
+            int j = numPoints - 1;            
+            fixed (byte* bPtr = data)
+            {
+                PointD* points = (PointD*)(bPtr + offset);
+                for (int i = 0; i < numPoints; ++i)
+                {                    
+                    area += (points[j].X * points[i].Y - points[i].X * points[j].Y);
+                    j = i;
+                }
+            }
+            return area > 0;           
+        }
+
+        private static unsafe bool IntersectsRect(byte[] data, int offset, int numPoints, ref RectangleD rect)
+        {
+            if (IsHole(data, offset, numPoints))
+            {
+                //We need to check if the hole contains the rect
+                //but for the moment we will return false.
+                return false;
+            }
+
+            fixed (byte* ptr = data)
+            {
+                return NativeMethods.PolygonRectIntersect(ptr + offset, numPoints, rect.Left, rect.Top, rect.Right, rect.Bottom);
+            }
+        }
+
 
         #region QTNodeHelper Members
 
@@ -9186,13 +9297,67 @@ namespace EGIS.ShapeFileLib
         #endregion
     }
 
+    internal struct RenderPtObj
+    {
+        public Point Point0;
+        public float Point0Dist;
+        public float Angle0;
+        
+        public int RecordIndex;
+
+        public RenderPtObj(Point p0, float poDist, float p0Angle, /*Point p1, float p1Dist, float p1Angle,*/ int recordIndex)
+        {
+            Point0 = p0;
+            Point0Dist = poDist;
+            Angle0 = p0Angle;
+            RecordIndex = recordIndex;
+        }
+
+
+        public static int AddRenderPtObjects(Point[] pts, int numPoints, List<RenderPtObj> renderPoints, int recordIndex, float minDist)
+        {
+
+            int count = renderPoints.Count;
+            int ptIndex = 0;
+            float minDistSquared = minDist * minDist;
+
+            while (ptIndex < numPoints)
+            {
+                if (ptIndex > 0)
+                {
+                    double xdif = pts[ptIndex].X - pts[ptIndex - 1].X;
+                    double ydif = pts[ptIndex].Y - pts[ptIndex - 1].Y;
+                    double temp = (xdif * xdif) + (ydif * ydif);
+                    if (temp >= minDistSquared)
+                    {
+                        float angle = (float)(Math.Atan2(-ydif, xdif) * 180f / Math.PI);
+
+                        if (Math.Abs(angle) > 90f && Math.Abs(angle) <= 270f)
+                        {
+                            renderPoints.Add(new RenderPtObj(pts[ptIndex], (float)Math.Sqrt(temp), angle - 180f, recordIndex));
+                        }
+                        else
+                        {
+                            renderPoints.Add(new RenderPtObj(pts[ptIndex - 1], (float)Math.Sqrt(temp), angle, recordIndex));
+                        }
+
+                    }
+                }
+                ptIndex++;
+            }
+            return renderPoints.Count - count; ;
+        }
+
+
+    }
+
+
     class SFPolyLineCol : SFRecordCol, QTNodeHelper
     {
 
         public SFPolyLineCol(RecordHeader[] recs, ref ShapeFileMainHeader head)
             : base(ref head, recs)
         {
-            //this.RecordHeaders = recs;
             SFRecordCol.EnsureBufferSize(SFRecordCol.GetMaxRecordLength(recs) + 100);
         }
 
@@ -9310,12 +9475,8 @@ namespace EGIS.ShapeFileLib
             bool fileMapped = (mapView != IntPtr.Zero);
 
             bool MercProj = projectionType == ProjectionType.Mercator;
-            //Bitmap bm = new Bitmap(clientArea.Width, clientArea.Height, g);
-            //IntPtr dc = g.GetHdc();            
-            //IntPtr gdiplusGraphics = NativeMethods.CreateGraphics(dc);
-
-            //IntPtr gdiplusPenPtr = IntPtr.Zero;
-            //bool useExternGraphics = (gdiplusGraphics != IntPtr.Zero);
+            Point[] tempPoints = new Point[SFRecordCol.SharedPointBuffer.Length];
+            
             try
             {
                 double scaleX = (double)(clientArea.Width / extent.Width);
@@ -9336,8 +9497,9 @@ namespace EGIS.ShapeFileLib
                 ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
                 bool useCustomRenderSettings = (renderSettings != null && customRenderSettings != null);
 
-                bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+                bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));               
                 bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
+                bool usePolySimplificationLabeling = true;
                 List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
 
                 float renderPenWidth = (float)(renderSettings.PenWidthScale * scaleX);
@@ -9450,7 +9612,7 @@ namespace EGIS.ShapeFileLib
                                         Point[] pts;
 
                                         //if labelling fields then add a renderPtObj
-                                        if (labelFields && paintCount == 0)
+                                        if (labelFields && paintCount == 0 && !usePolySimplificationLabeling)
                                         {
                                             //check what the scaled bounds of this part are
                                             if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
@@ -9464,11 +9626,11 @@ namespace EGIS.ShapeFileLib
                                                         float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                         if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
                                                         {
-                                                            renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f, Point.Empty, 0, 0, index));
+                                                            renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f, /*Point.Empty, 0, 0,*/ index));
                                                         }
                                                         else
                                                         {
-                                                            renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, Point.Empty, 0, 0, index));
+                                                            renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, /*Point.Empty, 0, 0,*/ index));
                                                         }
                                                     }
                                                 }
@@ -9484,11 +9646,11 @@ namespace EGIS.ShapeFileLib
                                                         {
                                                             if (Math.Abs(angle) > 90f && Math.Abs(angle) <= 270f)
                                                             {
-                                                                renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f, Point.Empty, 0, 0, index));
+                                                                renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f,/* Point.Empty, 0, 0,*/ index));
                                                             }
                                                             else
                                                             {
-                                                                renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, Point.Empty, 0, 0, index));
+                                                                renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, /*Point.Empty, 0, 0,*/ index));
                                                             }
                                                         }
                                                     }
@@ -9525,7 +9687,22 @@ namespace EGIS.ShapeFileLib
                                                 continue;
                                             }
                                             pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY,MercProj);
-                                            //if (index == selectedRecordIndex && selectPen != null)
+                                            
+                                            //add any labels to the poly-lines
+                                            if (labelFields && paintCount == 0 && usePolySimplificationLabeling)
+                                            {
+                                                //check what the scaled bounds of this part are
+                                                if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                {
+                                                    int usedTempPoints = 0;
+                                                    NativeMethods.SimplifyDouglasPeucker(pts, pts.Length, 2, tempPoints, ref usedTempPoints);
+                                                    if (usedTempPoints > 0)
+                                                    {
+                                                        RenderPtObj.AddRenderPtObjects(tempPoints, usedTempPoints, renderPtObjList, index, 6);
+                                                    }
+                                                }
+                                            }
+
                                             if(recordSelected[index] && selectPen !=null)
                                             {
                                                 g.DrawLines(selectPen, pts);
@@ -9581,11 +9758,7 @@ namespace EGIS.ShapeFileLib
                                                 g.ResetTransform();
                                             }
                                         }
-                                    }
-                                    //if (fileMapped)
-                                    //{
-                                    //    dataPtr += this.RecordHeaders[index].ContentLength + 8;
-                                    //}
+                                    }                                   
                                     ++index;
                                 }
                             }
@@ -9600,9 +9773,7 @@ namespace EGIS.ShapeFileLib
                 }
                 finally
                 {
-                    //if (gdiplusGraphics != IntPtr.Zero) NativeMethods.ReleaseGraphics(gdiplusGraphics);
-                    //if (dc != IntPtr.Zero) g.ReleaseHdc(dc);
-                   // if(gdiplusPenPtr != IntPtr.Zero)NativeMethods.ReleaseGdiplusPen(gdiplusPenPtr);                                                
+                    tempPoints = null;                   
                 }
                 try
                 {
@@ -9672,7 +9843,7 @@ namespace EGIS.ShapeFileLib
                 if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
                 if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);                
             }
-        }
+        }        
 
         private unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {            
@@ -9714,6 +9885,7 @@ namespace EGIS.ShapeFileLib
 
             bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
             bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
+            bool usePolySimplificationLabeling = true;
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
 
             float renderPenWidth = (float)(renderSettings.PenWidthScale * scaleX);
@@ -9734,7 +9906,7 @@ namespace EGIS.ShapeFileLib
 
             // obtain a handle to the Device Context so we can use GDI to perform the painting.            
             dc = g.GetHdc();
-            
+            Point[] tempPoints = new Point[SFRecordCol.SharedPointBuffer.Length];
             try
             {
                 int maxPaintCount = 2;
@@ -9745,7 +9917,6 @@ namespace EGIS.ShapeFileLib
 
                 for (int paintCount = 0; paintCount < maxPaintCount; paintCount++)
                 {
-
                     try
                     {
                         Color currentPenColor = renderSettings.OutlineColor;
@@ -9792,6 +9963,9 @@ namespace EGIS.ShapeFileLib
                         byte[] data = SFRecordCol.SharedBuffer;
                         Point[] sharedPoints = SFRecordCol.SharedPointBuffer;
                         float minLabelLength = (float)(6 / scaleX);
+                        GPRDParams gprdParam = new GPRDParams(offX, offY, scaleX, 0, MercProj);
+
+                        //int ptCountAvg = 0, totalParts = 0;
                         fixed (byte* dataBufPtr = data)
                         {
                             if (!fileMapped) dataPtr = dataBufPtr;
@@ -9811,15 +9985,13 @@ namespace EGIS.ShapeFileLib
                                     shapeFileStream.Read(data, 0, pgRecs[index].ContentLength + 8);
                                 }
                                 PolyLineRecordP* nextRec = (PolyLineRecordP*)(dataPtr + 8);
-                                int dataOffset = nextRec->DataOffset;//nextRec.Read(data, 8);
+                                int dataOffset = nextRec->DataOffset;
                                 if (actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                                 {
-                                    //++numPainted;
                                     int numParts = nextRec->NumParts;
-                                    Point[] pts;
-
+                                    
                                     //if labelling fields then add a renderPtObj
-                                    if (labelFields && paintCount == 0)
+                                    if (labelFields && paintCount == 0 && !usePolySimplificationLabeling)
                                     {
                                         //check what the scaled bounds of this part are
                                         if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
@@ -9829,15 +10001,15 @@ namespace EGIS.ShapeFileLib
                                                 List<IndexAnglePair> iapList = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, minLabelLength, MercProj);
                                                 for (int li = iapList.Count - 1; li >= 0; li--)
                                                 {
-                                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
+                                                    Point[] pts = GetPointsD(dataPtr, 8 + dataOffset + (iapList[li].PointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                     float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                     if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
                                                     {
-                                                        renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f, Point.Empty, 0, 0, index));
+                                                        renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f, /*Point.Empty, 0, 0,*/ index));
                                                     }
                                                     else
                                                     {
-                                                        renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, Point.Empty, 0, 0, index));
+                                                        renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, /*Point.Empty, 0, 0,*/ index));
                                                     }
                                                 }
                                             }
@@ -9847,17 +10019,17 @@ namespace EGIS.ShapeFileLib
                                                 float angle = GetPointsDAngle(dataPtr, 8 + dataOffset, nextRec->NumPoints, ref pointIndex, projectedExtent, MercProj);
                                                 if (!angle.Equals(float.NaN))
                                                 {
-                                                    pts = GetPointsD(dataPtr, 8 + dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
+                                                    Point[] pts = GetPointsD(dataPtr, 8 + dataOffset + (pointIndex << 4), 2, offX, offY, scaleX, -scaleX, MercProj);
                                                     float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                     if (d0 > 6)
                                                     {
                                                         if (Math.Abs(angle) > 90f && Math.Abs(angle) <= 270f)
                                                         {
-                                                            renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f, Point.Empty, 0, 0, index));
+                                                            renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f, /*Point.Empty, 0, 0,*/ index));
                                                         }
                                                         else
                                                         {
-                                                            renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, Point.Empty, 0, 0, index));
+                                                            renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, /*Point.Empty, 0, 0,*/ index));
                                                         }
                                                     }
                                                 }
@@ -9889,19 +10061,32 @@ namespace EGIS.ShapeFileLib
                                         }
                                         if (numPoints <= 1)
                                         {
-                                            //Console.Out.WriteLine("Skipping Record {0}, Part {1} - {2} point(s)", index, partNum, numPoints);
                                             continue;
                                         }                                        
-                                        int usedPoints = 0;
-                                        GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPoints, ref usedPoints, MercProj);
-
+                                        gprdParam.usedPoints = 0;
+                                        GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, sharedPoints, ref gprdParam);
+                                        //add any labels to the poly-lines
+                                        if (labelFields && paintCount == 0 && usePolySimplificationLabeling)
+                                        {
+                                            //check what the scaled bounds of this part are
+                                            if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                            {
+                                                int usedTempPoints = 0;
+                                                NativeMethods.SimplifyDouglasPeucker(sharedPoints, gprdParam.usedPoints, 2, tempPoints, ref usedTempPoints);
+                                                if (usedTempPoints > 0)
+                                                {
+                                                    RenderPtObj.AddRenderPtObjects(tempPoints, usedTempPoints, renderPtObjList, index, 6);                                                    
+                                                }
+                                            }
+                                        }
+                                        //render the lines
                                         if (recordSelected[index])
                                         {
                                             IntPtr tempPen = IntPtr.Zero;
                                             try
                                             {
                                                 tempPen = NativeMethods.SelectObject(dc, selectPen);
-                                                NativeMethods.DrawPolyline(dc, sharedPoints, usedPoints);
+                                                NativeMethods.DrawPolyline(dc, sharedPoints, gprdParam.usedPoints);
                                             }
                                             finally
                                             {
@@ -9909,18 +10094,18 @@ namespace EGIS.ShapeFileLib
                                             }
                                         }
                                         else
-                                        {
-                                            NativeMethods.DrawPolyline(dc, sharedPoints, usedPoints);
-                                        }
+                                        {                                            
+                                            NativeMethods.DrawPolyline(dc, sharedPoints, gprdParam.usedPoints);                                            
+                                        }                                        
                                     }
                                 }
-                                //if (fileMapped)
-                                //{
-                                //    dataPtr += this.RecordHeaders[index].ContentLength + 8; 
-                                //}
+                                
                                 ++index;
+                      
                             }
                         }
+                      //  Console.Out.WriteLine("Avg ptCount: " + ((double)ptCountAvg/totalParts));
+                                        
                         //Console.Out.WriteLine("numPainted:" + numPainted);
                     }
                     finally
@@ -9938,6 +10123,7 @@ namespace EGIS.ShapeFileLib
                 if (dc != IntPtr.Zero) g.ReleaseHdc(dc);
                 if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
                 if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
+                tempPoints = null;
             }
 
             try
@@ -10000,36 +10186,12 @@ namespace EGIS.ShapeFileLib
             }
             finally
             {
-                g.ResetTransform();
-                //g.DrawString("Test", renderer.Font, Brushes.Black, 0, 0);
+                g.ResetTransform();               
             }
 
         }
         
-        private struct RenderPtObj
-        {
-            public Point Point0;
-            public float Point0Dist;
-            public float Angle0;
-            public Point Point1;
-            public float Point1Dist;
-            public float Angle1;
-
-            public int RecordIndex;
-
-            public RenderPtObj(Point p0, float poDist, float p0Angle, Point p1, float p1Dist, float p1Angle, int recordIndexParam)
-            {
-                Point0 = p0;
-                Point0Dist = poDist;
-                Angle0 = p0Angle;
-                RecordIndex = recordIndexParam;
-                Point1 = p1;
-                Point1Dist = p1Dist;
-                Angle1 = p1Angle;
-            }
-
-        }
-
+        
         #endregion
 
         
@@ -10122,6 +10284,52 @@ namespace EGIS.ShapeFileLib
             }
             return Math.Abs(cross(ref a, ref b, ref c) / distance(ref a, ref b));
         }
+
+
+        internal unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        {
+            //first check if the record's bounds intersects with rect
+            if (!GetRecordBoundsD(shapeIndex, shapeFileStream).IntersectsWith(rect)) return false;
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolyLineRecordP* nextRec = (PolyLineRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->DataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+                       
+                    if (IntersectsRect(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref rect))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private static unsafe bool IntersectsRect(byte[] data, int offset, int numPoints, ref RectangleD rect)
+        {
+           
+            fixed (byte* ptr = data)
+            {
+                return NativeMethods.PolyLineRectIntersect(ptr + offset, numPoints, rect.Left, rect.Top, rect.Right, rect.Bottom);
+            }
+        }
+
+
 
         #region QTNodeHelper Members
 
@@ -10286,7 +10494,7 @@ namespace EGIS.ShapeFileLib
             bool fileMapped = (mapView != IntPtr.Zero);
 
             bool MercProj = projectionType == ProjectionType.Mercator;
-
+            Point[] tempPoints = new Point[SFRecordCol.SharedBuffer.Length];
             try
             {
                 double scaleX = (double)(clientArea.Width / extent.Width);
@@ -10309,6 +10517,7 @@ namespace EGIS.ShapeFileLib
 
                 bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
                 bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
+                bool usePolySimplificationLabeling = true;
                 List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
 
                 float renderPenWidth = (float)(renderSettings.PenWidthScale * scaleX);
@@ -10422,7 +10631,7 @@ namespace EGIS.ShapeFileLib
                                         Point[] pts;
 
                                         //if labelling fields then add a renderPtObj
-                                        if (labelFields && paintCount == 0)
+                                        if (labelFields && paintCount == 0 && !usePolySimplificationLabeling)
                                         {
                                             //check what the scaled bounds of this part are
                                             if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
@@ -10436,11 +10645,11 @@ namespace EGIS.ShapeFileLib
                                                         float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                         if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
                                                         {
-                                                            renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f, Point.Empty, 0, 0, index));
+                                                            renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f, index));
                                                         }
                                                         else
                                                         {
-                                                            renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, Point.Empty, 0, 0, index));
+                                                            renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, index));
                                                         }
                                                     }
                                                 }
@@ -10456,11 +10665,11 @@ namespace EGIS.ShapeFileLib
                                                         {
                                                             if (Math.Abs(angle) > 90f && Math.Abs(angle) <= 270f)
                                                             {
-                                                                renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f, Point.Empty, 0, 0, index));
+                                                                renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f, index));
                                                             }
                                                             else
                                                             {
-                                                                renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, Point.Empty, 0, 0, index));
+                                                                renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, index));
                                                             }
                                                         }
                                                     }
@@ -10498,7 +10707,22 @@ namespace EGIS.ShapeFileLib
                                             }
                                            
                                             pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, MercProj);
-                                            //if (index == selectedRecordIndex && selectPen != null)
+
+                                            //add any labels to the poly-lines
+                                            if (labelFields && paintCount == 0 && usePolySimplificationLabeling)
+                                            {
+                                                //check what the scaled bounds of this part are
+                                                if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                {
+                                                    int usedTempPoints = 0;
+                                                    NativeMethods.SimplifyDouglasPeucker(pts, pts.Length, 2, tempPoints, ref usedTempPoints);
+                                                    if (usedTempPoints > 0)
+                                                    {
+                                                        RenderPtObj.AddRenderPtObjects(tempPoints, usedTempPoints, renderPtObjList, index, 6);
+                                                    }
+                                                }
+                                            }
+
                                             if(recordSelected[index] && selectPen != null)
                                             {
                                                 g.DrawLines(selectPen, pts);
@@ -10641,6 +10865,7 @@ namespace EGIS.ShapeFileLib
             {
                 if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
                 if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
+                tempPoints = null;
             }
         }
 
@@ -10683,6 +10908,7 @@ namespace EGIS.ShapeFileLib
 
             bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
             bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
+            bool usePolySimplificationLabeling = true;
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
 
             float renderPenWidth = (float)(renderSettings.PenWidthScale * scaleX);
@@ -10704,6 +10930,7 @@ namespace EGIS.ShapeFileLib
             // obtain a handle to the Device Context so we can use GDI to perform the painting.
             dc = g.GetHdc();
 
+            Point[] labelPoints = new Point[SFRecordCol.SharedPointBuffer.Length];
             try
             {
                 int maxPaintCount = 2;
@@ -10788,7 +11015,7 @@ namespace EGIS.ShapeFileLib
                                     Point[] pts;
 
                                     //if labelling fields then add a renderPtObj
-                                    if (labelFields && paintCount == 0)
+                                    if (labelFields && paintCount == 0 && !usePolySimplificationLabeling)
                                     {
                                         //check what the scaled bounds of this part are
                                         if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
@@ -10802,11 +11029,11 @@ namespace EGIS.ShapeFileLib
                                                     float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
                                                     if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
                                                     {
-                                                        renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f, Point.Empty, 0, 0, index));
+                                                        renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f,index));
                                                     }
                                                     else
                                                     {
-                                                        renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, Point.Empty, 0, 0, index));
+                                                        renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, index));
                                                     }
                                                 }
                                             }
@@ -10822,11 +11049,11 @@ namespace EGIS.ShapeFileLib
                                                     {
                                                         if (Math.Abs(angle) > 90f && Math.Abs(angle) <= 270f)
                                                         {
-                                                            renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f, Point.Empty, 0, 0, index));
+                                                            renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f, index));
                                                         }
                                                         else
                                                         {
-                                                            renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, Point.Empty, 0, 0, index));
+                                                            renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, index));
                                                         }
                                                     }
                                                 }
@@ -10863,6 +11090,22 @@ namespace EGIS.ShapeFileLib
                                         }
                                         int usedPoints = 0;
                                         GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPoints, ref usedPoints, MercProj);
+                                        
+                                        //add any labels to the poly-lines
+                                        if (labelFields && paintCount == 0 && usePolySimplificationLabeling)
+                                        {
+                                            //check what the scaled bounds of this part are
+                                            if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                            {
+                                                int usedTempPoints = 0;
+                                                NativeMethods.SimplifyDouglasPeucker(sharedPoints, usedPoints, 2, labelPoints, ref usedTempPoints);
+                                                if (usedTempPoints > 0)
+                                                {
+                                                    RenderPtObj.AddRenderPtObjects(labelPoints, usedTempPoints, renderPtObjList, index, 6);
+                                                }
+                                            }
+                                        }
+                                        
                                         if (recordSelected[index])
                                         {
                                             IntPtr tempPen = IntPtr.Zero;
@@ -10878,14 +11121,10 @@ namespace EGIS.ShapeFileLib
                                         }
                                         else
                                         {
-                                            NativeMethods.DrawPolyline(dc, sharedPoints, usedPoints);
+                                            NativeMethods.DrawPolyline(dc, sharedPoints, usedPoints);                                            
                                         }
                                     }
-                                }
-                                //if (fileMapped)
-                                //{
-                                //    dataPtr += this.RecordHeaders[index].ContentLength + 8;
-                                //}
+                                }                                
                                 ++index;
                             }
                         }
@@ -10902,6 +11141,7 @@ namespace EGIS.ShapeFileLib
 
             finally
             {
+                labelPoints = null;
                 if (dc != IntPtr.Zero) g.ReleaseHdc(dc);
                 if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
                 if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
@@ -10972,30 +11212,7 @@ namespace EGIS.ShapeFileLib
 
         }
 
-        private struct RenderPtObj
-        {
-            public Point Point0;
-            public float Point0Dist;
-            public float Angle0;
-            public Point Point1;
-            public float Point1Dist;
-            public float Angle1;
-
-            public int RecordIndex;
-
-            public RenderPtObj(Point p0, float poDist, float p0Angle, Point p1, float p1Dist, float p1Angle, int recordIndexParam)
-            {
-                Point0 = p0;
-                Point0Dist = poDist;
-                Angle0 = p0Angle;
-                RecordIndex = recordIndexParam;
-                Point1 = p1;
-                Point1Dist = p1Dist;
-                Angle1 = p1Angle;
-            }
-
-        }
-
+        
         #endregion
 
 
@@ -11921,6 +12138,73 @@ namespace EGIS.ShapeFileLib
             return inPoly;
         }
 
+
+        internal unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        {
+            //first check if the record's bounds intersects with rect
+            if (!GetRecordBoundsD(shapeIndex, shapeFileStream).IntersectsWith(rect)) return false;
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolygonRecordP* nextRec = (PolygonRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->DataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }                    
+                    if (IntersectsRect(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref rect))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+       
+        private static unsafe bool IsHole(byte[] data, int offset, int numPoints)
+        {
+            //if we are detecting holes then we need to calculate the area
+            double area = 0;
+            int j = numPoints - 1;
+            fixed (byte* bPtr = data)
+            {
+                PointD* points = (PointD*)(bPtr + offset);
+                for (int i = 0; i < numPoints; ++i)
+                {
+                    area += (points[j].X * points[i].Y - points[i].X * points[j].Y);
+                    j = i;
+                }
+            }
+            return area > 0;
+        }
+
+        private static unsafe bool IntersectsRect(byte[] data, int offset, int numPoints, ref RectangleD rect)
+        {
+            if (IsHole(data, offset, numPoints))
+            {
+                //We need to check if the hole contains the rect
+                //but for the moment we will return false.
+                return false;
+            }
+
+            fixed (byte* ptr = data)
+            {
+                return NativeMethods.PolygonRectIntersect(ptr + offset, numPoints, rect.Left, rect.Top, rect.Right, rect.Bottom);
+            }
+        }
+
+
         #region QTNodeHelper Members
 
         public bool IsPointData()
@@ -12525,7 +12809,6 @@ namespace EGIS.ShapeFileLib
             RectangleD actualExtent = projectedExtent;
 
             bool MercProj = projectionType == ProjectionType.Mercator;
-
             if (MercProj)
             {
                 //if we're using a Mercator Projection then convert the actual Extent to LL coords
@@ -12561,6 +12844,8 @@ namespace EGIS.ShapeFileLib
 
             try
             {
+                Point[] tempPoints = new Point[SFRecordCol.SharedPointBuffer.Length];
+            
                 int maxPaintCount = 2;
                 if ((renderSettings.LineType == LineType.Solid) || (Math.Round(renderPenWidth) < 3))
                 {
@@ -12734,7 +13019,26 @@ namespace EGIS.ShapeFileLib
                                         }
                                         else
                                         {
+
                                             NativeMethods.DrawPolyline(dc, sharedPoints, usedPoints);
+                                            //int usedTempPoints = 0;
+                                            //NativeMethods.SimplifyDouglasPeucker(sharedPoints, usedPoints, 5, tempPoints, ref usedTempPoints);
+                                            //if (usedTempPoints > 0)
+                                            //{
+                                            //    IntPtr tempPen = IntPtr.Zero;
+                                            //    try
+                                            //    {
+                                            //        tempPen = NativeMethods.SelectObject(dc, selectPen);
+                                            //        NativeMethods.DrawPolyline(dc, sharedPoints, usedPoints);
+                                            //    }
+                                            //    finally
+                                            //    {
+                                            //        if (tempPen != IntPtr.Zero) NativeMethods.SelectObject(dc, tempPen);
+                                            //    }
+                                                
+                                            //}
+
+
                                         }
                                     }
                                 }
@@ -12755,6 +13059,7 @@ namespace EGIS.ShapeFileLib
                         selectPen = IntPtr.Zero;
                     }
                 }
+                tempPoints = null;
             }
 
             finally
@@ -12762,6 +13067,7 @@ namespace EGIS.ShapeFileLib
                 if (dc != IntPtr.Zero) g.ReleaseHdc(dc);
                 if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
                 if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
+                
             }
 
             try
@@ -13983,7 +14289,8 @@ namespace EGIS.ShapeFileLib
 
     #endregion
 
-    #region GDIUtils
+
+    #region GDI Utils and Native Methods
 
     internal sealed class NativeMethods
 	{
@@ -14103,6 +14410,43 @@ namespace EGIS.ShapeFileLib
 
         [DllImport("gdipluslib.dll")]
         internal static extern void ReleaseGdiplusPen(IntPtr pen);
+
+
+        [DllImport("geomutil_lib.dll")]
+        internal static unsafe extern int SimplifyDouglasPeuckerInt(int* input, int inputCount, int tolerance, int* output, ref int outputCount);
+
+        internal static unsafe int SimplifyDouglasPeucker(Point[] input, int inputCount, int tolerance, Point[] output, ref int outputCount)
+        {
+            fixed (Point* inputPtr = input)
+            {
+                fixed (Point* outputPtr = output)
+                {
+                    return SimplifyDouglasPeuckerInt((int*)inputPtr, inputCount, tolerance, (int*)outputPtr, ref outputCount);
+                }                
+            }
+        }
+
+        [DllImport("geomutil_lib.dll")]        
+        internal static unsafe extern bool PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
+
+        internal static unsafe bool PolygonRectIntersect(double[] data, int dataLength, double rMinX, double rMinY, double rMaxX, double rMaxY)
+        {
+            fixed (double* ptr = data)
+            {
+                return PolygonRectIntersect(ptr, dataLength >> 1, rMinX, rMinY, rMaxX, rMaxY);
+            }
+        }
+
+        [DllImport("geomutil_lib.dll")]
+        internal static unsafe extern bool PolyLineRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
+
+        internal static unsafe bool PolyLineRectIntersect(double[] data, int dataLength, double rMinX, double rMinY, double rMaxX, double rMaxY)
+        {
+            fixed (double* ptr = data)
+            {
+                return PolyLineRectIntersect(ptr, dataLength >> 1, rMinX, rMinY, rMaxX, rMaxY);
+            }
+        }
 
 
 
@@ -14373,19 +14717,30 @@ namespace EGIS.ShapeFileLib
             currentIndex++;
             if (myShapeFile.ShapeType == ShapeType.Point)
             {
-
                 while (currentIndex < totalRecords && !this.extent.Contains(myShapeFile.GetShapeBoundsD(currentIndex)))
                 {
                     currentIndex++;
                 }
-            }
+            }            
             else
             {
                 if (this.intersectType == IntersectionType.Intersects)
                 {
-                    while (currentIndex < totalRecords && !recordExtents[currentIndex].IntersectsWith(this.extent))
+                    if (myShapeFile.ShapeType == ShapeType.Polygon ||
+                        myShapeFile.ShapeType == ShapeType.PolygonZ ||
+                        myShapeFile.ShapeType == ShapeType.PolyLine)
                     {
-                        currentIndex++;
+                        while (currentIndex < totalRecords && !this.myShapeFile.ShapeIntersectsRect(currentIndex, this.extent))
+                        {
+                            currentIndex++;
+                        }
+                    }
+                    else
+                    {
+                        while (currentIndex < totalRecords && !recordExtents[currentIndex].IntersectsWith(this.extent))
+                        {
+                            currentIndex++;
+                        }
                     }
                 }
                 else if (this.intersectType == IntersectionType.Contains)
@@ -14394,7 +14749,6 @@ namespace EGIS.ShapeFileLib
                     {
                         currentIndex++;
                     }
-
                 }
             }
             return (currentIndex < totalRecords);
