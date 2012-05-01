@@ -472,54 +472,29 @@ namespace EGIS.ShapeFileLib
         {
             if (sfRecordCol != null) sfRecordCol.ClearSelectedRecords();
         }
-        
-        /*
+
         /// <summary>
-        /// Gets or sets the index (zero based) of the current selected shape/record. If no shape is selected then SelectedRecordIndex is -1
+        /// Returns a collection of all the selected record indices
         /// </summary>
-        public int SelectedRecordIndex
+        public System.Collections.ObjectModel.ReadOnlyCollection<int> SelectedRecordIndices
         {
-#if SinglePrecision             
-            set
-            {
-                if (sfRecordColEx != null) sfRecordColEx.SetSelectedRecordIndex(value);
-            }
             get
             {
-                if (sfRecordColEx == null)
+                List<int> selectedRecords = new List<int>();
+                int numRecs = RecordCount;
+                for (int n = 0; n < numRecs; ++n)
                 {
-                    return -1;
+                    if (sfRecordCol.IsRecordSelected(n)) selectedRecords.Add(n);
                 }
-                else
-                {
-                    return sfRecordColEx.GetSelectedRecordIndex();
-                }
+                return new System.Collections.ObjectModel.ReadOnlyCollection<int>(selectedRecords);
             }
-#else
-            set
-            {
-                if (sfRecordCol != null) sfRecordCol.SetSelectedRecordIndex(value);
-            }
-            get
-            {
-                if (sfRecordCol == null)
-                {
-                    return -1;
-                }
-                else
-                {
-                    return sfRecordCol.GetSelectedRecordIndex();
-                }
-            }
-
-#endif
         }
-        */
 
-        /// <summary>
-        /// Gets the number of records(shapes) in the ShapeFile
-        /// </summary>
-        public int RecordCount
+
+            /// <summary>
+            /// Gets the number of records(shapes) in the ShapeFile
+            /// </summary>
+            public int RecordCount
         {
             get
             {
@@ -800,7 +775,7 @@ namespace EGIS.ShapeFileLib
 
             DateTime start = DateTime.Now;
 
-            RecordHeader[] recordHeaders=LoadIndexfile(System.IO.Path.ChangeExtension(shapeFilePath, ".shx"));
+            RecordHeader[] recordHeaders=LoadIndexfile(shapeFilePath+".shx");
 
             //Console.Out.WriteLine("Time to load index file: " + ((TimeSpan)DateTime.Now.Subtract(start)).TotalMilliseconds);
 
@@ -1754,7 +1729,7 @@ namespace EGIS.ShapeFileLib
             }
             return -1;
         }
-
+         
 
         private int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFPolyLineZCol col)
         {
@@ -1782,21 +1757,130 @@ namespace EGIS.ShapeFileLib
             return -1;
         }
 
-        public bool ShapeIntersectsRect(int shapeIndex, RectangleD rect)
+
+        public void GetShapeIndiciesIntersectingRect(List<int> indicies, RectangleD rect)
+        {
+            if (indicies == null) return;
+            if (!rect.IntersectsWith(this.Extent)) return;
+
+            switch (sfRecordCol.MainHeader.ShapeType)
+            {
+                //case ShapeType.PolyLine:
+                //    GetShapeIndiciesIntersectingRect(indicies, rect, sfRecordCol as SFPolyLineCol);
+                //    break;
+                //case ShapeType.Point:
+                //    GetShapeIndiciesIntersectingRect(indicies, rect, sfRecordCol as SFPointCol);
+                //    break;
+                default:
+                    GetShapeIndiciesIntersectingRect(indicies, rect, sfRecordCol);
+                    break;
+            }
+        }
+
+        private void GetShapeIndiciesIntersectingRect(List<int> indices, RectangleD rect, SFRecordCol col)
+        {
+            
+            if (shapeQuadTree == null)
+            {
+                CreateQuadTree(col);
+            }
+
+            List<int> shapeIndicies = shapeQuadTree.GetIndices(ref rect);
+            if (shapeIndicies != null)
+            {
+                for (int n = shapeIndicies.Count - 1; n >= 0; --n)
+                {
+                    if (col.IntersectRect(shapeIndicies[n], ref rect, shapeFileStream))
+                    {
+                        indices.Add(shapeIndicies[n]);
+                    }
+                }
+            }            
+        }
+
+        private void GetShapeIndiciesIntersectingRect(List<int> indices, RectangleD rect, SFPointCol col)
+        {
+
+            int numRecs = this.RecordCount;
+            
+                for (int n = 0; n<numRecs;++n)
+                {
+                    if (col.IntersectRect(n, ref rect, shapeFileStream))
+                    {
+                        indices.Add(n);
+                    }
+                }
+           
+        }
+       
+        private void GetShapeIndiciesIntersectingRect(List<int> indices, RectangleD rect, SFPolyLineCol col)
+        {
+            if (shapeQuadTree == null)
+            {
+                CreateQuadTree(col);
+            }
+
+            List<int> shapeIndicies = shapeQuadTree.GetIndices(ref rect);
+            if (shapeIndicies != null)
+            {
+                //int numRecs = shapeIndicies.Count;
+                for (int n = shapeIndicies.Count-1; n >=0; --n)
+                {
+                    if (col.IntersectRect(shapeIndicies[n], ref rect, shapeFileStream))
+                    {
+                        indices.Add(shapeIndicies[n]);
+                    }
+                }
+            }                           
+        }
+
+        public bool ShapeIntersectsRect(int shapeIndex, ref RectangleD rect)
         {
             switch (sfRecordCol.MainHeader.ShapeType)
             {
                 case ShapeType.Polygon:
                     return (sfRecordCol as SFPolygonCol).IntersectRect(shapeIndex, ref rect, shapeFileStream);
                 case ShapeType.PolygonZ:
-                    return (sfRecordCol as SFPolygonZCol).IntersectRect(shapeIndex, ref rect, shapeFileStream);
-                case ShapeType.PolyLine:
-                    return (sfRecordCol as SFPolyLineCol).IntersectRect(shapeIndex, ref rect, shapeFileStream);
-                
+                    return (sfRecordCol as SFPolygonZCol).IntersectRect(shapeIndex, ref rect, shapeFileStream);                
                 default:
-                    throw new NotImplementedException("ShapeIntersectsRect");
+                    return sfRecordCol.IntersectRect(shapeIndex, ref rect, shapeFileStream);
             }
         }
+
+
+        public void GetShapeIndiciesIntersectingCircle(List<int> indicies, PointD centre, double radius)
+        {
+
+            if (indicies == null) return;
+            
+            switch (sfRecordCol.MainHeader.ShapeType)
+            {
+                default:
+                    GetShapeIndiciesIntersectingCircle(indicies, centre, radius, sfRecordCol);
+                    break;
+            }
+        }
+
+        private void GetShapeIndiciesIntersectingCircle(List<int> indices, PointD centre, double radius, SFRecordCol col)
+        {
+            if (shapeQuadTree == null)
+            {
+                CreateQuadTree(col);
+            }
+
+            List<int> shapeIndicies = shapeQuadTree.GetIndices(centre, radius);
+            if (shapeIndicies != null)
+            {
+                for (int n = shapeIndicies.Count - 1; n >= 0; --n)
+                {
+                    if (col.IntersectCircle(shapeIndicies[n], centre, radius, shapeFileStream))
+                    {
+                        indices.Add(shapeIndicies[n]);
+                    }
+                }
+            }
+        }
+
 
         #endregion
 
@@ -3628,6 +3712,20 @@ namespace EGIS.ShapeFileLib
             //return new RectangleD(rf.X, rf.Y, rf.Width, rf.Height);
         }
 
+        public abstract bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream);
+        //{
+        //    throw new NotImplementedException();
+            
+        //}
+
+        public abstract unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        ;
+            //{
+        //    RectangleD r = GetRecordBoundsD(shapeIndex, shapeFileStream);
+        //    return GeometryAlgorithms.RectangleCircleIntersects(ref r, ref centre, radius);
+        //}
+
+
         #region static utility methods
 
         public static int GetMaxRecordLength(RecordHeader[] records)
@@ -4607,2425 +4705,2454 @@ namespace EGIS.ShapeFileLib
         }
 
     }
+
+#region Old SFRecordcol classes (float based)
     
-    class SFPolyLineExCol : SFRecordCol, QTNodeHelper
-	{        
-		public PolyLineRecordEx[] Recs;
+//    class SFPolyLineExCol : SFRecordCol, QTNodeHelper
+//    {        
+//        public PolyLineRecordEx[] Recs;
 
-        public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
-        {
-            return Recs[recordIndex].Bounds;
-        }
+//        public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
+//        {
+//            return Recs[recordIndex].Bounds;
+//        }
         
-		public SFPolyLineExCol(PolyLineRecordEx[] recs,ShapeFileMainHeaderEx head): base(head)
-		{
-			this.Recs = recs;
-		}
+//        public SFPolyLineExCol(PolyLineRecordEx[] recs,ShapeFileMainHeaderEx head): base(head)
+//        {
+//            this.Recs = recs;
+//        }
 
-        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
-        {
-            return GetShapeData(recordIndex, shapeFileStream, SFRecordCol.SharedBuffer/*new byte[ShapeFileExConstants.MAX_REC_LENGTH]*/);            
-        }
+//        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
+//        {
+//            return GetShapeData(recordIndex, shapeFileStream, SFRecordCol.SharedBuffer/*new byte[ShapeFileExConstants.MAX_REC_LENGTH]*/);            
+//        }
 
-        public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            throw new NotImplementedException();
-        }
+//        public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            throw new NotImplementedException();
+//        }
 
-        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            byte[] data = dataBuffer;
-            PolyLineRecordEx nextRec = Recs[recordIndex];
-            shapeFileStream.Seek(nextRec.DataOffset, SeekOrigin.Begin);
-            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
-            int numParts = nextRec.NumParts;
-            List<PointF[]> dataList = new List<PointF[]>();
-            PointF[] pts;
-            for (int partNum = 0; partNum < numParts; partNum++)
-            {
-                int numPoints;
-                if ((numParts - partNum) > 1)
-                {
-                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
-                }
-                else
-                {
-                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
-                }
-                pts = GetPointsF(data, nextRec.PartOffsets[partNum] << 3, numPoints);
-                dataList.Add(pts);
-            }
-            data = null;
-            return dataList;
-        }
+//        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            byte[] data = dataBuffer;
+//            PolyLineRecordEx nextRec = Recs[recordIndex];
+//            shapeFileStream.Seek(nextRec.DataOffset, SeekOrigin.Begin);
+//            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
+//            int numParts = nextRec.NumParts;
+//            List<PointF[]> dataList = new List<PointF[]>();
+//            PointF[] pts;
+//            for (int partNum = 0; partNum < numParts; partNum++)
+//            {
+//                int numPoints;
+//                if ((numParts - partNum) > 1)
+//                {
+//                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
+//                }
+//                else
+//                {
+//                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
+//                }
+//                pts = GetPointsF(data, nextRec.PartOffsets[partNum] << 3, numPoints);
+//                dataList.Add(pts);
+//            }
+//            data = null;
+//            return dataList;
+//        }
 
-        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream)
-        {
-            return null;
-        }
+//        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream)
+//        {
+//            return null;
+//        }
 
-        public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            throw new NotImplementedException();
-        }
+//        public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            throw new NotImplementedException();
+//        }
 
-        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            return null;
-        }
+//        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            return null;
+//        }
 
 
-		public override void paint(Graphics g, Size clientArea, RectangleD extent,Stream shapeFileStream, ProjectionType projectionType)
-		{
-			paint(g, clientArea, extent, shapeFileStream, null, projectionType);
-		}
+//        public override void paint(Graphics g, Size clientArea, RectangleD extent,Stream shapeFileStream, ProjectionType projectionType)
+//        {
+//            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
+//        }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer, ProjectionType projectionType)
-        {
-            float zoom = (float)(clientArea.Width / extent.Width);
+//        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer, ProjectionType projectionType)
+//        {
+//            float zoom = (float)(clientArea.Width / extent.Width);
 
-            if (SFRecordCol.RenderAllRecordsAtZoomLevel(zoom, renderer))
-            {
-                paintAllRecords(g, clientArea, extent, shapeFileStream, renderer, projectionType);
-            }
+//            if (SFRecordCol.RenderAllRecordsAtZoomLevel(zoom, renderer))
+//            {
+//                paintAllRecords(g, clientArea, extent, shapeFileStream, renderer, projectionType);
+//            }
             
-        }
+//        }
 
-        private void paintAllRecords(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
-		{
-            bool UseGDI = this.UseGDI(extent);
+//        private void paintAllRecords(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+//        {
+//            bool UseGDI = this.UseGDI(extent);
             
-			IntPtr dc = IntPtr.Zero;
-			IntPtr gdiPen = IntPtr.Zero;
-			IntPtr oldGdiObj = IntPtr.Zero;
-            Pen gdiplusPen = null;
-            Pen rwPen = null;
-            bool renderRailway = false;
+//            IntPtr dc = IntPtr.Zero;
+//            IntPtr gdiPen = IntPtr.Zero;
+//            IntPtr oldGdiObj = IntPtr.Zero;
+//            Pen gdiplusPen = null;
+//            Pen rwPen = null;
+//            bool renderRailway = false;
 
-            Pen selectPen = null;
+//            Pen selectPen = null;
 
-			double scaleX = (double)(clientArea.Width / extent.Width);
-            double scaleY = -scaleX;
+//            double scaleX = (double)(clientArea.Width / extent.Width);
+//            double scaleY = -scaleX;
 			            
-			RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-            double offX = -projectedExtent.Left;
-            double offY = -projectedExtent.Bottom;
-            RectangleD actualExtent = projectedExtent;
+//            RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+//            double offX = -projectedExtent.Left;
+//            double offY = -projectedExtent.Bottom;
+//            RectangleD actualExtent = projectedExtent;
 
-            bool MercProj = (projectionType == ProjectionType.Mercator);
+//            bool MercProj = (projectionType == ProjectionType.Mercator);
             
-            if (MercProj)
-            {
-                //if we're using a Mercator Projection then convert the actual Extent to LL coords
-                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
-                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
-                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
-            }
-            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-            bool useCustomRenderSettings = (renderSettings != null && customRenderSettings != null);
+//            if (MercProj)
+//            {
+//                //if we're using a Mercator Projection then convert the actual Extent to LL coords
+//                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
+//                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
+//                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+//            }
+//            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+//            bool useCustomRenderSettings = (renderSettings != null && customRenderSettings != null);
             
-            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >=0 && (renderSettings.MinRenderLabelZoom <0 || scaleX > renderSettings.MinRenderLabelZoom));
-            bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
-            List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
+//            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >=0 && (renderSettings.MinRenderLabelZoom <0 || scaleX > renderSettings.MinRenderLabelZoom));
+//            bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
+//            List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
 
-            float renderPenWidth = (float)(renderSettings.PenWidthScale * scaleX);
+//            float renderPenWidth = (float)(renderSettings.PenWidthScale * scaleX);
 
-            if (renderSettings.MaxPixelPenWidth > 0 && renderPenWidth > renderSettings.MaxPixelPenWidth)
-            {
-                renderPenWidth = renderSettings.MaxPixelPenWidth;
-            }
-            if (renderSettings.MinPixelPenWidth > 0 && renderPenWidth < renderSettings.MinPixelPenWidth)
-            {
-                renderPenWidth = renderSettings.MinPixelPenWidth;
-            }
+//            if (renderSettings.MaxPixelPenWidth > 0 && renderPenWidth > renderSettings.MaxPixelPenWidth)
+//            {
+//                renderPenWidth = renderSettings.MaxPixelPenWidth;
+//            }
+//            if (renderSettings.MinPixelPenWidth > 0 && renderPenWidth < renderSettings.MinPixelPenWidth)
+//            {
+//                renderPenWidth = renderSettings.MinPixelPenWidth;
+//            }
 
-            if (renderSettings.LineType == LineType.Railway)
-            {
-                renderPenWidth = Math.Min(renderPenWidth, 7f);
-            }
+//            if (renderSettings.LineType == LineType.Railway)
+//            {
+//                renderPenWidth = Math.Min(renderPenWidth, 7f);
+//            }
 
-			// obtain a handle to the Device Context so we can use GDI to perform the painting.
-            if (UseGDI)
-            {
-                dc = g.GetHdc();
-            }
-            else
-            {                
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;                              
-            }
-            try
-            {
-                int maxPaintCount = 2;
-                if ((renderSettings.LineType == LineType.Solid )|| (Math.Round(renderPenWidth) < 3))
-                {
-                    maxPaintCount = 1;
-                }
+//            // obtain a handle to the Device Context so we can use GDI to perform the painting.
+//            if (UseGDI)
+//            {
+//                dc = g.GetHdc();
+//            }
+//            else
+//            {                
+//                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+//                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;                              
+//            }
+//            try
+//            {
+//                int maxPaintCount = 2;
+//                if ((renderSettings.LineType == LineType.Solid )|| (Math.Round(renderPenWidth) < 3))
+//                {
+//                    maxPaintCount = 1;
+//                }
                 
-                for (int paintCount = 0; paintCount < maxPaintCount; paintCount++)
-                {
+//                for (int paintCount = 0; paintCount < maxPaintCount; paintCount++)
+//                {
                     
-                    try
-                    {
-                        Color currentPenColor = renderSettings.OutlineColor;
-                        int penWidth = (int)Math.Round(renderPenWidth);
-                        int color = 0x1d1030;
+//                    try
+//                    {
+//                        Color currentPenColor = renderSettings.OutlineColor;
+//                        int penWidth = (int)Math.Round(renderPenWidth);
+//                        int color = 0x1d1030;
 
-                        if (renderSettings != null)
-                        {
-                            color = renderSettings.OutlineColor.B & 0xff;
-                            color = (color << 8) | (renderSettings.OutlineColor.G & 0xff);
-                            color = (color << 8) | (renderSettings.OutlineColor.R & 0xff);
-                        }
+//                        if (renderSettings != null)
+//                        {
+//                            color = renderSettings.OutlineColor.B & 0xff;
+//                            color = (color << 8) | (renderSettings.OutlineColor.G & 0xff);
+//                            color = (color << 8) | (renderSettings.OutlineColor.R & 0xff);
+//                        }
 
-                        if (paintCount ==1)
-                        {
-                            currentPenColor = renderSettings.FillColor;
-                            color = 0x202020;
-                            if (renderSettings != null)
-                            {
-                                color = renderSettings.FillColor.B & 0xff;
-                                color = (color << 8) | (renderSettings.FillColor.G & 0xff);
-                                color = (color << 8) | (renderSettings.FillColor.R & 0xff);
-                            }
-                            penWidth -=2;
-                        }                        
+//                        if (paintCount ==1)
+//                        {
+//                            currentPenColor = renderSettings.FillColor;
+//                            color = 0x202020;
+//                            if (renderSettings != null)
+//                            {
+//                                color = renderSettings.FillColor.B & 0xff;
+//                                color = (color << 8) | (renderSettings.FillColor.G & 0xff);
+//                                color = (color << 8) | (renderSettings.FillColor.R & 0xff);
+//                            }
+//                            penWidth -=2;
+//                        }                        
                         
-                        if (UseGDI)
-                        {
-                            gdiPen = NativeMethods.CreatePen(0, penWidth, color);                            
-                            oldGdiObj = NativeMethods.SelectObject(dc, gdiPen);
-                        }
-                        else
-                        {
-                            if (paintCount == 0)
-                            {
-                                gdiplusPen = new Pen(renderSettings.OutlineColor, penWidth);
-                                //System.Drawing.Drawing2D.HatchBrush hb = new System.Drawing.Drawing2D.HatchBrush(System.Drawing.Drawing2D.HatchStyle.Vertical, renderer.OutlineColor, Color.FromArgb(10, Color.White));                                
-                                //gdiplusPen = new Pen(hb, penWidth);
+//                        if (UseGDI)
+//                        {
+//                            gdiPen = NativeMethods.CreatePen(0, penWidth, color);                            
+//                            oldGdiObj = NativeMethods.SelectObject(dc, gdiPen);
+//                        }
+//                        else
+//                        {
+//                            if (paintCount == 0)
+//                            {
+//                                gdiplusPen = new Pen(renderSettings.OutlineColor, penWidth);
+//                                //System.Drawing.Drawing2D.HatchBrush hb = new System.Drawing.Drawing2D.HatchBrush(System.Drawing.Drawing2D.HatchStyle.Vertical, renderer.OutlineColor, Color.FromArgb(10, Color.White));                                
+//                                //gdiplusPen = new Pen(hb, penWidth);
 
-                            }
-                            else if (paintCount == 1)
-                            {
-                                gdiplusPen = new Pen(renderSettings.FillColor, penWidth);
-                                if (paintCount == 1)
-                                {
-                                    selectPen = new Pen(Color.LightPink, penWidth);
-                                }
-                                if (penWidth > 1)
-                                {
-                                    //hatchBrush = new System.Drawing.Drawing2D.HatchBrush(System.Drawing.Drawing2D.HatchStyle.Vertical, renderer.OutlineColor, Color.FromArgb(10, Color.White));
-                                    //hatchPen = new Pen(hatchBrush, penWidth + 4);
-                                    renderRailway = (renderSettings.LineType == LineType.Railway);
-                                    if (renderRailway)
-                                    {
-                                        rwPen = new Pen(renderSettings.OutlineColor, 1);
-                                    }
-                                }
-                            }                            
-                            gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-                            gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-                            gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;                            
-                        }
+//                            }
+//                            else if (paintCount == 1)
+//                            {
+//                                gdiplusPen = new Pen(renderSettings.FillColor, penWidth);
+//                                if (paintCount == 1)
+//                                {
+//                                    selectPen = new Pen(Color.LightPink, penWidth);
+//                                }
+//                                if (penWidth > 1)
+//                                {
+//                                    //hatchBrush = new System.Drawing.Drawing2D.HatchBrush(System.Drawing.Drawing2D.HatchStyle.Vertical, renderer.OutlineColor, Color.FromArgb(10, Color.White));
+//                                    //hatchPen = new Pen(hatchBrush, penWidth + 4);
+//                                    renderRailway = (renderSettings.LineType == LineType.Railway);
+//                                    if (renderRailway)
+//                                    {
+//                                        rwPen = new Pen(renderSettings.OutlineColor, 1);
+//                                    }
+//                                }
+//                            }                            
+//                            gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+//                            gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+//                            gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;                            
+//                        }
 
-                        //shapeFileStream.BaseStream.Seek(MainHeader.DataOffset, SeekOrigin.Begin);
-                        shapeFileStream.Seek(MainHeaderEx.DataOffset, SeekOrigin.Begin);                        
-                        PolyLineRecordEx[] plmRecs = Recs;
-                        int index = 0;
-                        byte[] data = SFRecordCol.SharedBuffer;;
-                        Point[] sharedPoints = SFRecordCol.SharedPointBuffer; 
+//                        //shapeFileStream.BaseStream.Seek(MainHeader.DataOffset, SeekOrigin.Begin);
+//                        shapeFileStream.Seek(MainHeaderEx.DataOffset, SeekOrigin.Begin);                        
+//                        PolyLineRecordEx[] plmRecs = Recs;
+//                        int index = 0;
+//                        byte[] data = SFRecordCol.SharedBuffer;;
+//                        Point[] sharedPoints = SFRecordCol.SharedPointBuffer; 
                         
-                        float minLabelLength = (float)(6/scaleX);
-                        while (index < plmRecs.Length)
-                        {
-                            PolyLineRecordEx nextRec = plmRecs[index];
-                            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
-                            if (actualExtent.IntersectsWith(nextRec.Bounds) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
-                            {
-                                int numParts = nextRec.NumParts;
-                                Point[] pts;
+//                        float minLabelLength = (float)(6/scaleX);
+//                        while (index < plmRecs.Length)
+//                        {
+//                            PolyLineRecordEx nextRec = plmRecs[index];
+//                            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
+//                            if (actualExtent.IntersectsWith(nextRec.Bounds) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+//                            {
+//                                int numParts = nextRec.NumParts;
+//                                Point[] pts;
                                 
-                                //if labelling fields then add a renderPtObj
-                                if (labelFields && paintCount == 0)
-                                {                                                                        
-                                    //check what the scaled bounds of this part are
-                                    if ((nextRec.Bounds.Width * scaleX > 6) || (nextRec.Bounds.Height * scaleX > 6))
-                                    {
-                                        if (renderDuplicateFields)
-                                        {
-                                            List<IndexAnglePair> iapList = GetPointsFAngle(data, 0, nextRec.NumPoints, minLabelLength, MercProj);
-                                            for (int li = iapList.Count - 1; li >= 0; li--)
-                                            {
-                                                pts = GetPoints(data, iapList[li].PointIndex << 3, 2, offX, offY, scaleX, -scaleX, MercProj);
-                                                float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
-                                                if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
-                                                {
-                                                    renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f, Point.Empty, 0, 0, index));
-                                                }
-                                                else
-                                                {
-                                                    renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, Point.Empty, 0, 0, index));
-                                                }                                                
-                                            }
-                                        }
-                                        else
-                                        {
-                                            int pointIndex = 0;
-                                            float angle = GetPointsFAngle(data, 0, nextRec.NumPoints, ref pointIndex, projectedExtent, MercProj);
-                                            if (!angle.Equals(float.NaN))
-                                            {
-                                                pts = GetPoints(data, pointIndex << 3, 2, offX, offY, scaleX, -scaleX, MercProj);
-                                                float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
-                                                if (d0 > 6)
-                                                {
-                                                    if (Math.Abs(angle) > 90f && Math.Abs(angle) <= 270f)
-                                                    {
-                                                        renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f, Point.Empty, 0, 0, index));
-                                                    }
-                                                    else
-                                                    {
-                                                        renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, Point.Empty, 0, 0, index));
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+//                                //if labelling fields then add a renderPtObj
+//                                if (labelFields && paintCount == 0)
+//                                {                                                                        
+//                                    //check what the scaled bounds of this part are
+//                                    if ((nextRec.Bounds.Width * scaleX > 6) || (nextRec.Bounds.Height * scaleX > 6))
+//                                    {
+//                                        if (renderDuplicateFields)
+//                                        {
+//                                            List<IndexAnglePair> iapList = GetPointsFAngle(data, 0, nextRec.NumPoints, minLabelLength, MercProj);
+//                                            for (int li = iapList.Count - 1; li >= 0; li--)
+//                                            {
+//                                                pts = GetPoints(data, iapList[li].PointIndex << 3, 2, offX, offY, scaleX, -scaleX, MercProj);
+//                                                float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
+//                                                if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
+//                                                {
+//                                                    renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f, Point.Empty, 0, 0, index));
+//                                                }
+//                                                else
+//                                                {
+//                                                    renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, Point.Empty, 0, 0, index));
+//                                                }                                                
+//                                            }
+//                                        }
+//                                        else
+//                                        {
+//                                            int pointIndex = 0;
+//                                            float angle = GetPointsFAngle(data, 0, nextRec.NumPoints, ref pointIndex, projectedExtent, MercProj);
+//                                            if (!angle.Equals(float.NaN))
+//                                            {
+//                                                pts = GetPoints(data, pointIndex << 3, 2, offX, offY, scaleX, -scaleX, MercProj);
+//                                                float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
+//                                                if (d0 > 6)
+//                                                {
+//                                                    if (Math.Abs(angle) > 90f && Math.Abs(angle) <= 270f)
+//                                                    {
+//                                                        renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f, Point.Empty, 0, 0, index));
+//                                                    }
+//                                                    else
+//                                                    {
+//                                                        renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, Point.Empty, 0, 0, index));
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                }
 
-                                if (useCustomRenderSettings)
-                                {
-                                    Color customColor = (paintCount == 0) ? customRenderSettings.GetRecordOutlineColor(index) : customRenderSettings.GetRecordFillColor(index);
+//                                if (useCustomRenderSettings)
+//                                {
+//                                    Color customColor = (paintCount == 0) ? customRenderSettings.GetRecordOutlineColor(index) : customRenderSettings.GetRecordFillColor(index);
                                         
-                                    if (UseGDI)
-                                    {
-                                        if (customColor.ToArgb() != currentPenColor.ToArgb())
-                                        {
-                                            gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, penWidth, ColorToGDIColor(customColor));
-                                            NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
-                                            currentPenColor = customColor;
-                                        }                                        
-                                    }
-                                    else
-                                    {
-                                        if (customColor.ToArgb() != currentPenColor.ToArgb())
-                                        {
-                                            gdiplusPen = new Pen(customColor, penWidth);
-                                            currentPenColor = customColor;
-                                            gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-                                            gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-                                            gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;                            
-                                        }
+//                                    if (UseGDI)
+//                                    {
+//                                        if (customColor.ToArgb() != currentPenColor.ToArgb())
+//                                        {
+//                                            gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, penWidth, ColorToGDIColor(customColor));
+//                                            NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
+//                                            currentPenColor = customColor;
+//                                        }                                        
+//                                    }
+//                                    else
+//                                    {
+//                                        if (customColor.ToArgb() != currentPenColor.ToArgb())
+//                                        {
+//                                            gdiplusPen = new Pen(customColor, penWidth);
+//                                            currentPenColor = customColor;
+//                                            gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+//                                            gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+//                                            gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;                            
+//                                        }
                                         
 
-                                    }
-                                }
+//                                    }
+//                                }
 
-                                for (int partNum = 0; partNum < numParts; partNum++)
-                                {
-                                    int numPoints;
-                                    if ((numParts - partNum) > 1)
-                                    {
-                                        numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
-                                    }
-                                    else
-                                    {
-                                        numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
-                                    }
-                                    if (numPoints <= 1)
-                                    {
-                                        //Console.Out.WriteLine("Skipping Record {0}, Part {1} - {2} point(s)", index, partNum, numPoints);
-                                        continue;
-                                    }
-                                    if(UseGDI)
-                                    {                                        
-                                        int usedPoints = 0;
-                                        GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, -scaleX, sharedPoints, ref usedPoints, MercProj);
-                                        NativeMethods.DrawPolyline(dc,sharedPoints, usedPoints);
-                                    }
-                                    else
-                                    {                                        
-                                        pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, MercProj);                                        
-                                        //if (index == selectedRecordIndex && selectPen != null)
-                                        if(recordSelected[index] && selectPen != null)
-                                        {
-                                            g.DrawLines(selectPen, pts);
-                                        }
-                                        else
-                                        {
-                                            g.DrawLines(gdiplusPen, pts);
-                                        }
+//                                for (int partNum = 0; partNum < numParts; partNum++)
+//                                {
+//                                    int numPoints;
+//                                    if ((numParts - partNum) > 1)
+//                                    {
+//                                        numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
+//                                    }
+//                                    else
+//                                    {
+//                                        numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
+//                                    }
+//                                    if (numPoints <= 1)
+//                                    {
+//                                        //Console.Out.WriteLine("Skipping Record {0}, Part {1} - {2} point(s)", index, partNum, numPoints);
+//                                        continue;
+//                                    }
+//                                    if(UseGDI)
+//                                    {                                        
+//                                        int usedPoints = 0;
+//                                        GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, -scaleX, sharedPoints, ref usedPoints, MercProj);
+//                                        NativeMethods.DrawPolyline(dc,sharedPoints, usedPoints);
+//                                    }
+//                                    else
+//                                    {                                        
+//                                        pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, MercProj);                                        
+//                                        //if (index == selectedRecordIndex && selectPen != null)
+//                                        if(recordSelected[index] && selectPen != null)
+//                                        {
+//                                            g.DrawLines(selectPen, pts);
+//                                        }
+//                                        else
+//                                        {
+//                                            g.DrawLines(gdiplusPen, pts);
+//                                        }
 
-                                        if (renderRailway)
-                                        {
-                                            int th = (int)Math.Ceiling((renderPenWidth + 2)/2);
-                                            int tw = (int)Math.Max(Math.Round((7f *th)/7), 5);
-                                            int pIndx = 0;
-                                            int lx = 0;
-                                            while (pIndx < pts.Length - 1)
-                                            {
-                                                //draw the next line segment
+//                                        if (renderRailway)
+//                                        {
+//                                            int th = (int)Math.Ceiling((renderPenWidth + 2)/2);
+//                                            int tw = (int)Math.Max(Math.Round((7f *th)/7), 5);
+//                                            int pIndx = 0;
+//                                            int lx = 0;
+//                                            while (pIndx < pts.Length - 1)
+//                                            {
+//                                                //draw the next line segment
                                                 
-                                                int dy= pts[pIndx + 1].Y - pts[pIndx].Y;
-                                                int dx = pts[pIndx + 1].X - pts[pIndx].X;
-                                                float a = (float)(Math.Atan2(dy, dx)*180f/Math.PI);
-                                                int d = (int)Math.Round(Math.Sqrt(dy * dy + dx * dx));
-                                                if (d > 0)
-                                                {
-                                                    g.ResetTransform();
-                                                    if (Math.Abs(a) > 90f && Math.Abs(a) <= 270f)
-                                                    {
-                                                        a -= 180f;
-                                                        g.TranslateTransform(pts[pIndx + 1].X, pts[pIndx + 1].Y);
-                                                        g.RotateTransform(a);
-                                                        while(lx < d)
-                                                        {
-                                                            g.DrawLine(rwPen, lx, -th, lx, th);
-                                                            lx += tw;
-                                                        }
-                                                        lx -= d;
-                                                    }
-                                                    else
-                                                    {
-                                                        g.TranslateTransform(pts[pIndx].X, pts[pIndx].Y);
-                                                        g.RotateTransform(a);
-                                                        while(lx < d)
-                                                        {
-                                                            g.DrawLine(rwPen, lx, -th, lx, th);
-                                                            lx += tw;
-                                                        }
-                                                        lx -= d;
-                                                    }
-                                                }
+//                                                int dy= pts[pIndx + 1].Y - pts[pIndx].Y;
+//                                                int dx = pts[pIndx + 1].X - pts[pIndx].X;
+//                                                float a = (float)(Math.Atan2(dy, dx)*180f/Math.PI);
+//                                                int d = (int)Math.Round(Math.Sqrt(dy * dy + dx * dx));
+//                                                if (d > 0)
+//                                                {
+//                                                    g.ResetTransform();
+//                                                    if (Math.Abs(a) > 90f && Math.Abs(a) <= 270f)
+//                                                    {
+//                                                        a -= 180f;
+//                                                        g.TranslateTransform(pts[pIndx + 1].X, pts[pIndx + 1].Y);
+//                                                        g.RotateTransform(a);
+//                                                        while(lx < d)
+//                                                        {
+//                                                            g.DrawLine(rwPen, lx, -th, lx, th);
+//                                                            lx += tw;
+//                                                        }
+//                                                        lx -= d;
+//                                                    }
+//                                                    else
+//                                                    {
+//                                                        g.TranslateTransform(pts[pIndx].X, pts[pIndx].Y);
+//                                                        g.RotateTransform(a);
+//                                                        while(lx < d)
+//                                                        {
+//                                                            g.DrawLine(rwPen, lx, -th, lx, th);
+//                                                            lx += tw;
+//                                                        }
+//                                                        lx -= d;
+//                                                    }
+//                                                }
                                                                                                 
-                                                pIndx++;
-                                            }
-                                            g.ResetTransform();
-                                        }
+//                                                pIndx++;
+//                                            }
+//                                            g.ResetTransform();
+//                                        }
                                         
-                                    }
-                                }
+//                                    }
+//                                }
 
-                            }
-                            index++;
-                        }
-                    }
-                    finally
-                    {                        
-                        if (gdiPen != IntPtr.Zero) NativeMethods.DeleteObject(gdiPen);
-                        if (oldGdiObj != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiObj);
-                        if (gdiplusPen != null) gdiplusPen.Dispose();
-                        if (rwPen != null) rwPen.Dispose();                                                
-                    }
-                }
-            }
+//                            }
+//                            index++;
+//                        }
+//                    }
+//                    finally
+//                    {                        
+//                        if (gdiPen != IntPtr.Zero) NativeMethods.DeleteObject(gdiPen);
+//                        if (oldGdiObj != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiObj);
+//                        if (gdiplusPen != null) gdiplusPen.Dispose();
+//                        if (rwPen != null) rwPen.Dispose();                                                
+//                    }
+//                }
+//            }
             
-            finally
-            {
-                if (dc != IntPtr.Zero) g.ReleaseHdc(dc);
-            }
+//            finally
+//            {
+//                if (dc != IntPtr.Zero) g.ReleaseHdc(dc);
+//            }
 
-            try
-            {                
-                if (labelFields)
-                {
-                    bool shadowText = (renderSettings != null && renderSettings.ShadowText);
-                    Brush fontBrush = new SolidBrush(renderSettings.FontColor);
-                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
-                    pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
-                    int count = renderPtObjList.Count;
-                    Color currentFontColor = renderSettings.FontColor;
-                    bool useCustomFontColor = customRenderSettings != null;
-                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
-                    float ws = 1.2f;
-                    if (renderDuplicateFields) ws = 1f;
-                    float ssm = shadowText ? 0.8f : 1f;
-                    for (int n = 0; n < count; n++)
-                    {
-                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
-                        if (strLabel.Length > 0)// && string.Compare(strLabel, lastLabel) != 0)
-                        {
-                            SizeF strSize = g.MeasureString(strLabel, renderSettings.Font);
-                            strSize = new SizeF(strSize.Width * ssm, strSize.Height * ssm);
-                            if (strSize.Width <= (renderPtObjList[n].Point0Dist)*ws)
-                            {
-                                g.ResetTransform();
-                                g.TranslateTransform(renderPtObjList[n].Point0.X, renderPtObjList[n].Point0.Y);
-                                g.RotateTransform(-renderPtObjList[n].Angle0);
+//            try
+//            {                
+//                if (labelFields)
+//                {
+//                    bool shadowText = (renderSettings != null && renderSettings.ShadowText);
+//                    Brush fontBrush = new SolidBrush(renderSettings.FontColor);
+//                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+//                    pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+//                    int count = renderPtObjList.Count;
+//                    Color currentFontColor = renderSettings.FontColor;
+//                    bool useCustomFontColor = customRenderSettings != null;
+//                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+//                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+//                    float ws = 1.2f;
+//                    if (renderDuplicateFields) ws = 1f;
+//                    float ssm = shadowText ? 0.8f : 1f;
+//                    for (int n = 0; n < count; n++)
+//                    {
+//                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+//                        if (strLabel.Length > 0)// && string.Compare(strLabel, lastLabel) != 0)
+//                        {
+//                            SizeF strSize = g.MeasureString(strLabel, renderSettings.Font);
+//                            strSize = new SizeF(strSize.Width * ssm, strSize.Height * ssm);
+//                            if (strSize.Width <= (renderPtObjList[n].Point0Dist)*ws)
+//                            {
+//                                g.ResetTransform();
+//                                g.TranslateTransform(renderPtObjList[n].Point0.X, renderPtObjList[n].Point0.Y);
+//                                g.RotateTransform(-renderPtObjList[n].Angle0);
 
-                                if (useCustomFontColor)
-                                {
-                                    Color customColor = customRenderSettings.GetRecordFontColor(renderPtObjList[n].RecordIndex);
-                                    if (customColor.ToArgb() != currentFontColor.ToArgb())
-                                    {
-                                        fontBrush.Dispose();
-                                        fontBrush = new SolidBrush(customColor);
-                                        currentFontColor = customColor;
-                                    }
-                                }
+//                                if (useCustomFontColor)
+//                                {
+//                                    Color customColor = customRenderSettings.GetRecordFontColor(renderPtObjList[n].RecordIndex);
+//                                    if (customColor.ToArgb() != currentFontColor.ToArgb())
+//                                    {
+//                                        fontBrush.Dispose();
+//                                        fontBrush = new SolidBrush(customColor);
+//                                        currentFontColor = customColor;
+//                                    }
+//                                }
 
-                                if (shadowText)
-                                {
-                                    System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
-                                    gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, new PointF((renderPtObjList[n].Point0Dist - strSize.Width) / 2, -(strSize.Height) / 2), StringFormat.GenericDefault);//new StringFormat());
-                                    g.DrawPath(pen, gp);
-                                    g.FillPath(fontBrush, gp);
-                                }
-                                else
-                                {
-                                    g.DrawString(strLabel, renderSettings.Font, fontBrush, (renderPtObjList[n].Point0Dist - strSize.Width) / 2, -strSize.Height / 2);                                    
-                                }
-                            }
-                        }
-                    }
-                    fontBrush.Dispose();
-                    pen.Dispose();
-                }
-            }
-            finally
-            {
-                g.ResetTransform();
-                //g.DrawString("Test", renderer.Font, Brushes.Black, 0, 0);
-            }
+//                                if (shadowText)
+//                                {
+//                                    System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
+//                                    gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, new PointF((renderPtObjList[n].Point0Dist - strSize.Width) / 2, -(strSize.Height) / 2), StringFormat.GenericDefault);//new StringFormat());
+//                                    g.DrawPath(pen, gp);
+//                                    g.FillPath(fontBrush, gp);
+//                                }
+//                                else
+//                                {
+//                                    g.DrawString(strLabel, renderSettings.Font, fontBrush, (renderPtObjList[n].Point0Dist - strSize.Width) / 2, -strSize.Height / 2);                                    
+//                                }
+//                            }
+//                        }
+//                    }
+//                    fontBrush.Dispose();
+//                    pen.Dispose();
+//                }
+//            }
+//            finally
+//            {
+//                g.ResetTransform();
+//                //g.DrawString("Test", renderer.Font, Brushes.Black, 0, 0);
+//            }
             
-		}
+//        }
 
         
-        private struct RenderPtObj
-        {
-            public Point Point0;
-            public float Point0Dist;
-            public float Angle0;
-            public Point Point1;
-            public float Point1Dist;
-            public float Angle1;
+//        private struct RenderPtObj
+//        {
+//            public Point Point0;
+//            public float Point0Dist;
+//            public float Angle0;
+//            public Point Point1;
+//            public float Point1Dist;
+//            public float Angle1;
 
-            public int RecordIndex;
+//            public int RecordIndex;
 
-            public RenderPtObj(Point p0, float poDist, float p0Angle, Point p1, float p1Dist,float p1Angle, int recordIndexParam)
-            {
-                Point0 = p0;
-                Point0Dist = poDist;
-                Angle0 = p0Angle;
-                RecordIndex = recordIndexParam;
-                Point1 = p1;
-                Point1Dist = p1Dist;
-                Angle1 = p1Angle;
-            }
+//            public RenderPtObj(Point p0, float poDist, float p0Angle, Point p1, float p1Dist,float p1Angle, int recordIndexParam)
+//            {
+//                Point0 = p0;
+//                Point0Dist = poDist;
+//                Angle0 = p0Angle;
+//                RecordIndex = recordIndexParam;
+//                Point1 = p1;
+//                Point1Dist = p1Dist;
+//                Angle1 = p1Angle;
+//            }
 
-        }
+//        }
 
-        public bool ContainsPoint(int shapeIndex, PointF pt, BinaryReader shapeFileStream, byte[] dataBuf, float minDist)
-        {
-            byte[] data = dataBuf;
-            PolyLineRecordEx nextRec = Recs[shapeIndex];
-            shapeFileStream.BaseStream.Seek(nextRec.DataOffset, SeekOrigin.Begin);
-            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
-            int numParts = nextRec.NumParts;
-            PointF[] pts;
-            for (int partNum = 0; partNum < numParts; partNum++)
-            {
-                int numPoints;
-                if ((numParts - partNum) > 1)
-                {
-                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
-                }
-                else
-                {
-                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
-                }
-                pts = GetPointsF(data, nextRec.PartOffsets[partNum] << 3, numPoints);
-                if (PointOnPolyLine(pts, pt, minDist))
-                {
-                    return true;
-                }
-            }
-            data = null;
-            return false;
-        }
+//        public bool ContainsPoint(int shapeIndex, PointF pt, BinaryReader shapeFileStream, byte[] dataBuf, float minDist)
+//        {
+//            byte[] data = dataBuf;
+//            PolyLineRecordEx nextRec = Recs[shapeIndex];
+//            shapeFileStream.BaseStream.Seek(nextRec.DataOffset, SeekOrigin.Begin);
+//            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
+//            int numParts = nextRec.NumParts;
+//            PointF[] pts;
+//            for (int partNum = 0; partNum < numParts; partNum++)
+//            {
+//                int numPoints;
+//                if ((numParts - partNum) > 1)
+//                {
+//                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
+//                }
+//                else
+//                {
+//                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
+//                }
+//                pts = GetPointsF(data, nextRec.PartOffsets[partNum] << 3, numPoints);
+//                if (PointOnPolyLine(pts, pt, minDist))
+//                {
+//                    return true;
+//                }
+//            }
+//            data = null;
+//            return false;
+//        }
 
-        private static bool PointOnPolyLine(PointF[] points, PointF pt, float minDist)
-        {
+//        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+//        {
+//            throw new NotImplementedException();
+//        }
+
+
+//        private static bool PointOnPolyLine(PointF[] points, PointF pt, float minDist)
+//        {
             
-            for (int i = 0; i < points.Length-1; i++)
-            {
-                if (lineSegPointDist(ref points[i], ref points[i + 1], ref pt) <= minDist)
-                {
-                    return true;
-                }
+//            for (int i = 0; i < points.Length-1; i++)
+//            {
+//                if (lineSegPointDist(ref points[i], ref points[i + 1], ref pt) <= minDist)
+//                {
+//                    return true;
+//                }
                 
-            }
+//            }
             
-            return false;
-        }
+//            return false;
+//        }
 
-         //compute the dot product AB*BC         
-        static float dot(ref PointF a, ref PointF b, ref PointF c)
-        {
-            PointF ab = new PointF(b.X-a.X, b.Y-a.Y);
-            PointF bc = new PointF(c.X - b.X, c.Y - b.Y);
-            return (ab.X * bc.X) + (ab.Y * bc.Y);        
-        }
+//         //compute the dot product AB*BC         
+//        static float dot(ref PointF a, ref PointF b, ref PointF c)
+//        {
+//            PointF ab = new PointF(b.X-a.X, b.Y-a.Y);
+//            PointF bc = new PointF(c.X - b.X, c.Y - b.Y);
+//            return (ab.X * bc.X) + (ab.Y * bc.Y);        
+//        }
 
-        //Compute the cross product AB x AC
-        static float cross(ref PointF a, ref PointF b, ref PointF c)
-        {
-            PointF ab = new PointF(b.X - a.X, b.Y - a.Y);
-            PointF ac = new PointF(c.X - a.X, c.Y - a.Y);
-            return (ab.X * ac.Y) - (ab.Y * ac.X);                
-        }
+//        //Compute the cross product AB x AC
+//        static float cross(ref PointF a, ref PointF b, ref PointF c)
+//        {
+//            PointF ab = new PointF(b.X - a.X, b.Y - a.Y);
+//            PointF ac = new PointF(c.X - a.X, c.Y - a.Y);
+//            return (ab.X * ac.Y) - (ab.Y * ac.X);                
+//        }
    
-        private static double distance(ref PointF a,  ref PointF b)
-        {
-            float d1 = a.X - b.X;
-            float d2 = a.Y - b.Y;
-            return Math.Sqrt((d1 * d1) + (d2 * d2));
-        }
+//        private static double distance(ref PointF a,  ref PointF b)
+//        {
+//            float d1 = a.X - b.X;
+//            float d2 = a.Y - b.Y;
+//            return Math.Sqrt((d1 * d1) + (d2 * d2));
+//        }
 
 
-    //Compute the distance from AB to C
-    //if isSegment is true, AB is a segment, not a line.
-    private static double lineSegPointDist( ref PointF a,  ref PointF b, ref PointF c)
-    {
-        //float dist = cross(a,b,c) / distance(a,b);
+//    //Compute the distance from AB to C
+//    //if isSegment is true, AB is a segment, not a line.
+//    private static double lineSegPointDist( ref PointF a,  ref PointF b, ref PointF c)
+//    {
+//        //float dist = cross(a,b,c) / distance(a,b);
 
-        if (dot(ref a, ref b, ref c) > 0)
-        {
-            return distance(ref b,ref c);
-        }
-        if (dot(ref b, ref a, ref c) > 0)
-        {
-            return distance(ref a, ref c);
-        } 
-        return Math.Abs(cross(ref a, ref b, ref c) / distance(ref a, ref b));
-    }
+//        if (dot(ref a, ref b, ref c) > 0)
+//        {
+//            return distance(ref b,ref c);
+//        }
+//        if (dot(ref b, ref a, ref c) > 0)
+//        {
+//            return distance(ref a, ref c);
+//        } 
+//        return Math.Abs(cross(ref a, ref b, ref c) / distance(ref a, ref b));
+//    }
 
 
 
-    #region QTNodeHelper Members
+//    #region QTNodeHelper Members
 
-    public bool IsPointData()
-    {
-        return false;
-    }
+//    public bool IsPointData()
+//    {
+//        return false;
+//    }
 
-    public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
-    {
-        //throw new Exception("The method or operation is not implemented.");
-        return PointF.Empty;
-    }
+//    public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+//    {
+//        //throw new Exception("The method or operation is not implemented.");
+//        return PointF.Empty;
+//    }
 
     
+
+//    #endregion
+
+    
+//}
+    
+//    class SFPolyLineMExCol : SFRecordCol
+//    {
+//        public PolyLineMRecordEx[] Recs;
+
+//        public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
+//        {
+//            return Recs[recordIndex].Bounds;
+//        }
+
+//        public SFPolyLineMExCol(PolyLineMRecordEx[] recs,ShapeFileMainHeaderEx head): base(head)
+//        {
+//            this.Recs = recs;
+//        }
+
+//        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
+//        {
+//            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
+//        }
+
+//        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
+//        {
+//            throw new System.NotImplementedException("The method or operation is not implemented.");
+//        }
+
+//        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            throw new NotImplementedException("The method or operation is not implemented.");
+//        }
+
+//        public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            throw new NotImplementedException();
+//        }
+
+//        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream)
+//        {
+//            return null;
+//        }
+
+//        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            return null;
+//        }
+
+//        public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            throw new NotImplementedException();
+//        }
+
+//        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+//        {
+//            throw new NotImplementedException();
+//        }
+
+//        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer, ProjectionType projectionType)
+//        {
+//            bool UseGDI = this.UseGDI(extent);
+//            //DateTime start = DateTime.Now;
+
+//            IntPtr dc = IntPtr.Zero;
+//            IntPtr gdiPen = IntPtr.Zero;
+//            IntPtr oldGdiObj = IntPtr.Zero;
+//            Pen gdiplusPen = null;
+//            Pen rwPen = null;
+//            bool renderRailway = false;
+
+
+//            float scaleX = (float)(clientArea.Width / extent.Width);
+//            float scaleY = -scaleX;
+
+//            RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+//            double offX = -projectedExtent.Left;
+//            double offY = -projectedExtent.Bottom;
+//            RectangleD actualExtent = projectedExtent;
+
+//            bool MercProj = projectionType == ProjectionType.Mercator;
+
+//            if (MercProj)
+//            {
+//                //if we're using a Mercator Projection then convert the actual Extent to LL coords
+//                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
+//                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
+//                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+//            }
+            
+//            bool labelFields = (renderer != null && renderer.FieldIndex >= 0 && (renderer.MinRenderLabelZoom < 0 || scaleX > renderer.MinRenderLabelZoom));
+//            bool renderDuplicateFields = (labelFields && renderer.RenderDuplicateFields); 
+//            List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
+
+//            float renderPenWidth = renderer.PenWidthScale * scaleX;
+
+//            if (renderer.MaxPixelPenWidth > 0 && renderPenWidth > renderer.MaxPixelPenWidth)
+//            {
+//                renderPenWidth = renderer.MaxPixelPenWidth;
+//            }
+//            if (renderer.MinPixelPenWidth > 0 && renderPenWidth < renderer.MinPixelPenWidth)
+//            {
+//                renderPenWidth = renderer.MinPixelPenWidth;
+//            }
+
+//            if (renderer.LineType == LineType.Railway)
+//            {
+//                renderPenWidth = Math.Min(renderPenWidth, 7f);
+//            }
+
+//            // obtain a handle to the Device Context so we can use GDI to perform the painting.
+//            if (UseGDI)
+//            {
+//                dc = g.GetHdc();
+//            }
+//            else
+//            {
+//                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+//                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;// ClearTypeGridFit;              
+//            }
+//            try
+//            {
+//                int maxPaintCount = 2;
+//                if ((renderer.LineType == LineType.Solid) || (Math.Round(renderPenWidth) < 3))
+//                {
+//                    maxPaintCount = 1;
+//                }
+
+//                for (int paintCount = 0; paintCount < maxPaintCount; paintCount++)
+//                {
+//                    try
+//                    {
+//                        int penWidth = (int)Math.Round(renderPenWidth);
+//                        int color = 0x1d1030;
+
+//                        if (renderer != null)
+//                        {
+//                            color = renderer.OutlineColor.B & 0xff;
+//                            color = (color << 8) | (renderer.OutlineColor.G & 0xff);
+//                            color = (color << 8) | (renderer.OutlineColor.R & 0xff);
+//                        }
+
+//                        if (paintCount == 1)
+//                        {
+//                            color = 0x202020;
+//                            if (renderer != null)
+//                            {
+//                                color = renderer.FillColor.B & 0xff;
+//                                color = (color << 8) | (renderer.FillColor.G & 0xff);
+//                                color = (color << 8) | (renderer.FillColor.R & 0xff);
+//                            }
+//                            penWidth -= 2;
+//                        }
+
+
+//                        if (UseGDI)
+//                        {
+//                            gdiPen = NativeMethods.CreatePen(0, penWidth, color);
+//                            oldGdiObj = NativeMethods.SelectObject(dc, gdiPen);
+//                        }
+//                        else
+//                        {
+//                            if (paintCount == 0)
+//                            {
+//                                gdiplusPen = new Pen(renderer.OutlineColor, penWidth);
+//                            }
+//                            else if (paintCount == 1)
+//                            {
+//                                gdiplusPen = new Pen(renderer.FillColor, penWidth);
+
+//                                if (penWidth > 1)
+//                                {
+//                                    renderRailway = (renderer.LineType == LineType.Railway);
+//                                    if (renderRailway)
+//                                    {
+//                                        rwPen = new Pen(renderer.OutlineColor, 1);
+//                                    }
+//                                }
+
+//                            }
+//                            gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+//                            gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+//                            gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+//                        }
+
+//                        //shapeFileStream.BaseStream.Seek(MainHeader.DataOffset, SeekOrigin.Begin);
+//                        shapeFileStream.Seek(MainHeaderEx.DataOffset, SeekOrigin.Begin);
+
+//                        PolyLineMRecordEx[] plmRecs = Recs;
+//                        int index = 0;
+//                        byte[] data = SFRecordCol.SharedBuffer;                        
+//                        float minLabelLength = (float)(6 / scaleX);
+//                        while (index < plmRecs.Length)
+//                        {
+//                            PolyLineMRecordEx nextRec = plmRecs[index];
+//                            //shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
+//                            shapeFileStream.Read(data, 0, (nextRec.NumPoints << 3) + (nextRec.NumPoints << 2));
+//                            if (actualExtent.IntersectsWith(nextRec.Bounds))
+//                            {
+//                                int numParts = nextRec.NumParts;
+//                                Point[] pts;
+
+//                                //if using a renderer then add a renderPtObj
+//                                if (labelFields && paintCount == 0)
+//                                {
+//                                    if ((nextRec.Bounds.Width * scaleX > 6) || (nextRec.Bounds.Height * scaleX > 6))
+//                                    {
+//                                        if (renderDuplicateFields)
+//                                        {
+//                                            List<IndexAnglePair> iapList = GetPointsFAngle(data, 0, nextRec.NumPoints, minLabelLength, MercProj);
+//                                            for (int li = iapList.Count - 1; li >= 0; li--)
+//                                            {
+//                                                pts = GetPoints(data, iapList[li].PointIndex << 3, 2, offX, offY, scaleX, -scaleX, MercProj);
+//                                                float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
+//                                                if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
+//                                                {
+//                                                    renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f, Point.Empty, 0, 0, index));
+//                                                }
+//                                                else
+//                                                {
+//                                                    renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, Point.Empty, 0, 0, index));
+//                                                }
+//                                            }
+//                                        }
+//                                        else
+//                                        {
+
+//                                            int pointIndex = 0;
+//                                            float angle = GetPointsFAngle(data, 0, nextRec.NumPoints, ref pointIndex, actualExtent, MercProj);
+//                                            if (!angle.Equals(float.NaN))
+//                                            {                                               
+//                                                pts = GetPoints(data, pointIndex << 3, 2, offX, offY, scaleX, -scaleX, MercProj);
+//                                                float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
+//                                                if (Math.Abs(angle) > 90f && Math.Abs(angle) <= 270f)
+//                                                {
+//                                                    renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f, Point.Empty, 0, 0, index));
+//                                                }
+//                                                else
+//                                                {
+//                                                    renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, Point.Empty, 0, 0, index));
+//                                                }                                                
+//                                            }
+//                                        }
+//                                    }
+//                                }
+
+//                                for (int partNum = 0; partNum < numParts; partNum++)
+//                                {
+//                                    int numPoints;
+//                                    if ((numParts - partNum) > 1)
+//                                    {
+//                                        numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
+//                                    }
+//                                    else
+//                                    {
+//                                        numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
+//                                    }
+//                                    if (numPoints <= 1)
+//                                    {
+//                                        //Console.Out.WriteLine("Skipping Record {0}, Part {1} - {2} point(s)", index, partNum, numPoints);
+//                                        continue;
+//                                    }
+//                                    if (UseGDI)
+//                                    {
+//                                        pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, -scaleX, MercProj);
+//                                        NativeMethods.DrawPolyline(dc, pts, numPoints);
+//                                    }
+//                                    else
+//                                    {
+//                                        pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, MercProj);
+//                                        g.DrawLines(gdiplusPen, pts);
+
+//                                        if (renderRailway)
+//                                        {
+//                                            int th = (int)Math.Ceiling((renderPenWidth + 2) / 2);
+//                                            int tw = (int)Math.Max(Math.Round((7f * th) / 7), 5);
+//                                            int pIndx = 0;
+//                                            int lx = 0;
+//                                            while (pIndx < pts.Length - 1)
+//                                            {
+//                                                //draw the next line segment
+
+//                                                int dy = pts[pIndx + 1].Y - pts[pIndx].Y;
+//                                                int dx = pts[pIndx + 1].X - pts[pIndx].X;
+//                                                float a = (float)(Math.Atan2(dy, dx) * 180f / Math.PI);
+//                                                int d = (int)Math.Round(Math.Sqrt(dy * dy + dx * dx));
+//                                                if (d > 0)
+//                                                {
+//                                                    g.ResetTransform();
+//                                                    if (Math.Abs(a) > 90f && Math.Abs(a) <= 270f)
+//                                                    {
+//                                                        a -= 180f;
+//                                                        g.TranslateTransform(pts[pIndx + 1].X, pts[pIndx + 1].Y);
+//                                                        g.RotateTransform(a);
+//                                                        while (lx < d)
+//                                                        {
+//                                                            g.DrawLine(rwPen, lx, -th, lx, th);
+//                                                            lx += tw;
+//                                                        }
+//                                                        lx -= d;
+//                                                    }
+//                                                    else
+//                                                    {
+//                                                        g.TranslateTransform(pts[pIndx].X, pts[pIndx].Y);
+//                                                        g.RotateTransform(a);
+//                                                        while (lx < d)
+//                                                        {
+//                                                            g.DrawLine(rwPen, lx, -th, lx, th);
+//                                                            lx += tw;
+//                                                        }
+//                                                        lx -= d;
+//                                                    }
+//                                                }
+
+//                                                pIndx++;
+//                                            }
+//                                            g.ResetTransform();
+//                                        }
+//                                    }
+//                                }
+
+//                            }
+//                            index++;
+//                        }
+//                    }
+//                    finally
+//                    {                        
+//                        if (gdiPen != IntPtr.Zero) NativeMethods.DeleteObject(gdiPen);
+//                        if (oldGdiObj != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiObj);
+//                        if (gdiplusPen != null) gdiplusPen.Dispose();
+//                        if (rwPen != null) rwPen.Dispose();                    
+//                    }
+//                }
+//            }
+
+//            finally
+//            {
+//                if (dc != IntPtr.Zero) g.ReleaseHdc(dc);
+//            }
+
+//            try
+//            {
+//                if (labelFields)
+//                {
+//                    Brush fontBrush = new SolidBrush(renderer.FontColor);
+//                    int count = renderPtObjList.Count;
+//                    //string lastLabel = null;
+//                    for (int n = 0; n < count; n++)
+//                    {
+//                        //RenderPtObj rpObj = renderPtObjList[n];
+//                        string strLabel = renderer.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderer.FieldIndex).Trim();
+//                        if (strLabel.Length > 0)// && string.Compare(strLabel, lastLabel) != 0)
+//                        {
+//                            //lastLabel = strLabel;
+//                            SizeF strSize = g.MeasureString(strLabel, renderer.Font);
+//                            if (strSize.Width*.5f <= (renderPtObjList[n].Point0Dist))
+//                            {
+//                                g.ResetTransform();
+//                                g.TranslateTransform(renderPtObjList[n].Point0.X, renderPtObjList[n].Point0.Y);
+//                                g.RotateTransform(-renderPtObjList[n].Angle0);
+
+//                                g.DrawString(strLabel, renderer.Font, fontBrush, (renderPtObjList[n].Point0Dist - strSize.Width) / 2/*-strSize.Width / 2*/, -strSize.Height / 2);
+//                                //g.DrawRectangle(Pens.Red, 0, -strSize.Height, rpObj.Point0Dist, strSize.Height);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//            finally
+//            {
+//                g.ResetTransform();
+//            }            
+//        }
+
+//        private struct RenderPtObj
+//        {
+//            public Point Point0;
+//            public float Point0Dist;
+//            public float Angle0;
+//            public Point Point1;
+//            public float Point1Dist;
+//            public float Angle1;
+
+//            public int RecordIndex;
+
+//            public RenderPtObj(Point p0, float poDist, float p0Angle, Point p1, float p1Dist, float p1Angle, int recordIndexParam)
+//            {
+//                Point0 = p0;
+//                Point0Dist = poDist;
+//                Angle0 = p0Angle;
+//                RecordIndex = recordIndexParam;
+//                Point1 = p1;
+//                Point1Dist = p1Dist;
+//                Angle1 = p1Angle;
+//            }
+
+//        }
+        
+//    }
+
+//    class SFPolygonExCol : SFRecordCol, QTNodeHelper
+//    {        
+//        public PolygonRecordEx[] Recs;
+        
+//        public SFPolygonExCol(PolygonRecordEx[] recs, ShapeFileMainHeaderEx head): base(head)
+//        {
+//            this.Recs = recs;
+//        }
+
+//        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
+//        {
+//            return GetShapeData(recordIndex, shapeFileStream, SFRecordCol.SharedBuffer/*new byte[ShapeFileExConstants.MAX_REC_LENGTH]*/);
+
+//        }
+
+//        public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            throw new NotImplementedException();
+//        }
+
+//        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            byte[] data = dataBuffer;
+//            PolygonRecordEx nextRec = Recs[recordIndex];
+//            shapeFileStream.Seek(nextRec.DataOffset, SeekOrigin.Begin);
+//            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
+//            int numParts = nextRec.NumParts;
+//            List<PointF[]> dataList = new List<PointF[]>();
+//            PointF[] pts;
+//            for (int partNum = 0; partNum < numParts; partNum++)
+//            {
+//                int numPoints;
+//                if ((numParts - partNum) > 1)
+//                {
+//                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
+//                }
+//                else
+//                {
+//                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
+//                }
+//                pts = GetPointsF(data, nextRec.PartOffsets[partNum] << 3, numPoints);
+//                dataList.Add(pts);
+//            }
+//            data = null;
+//            return dataList;
+//        }
+
+//        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream)
+//        {
+//            return null;
+//        }
+
+//        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            return null;
+//        }
+//        public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            throw new NotImplementedException();
+//        }
+
+//        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+//        {
+//            throw new NotImplementedException();
+//        }
+
+//        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
+//        {
+//            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
+//        }
+
+//        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+//        {
+//            if (this.UseGDI(extent))
+//            {
+//                paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
+//            }
+//            else
+//            {
+//                paintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
+//            }
+//        }
+
+//        private void paintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+//        {                      
+//            Pen gdiplusPen = null;
+//            Brush gdiplusBrush = null;
+//            bool renderInterior = true;
+
+//            float scaleX = (float)(clientArea.Width / extent.Width);
+//            float scaleY = -scaleX;
+//            RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+//            double offX = -projectedExtent.Left;
+//            double offY = -projectedExtent.Bottom;
+//            RectangleD actualExtent = projectedExtent;
+
+//            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+//            bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
+
+//            Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
+
+//            bool MercProj = projectionType == ProjectionType.Mercator;
+
+//            if (MercProj)
+//            {
+//                //if we're using a Mercator Projection then convert the actual Extent to LL coords
+//                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
+//                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
+//                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+//            }
+
+//            bool labelfields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+//            if (renderSettings != null) renderInterior = renderSettings.FillInterior;
+//            List<PartBoundsIndex> partBoundsIndexList = new List<PartBoundsIndex>(256);
+           
+//            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+//            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;// ClearTypeGridFit;              
+           
+//            try
+//            {
+//                // setup our pen and brush                
+//                if (renderSettings != null)
+//                {
+//                    gdiplusBrush = new SolidBrush(renderSettings.FillColor);
+//                    gdiplusPen = new Pen(renderSettings.OutlineColor, 1);
+//                }
+//                else
+//                {
+//                    gdiplusBrush = new SolidBrush(Color.White);
+//                    gdiplusPen = new Pen(Color.Black, 1);
+//                }            
+//                shapeFileStream.Seek(MainHeaderEx.DataOffset, SeekOrigin.Begin);
+
+//                PointF pt = new PointF(0, 0);
+//                PolygonRecordEx[] pgRecs = Recs;
+//                int index = 0;
+//                byte[] data = SFRecordCol.SharedBuffer;
+//                Point[] sharedPointBuffer = SFRecordCol.SharedPointBuffer;
+//                while (index < pgRecs.Length)
+//                {
+//                    Rectangle partBounds = Rectangle.Empty;
+//                    PolygonRecordEx nextRec = pgRecs[index];
+//                    shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
+//                    if (actualExtent.IntersectsWith(nextRec.Bounds) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+//                    {
+//                        if (useCustomRenderSettings)
+//                        {                                                        
+//                            Color customColor = customRenderSettings.GetRecordOutlineColor(index);
+//                            if (customColor.ToArgb() != currentPenColor.ToArgb())
+//                            {
+//                                gdiplusPen = new Pen(customColor, 1);
+//                                currentPenColor = customColor;
+//                            }
+//                            if (renderInterior)
+//                            {
+//                                customColor = customRenderSettings.GetRecordFillColor(index);
+//                                if (customColor.ToArgb() != currentBrushColor.ToArgb())
+//                                {
+//                                    gdiplusBrush = new SolidBrush(customColor);
+//                                    currentBrushColor = customColor;
+//                                }
+//                            }                            
+//                        }
+//                        int numParts = nextRec.NumParts;
+//                        Point[] pts;
+//                        System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath();
+//                        gp.FillMode = System.Drawing.Drawing2D.FillMode.Winding;
+                    
+//                        for (int partNum = 0; partNum < numParts; ++partNum)
+//                        {
+//                            int numPoints;
+//                            if ((numParts - partNum) > 1)
+//                            {
+//                                numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
+//                            }
+//                            else
+//                            {
+//                                numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
+//                            }
+//                            if (numPoints <= 1)
+//                            {
+//                                //Console.Out.WriteLine("Skipping Record {0}, Part {1} - {2} point(s)", index, partNum, numPoints);
+//                                continue;
+//                            }                           
+//                            if (labelfields)
+//                            {
+//                                pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
+//                                if (partBounds.Width > 5 && partBounds.Height > 5)
+//                                {
+//                                    partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
+//                                }
+//                            }
+//                            else
+//                            {
+//                                pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, MercProj);
+//                            }
+//                            //if (renderInterior)
+//                            //{
+//                            //    g.FillPolygon(gdiplusBrush, pts);
+//                            //}
+//                            //g.DrawPolygon(gdiplusPen, pts);
+//                            gp.AddPolygon(pts);                    
+//                        }
+//                        if (renderInterior)
+//                        {
+//                            //g.FillPolygon(gdiplusBrush, pts);
+//                            g.FillPath(gdiplusBrush, gp);
+//                        }
+//                        //g.DrawPolygon(gdiplusPen, pts);
+//                        g.DrawPath(gdiplusPen, gp);
+//                        gp.Dispose();
+//                    }
+//                    ++index;
+//                }
+//            }
+//            finally
+//            {
+//                if (gdiplusPen != null) gdiplusPen.Dispose();
+//                if (gdiplusBrush != null) gdiplusBrush.Dispose();
+//            }
+//            if (labelfields)
+//            {
+
+//                PointF pt = new PointF(0, 0);
+//                int count = partBoundsIndexList.Count;
+//                Brush fontBrush = new SolidBrush(renderSettings.FontColor);
+//                bool shadowText = (renderSettings != null && renderSettings.ShadowText);
+//                Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+//                pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+//                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+//                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+//                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+//                Color currentFontColor = renderSettings.FontColor;
+//                bool useCustomFontColor = customRenderSettings != null;
+//                for (int n = 0; n < count; n++)
+//                {
+//                    int index = partBoundsIndexList[n].RecIndex;
+//                    string strLabel = renderSettings.DbfReader.GetField(index, renderSettings.FieldIndex);
+//                    if (!string.IsNullOrEmpty(strLabel) && g.MeasureString(strLabel, renderSettings.Font).Width <= partBoundsIndexList[n].Bounds.Width)
+//                    {
+//                        pt.X = partBoundsIndexList[n].Bounds.Left + (partBoundsIndexList[n].Bounds.Width >> 1);
+//                        pt.Y = partBoundsIndexList[n].Bounds.Top + (partBoundsIndexList[n].Bounds.Height >> 1);
+//                        pt.X -= (g.MeasureString(strLabel, renderSettings.Font).Width / 2f);
+//                        if (useCustomFontColor)
+//                        {
+//                            Color customColor = customRenderSettings.GetRecordFontColor(index);
+//                            if (customColor.ToArgb() != currentFontColor.ToArgb())
+//                            {
+//                                fontBrush.Dispose();
+//                                fontBrush = new SolidBrush(customColor);
+//                                currentFontColor = customColor;
+//                            }
+//                        }
+//                        if (shadowText)
+//                        {
+//                            System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
+//                            gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, pt, StringFormat.GenericDefault);//new StringFormat());
+//                            g.DrawPath(pen, gp);
+//                            g.FillPath(fontBrush, gp);
+//                        }
+//                        else
+//                        {
+//                            g.DrawString(strLabel, renderSettings.Font, fontBrush, pt);
+//                            //g.DrawString(strLabel, renderer.Font, fontBrush, (renderPtObjList[n].Point0Dist - strSize.Width) / 2, -strSize.Height / 2);                            
+//                        }
+//                    }
+//                }
+//                fontBrush.Dispose();
+//            }
+//        }
+
+
+//        private void paintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+//        {           
+//            IntPtr dc = IntPtr.Zero;
+//            IntPtr gdiBrush = IntPtr.Zero;
+//            IntPtr gdiPen = IntPtr.Zero;
+//            IntPtr oldGdiBrush = IntPtr.Zero;
+//            IntPtr oldGdiPen = IntPtr.Zero;
+//            bool renderInterior = true;
+//            float scaleX = (float)(clientArea.Width / extent.Width);
+//            float scaleY = -scaleX;
+
+//            RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+//            double offX = -projectedExtent.Left;
+//            double offY = -projectedExtent.Bottom;
+//            RectangleD actualExtent = projectedExtent;
+
+//            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+//            bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
+
+//            Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
+//            bool MercProj = projectionType == ProjectionType.Mercator;
+//            if (MercProj)
+//            {
+//                //if we're using a Mercator Projection then convert the actual Extent to LL coords
+//                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
+//                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
+//                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+//            }
+
+//            bool labelfields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+//            if (renderSettings != null) renderInterior = renderSettings.FillInterior;
+//            List<PartBoundsIndex> partBoundsIndexList = new List<PartBoundsIndex>(256);
+
+//            // obtain a handle to the Device Context so we can use GDI to perform the painting.            
+//            dc = g.GetHdc();
+            
+//            try
+//            {
+//                // setup our pen and brush
+//                int color = 0x70c09b;                
+//                if (renderSettings != null)
+//                {
+//                    color = ColorToGDIColor(renderSettings.FillColor);
+//                }
+
+//                if (renderInterior)
+//                {
+//                    gdiBrush = NativeMethods.CreateSolidBrush(color);
+//                    oldGdiBrush = NativeMethods.SelectObject(dc, gdiBrush);
+//                }
+//                else
+//                {
+//                    oldGdiBrush = NativeMethods.SelectObject(dc, NativeMethods.GetStockObject(NativeMethods.NULL_BRUSH));
+//                }
+
+//                color = 0x70c09b;
+//                if (renderSettings != null)
+//                {
+//                    color = ColorToGDIColor(renderSettings.OutlineColor);
+//                }
+//                gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, color);
+//                oldGdiPen = NativeMethods.SelectObject(dc, gdiPen);
+
+//                NativeMethods.SetBkMode(dc, NativeMethods.TRANSPARENT);
+            
+//                shapeFileStream.Seek(MainHeaderEx.DataOffset, SeekOrigin.Begin);
+
+//                PointF pt = new PointF(0, 0);
+//                PolygonRecordEx[] pgRecs = Recs;
+//                int index = 0;
+//                byte[] data = SFRecordCol.SharedBuffer;
+//                Point[] sharedPointBuffer = SFRecordCol.SharedPointBuffer;
+//                while (index < pgRecs.Length)
+//                {
+//                    Rectangle partBounds = Rectangle.Empty;
+//                    PolygonRecordEx nextRec = pgRecs[index];
+//                    shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
+//                    if (actualExtent.IntersectsWith(nextRec.Bounds) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+//                    {
+//                        if (useCustomRenderSettings)
+//                        {                            
+//                            Color customColor = customRenderSettings.GetRecordOutlineColor(index);
+//                            if (customColor.ToArgb() != currentPenColor.ToArgb())
+//                            {
+//                                gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, ColorToGDIColor(customColor));
+//                                NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
+//                                currentPenColor = customColor;
+//                            }
+//                            if (renderInterior)
+//                            {
+//                                customColor = customRenderSettings.GetRecordFillColor(index);
+//                                if (customColor.ToArgb() != currentBrushColor.ToArgb())
+//                                {
+//                                    gdiBrush = NativeMethods.CreateSolidBrush(ColorToGDIColor(customColor));
+//                                    NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiBrush));
+//                                    currentBrushColor = customColor;
+//                                }
+//                            }                                                        
+//                        }
+//                        int numParts = nextRec.NumParts;
+//                        for (int partNum = 0; partNum < numParts; ++partNum)
+//                        {
+//                            int numPoints;
+//                            if ((numParts - partNum) > 1)
+//                            {
+//                                numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
+//                            }
+//                            else
+//                            {
+//                                numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
+//                            }
+//                            if (numPoints <= 1)
+//                            {
+//                                //Console.Out.WriteLine("Skipping Record {0}, Part {1} - {2} point(s)", index, partNum, numPoints);
+//                                continue;
+//                            }
+                            
+//                            int usedPoints = 0;
+//                            if (labelfields)
+//                            {
+//                                GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints, MercProj);
+//                                if (partBounds.Width > 5 && partBounds.Height > 5)
+//                                {
+//                                    partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
+//                                }
+//                            }
+//                            else
+//                            {
+//                                GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, sharedPointBuffer, ref usedPoints, MercProj);
+//                            }
+//                            NativeMethods.DrawPolygon(dc, sharedPointBuffer, usedPoints);
+                                                        
+//                        }
+//                    }
+//                    ++index;
+//                }
+//            }
+//            finally
+//            {
+//                if (gdiBrush != IntPtr.Zero) NativeMethods.DeleteObject(gdiBrush);
+//                if (gdiPen != IntPtr.Zero) NativeMethods.DeleteObject(gdiPen);
+//                if (oldGdiBrush != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiBrush);
+//                if (oldGdiPen != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiPen);
+//                if (dc != IntPtr.Zero) g.ReleaseHdc(dc);                
+//            }
+
+//            if (labelfields)
+//            {
+
+//                PointF pt = new PointF(0, 0);
+//                int count = partBoundsIndexList.Count;
+//                Brush fontBrush = new SolidBrush(renderSettings.FontColor);
+//                bool shadowText = (renderSettings != null && renderSettings.ShadowText);
+//                Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+//                pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+//                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+//                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+//                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+//                Color currentFontColor = renderSettings.FontColor;
+//                bool useCustomFontColor = customRenderSettings != null;
+//                for (int n = 0; n < count; n++)
+//                {
+//                    int index = partBoundsIndexList[n].RecIndex;
+//                    string strLabel = renderSettings.DbfReader.GetField(index, renderSettings.FieldIndex);
+//                    if (!string.IsNullOrEmpty(strLabel) && g.MeasureString(strLabel, renderSettings.Font).Width <= partBoundsIndexList[n].Bounds.Width)
+//                    {
+//                        pt.X = partBoundsIndexList[n].Bounds.Left + (partBoundsIndexList[n].Bounds.Width >> 1);
+//                        pt.Y = partBoundsIndexList[n].Bounds.Top + (partBoundsIndexList[n].Bounds.Height >> 1);
+//                        pt.X -= (g.MeasureString(strLabel, renderSettings.Font).Width / 2f);
+//                        if (useCustomFontColor)
+//                        {
+//                            Color customColor = customRenderSettings.GetRecordFontColor(index);
+//                            if (customColor.ToArgb() != currentFontColor.ToArgb())
+//                            {
+//                                fontBrush.Dispose();
+//                                fontBrush = new SolidBrush(customColor);
+//                                currentFontColor = customColor;
+//                            }
+//                        }
+//                        if (shadowText)
+//                        {
+//                            System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
+//                            gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, pt, StringFormat.GenericDefault);//new StringFormat());
+//                            g.DrawPath(pen, gp);
+//                            g.FillPath(fontBrush, gp);
+//                        }
+//                        else
+//                        {
+//                            g.DrawString(strLabel, renderSettings.Font, fontBrush, pt);
+//                            //g.DrawString(strLabel, renderer.Font, fontBrush, (renderPtObjList[n].Point0Dist - strSize.Width) / 2, -strSize.Height / 2);                            
+//                        }
+//                    }
+//                }
+//                fontBrush.Dispose();
+//            }
+//        }
+
+
+//        internal bool ContainsPoint(int shapeIndex, PointF pt, BinaryReader shapeFileStream)
+//        {
+//            byte[] data = SFRecordCol.SharedBuffer;            
+//            PolygonRecordEx nextRec = Recs[shapeIndex];
+//            shapeFileStream.BaseStream.Seek(nextRec.DataOffset, SeekOrigin.Begin);
+//            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
+//            int numParts = nextRec.NumParts;
+//            PointF[] pts;
+//            //Console.Out.WriteLine("num parts:" + numParts);
+//            //check for holes
+//            bool inPolygon = false;
+//            for (int partNum = 0; partNum < numParts; partNum++)
+//            {
+//                int numPoints;
+//                if ((numParts - partNum) > 1)
+//                {
+//                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
+//                }
+//                else
+//                {
+//                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
+//                }
+//                pts = GetPointsF(data, nextRec.PartOffsets[partNum] << 3, numPoints);
+                
+//                bool isHole = false;
+//                bool partInPolygon = PointInPolygon(pts, pt.X, pt.Y, numParts == 1, ref isHole); //ignore holes if only 1 part
+//                inPolygon |= partInPolygon;
+//                if(isHole && partInPolygon)
+//                {
+//                    //Console.Out.WriteLine("is hole!");
+//                    return false;
+//                }
+                
+//            }
+
+//            return inPolygon;
+//        }
+		
+//        /// <summary>
+//        /// Tests whether a point is inside a polygon
+//        /// </summary>
+//        /// <param name="points"></param>
+//        /// <param name="x"></param>
+//        /// <param name="y"></param>
+//        /// <param name="ignoreHoles"></param>
+//        /// <param name="isHole"></param>
+//        /// <returns></returns>
+//        private static bool PointInPolygon(PointF[] points,float x, float y, bool ignoreHoles, ref bool isHole) 
+//        {
+//            if (ignoreHoles) return PointInPolygon(points, x, y);
+
+//            //if we are detecting holes then we need to calculate the area
+//            float area = 0;
+//            //latitude = y
+//            int j=points.Length-1;
+//            bool inPoly=false;
+
+//            for (int i=0; i<points.Length; ++i) 
+//            {
+//                if (points[i].X<x && points[j].X>=x ||  points[j].X<x && points[i].X>=x) 
+//                {
+//                    if (points[i].Y+(x-points[i].X)/(points[j].X-points[i].X)*(points[j].Y-points[i].Y)<y) 
+//                    {
+//                        inPoly=!inPoly; 
+//                    }
+//                }
+                
+//                area += (points[j].X*points[i].Y - points[i].X*points[j].Y);
+                
+//                j=i;
+//            }
+//            area *=0.5f;
+//            //Console.Out.WriteLine("area = " + area);
+//            isHole = area > 0;
+//            return inPoly;// && isHole; 
+//        }
+
+//        private static bool PointInPolygon(PointF[] points, float x, float y)
+//        {
+//            //latitude = y
+//            int j = points.Length - 1;
+//            bool inPoly = false;
+
+//            for (int i = 0; i < points.Length; ++i)
+//            {
+//                if (points[i].X < x && points[j].X >= x || points[j].X < x && points[i].X >= x)
+//                {
+//                    if (points[i].Y + (x - points[i].X) / (points[j].X - points[i].X) * (points[j].Y - points[i].Y) < y)
+//                    {
+//                        inPoly = !inPoly;
+//                    }
+//                }
+//                j = i;
+//            }
+
+//            return inPoly;
+//        }
+
+
+//        #region QTNodeHelper Members
+
+//        public bool IsPointData()
+//        {
+//            return false;
+//        }
+
+//        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+//        {
+//            return PointF.Empty;
+//        }
+
+//        public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
+//        {
+//            return Recs[recordIndex].Bounds;
+//        }
+
+//        #endregion
+
+//        private struct PartBoundsIndex
+//        {
+//            public int RecIndex;
+//            public Rectangle Bounds;
+
+//            public PartBoundsIndex(int index, Rectangle r)
+//            {
+//                RecIndex = index;
+//                Bounds = r;
+//            }
+//        }
+//    }
+
+//    class SFPolygonZExCol : SFRecordCol, QTNodeHelper
+//    {
+//        public PolygonZRecordEx[] Recs;
+
+//        public SFPolygonZExCol(PolygonZRecordEx[] recs, ShapeFileMainHeaderEx head)
+//            : base(head)
+//        {
+//            this.Recs = recs;
+//        }
+
+//        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
+//        {
+//            return GetShapeData(recordIndex, shapeFileStream, SFRecordCol.SharedBuffer);
+//        }
+
+//        public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            throw new NotImplementedException();
+//        }        
+
+//        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            byte[] data = dataBuffer;
+//            PolygonZRecordEx nextRec = Recs[recordIndex];
+//            shapeFileStream.Seek(nextRec.DataOffset, SeekOrigin.Begin);
+//            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
+//            int numParts = nextRec.NumParts;
+//            List<PointF[]> dataList = new List<PointF[]>();
+//            PointF[] pts;
+//            for (int partNum = 0; partNum < numParts; partNum++)
+//            {
+//                int numPoints;
+//                if ((numParts - partNum) > 1)
+//                {
+//                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
+//                }
+//                else
+//                {
+//                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
+//                }
+//                pts = GetPointsF(data, nextRec.PartOffsets[partNum] << 3, numPoints);
+//                dataList.Add(pts);
+//            }
+//            data = null;
+//            return dataList;
+//        }
+
+//        public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            throw new NotImplementedException();
+//        }
+
+//        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream)
+//        {
+//            return GetShapeHeightData(recordIndex, shapeFileStream, SFRecordCol.SharedBuffer);
+//        }
+
+//        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            byte[] data = dataBuffer;
+//            PolygonZRecordEx nextRec = Recs[recordIndex];
+//            shapeFileStream.Seek(nextRec.DataOffset + (nextRec.NumPoints << 3), SeekOrigin.Begin);
+//            shapeFileStream.Read(data, 0, nextRec.NumPoints <<2); //4bytes per point
+//            int numParts = nextRec.NumParts;
+//            List<float[]> dataList = new List<float[]>();
+//            float[] heights;
+//            for (int partNum = 0; partNum < numParts; partNum++)
+//            {
+//                int numPoints;
+//                if ((numParts - partNum) > 1)
+//                {
+//                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
+//                }
+//                else
+//                {
+//                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
+//                }
+//                heights = GetFloatData(data, nextRec.PartOffsets[partNum] << 2, numPoints);
+//                dataList.Add(heights);
+//            }
+//            data = null;
+//            return dataList;
+//        }
+
+//        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+//        {
+//            throw new NotImplementedException();
+//        }
+
+//        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
+//        {
+//            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
+//        }
+
+//        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+//        {
+//            bool UseGDI = this.UseGDI(extent);
+
+//            IntPtr dc = IntPtr.Zero;
+//            IntPtr gdiBrush = IntPtr.Zero;
+//            IntPtr gdiPen = IntPtr.Zero;
+//            IntPtr oldGdiBrush = IntPtr.Zero;
+//            IntPtr oldGdiPen = IntPtr.Zero;
+//            Pen gdiplusPen = null;
+//            Brush gdiplusBrush = null;
+//            bool renderInterior = true;
+
+//            float scaleX = (float)(clientArea.Width / extent.Width);
+//            float scaleY = -scaleX;
+
+//            RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+//            double offX = -projectedExtent.Left;
+//            double offY = -projectedExtent.Bottom;
+//            RectangleD actualExtent = projectedExtent;
+
+//            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+//            bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
+
+//            Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
+//            bool MercProj = projectionType == ProjectionType.Mercator;
+//            if (MercProj)
+//            {
+//                //if we're using a Mercator Projection then convert the actual Extent to LL coords
+//                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
+//                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
+//                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+//            }
+
+//            bool labelfields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+//            if (renderSettings != null) renderInterior = renderSettings.FillInterior;
+//            List<PartBoundsIndex> partBoundsIndexList = new List<PartBoundsIndex>(256);
+
+//            // obtain a handle to the Device Context so we can use GDI to perform the painting.
+//            if (UseGDI)
+//            {
+//                dc = g.GetHdc();
+//            }
+//            else
+//            {
+//                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+//                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;// ClearTypeGridFit;              
+//            }
+
+//            try
+//            {
+//                // setup our pen and brush
+//                int color = 0x70c09b;
+
+//                if (UseGDI)
+//                {
+//                    if (renderSettings != null)
+//                    {
+//                        color = ColorToGDIColor(renderSettings.FillColor);
+//                    }
+
+//                    if (renderInterior)
+//                    {
+//                        gdiBrush = NativeMethods.CreateSolidBrush(color);
+//                        oldGdiBrush = NativeMethods.SelectObject(dc, gdiBrush);
+//                    }
+//                    else
+//                    {
+//                        oldGdiBrush = NativeMethods.SelectObject(dc, NativeMethods.GetStockObject(NativeMethods.NULL_BRUSH));
+//                    }
+
+//                    color = 0x70c09b;
+//                    if (renderSettings != null)
+//                    {
+//                        color = ColorToGDIColor(renderSettings.OutlineColor);
+//                    }
+//                    gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, color);
+//                    oldGdiPen = NativeMethods.SelectObject(dc, gdiPen);
+
+//                    NativeMethods.SetBkMode(dc, NativeMethods.TRANSPARENT);
+//                }
+//                else
+//                {
+//                    if (renderSettings != null)
+//                    {
+//                        gdiplusBrush = new SolidBrush(renderSettings.FillColor);
+//                        gdiplusPen = new Pen(renderSettings.OutlineColor, 1);
+//                    }
+//                    else
+//                    {
+//                        gdiplusBrush = new SolidBrush(Color.White);
+//                        gdiplusPen = new Pen(Color.Black, 1);
+//                    }
+//                }
+
+//                shapeFileStream.Seek(MainHeaderEx.DataOffset, SeekOrigin.Begin);
+
+//                PointF pt = new PointF(0, 0);
+//                PolygonZRecordEx[] pgRecs = Recs;
+//                int index = 0;
+//                byte[] data = SFRecordCol.SharedBuffer;
+//                Point[] sharedPointBuffer = SFRecordCol.SharedPointBuffer;
+//                while (index < pgRecs.Length)
+//                {
+//                    Rectangle partBounds = Rectangle.Empty;
+//                    PolygonZRecordEx nextRec = pgRecs[index];
+//                    //we read all of the record data 8 bytes for each point + (4+4 for the Z and Measure)
+//                    //but we wont actually use the Z or Measure
+//                    shapeFileStream.Read(data, 0, nextRec.NumPoints << 4);
+//                    if (actualExtent.IntersectsWith(nextRec.Bounds) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+//                    {
+//                        if (useCustomRenderSettings)
+//                        {
+//                            if (UseGDI)
+//                            {
+//                                Color customColor = customRenderSettings.GetRecordOutlineColor(index);
+//                                if (customColor.ToArgb() != currentPenColor.ToArgb())
+//                                {
+//                                    gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, ColorToGDIColor(customColor));
+//                                    NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
+//                                    currentPenColor = customColor;
+//                                }
+//                                if (renderInterior)
+//                                {
+//                                    customColor = customRenderSettings.GetRecordFillColor(index);
+//                                    if (customColor.ToArgb() != currentBrushColor.ToArgb())
+//                                    {
+//                                        gdiBrush = NativeMethods.CreateSolidBrush(ColorToGDIColor(customColor));
+//                                        NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiBrush));
+//                                        currentBrushColor = customColor;
+//                                    }
+//                                }
+
+//                            }
+//                            else
+//                            {
+//                                Color customColor = customRenderSettings.GetRecordOutlineColor(index);
+//                                if (customColor.ToArgb() != currentPenColor.ToArgb())
+//                                {
+//                                    gdiplusPen = new Pen(customColor, 1);
+//                                    currentPenColor = customColor;
+//                                }
+//                                if (renderInterior)
+//                                {
+//                                    customColor = customRenderSettings.GetRecordFillColor(index);
+//                                    if (customColor.ToArgb() != currentBrushColor.ToArgb())
+//                                    {
+//                                        gdiplusBrush = new SolidBrush(customColor);
+//                                        currentBrushColor = customColor;
+//                                    }
+//                                }
+
+//                            }
+//                        }
+//                        int numParts = nextRec.NumParts;
+//                        Point[] pts;
+//                        for (int partNum = 0; partNum < numParts; ++partNum)
+//                        {
+//                            int numPoints;
+//                            if ((numParts - partNum) > 1)
+//                            {
+//                                numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
+//                            }
+//                            else
+//                            {
+//                                numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
+//                            }
+//                            if (UseGDI)
+//                            {
+//                                int usedPoints = 0;
+//                                if (labelfields)
+//                                {
+//                                    GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints, MercProj);
+//                                    if (partBounds.Width > 5 && partBounds.Height > 5)
+//                                    {
+//                                        partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
+//                                    }
+//                                }
+//                                else
+//                                {
+//                                    GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, sharedPointBuffer, ref usedPoints, MercProj);
+//                                }
+//                                NativeMethods.DrawPolygon(dc, sharedPointBuffer, usedPoints);
+//                            }
+//                            else
+//                            {
+//                                if (labelfields)
+//                                {
+//                                    pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
+//                                    if (partBounds.Width > 5 && partBounds.Height > 5)
+//                                    {
+//                                        partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
+//                                    }
+//                                }
+//                                else
+//                                {
+//                                    pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, MercProj);
+//                                }
+//                                if (renderInterior)
+//                                {
+//                                    g.FillPolygon(gdiplusBrush, pts);
+//                                }
+//                                g.DrawPolygon(gdiplusPen, pts);
+//                            }
+//                        }
+//                    }
+//                    ++index;
+//                }
+//            }
+//            finally
+//            {
+//                if (gdiBrush != IntPtr.Zero) NativeMethods.DeleteObject(gdiBrush);
+//                if (gdiPen != IntPtr.Zero) NativeMethods.DeleteObject(gdiPen);
+//                if (oldGdiBrush != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiBrush);
+//                if (oldGdiPen != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiPen);
+//                if (dc != IntPtr.Zero) g.ReleaseHdc(dc);
+//                if (gdiplusPen != null) gdiplusPen.Dispose();
+//                if (gdiplusBrush != null) gdiplusBrush.Dispose();
+
+//            }
+//            if (labelfields)
+//            {
+
+//                PointF pt = new PointF(0, 0);
+//                int count = partBoundsIndexList.Count;
+//                Brush fontBrush = new SolidBrush(renderSettings.FontColor);
+//                bool shadowText = (renderSettings != null && renderSettings.ShadowText);
+//                Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+//                pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+//                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+//                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+//                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+//                Color currentFontColor = renderSettings.FontColor;
+//                bool useCustomFontColor = customRenderSettings != null;
+//                for (int n = 0; n < count; n++)
+//                {
+//                    int index = partBoundsIndexList[n].RecIndex;
+//                    string strLabel = renderSettings.DbfReader.GetField(index, renderSettings.FieldIndex);
+//                    if (!string.IsNullOrEmpty(strLabel) && g.MeasureString(strLabel, renderSettings.Font).Width <= partBoundsIndexList[n].Bounds.Width)
+//                    {
+//                        pt.X = partBoundsIndexList[n].Bounds.Left + (partBoundsIndexList[n].Bounds.Width >> 1);
+//                        pt.Y = partBoundsIndexList[n].Bounds.Top + (partBoundsIndexList[n].Bounds.Height >> 1);
+//                        pt.X -= (g.MeasureString(strLabel, renderSettings.Font).Width / 2f);
+//                        if (useCustomFontColor)
+//                        {
+//                            Color customColor = customRenderSettings.GetRecordFontColor(index);
+//                            if (customColor.ToArgb() != currentFontColor.ToArgb())
+//                            {
+//                                fontBrush.Dispose();
+//                                fontBrush = new SolidBrush(customColor);
+//                                currentFontColor = customColor;
+//                            }
+//                        }
+//                        if (shadowText)
+//                        {
+//                            System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
+//                            gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, pt, StringFormat.GenericDefault);//new StringFormat());
+//                            g.DrawPath(pen, gp);
+//                            g.FillPath(fontBrush, gp);
+//                        }
+//                        else
+//                        {
+//                            g.DrawString(strLabel, renderSettings.Font, fontBrush, pt);
+//                            //g.DrawString(strLabel, renderer.Font, fontBrush, (renderPtObjList[n].Point0Dist - strSize.Width) / 2, -strSize.Height / 2);                            
+//                        }
+//                    }
+//                }
+//                fontBrush.Dispose();
+//            }
+//        }
+
+//        internal bool ContainsPoint(int shapeIndex, PointF pt, BinaryReader shapeFileStream)
+//        {
+//            byte[] data = SFRecordCol.SharedBuffer;
+//            PolygonZRecordEx nextRec = Recs[shapeIndex];
+//            shapeFileStream.BaseStream.Seek(nextRec.DataOffset, SeekOrigin.Begin);
+//            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3); //just read the points (don't care about the Z or M values)
+//            int numParts = nextRec.NumParts;
+//            PointF[] pts;
+//            for (int partNum = 0; partNum < numParts; partNum++)
+//            {
+//                int numPoints;
+//                if ((numParts - partNum) > 1)
+//                {
+//                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
+//                }
+//                else
+//                {
+//                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
+//                }
+//                pts = GetPointsF(data, nextRec.PartOffsets[partNum] << 3, numPoints);
+//                if (PointInPolygon(pts, pt.X, pt.Y))
+//                {
+//                    return true;
+//                }
+//            }
+
+//            return false;
+//        }
+
+//        private static bool PointInPolygon(PointF[] points, float x, float y)
+//        {
+//            //latitude = y
+//            int j = points.Length - 1;
+//            bool inPoly = false;
+
+//            for (int i = 0; i < points.Length; ++i)
+//            {
+//                if (points[i].X < x && points[j].X >= x || points[j].X < x && points[i].X >= x)
+//                {
+//                    if (points[i].Y + (x - points[i].X) / (points[j].X - points[i].X) * (points[j].Y - points[i].Y) < y)
+//                    {
+//                        inPoly = !inPoly;
+//                    }
+//                }
+//                j = i;
+//            }
+
+//            return inPoly;
+//        }
+
+
+//        #region QTNodeHelper Members
+
+//        public bool IsPointData()
+//        {
+//            return false;
+//        }
+
+//        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+//        {
+//            return PointF.Empty;
+//        }
+
+//        public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
+//        {
+//            return Recs[recordIndex].Bounds;
+//        }
+
+//        #endregion
+
+//        private struct PartBoundsIndex
+//        {
+//            public int RecIndex;
+//            public Rectangle Bounds;
+
+//            public PartBoundsIndex(int index, Rectangle r)
+//            {
+//                RecIndex = index;
+//                Bounds = r;
+//            }
+//        }
+//    }
+
+//    class SFPointExCol : SFRecordCol
+//    {
+//        internal PointRecordEx[] Recs;
+
+//        public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
+//        {
+//            return new RectangleF(Recs[recordIndex].pt.X, Recs[recordIndex].pt.Y, float.Epsilon, float.Epsilon);
+//        }
+
+//        public SFPointExCol(PointRecordEx[] recs,ShapeFileMainHeaderEx head): base(head)
+//        {
+//            this.Recs = recs;
+//        }
+
+//        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
+//        {
+//            if(recordIndex <0 || recordIndex >= Recs.Length) throw new ArgumentOutOfRangeException("recordIndex");
+
+//            PointRecordEx nextRec = Recs[recordIndex];
+//            List<PointF[]> data = new List<PointF[]>();
+//            data.Add( new PointF[] { nextRec.pt });
+//            return data;
+
+//        }
+
+//        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            return GetShapeData(recordIndex, shapeFileStream);
+//        }
+
+//        public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            throw new NotImplementedException();
+//        }
+
+//        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream)
+//        {
+//            return null;
+//        }
+
+//        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            return null;
+//        }
+
+//        public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+//        {
+//            throw new NotImplementedException();
+//        }
+
+//        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+//        {
+//            throw new NotImplementedException();
+//        }
+
+//        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
+//        {
+//            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
+//        }
+
+//        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+//        {
+//            bool useGDI = this.UseGDI(extent);
+//            List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);			
+//            double scaleX = (double)(clientArea.Width / extent.Width);
+//            double scaleY = -scaleX;
+//            RectangleD actualExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width/scaleX, clientArea.Height/(-scaleY));
+//            double offX = -actualExtent.Left;
+//            double offY = -actualExtent.Bottom;
+//            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+//            bool renderInterior = true;
+            
+//            Image symbol = null;
+//            Size symbolSize = Size.Empty;
+            
+//            float pointSize = 6f;
+
+//            if (renderSettings != null)
+//            {
+//                renderInterior = renderSettings.FillInterior;
+//                pointSize = renderSettings.PointSize;
+//                symbol = renderSettings.GetImageSymbol();
+//                if (symbol != null)
+//                {
+//                    symbolSize = symbol.Size;
+//                    useGDI = false; //use hi quality if we're going to render an image
+//                }
+//                else
+//                {
+//                    symbolSize = new Size((int)pointSize, (int)pointSize);
+//                }
+                
+		
+//            }
+
+
+//            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+//            bool useCustomRenderSettings = (customRenderSettings != null);
+            
+//            Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
+//            bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
+            
+//            bool drawPoint = (symbol == null && !useCustomImageSymbols);
+//            bool MercProj = projectionType == ProjectionType.Mercator;
+//            if (MercProj)
+//            {
+//                //if we're using a Mercator Projection then convert the actual Extent to LL coords
+//                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
+//                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
+//                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+//            }
+
+//            if (useGDI)
+//            {
+//                IntPtr dc = IntPtr.Zero;
+//                IntPtr gdiPen = IntPtr.Zero;
+//                IntPtr gdiBrush = IntPtr.Zero;
+//                IntPtr oldGdiPen = IntPtr.Zero;
+//                IntPtr oldGdiBrush = IntPtr.Zero;
+
+
+//                // obtain a handle to the Device Context so we can use GDI to perform the painting.
+//                dc = g.GetHdc();
+
+//                try
+//                {
+//                    int color = 0x70c09b;                    
+//                    if (renderSettings != null)
+//                    {
+//                        color = ColorToGDIColor(renderSettings.FillColor);
+//                    }
+//                    if (renderInterior)
+//                    {
+//                        gdiBrush = NativeMethods.CreateSolidBrush(color);
+//                        oldGdiBrush = NativeMethods.SelectObject(dc, gdiBrush);
+//                    }
+//                    else
+//                    {
+//                        oldGdiBrush = NativeMethods.SelectObject(dc, NativeMethods.GetStockObject(NativeMethods.NULL_BRUSH));
+//                    }
+                    
+//                    color = 0x70c09b;
+//                    if (renderSettings != null)
+//                    {
+//                        color = ColorToGDIColor(renderSettings.OutlineColor);
+//                    }
+//                    gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, color);
+//                    oldGdiPen = NativeMethods.SelectObject(dc, gdiPen);
+                    
+//                    NativeMethods.SetBkMode(dc, NativeMethods.TRANSPARENT);
+                     
+//                    int index = 0;
+//                    Point pt = new Point();
+//                    int halfPointSize = (int)Math.Round(pointSize*0.5);
+//                    int pointSizeInt = (int)Math.Round(pointSize);
+//                    while (index < Recs.Length)
+//                    {
+//                        PointRecordEx nextRec = Recs[index];
+//                        if (actualExtent.Contains(nextRec.pt) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+//                        {
+//                            if (useCustomRenderSettings)
+//                            {                                
+//                                Color customColor = customRenderSettings.GetRecordOutlineColor(index);
+//                                if (customColor.ToArgb() != currentPenColor.ToArgb())
+//                                {
+//                                    gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, ColorToGDIColor(customColor));
+//                                    NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
+//                                    currentPenColor = customColor;
+//                                }
+//                                if (renderInterior)
+//                                {
+//                                    customColor = customRenderSettings.GetRecordFillColor(index);
+//                                    if (customColor.ToArgb() != currentBrushColor.ToArgb())
+//                                    {
+//                                        gdiBrush = NativeMethods.CreateSolidBrush(ColorToGDIColor(customColor));
+//                                        NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiBrush));
+//                                        currentBrushColor = customColor;
+//                                    }
+//                                }                                
+//                            }
+
+//                            PointD ptf = MercProj ? LLToProjection((PointD)nextRec.pt) : (PointD)nextRec.pt; //LLToProjection((PointD)nextRec.pt);
+//                            pt.X = (int)Math.Round((ptf.X + offX) * scaleX);
+//                            pt.Y = (int)Math.Round((ptf.Y + offY) * scaleY);
+
+//                            if (pointSizeInt > 0)
+//                            {
+//                                NativeMethods.Ellipse(dc, pt.X - halfPointSize, pt.Y - halfPointSize, pt.X + halfPointSize, pt.Y + halfPointSize);
+//                            }
+//                            if (labelFields)
+//                            {
+//                                renderPtObjList.Add(new RenderPtObj(pt, index, halfPointSize+5, -(halfPointSize+5)));                                
+//                            }                            
+//                        }
+//                        ++index;
+//                    }
+//                }
+//                finally
+//                {                    
+//                    if (oldGdiPen != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiPen);
+//                    if (gdiPen != IntPtr.Zero) NativeMethods.DeleteObject(gdiPen);
+//                    if (oldGdiBrush != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiBrush);
+//                    if (gdiBrush != IntPtr.Zero) NativeMethods.DeleteObject(gdiBrush);                
+//                    g.ReleaseHdc(dc);
+//                }
+//            }
+//            else
+//            {
+//                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+//                Brush fillBrush = null;
+//                Pen outlinePen = null;
+//                if (renderSettings != null)
+//                {
+//                    fillBrush = new SolidBrush(renderSettings.FillColor);
+//                    outlinePen = new Pen(renderSettings.OutlineColor,1f);
+//                }
+//                else
+//                {
+//                    fillBrush = new SolidBrush(Color.Black);
+//                    outlinePen = new Pen(Color.White,1f);
+//                }
+//                try
+//                {                   
+//                    int index = 0;
+//                    float halfPointSize = pointSize * 0.5f;
+//                    while (index < Recs.Length)
+//                    {
+//                        PointRecordEx nextRec = Recs[index];
+//                        if (actualExtent.Contains(nextRec.pt) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+//                        {
+//                            if(useCustomRenderSettings)
+//                            {
+//                                Color customColor = customRenderSettings.GetRecordOutlineColor(index);
+//                                if (customColor.ToArgb() != currentPenColor.ToArgb())
+//                                {
+//                                    outlinePen = new Pen(customColor, 1);
+//                                    currentPenColor = customColor;
+//                                }
+//                                if (renderInterior)
+//                                {
+//                                    customColor = customRenderSettings.GetRecordFillColor(index);
+//                                    if (customColor.ToArgb() != currentBrushColor.ToArgb())
+//                                    {
+//                                        fillBrush = new SolidBrush(customColor);
+//                                        currentBrushColor = customColor;
+//                                    }
+//                                }
+//                                if (useCustomImageSymbols)
+//                                {
+//                                    symbol = customRenderSettings.GetRecordImageSymbol(index);
+//                                    if (symbol != null)
+//                                    {
+//                                        symbolSize = symbol.Size;
+//                                        drawPoint = false;
+//                                    }
+//                                    else
+//                                    {
+//                                        drawPoint = true;
+//                                    }
+//                                }
+//                            }
+
+//                            PointD ptD = MercProj ? LLToProjection((PointD)nextRec.pt) : (PointD)nextRec.pt; //LLToProjection((PointD)nextRec.pt);
+                        
+//                            PointF pt = new PointF((float)((ptD.X + offX) * scaleX), (float)((ptD.Y + offY) * scaleY));
+//                            if (drawPoint)
+//                            {
+//                                if (pointSize > 0)
+//                                {
+//                                    if (renderInterior)
+//                                    {
+//                                        g.FillEllipse(fillBrush, pt.X - halfPointSize, pt.Y - halfPointSize, pointSize, pointSize);
+//                                    }
+//                                    g.DrawEllipse(outlinePen, pt.X - halfPointSize, pt.Y - halfPointSize, pointSize, pointSize);
+//                                }
+//                                if (labelFields)
+//                                {
+//                                    renderPtObjList.Add(new RenderPtObj(pt, index, (int)halfPointSize + 5, -((int)halfPointSize + 5)));
+//                                }
+//                            }
+//                            else
+//                            {                        
+//                                g.DrawImage(symbol, pt.X - (symbolSize.Width >> 1), pt.Y -(symbolSize.Height>>1));
+//                                if (labelFields)
+//                                {
+//                                    renderPtObjList.Add(new RenderPtObj(pt, index, ((symbolSize.Width + 1) >> 1)+5, -(((symbolSize.Height + 1) >> 1) + 5) ));
+//                                }
+//                            }
+                            
+                            
+//                        }                        
+//                        index++;
+//                    }
+                    
+//                }
+//                finally
+//                {                    
+//                    if(fillBrush!= null) fillBrush.Dispose();
+//                    if (outlinePen != null) outlinePen.Dispose();  
+//                }
+//            }
+            
+//            if (labelFields)
+//            {                
+//                Brush fontBrush = new SolidBrush(renderSettings.FontColor);
+//                int count = renderPtObjList.Count;
+//                bool shadowText = (renderSettings != null && renderSettings.ShadowText);
+//                LabelPlacementMap labelPlacementMap = new LabelPlacementMap(clientArea.Width, clientArea.Height);
+                
+//                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+//                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+//                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+//                Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+//                pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+//                float ssm = shadowText ? 0.8f : 1f;
+//                Color currentFontColor = renderSettings.FontColor;
+//                bool useCustomFontColor = customRenderSettings != null;				                        
+//                for (int n = 0; n < count; n++)
+//                {
+//                    string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+//                    if (strLabel.Length > 0)
+//                    {
+//                        SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
+//                        int x0 = renderPtObjList[n].offX;
+//                        int y0 = renderPtObjList[n].offY;
+//                        if (labelPlacementMap.addLabelToMap(Point.Round(renderPtObjList[n].Pt), x0, y0, (int)Math.Round(labelSize.Width*ssm), (int)Math.Round(labelSize.Height*ssm)))
+//                        {
+//                            if (useCustomFontColor)
+//                            {
+//                                Color customColor = customRenderSettings.GetRecordFontColor(renderPtObjList[n].RecordIndex);
+//                                if (customColor.ToArgb() != currentFontColor.ToArgb())
+//                                {
+//                                    fontBrush.Dispose();
+//                                    fontBrush = new SolidBrush(customColor);
+//                                    currentFontColor = customColor;
+//                                }
+//                            }
+
+//                            if (shadowText)
+//                            {
+//                                System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
+//                                gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0), new StringFormat());
+//                                g.DrawPath(pen, gp);
+//                                g.FillPath(fontBrush, gp);
+//                            }
+//                            else
+//                            {
+//                                g.DrawRectangle(Pens.Red, renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0, labelSize.Width * ssm, labelSize.Height * ssm);
+//                                g.DrawString(strLabel, renderSettings.Font, fontBrush, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0));
+//                            }
+//                        }
+//                    }
+//                }
+//                pen.Dispose();
+//                fontBrush.Dispose();
+//            }
+            
+//        }
+
+//        private struct RenderPtObj
+//        {
+//            public PointF Pt;
+//            public int RecordIndex;
+
+//            public int offX, offY;
+
+//            public RenderPtObj(PointF p, int recordIndexParam, int x0, int y0)
+//            {
+//                Pt = p;
+//                RecordIndex = recordIndexParam;
+//                offX = x0;
+//                offY = y0;
+//            }
+
+//        }
+
+//    }
+    
+#endregion
 
     #endregion
-
-    
-}
-    
-	class SFPolyLineMExCol : SFRecordCol
-	{
-		public PolyLineMRecordEx[] Recs;
-
-        public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
-        {
-            return Recs[recordIndex].Bounds;
-        }
-
-		public SFPolyLineMExCol(PolyLineMRecordEx[] recs,ShapeFileMainHeaderEx head): base(head)
-		{
-			this.Recs = recs;
-		}
-
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
-		{
-			paint(g, clientArea, extent, shapeFileStream, null, projectionType);
-		}
-
-        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
-        {
-            throw new System.NotImplementedException("The method or operation is not implemented.");
-        }
-
-        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            throw new NotImplementedException("The method or operation is not implemented.");
-        }
-
-        public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream)
-        {
-            return null;
-        }
-
-        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            return null;
-        }
-
-        public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer, ProjectionType projectionType)
-        {
-            bool UseGDI = this.UseGDI(extent);
-            //DateTime start = DateTime.Now;
-
-            IntPtr dc = IntPtr.Zero;
-            IntPtr gdiPen = IntPtr.Zero;
-            IntPtr oldGdiObj = IntPtr.Zero;
-            Pen gdiplusPen = null;
-            Pen rwPen = null;
-            bool renderRailway = false;
-
-
-            float scaleX = (float)(clientArea.Width / extent.Width);
-            float scaleY = -scaleX;
-
-            RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-            double offX = -projectedExtent.Left;
-            double offY = -projectedExtent.Bottom;
-            RectangleD actualExtent = projectedExtent;
-
-            bool MercProj = projectionType == ProjectionType.Mercator;
-
-            if (MercProj)
-            {
-                //if we're using a Mercator Projection then convert the actual Extent to LL coords
-                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
-                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
-                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
-            }
-            
-            bool labelFields = (renderer != null && renderer.FieldIndex >= 0 && (renderer.MinRenderLabelZoom < 0 || scaleX > renderer.MinRenderLabelZoom));
-            bool renderDuplicateFields = (labelFields && renderer.RenderDuplicateFields); 
-            List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
-
-            float renderPenWidth = renderer.PenWidthScale * scaleX;
-
-            if (renderer.MaxPixelPenWidth > 0 && renderPenWidth > renderer.MaxPixelPenWidth)
-            {
-                renderPenWidth = renderer.MaxPixelPenWidth;
-            }
-            if (renderer.MinPixelPenWidth > 0 && renderPenWidth < renderer.MinPixelPenWidth)
-            {
-                renderPenWidth = renderer.MinPixelPenWidth;
-            }
-
-            if (renderer.LineType == LineType.Railway)
-            {
-                renderPenWidth = Math.Min(renderPenWidth, 7f);
-            }
-
-            // obtain a handle to the Device Context so we can use GDI to perform the painting.
-            if (UseGDI)
-            {
-                dc = g.GetHdc();
-            }
-            else
-            {
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;// ClearTypeGridFit;              
-            }
-            try
-            {
-                int maxPaintCount = 2;
-                if ((renderer.LineType == LineType.Solid) || (Math.Round(renderPenWidth) < 3))
-                {
-                    maxPaintCount = 1;
-                }
-
-                for (int paintCount = 0; paintCount < maxPaintCount; paintCount++)
-                {
-                    try
-                    {
-                        int penWidth = (int)Math.Round(renderPenWidth);
-                        int color = 0x1d1030;
-
-                        if (renderer != null)
-                        {
-                            color = renderer.OutlineColor.B & 0xff;
-                            color = (color << 8) | (renderer.OutlineColor.G & 0xff);
-                            color = (color << 8) | (renderer.OutlineColor.R & 0xff);
-                        }
-
-                        if (paintCount == 1)
-                        {
-                            color = 0x202020;
-                            if (renderer != null)
-                            {
-                                color = renderer.FillColor.B & 0xff;
-                                color = (color << 8) | (renderer.FillColor.G & 0xff);
-                                color = (color << 8) | (renderer.FillColor.R & 0xff);
-                            }
-                            penWidth -= 2;
-                        }
-
-
-                        if (UseGDI)
-                        {
-                            gdiPen = NativeMethods.CreatePen(0, penWidth, color);
-                            oldGdiObj = NativeMethods.SelectObject(dc, gdiPen);
-                        }
-                        else
-                        {
-                            if (paintCount == 0)
-                            {
-                                gdiplusPen = new Pen(renderer.OutlineColor, penWidth);
-                            }
-                            else if (paintCount == 1)
-                            {
-                                gdiplusPen = new Pen(renderer.FillColor, penWidth);
-
-                                if (penWidth > 1)
-                                {
-                                    renderRailway = (renderer.LineType == LineType.Railway);
-                                    if (renderRailway)
-                                    {
-                                        rwPen = new Pen(renderer.OutlineColor, 1);
-                                    }
-                                }
-
-                            }
-                            gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-                            gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-                            gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
-                        }
-
-                        //shapeFileStream.BaseStream.Seek(MainHeader.DataOffset, SeekOrigin.Begin);
-                        shapeFileStream.Seek(MainHeaderEx.DataOffset, SeekOrigin.Begin);
-
-                        PolyLineMRecordEx[] plmRecs = Recs;
-                        int index = 0;
-                        byte[] data = SFRecordCol.SharedBuffer;                        
-                        float minLabelLength = (float)(6 / scaleX);
-                        while (index < plmRecs.Length)
-                        {
-                            PolyLineMRecordEx nextRec = plmRecs[index];
-                            //shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
-                            shapeFileStream.Read(data, 0, (nextRec.NumPoints << 3) + (nextRec.NumPoints << 2));
-                            if (actualExtent.IntersectsWith(nextRec.Bounds))
-                            {
-                                int numParts = nextRec.NumParts;
-                                Point[] pts;
-
-                                //if using a renderer then add a renderPtObj
-                                if (labelFields && paintCount == 0)
-                                {
-                                    if ((nextRec.Bounds.Width * scaleX > 6) || (nextRec.Bounds.Height * scaleX > 6))
-                                    {
-                                        if (renderDuplicateFields)
-                                        {
-                                            List<IndexAnglePair> iapList = GetPointsFAngle(data, 0, nextRec.NumPoints, minLabelLength, MercProj);
-                                            for (int li = iapList.Count - 1; li >= 0; li--)
-                                            {
-                                                pts = GetPoints(data, iapList[li].PointIndex << 3, 2, offX, offY, scaleX, -scaleX, MercProj);
-                                                float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
-                                                if (Math.Abs(iapList[li].Angle) > 90f && Math.Abs(iapList[li].Angle) <= 270f)
-                                                {
-                                                    renderPtObjList.Add(new RenderPtObj(pts[1], d0, iapList[li].Angle - 180f, Point.Empty, 0, 0, index));
-                                                }
-                                                else
-                                                {
-                                                    renderPtObjList.Add(new RenderPtObj(pts[0], d0, iapList[li].Angle, Point.Empty, 0, 0, index));
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
-
-                                            int pointIndex = 0;
-                                            float angle = GetPointsFAngle(data, 0, nextRec.NumPoints, ref pointIndex, actualExtent, MercProj);
-                                            if (!angle.Equals(float.NaN))
-                                            {                                               
-                                                pts = GetPoints(data, pointIndex << 3, 2, offX, offY, scaleX, -scaleX, MercProj);
-                                                float d0 = (float)Math.Sqrt(((pts[1].X - pts[0].X) * (pts[1].X - pts[0].X)) + ((pts[1].Y - pts[0].Y) * (pts[1].Y - pts[0].Y)));
-                                                if (Math.Abs(angle) > 90f && Math.Abs(angle) <= 270f)
-                                                {
-                                                    renderPtObjList.Add(new RenderPtObj(pts[1], d0, angle - 180f, Point.Empty, 0, 0, index));
-                                                }
-                                                else
-                                                {
-                                                    renderPtObjList.Add(new RenderPtObj(pts[0], d0, angle, Point.Empty, 0, 0, index));
-                                                }                                                
-                                            }
-                                        }
-                                    }
-                                }
-
-                                for (int partNum = 0; partNum < numParts; partNum++)
-                                {
-                                    int numPoints;
-                                    if ((numParts - partNum) > 1)
-                                    {
-                                        numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
-                                    }
-                                    else
-                                    {
-                                        numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
-                                    }
-                                    if (numPoints <= 1)
-                                    {
-                                        //Console.Out.WriteLine("Skipping Record {0}, Part {1} - {2} point(s)", index, partNum, numPoints);
-                                        continue;
-                                    }
-                                    if (UseGDI)
-                                    {
-                                        pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, -scaleX, MercProj);
-                                        NativeMethods.DrawPolyline(dc, pts, numPoints);
-                                    }
-                                    else
-                                    {
-                                        pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, MercProj);
-                                        g.DrawLines(gdiplusPen, pts);
-
-                                        if (renderRailway)
-                                        {
-                                            int th = (int)Math.Ceiling((renderPenWidth + 2) / 2);
-                                            int tw = (int)Math.Max(Math.Round((7f * th) / 7), 5);
-                                            int pIndx = 0;
-                                            int lx = 0;
-                                            while (pIndx < pts.Length - 1)
-                                            {
-                                                //draw the next line segment
-
-                                                int dy = pts[pIndx + 1].Y - pts[pIndx].Y;
-                                                int dx = pts[pIndx + 1].X - pts[pIndx].X;
-                                                float a = (float)(Math.Atan2(dy, dx) * 180f / Math.PI);
-                                                int d = (int)Math.Round(Math.Sqrt(dy * dy + dx * dx));
-                                                if (d > 0)
-                                                {
-                                                    g.ResetTransform();
-                                                    if (Math.Abs(a) > 90f && Math.Abs(a) <= 270f)
-                                                    {
-                                                        a -= 180f;
-                                                        g.TranslateTransform(pts[pIndx + 1].X, pts[pIndx + 1].Y);
-                                                        g.RotateTransform(a);
-                                                        while (lx < d)
-                                                        {
-                                                            g.DrawLine(rwPen, lx, -th, lx, th);
-                                                            lx += tw;
-                                                        }
-                                                        lx -= d;
-                                                    }
-                                                    else
-                                                    {
-                                                        g.TranslateTransform(pts[pIndx].X, pts[pIndx].Y);
-                                                        g.RotateTransform(a);
-                                                        while (lx < d)
-                                                        {
-                                                            g.DrawLine(rwPen, lx, -th, lx, th);
-                                                            lx += tw;
-                                                        }
-                                                        lx -= d;
-                                                    }
-                                                }
-
-                                                pIndx++;
-                                            }
-                                            g.ResetTransform();
-                                        }
-                                    }
-                                }
-
-                            }
-                            index++;
-                        }
-                    }
-                    finally
-                    {                        
-                        if (gdiPen != IntPtr.Zero) NativeMethods.DeleteObject(gdiPen);
-                        if (oldGdiObj != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiObj);
-                        if (gdiplusPen != null) gdiplusPen.Dispose();
-                        if (rwPen != null) rwPen.Dispose();                    
-                    }
-                }
-            }
-
-            finally
-            {
-                if (dc != IntPtr.Zero) g.ReleaseHdc(dc);
-            }
-
-            try
-            {
-                if (labelFields)
-                {
-                    Brush fontBrush = new SolidBrush(renderer.FontColor);
-                    int count = renderPtObjList.Count;
-                    //string lastLabel = null;
-                    for (int n = 0; n < count; n++)
-                    {
-                        //RenderPtObj rpObj = renderPtObjList[n];
-                        string strLabel = renderer.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderer.FieldIndex).Trim();
-                        if (strLabel.Length > 0)// && string.Compare(strLabel, lastLabel) != 0)
-                        {
-                            //lastLabel = strLabel;
-                            SizeF strSize = g.MeasureString(strLabel, renderer.Font);
-                            if (strSize.Width*.5f <= (renderPtObjList[n].Point0Dist))
-                            {
-                                g.ResetTransform();
-                                g.TranslateTransform(renderPtObjList[n].Point0.X, renderPtObjList[n].Point0.Y);
-                                g.RotateTransform(-renderPtObjList[n].Angle0);
-
-                                g.DrawString(strLabel, renderer.Font, fontBrush, (renderPtObjList[n].Point0Dist - strSize.Width) / 2/*-strSize.Width / 2*/, -strSize.Height / 2);
-                                //g.DrawRectangle(Pens.Red, 0, -strSize.Height, rpObj.Point0Dist, strSize.Height);
-                            }
-                        }
-                    }
-                }
-            }
-            finally
-            {
-                g.ResetTransform();
-            }            
-        }
-
-        private struct RenderPtObj
-        {
-            public Point Point0;
-            public float Point0Dist;
-            public float Angle0;
-            public Point Point1;
-            public float Point1Dist;
-            public float Angle1;
-
-            public int RecordIndex;
-
-            public RenderPtObj(Point p0, float poDist, float p0Angle, Point p1, float p1Dist, float p1Angle, int recordIndexParam)
-            {
-                Point0 = p0;
-                Point0Dist = poDist;
-                Angle0 = p0Angle;
-                RecordIndex = recordIndexParam;
-                Point1 = p1;
-                Point1Dist = p1Dist;
-                Angle1 = p1Angle;
-            }
-
-        }
-        
-	}
-
-    class SFPolygonExCol : SFRecordCol, QTNodeHelper
-	{        
-		public PolygonRecordEx[] Recs;
-        
-		public SFPolygonExCol(PolygonRecordEx[] recs, ShapeFileMainHeaderEx head): base(head)
-		{
-			this.Recs = recs;
-		}
-
-        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
-        {
-            return GetShapeData(recordIndex, shapeFileStream, SFRecordCol.SharedBuffer/*new byte[ShapeFileExConstants.MAX_REC_LENGTH]*/);
-
-        }
-
-        public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            byte[] data = dataBuffer;
-            PolygonRecordEx nextRec = Recs[recordIndex];
-            shapeFileStream.Seek(nextRec.DataOffset, SeekOrigin.Begin);
-            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
-            int numParts = nextRec.NumParts;
-            List<PointF[]> dataList = new List<PointF[]>();
-            PointF[] pts;
-            for (int partNum = 0; partNum < numParts; partNum++)
-            {
-                int numPoints;
-                if ((numParts - partNum) > 1)
-                {
-                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
-                }
-                else
-                {
-                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
-                }
-                pts = GetPointsF(data, nextRec.PartOffsets[partNum] << 3, numPoints);
-                dataList.Add(pts);
-            }
-            data = null;
-            return dataList;
-        }
-
-        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream)
-        {
-            return null;
-        }
-
-        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            return null;
-        }
-        public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
-		{
-			paint(g, clientArea, extent, shapeFileStream, null, projectionType);
-		}
-
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
-        {
-            if (this.UseGDI(extent))
-            {
-                paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
-            }
-            else
-            {
-                paintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
-            }
-        }
-
-        private void paintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
-        {                      
-            Pen gdiplusPen = null;
-            Brush gdiplusBrush = null;
-            bool renderInterior = true;
-
-            float scaleX = (float)(clientArea.Width / extent.Width);
-            float scaleY = -scaleX;
-            RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-            double offX = -projectedExtent.Left;
-            double offY = -projectedExtent.Bottom;
-            RectangleD actualExtent = projectedExtent;
-
-            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-            bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
-
-            Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
-
-            bool MercProj = projectionType == ProjectionType.Mercator;
-
-            if (MercProj)
-            {
-                //if we're using a Mercator Projection then convert the actual Extent to LL coords
-                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
-                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
-                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
-            }
-
-            bool labelfields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
-            if (renderSettings != null) renderInterior = renderSettings.FillInterior;
-            List<PartBoundsIndex> partBoundsIndexList = new List<PartBoundsIndex>(256);
-           
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;// ClearTypeGridFit;              
-           
-            try
-            {
-                // setup our pen and brush                
-                if (renderSettings != null)
-                {
-                    gdiplusBrush = new SolidBrush(renderSettings.FillColor);
-                    gdiplusPen = new Pen(renderSettings.OutlineColor, 1);
-                }
-                else
-                {
-                    gdiplusBrush = new SolidBrush(Color.White);
-                    gdiplusPen = new Pen(Color.Black, 1);
-                }            
-                shapeFileStream.Seek(MainHeaderEx.DataOffset, SeekOrigin.Begin);
-
-                PointF pt = new PointF(0, 0);
-                PolygonRecordEx[] pgRecs = Recs;
-                int index = 0;
-                byte[] data = SFRecordCol.SharedBuffer;
-                Point[] sharedPointBuffer = SFRecordCol.SharedPointBuffer;
-                while (index < pgRecs.Length)
-                {
-                    Rectangle partBounds = Rectangle.Empty;
-                    PolygonRecordEx nextRec = pgRecs[index];
-                    shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
-                    if (actualExtent.IntersectsWith(nextRec.Bounds) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
-                    {
-                        if (useCustomRenderSettings)
-                        {                                                        
-                            Color customColor = customRenderSettings.GetRecordOutlineColor(index);
-                            if (customColor.ToArgb() != currentPenColor.ToArgb())
-                            {
-                                gdiplusPen = new Pen(customColor, 1);
-                                currentPenColor = customColor;
-                            }
-                            if (renderInterior)
-                            {
-                                customColor = customRenderSettings.GetRecordFillColor(index);
-                                if (customColor.ToArgb() != currentBrushColor.ToArgb())
-                                {
-                                    gdiplusBrush = new SolidBrush(customColor);
-                                    currentBrushColor = customColor;
-                                }
-                            }                            
-                        }
-                        int numParts = nextRec.NumParts;
-                        Point[] pts;
-                        System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath();
-                        gp.FillMode = System.Drawing.Drawing2D.FillMode.Winding;
-                    
-                        for (int partNum = 0; partNum < numParts; ++partNum)
-                        {
-                            int numPoints;
-                            if ((numParts - partNum) > 1)
-                            {
-                                numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
-                            }
-                            else
-                            {
-                                numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
-                            }
-                            if (numPoints <= 1)
-                            {
-                                //Console.Out.WriteLine("Skipping Record {0}, Part {1} - {2} point(s)", index, partNum, numPoints);
-                                continue;
-                            }                           
-                            if (labelfields)
-                            {
-                                pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
-                                if (partBounds.Width > 5 && partBounds.Height > 5)
-                                {
-                                    partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
-                                }
-                            }
-                            else
-                            {
-                                pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, MercProj);
-                            }
-                            //if (renderInterior)
-                            //{
-                            //    g.FillPolygon(gdiplusBrush, pts);
-                            //}
-                            //g.DrawPolygon(gdiplusPen, pts);
-                            gp.AddPolygon(pts);                    
-                        }
-                        if (renderInterior)
-                        {
-                            //g.FillPolygon(gdiplusBrush, pts);
-                            g.FillPath(gdiplusBrush, gp);
-                        }
-                        //g.DrawPolygon(gdiplusPen, pts);
-                        g.DrawPath(gdiplusPen, gp);
-                        gp.Dispose();
-                    }
-                    ++index;
-                }
-            }
-            finally
-            {
-                if (gdiplusPen != null) gdiplusPen.Dispose();
-                if (gdiplusBrush != null) gdiplusBrush.Dispose();
-            }
-            if (labelfields)
-            {
-
-                PointF pt = new PointF(0, 0);
-                int count = partBoundsIndexList.Count;
-                Brush fontBrush = new SolidBrush(renderSettings.FontColor);
-                bool shadowText = (renderSettings != null && renderSettings.ShadowText);
-                Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
-                pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                Color currentFontColor = renderSettings.FontColor;
-                bool useCustomFontColor = customRenderSettings != null;
-                for (int n = 0; n < count; n++)
-                {
-                    int index = partBoundsIndexList[n].RecIndex;
-                    string strLabel = renderSettings.DbfReader.GetField(index, renderSettings.FieldIndex);
-                    if (!string.IsNullOrEmpty(strLabel) && g.MeasureString(strLabel, renderSettings.Font).Width <= partBoundsIndexList[n].Bounds.Width)
-                    {
-                        pt.X = partBoundsIndexList[n].Bounds.Left + (partBoundsIndexList[n].Bounds.Width >> 1);
-                        pt.Y = partBoundsIndexList[n].Bounds.Top + (partBoundsIndexList[n].Bounds.Height >> 1);
-                        pt.X -= (g.MeasureString(strLabel, renderSettings.Font).Width / 2f);
-                        if (useCustomFontColor)
-                        {
-                            Color customColor = customRenderSettings.GetRecordFontColor(index);
-                            if (customColor.ToArgb() != currentFontColor.ToArgb())
-                            {
-                                fontBrush.Dispose();
-                                fontBrush = new SolidBrush(customColor);
-                                currentFontColor = customColor;
-                            }
-                        }
-                        if (shadowText)
-                        {
-                            System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
-                            gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, pt, StringFormat.GenericDefault);//new StringFormat());
-                            g.DrawPath(pen, gp);
-                            g.FillPath(fontBrush, gp);
-                        }
-                        else
-                        {
-                            g.DrawString(strLabel, renderSettings.Font, fontBrush, pt);
-                            //g.DrawString(strLabel, renderer.Font, fontBrush, (renderPtObjList[n].Point0Dist - strSize.Width) / 2, -strSize.Height / 2);                            
-                        }
-                    }
-                }
-                fontBrush.Dispose();
-            }
-        }
-
-
-        private void paintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
-        {           
-            IntPtr dc = IntPtr.Zero;
-            IntPtr gdiBrush = IntPtr.Zero;
-            IntPtr gdiPen = IntPtr.Zero;
-            IntPtr oldGdiBrush = IntPtr.Zero;
-            IntPtr oldGdiPen = IntPtr.Zero;
-            bool renderInterior = true;
-            float scaleX = (float)(clientArea.Width / extent.Width);
-            float scaleY = -scaleX;
-
-            RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-            double offX = -projectedExtent.Left;
-            double offY = -projectedExtent.Bottom;
-            RectangleD actualExtent = projectedExtent;
-
-            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-            bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
-
-            Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
-            bool MercProj = projectionType == ProjectionType.Mercator;
-            if (MercProj)
-            {
-                //if we're using a Mercator Projection then convert the actual Extent to LL coords
-                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
-                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
-                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
-            }
-
-            bool labelfields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
-            if (renderSettings != null) renderInterior = renderSettings.FillInterior;
-            List<PartBoundsIndex> partBoundsIndexList = new List<PartBoundsIndex>(256);
-
-            // obtain a handle to the Device Context so we can use GDI to perform the painting.            
-            dc = g.GetHdc();
-            
-            try
-            {
-                // setup our pen and brush
-                int color = 0x70c09b;                
-                if (renderSettings != null)
-                {
-                    color = ColorToGDIColor(renderSettings.FillColor);
-                }
-
-                if (renderInterior)
-                {
-                    gdiBrush = NativeMethods.CreateSolidBrush(color);
-                    oldGdiBrush = NativeMethods.SelectObject(dc, gdiBrush);
-                }
-                else
-                {
-                    oldGdiBrush = NativeMethods.SelectObject(dc, NativeMethods.GetStockObject(NativeMethods.NULL_BRUSH));
-                }
-
-                color = 0x70c09b;
-                if (renderSettings != null)
-                {
-                    color = ColorToGDIColor(renderSettings.OutlineColor);
-                }
-                gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, color);
-                oldGdiPen = NativeMethods.SelectObject(dc, gdiPen);
-
-                NativeMethods.SetBkMode(dc, NativeMethods.TRANSPARENT);
-            
-                shapeFileStream.Seek(MainHeaderEx.DataOffset, SeekOrigin.Begin);
-
-                PointF pt = new PointF(0, 0);
-                PolygonRecordEx[] pgRecs = Recs;
-                int index = 0;
-                byte[] data = SFRecordCol.SharedBuffer;
-                Point[] sharedPointBuffer = SFRecordCol.SharedPointBuffer;
-                while (index < pgRecs.Length)
-                {
-                    Rectangle partBounds = Rectangle.Empty;
-                    PolygonRecordEx nextRec = pgRecs[index];
-                    shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
-                    if (actualExtent.IntersectsWith(nextRec.Bounds) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
-                    {
-                        if (useCustomRenderSettings)
-                        {                            
-                            Color customColor = customRenderSettings.GetRecordOutlineColor(index);
-                            if (customColor.ToArgb() != currentPenColor.ToArgb())
-                            {
-                                gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, ColorToGDIColor(customColor));
-                                NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
-                                currentPenColor = customColor;
-                            }
-                            if (renderInterior)
-                            {
-                                customColor = customRenderSettings.GetRecordFillColor(index);
-                                if (customColor.ToArgb() != currentBrushColor.ToArgb())
-                                {
-                                    gdiBrush = NativeMethods.CreateSolidBrush(ColorToGDIColor(customColor));
-                                    NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiBrush));
-                                    currentBrushColor = customColor;
-                                }
-                            }                                                        
-                        }
-                        int numParts = nextRec.NumParts;
-                        for (int partNum = 0; partNum < numParts; ++partNum)
-                        {
-                            int numPoints;
-                            if ((numParts - partNum) > 1)
-                            {
-                                numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
-                            }
-                            else
-                            {
-                                numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
-                            }
-                            if (numPoints <= 1)
-                            {
-                                //Console.Out.WriteLine("Skipping Record {0}, Part {1} - {2} point(s)", index, partNum, numPoints);
-                                continue;
-                            }
-                            
-                            int usedPoints = 0;
-                            if (labelfields)
-                            {
-                                GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints, MercProj);
-                                if (partBounds.Width > 5 && partBounds.Height > 5)
-                                {
-                                    partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
-                                }
-                            }
-                            else
-                            {
-                                GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, sharedPointBuffer, ref usedPoints, MercProj);
-                            }
-                            NativeMethods.DrawPolygon(dc, sharedPointBuffer, usedPoints);
-                                                        
-                        }
-                    }
-                    ++index;
-                }
-            }
-            finally
-            {
-                if (gdiBrush != IntPtr.Zero) NativeMethods.DeleteObject(gdiBrush);
-                if (gdiPen != IntPtr.Zero) NativeMethods.DeleteObject(gdiPen);
-                if (oldGdiBrush != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiBrush);
-                if (oldGdiPen != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiPen);
-                if (dc != IntPtr.Zero) g.ReleaseHdc(dc);                
-            }
-
-            if (labelfields)
-            {
-
-                PointF pt = new PointF(0, 0);
-                int count = partBoundsIndexList.Count;
-                Brush fontBrush = new SolidBrush(renderSettings.FontColor);
-                bool shadowText = (renderSettings != null && renderSettings.ShadowText);
-                Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
-                pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                Color currentFontColor = renderSettings.FontColor;
-                bool useCustomFontColor = customRenderSettings != null;
-                for (int n = 0; n < count; n++)
-                {
-                    int index = partBoundsIndexList[n].RecIndex;
-                    string strLabel = renderSettings.DbfReader.GetField(index, renderSettings.FieldIndex);
-                    if (!string.IsNullOrEmpty(strLabel) && g.MeasureString(strLabel, renderSettings.Font).Width <= partBoundsIndexList[n].Bounds.Width)
-                    {
-                        pt.X = partBoundsIndexList[n].Bounds.Left + (partBoundsIndexList[n].Bounds.Width >> 1);
-                        pt.Y = partBoundsIndexList[n].Bounds.Top + (partBoundsIndexList[n].Bounds.Height >> 1);
-                        pt.X -= (g.MeasureString(strLabel, renderSettings.Font).Width / 2f);
-                        if (useCustomFontColor)
-                        {
-                            Color customColor = customRenderSettings.GetRecordFontColor(index);
-                            if (customColor.ToArgb() != currentFontColor.ToArgb())
-                            {
-                                fontBrush.Dispose();
-                                fontBrush = new SolidBrush(customColor);
-                                currentFontColor = customColor;
-                            }
-                        }
-                        if (shadowText)
-                        {
-                            System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
-                            gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, pt, StringFormat.GenericDefault);//new StringFormat());
-                            g.DrawPath(pen, gp);
-                            g.FillPath(fontBrush, gp);
-                        }
-                        else
-                        {
-                            g.DrawString(strLabel, renderSettings.Font, fontBrush, pt);
-                            //g.DrawString(strLabel, renderer.Font, fontBrush, (renderPtObjList[n].Point0Dist - strSize.Width) / 2, -strSize.Height / 2);                            
-                        }
-                    }
-                }
-                fontBrush.Dispose();
-            }
-        }
-
-
-        internal bool ContainsPoint(int shapeIndex, PointF pt, BinaryReader shapeFileStream)
-        {
-            byte[] data = SFRecordCol.SharedBuffer;            
-            PolygonRecordEx nextRec = Recs[shapeIndex];
-            shapeFileStream.BaseStream.Seek(nextRec.DataOffset, SeekOrigin.Begin);
-            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
-            int numParts = nextRec.NumParts;
-            PointF[] pts;
-            //Console.Out.WriteLine("num parts:" + numParts);
-            //check for holes
-            bool inPolygon = false;
-            for (int partNum = 0; partNum < numParts; partNum++)
-            {
-                int numPoints;
-                if ((numParts - partNum) > 1)
-                {
-                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
-                }
-                else
-                {
-                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
-                }
-                pts = GetPointsF(data, nextRec.PartOffsets[partNum] << 3, numPoints);
-                
-                bool isHole = false;
-                bool partInPolygon = PointInPolygon(pts, pt.X, pt.Y, numParts == 1, ref isHole); //ignore holes if only 1 part
-                inPolygon |= partInPolygon;
-                if(isHole && partInPolygon)
-                {
-                    //Console.Out.WriteLine("is hole!");
-                    return false;
-                }
-                
-            }
-
-            return inPolygon;
-        }
-		
-        /// <summary>
-        /// Tests whether a point is inside a polygon
-        /// </summary>
-        /// <param name="points"></param>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
-        /// <param name="ignoreHoles"></param>
-        /// <param name="isHole"></param>
-        /// <returns></returns>
-        private static bool PointInPolygon(PointF[] points,float x, float y, bool ignoreHoles, ref bool isHole) 
-        {
-            if (ignoreHoles) return PointInPolygon(points, x, y);
-
-            //if we are detecting holes then we need to calculate the area
-            float area = 0;
-            //latitude = y
-            int j=points.Length-1;
-            bool inPoly=false;
-
-            for (int i=0; i<points.Length; ++i) 
-            {
-                if (points[i].X<x && points[j].X>=x ||  points[j].X<x && points[i].X>=x) 
-                {
-                    if (points[i].Y+(x-points[i].X)/(points[j].X-points[i].X)*(points[j].Y-points[i].Y)<y) 
-                    {
-                        inPoly=!inPoly; 
-                    }
-                }
-                
-                area += (points[j].X*points[i].Y - points[i].X*points[j].Y);
-                
-                j=i;
-            }
-            area *=0.5f;
-            //Console.Out.WriteLine("area = " + area);
-            isHole = area > 0;
-            return inPoly;// && isHole; 
-        }
-
-        private static bool PointInPolygon(PointF[] points, float x, float y)
-        {
-            //latitude = y
-            int j = points.Length - 1;
-            bool inPoly = false;
-
-            for (int i = 0; i < points.Length; ++i)
-            {
-                if (points[i].X < x && points[j].X >= x || points[j].X < x && points[i].X >= x)
-                {
-                    if (points[i].Y + (x - points[i].X) / (points[j].X - points[i].X) * (points[j].Y - points[i].Y) < y)
-                    {
-                        inPoly = !inPoly;
-                    }
-                }
-                j = i;
-            }
-
-            return inPoly;
-        }
-
-
-        #region QTNodeHelper Members
-
-        public bool IsPointData()
-        {
-            return false;
-        }
-
-        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
-        {
-            return PointF.Empty;
-        }
-
-        public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
-        {
-            return Recs[recordIndex].Bounds;
-        }
-
-        #endregion
-
-        private struct PartBoundsIndex
-        {
-            public int RecIndex;
-            public Rectangle Bounds;
-
-            public PartBoundsIndex(int index, Rectangle r)
-            {
-                RecIndex = index;
-                Bounds = r;
-            }
-        }
-    }
-
-    class SFPolygonZExCol : SFRecordCol, QTNodeHelper
-    {
-        public PolygonZRecordEx[] Recs;
-
-        public SFPolygonZExCol(PolygonZRecordEx[] recs, ShapeFileMainHeaderEx head)
-            : base(head)
-        {
-            this.Recs = recs;
-        }
-
-        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
-        {
-            return GetShapeData(recordIndex, shapeFileStream, SFRecordCol.SharedBuffer);
-        }
-
-        public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            throw new NotImplementedException();
-        }        
-
-        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            byte[] data = dataBuffer;
-            PolygonZRecordEx nextRec = Recs[recordIndex];
-            shapeFileStream.Seek(nextRec.DataOffset, SeekOrigin.Begin);
-            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3);
-            int numParts = nextRec.NumParts;
-            List<PointF[]> dataList = new List<PointF[]>();
-            PointF[] pts;
-            for (int partNum = 0; partNum < numParts; partNum++)
-            {
-                int numPoints;
-                if ((numParts - partNum) > 1)
-                {
-                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
-                }
-                else
-                {
-                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
-                }
-                pts = GetPointsF(data, nextRec.PartOffsets[partNum] << 3, numPoints);
-                dataList.Add(pts);
-            }
-            data = null;
-            return dataList;
-        }
-
-        public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream)
-        {
-            return GetShapeHeightData(recordIndex, shapeFileStream, SFRecordCol.SharedBuffer);
-        }
-
-        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            byte[] data = dataBuffer;
-            PolygonZRecordEx nextRec = Recs[recordIndex];
-            shapeFileStream.Seek(nextRec.DataOffset + (nextRec.NumPoints << 3), SeekOrigin.Begin);
-            shapeFileStream.Read(data, 0, nextRec.NumPoints <<2); //4bytes per point
-            int numParts = nextRec.NumParts;
-            List<float[]> dataList = new List<float[]>();
-            float[] heights;
-            for (int partNum = 0; partNum < numParts; partNum++)
-            {
-                int numPoints;
-                if ((numParts - partNum) > 1)
-                {
-                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
-                }
-                else
-                {
-                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
-                }
-                heights = GetFloatData(data, nextRec.PartOffsets[partNum] << 2, numPoints);
-                dataList.Add(heights);
-            }
-            data = null;
-            return dataList;
-        }
-
-
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
-        {
-            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
-        }
-
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
-        {
-            bool UseGDI = this.UseGDI(extent);
-
-            IntPtr dc = IntPtr.Zero;
-            IntPtr gdiBrush = IntPtr.Zero;
-            IntPtr gdiPen = IntPtr.Zero;
-            IntPtr oldGdiBrush = IntPtr.Zero;
-            IntPtr oldGdiPen = IntPtr.Zero;
-            Pen gdiplusPen = null;
-            Brush gdiplusBrush = null;
-            bool renderInterior = true;
-
-            float scaleX = (float)(clientArea.Width / extent.Width);
-            float scaleY = -scaleX;
-
-            RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-            double offX = -projectedExtent.Left;
-            double offY = -projectedExtent.Bottom;
-            RectangleD actualExtent = projectedExtent;
-
-            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-            bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
-
-            Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
-            bool MercProj = projectionType == ProjectionType.Mercator;
-            if (MercProj)
-            {
-                //if we're using a Mercator Projection then convert the actual Extent to LL coords
-                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
-                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
-                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
-            }
-
-            bool labelfields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
-            if (renderSettings != null) renderInterior = renderSettings.FillInterior;
-            List<PartBoundsIndex> partBoundsIndexList = new List<PartBoundsIndex>(256);
-
-            // obtain a handle to the Device Context so we can use GDI to perform the painting.
-            if (UseGDI)
-            {
-                dc = g.GetHdc();
-            }
-            else
-            {
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;// ClearTypeGridFit;              
-            }
-
-            try
-            {
-                // setup our pen and brush
-                int color = 0x70c09b;
-
-                if (UseGDI)
-                {
-                    if (renderSettings != null)
-                    {
-                        color = ColorToGDIColor(renderSettings.FillColor);
-                    }
-
-                    if (renderInterior)
-                    {
-                        gdiBrush = NativeMethods.CreateSolidBrush(color);
-                        oldGdiBrush = NativeMethods.SelectObject(dc, gdiBrush);
-                    }
-                    else
-                    {
-                        oldGdiBrush = NativeMethods.SelectObject(dc, NativeMethods.GetStockObject(NativeMethods.NULL_BRUSH));
-                    }
-
-                    color = 0x70c09b;
-                    if (renderSettings != null)
-                    {
-                        color = ColorToGDIColor(renderSettings.OutlineColor);
-                    }
-                    gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, color);
-                    oldGdiPen = NativeMethods.SelectObject(dc, gdiPen);
-
-                    NativeMethods.SetBkMode(dc, NativeMethods.TRANSPARENT);
-                }
-                else
-                {
-                    if (renderSettings != null)
-                    {
-                        gdiplusBrush = new SolidBrush(renderSettings.FillColor);
-                        gdiplusPen = new Pen(renderSettings.OutlineColor, 1);
-                    }
-                    else
-                    {
-                        gdiplusBrush = new SolidBrush(Color.White);
-                        gdiplusPen = new Pen(Color.Black, 1);
-                    }
-                }
-
-                shapeFileStream.Seek(MainHeaderEx.DataOffset, SeekOrigin.Begin);
-
-                PointF pt = new PointF(0, 0);
-                PolygonZRecordEx[] pgRecs = Recs;
-                int index = 0;
-                byte[] data = SFRecordCol.SharedBuffer;
-                Point[] sharedPointBuffer = SFRecordCol.SharedPointBuffer;
-                while (index < pgRecs.Length)
-                {
-                    Rectangle partBounds = Rectangle.Empty;
-                    PolygonZRecordEx nextRec = pgRecs[index];
-                    //we read all of the record data 8 bytes for each point + (4+4 for the Z and Measure)
-                    //but we wont actually use the Z or Measure
-                    shapeFileStream.Read(data, 0, nextRec.NumPoints << 4);
-                    if (actualExtent.IntersectsWith(nextRec.Bounds) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
-                    {
-                        if (useCustomRenderSettings)
-                        {
-                            if (UseGDI)
-                            {
-                                Color customColor = customRenderSettings.GetRecordOutlineColor(index);
-                                if (customColor.ToArgb() != currentPenColor.ToArgb())
-                                {
-                                    gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, ColorToGDIColor(customColor));
-                                    NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
-                                    currentPenColor = customColor;
-                                }
-                                if (renderInterior)
-                                {
-                                    customColor = customRenderSettings.GetRecordFillColor(index);
-                                    if (customColor.ToArgb() != currentBrushColor.ToArgb())
-                                    {
-                                        gdiBrush = NativeMethods.CreateSolidBrush(ColorToGDIColor(customColor));
-                                        NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiBrush));
-                                        currentBrushColor = customColor;
-                                    }
-                                }
-
-                            }
-                            else
-                            {
-                                Color customColor = customRenderSettings.GetRecordOutlineColor(index);
-                                if (customColor.ToArgb() != currentPenColor.ToArgb())
-                                {
-                                    gdiplusPen = new Pen(customColor, 1);
-                                    currentPenColor = customColor;
-                                }
-                                if (renderInterior)
-                                {
-                                    customColor = customRenderSettings.GetRecordFillColor(index);
-                                    if (customColor.ToArgb() != currentBrushColor.ToArgb())
-                                    {
-                                        gdiplusBrush = new SolidBrush(customColor);
-                                        currentBrushColor = customColor;
-                                    }
-                                }
-
-                            }
-                        }
-                        int numParts = nextRec.NumParts;
-                        Point[] pts;
-                        for (int partNum = 0; partNum < numParts; ++partNum)
-                        {
-                            int numPoints;
-                            if ((numParts - partNum) > 1)
-                            {
-                                numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
-                            }
-                            else
-                            {
-                                numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
-                            }
-                            if (UseGDI)
-                            {
-                                int usedPoints = 0;
-                                if (labelfields)
-                                {
-                                    GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints, MercProj);
-                                    if (partBounds.Width > 5 && partBounds.Height > 5)
-                                    {
-                                        partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
-                                    }
-                                }
-                                else
-                                {
-                                    GetPointsRemoveDuplicates(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, sharedPointBuffer, ref usedPoints, MercProj);
-                                }
-                                NativeMethods.DrawPolygon(dc, sharedPointBuffer, usedPoints);
-                            }
-                            else
-                            {
-                                if (labelfields)
-                                {
-                                    pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
-                                    if (partBounds.Width > 5 && partBounds.Height > 5)
-                                    {
-                                        partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
-                                    }
-                                }
-                                else
-                                {
-                                    pts = GetPoints(data, nextRec.PartOffsets[partNum] << 3, numPoints, offX, offY, scaleX, scaleY, MercProj);
-                                }
-                                if (renderInterior)
-                                {
-                                    g.FillPolygon(gdiplusBrush, pts);
-                                }
-                                g.DrawPolygon(gdiplusPen, pts);
-                            }
-                        }
-                    }
-                    ++index;
-                }
-            }
-            finally
-            {
-                if (gdiBrush != IntPtr.Zero) NativeMethods.DeleteObject(gdiBrush);
-                if (gdiPen != IntPtr.Zero) NativeMethods.DeleteObject(gdiPen);
-                if (oldGdiBrush != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiBrush);
-                if (oldGdiPen != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiPen);
-                if (dc != IntPtr.Zero) g.ReleaseHdc(dc);
-                if (gdiplusPen != null) gdiplusPen.Dispose();
-                if (gdiplusBrush != null) gdiplusBrush.Dispose();
-
-            }
-            if (labelfields)
-            {
-
-                PointF pt = new PointF(0, 0);
-                int count = partBoundsIndexList.Count;
-                Brush fontBrush = new SolidBrush(renderSettings.FontColor);
-                bool shadowText = (renderSettings != null && renderSettings.ShadowText);
-                Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
-                pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                Color currentFontColor = renderSettings.FontColor;
-                bool useCustomFontColor = customRenderSettings != null;
-                for (int n = 0; n < count; n++)
-                {
-                    int index = partBoundsIndexList[n].RecIndex;
-                    string strLabel = renderSettings.DbfReader.GetField(index, renderSettings.FieldIndex);
-                    if (!string.IsNullOrEmpty(strLabel) && g.MeasureString(strLabel, renderSettings.Font).Width <= partBoundsIndexList[n].Bounds.Width)
-                    {
-                        pt.X = partBoundsIndexList[n].Bounds.Left + (partBoundsIndexList[n].Bounds.Width >> 1);
-                        pt.Y = partBoundsIndexList[n].Bounds.Top + (partBoundsIndexList[n].Bounds.Height >> 1);
-                        pt.X -= (g.MeasureString(strLabel, renderSettings.Font).Width / 2f);
-                        if (useCustomFontColor)
-                        {
-                            Color customColor = customRenderSettings.GetRecordFontColor(index);
-                            if (customColor.ToArgb() != currentFontColor.ToArgb())
-                            {
-                                fontBrush.Dispose();
-                                fontBrush = new SolidBrush(customColor);
-                                currentFontColor = customColor;
-                            }
-                        }
-                        if (shadowText)
-                        {
-                            System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
-                            gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, pt, StringFormat.GenericDefault);//new StringFormat());
-                            g.DrawPath(pen, gp);
-                            g.FillPath(fontBrush, gp);
-                        }
-                        else
-                        {
-                            g.DrawString(strLabel, renderSettings.Font, fontBrush, pt);
-                            //g.DrawString(strLabel, renderer.Font, fontBrush, (renderPtObjList[n].Point0Dist - strSize.Width) / 2, -strSize.Height / 2);                            
-                        }
-                    }
-                }
-                fontBrush.Dispose();
-            }
-        }
-
-        internal bool ContainsPoint(int shapeIndex, PointF pt, BinaryReader shapeFileStream)
-        {
-            byte[] data = SFRecordCol.SharedBuffer;
-            PolygonZRecordEx nextRec = Recs[shapeIndex];
-            shapeFileStream.BaseStream.Seek(nextRec.DataOffset, SeekOrigin.Begin);
-            shapeFileStream.Read(data, 0, nextRec.NumPoints << 3); //just read the points (don't care about the Z or M values)
-            int numParts = nextRec.NumParts;
-            PointF[] pts;
-            for (int partNum = 0; partNum < numParts; partNum++)
-            {
-                int numPoints;
-                if ((numParts - partNum) > 1)
-                {
-                    numPoints = nextRec.PartOffsets[partNum + 1] - nextRec.PartOffsets[partNum];
-                }
-                else
-                {
-                    numPoints = nextRec.NumPoints - nextRec.PartOffsets[partNum];
-                }
-                pts = GetPointsF(data, nextRec.PartOffsets[partNum] << 3, numPoints);
-                if (PointInPolygon(pts, pt.X, pt.Y))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static bool PointInPolygon(PointF[] points, float x, float y)
-        {
-            //latitude = y
-            int j = points.Length - 1;
-            bool inPoly = false;
-
-            for (int i = 0; i < points.Length; ++i)
-            {
-                if (points[i].X < x && points[j].X >= x || points[j].X < x && points[i].X >= x)
-                {
-                    if (points[i].Y + (x - points[i].X) / (points[j].X - points[i].X) * (points[j].Y - points[i].Y) < y)
-                    {
-                        inPoly = !inPoly;
-                    }
-                }
-                j = i;
-            }
-
-            return inPoly;
-        }
-
-
-        #region QTNodeHelper Members
-
-        public bool IsPointData()
-        {
-            return false;
-        }
-
-        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
-        {
-            return PointF.Empty;
-        }
-
-        public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
-        {
-            return Recs[recordIndex].Bounds;
-        }
-
-        #endregion
-
-        private struct PartBoundsIndex
-        {
-            public int RecIndex;
-            public Rectangle Bounds;
-
-            public PartBoundsIndex(int index, Rectangle r)
-            {
-                RecIndex = index;
-                Bounds = r;
-            }
-        }
-    }
-
-	class SFPointExCol : SFRecordCol
-	{
-        internal PointRecordEx[] Recs;
-
-        public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
-        {
-            return new RectangleF(Recs[recordIndex].pt.X, Recs[recordIndex].pt.Y, float.Epsilon, float.Epsilon);
-        }
-
-		public SFPointExCol(PointRecordEx[] recs,ShapeFileMainHeaderEx head): base(head)
-		{
-			this.Recs = recs;
-        }
-
-        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
-        {
-            if(recordIndex <0 || recordIndex >= Recs.Length) throw new ArgumentOutOfRangeException("recordIndex");
-
-            PointRecordEx nextRec = Recs[recordIndex];
-            List<PointF[]> data = new List<PointF[]>();
-            data.Add( new PointF[] { nextRec.pt });
-            return data;
-
-        }
-
-        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            return GetShapeData(recordIndex, shapeFileStream);
-        }
-
-        public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream)
-        {
-            return null;
-        }
-
-        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            return null;
-        }
-
-        public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
-		{
-			paint(g, clientArea, extent, shapeFileStream, null, projectionType);
-		}
-
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
-		{
-            bool useGDI = this.UseGDI(extent);
-            List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);			
-			double scaleX = (double)(clientArea.Width / extent.Width);
-            double scaleY = -scaleX;
-			RectangleD actualExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width/scaleX, clientArea.Height/(-scaleY));
-			double offX = -actualExtent.Left;
-			double offY = -actualExtent.Bottom;
-            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
-            bool renderInterior = true;
-            
-            Image symbol = null;
-            Size symbolSize = Size.Empty;
-            
-            float pointSize = 6f;
-
-            if (renderSettings != null)
-            {
-                renderInterior = renderSettings.FillInterior;
-                pointSize = renderSettings.PointSize;
-                symbol = renderSettings.GetImageSymbol();
-                if (symbol != null)
-                {
-                    symbolSize = symbol.Size;
-                    useGDI = false; //use hi quality if we're going to render an image
-                }
-                else
-                {
-                    symbolSize = new Size((int)pointSize, (int)pointSize);
-                }
-                
-		
-            }
-
-
-            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-            bool useCustomRenderSettings = (customRenderSettings != null);
-            
-            Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
-            bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
-            
-            bool drawPoint = (symbol == null && !useCustomImageSymbols);
-            bool MercProj = projectionType == ProjectionType.Mercator;
-            if (MercProj)
-            {
-                //if we're using a Mercator Projection then convert the actual Extent to LL coords
-                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
-                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
-                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
-            }
-
-            if (useGDI)
-            {
-                IntPtr dc = IntPtr.Zero;
-                IntPtr gdiPen = IntPtr.Zero;
-                IntPtr gdiBrush = IntPtr.Zero;
-                IntPtr oldGdiPen = IntPtr.Zero;
-                IntPtr oldGdiBrush = IntPtr.Zero;
-
-
-                // obtain a handle to the Device Context so we can use GDI to perform the painting.
-                dc = g.GetHdc();
-
-                try
-                {
-                    int color = 0x70c09b;                    
-                    if (renderSettings != null)
-                    {
-                        color = ColorToGDIColor(renderSettings.FillColor);
-                    }
-                    if (renderInterior)
-                    {
-                        gdiBrush = NativeMethods.CreateSolidBrush(color);
-                        oldGdiBrush = NativeMethods.SelectObject(dc, gdiBrush);
-                    }
-                    else
-                    {
-                        oldGdiBrush = NativeMethods.SelectObject(dc, NativeMethods.GetStockObject(NativeMethods.NULL_BRUSH));
-                    }
-                    
-                    color = 0x70c09b;
-                    if (renderSettings != null)
-                    {
-                        color = ColorToGDIColor(renderSettings.OutlineColor);
-                    }
-                    gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, color);
-                    oldGdiPen = NativeMethods.SelectObject(dc, gdiPen);
-                    
-                    NativeMethods.SetBkMode(dc, NativeMethods.TRANSPARENT);
-                     
-                    int index = 0;
-                    Point pt = new Point();
-                    int halfPointSize = (int)Math.Round(pointSize*0.5);
-                    int pointSizeInt = (int)Math.Round(pointSize);
-                    while (index < Recs.Length)
-                    {
-                        PointRecordEx nextRec = Recs[index];
-                        if (actualExtent.Contains(nextRec.pt) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
-                        {
-                            if (useCustomRenderSettings)
-                            {                                
-                                Color customColor = customRenderSettings.GetRecordOutlineColor(index);
-                                if (customColor.ToArgb() != currentPenColor.ToArgb())
-                                {
-                                    gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, ColorToGDIColor(customColor));
-                                    NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
-                                    currentPenColor = customColor;
-                                }
-                                if (renderInterior)
-                                {
-                                    customColor = customRenderSettings.GetRecordFillColor(index);
-                                    if (customColor.ToArgb() != currentBrushColor.ToArgb())
-                                    {
-                                        gdiBrush = NativeMethods.CreateSolidBrush(ColorToGDIColor(customColor));
-                                        NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiBrush));
-                                        currentBrushColor = customColor;
-                                    }
-                                }                                
-                            }
-
-                            PointD ptf = MercProj ? LLToProjection((PointD)nextRec.pt) : (PointD)nextRec.pt; //LLToProjection((PointD)nextRec.pt);
-                            pt.X = (int)Math.Round((ptf.X + offX) * scaleX);
-                            pt.Y = (int)Math.Round((ptf.Y + offY) * scaleY);
-
-                            if (pointSizeInt > 0)
-                            {
-                                NativeMethods.Ellipse(dc, pt.X - halfPointSize, pt.Y - halfPointSize, pt.X + halfPointSize, pt.Y + halfPointSize);
-                            }
-                            if (labelFields)
-                            {
-                                renderPtObjList.Add(new RenderPtObj(pt, index, halfPointSize+5, -(halfPointSize+5)));                                
-                            }                            
-                        }
-                        ++index;
-                    }
-                }
-                finally
-                {                    
-                    if (oldGdiPen != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiPen);
-                    if (gdiPen != IntPtr.Zero) NativeMethods.DeleteObject(gdiPen);
-                    if (oldGdiBrush != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiBrush);
-                    if (gdiBrush != IntPtr.Zero) NativeMethods.DeleteObject(gdiBrush);                
-                    g.ReleaseHdc(dc);
-                }
-            }
-            else
-            {
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                Brush fillBrush = null;
-                Pen outlinePen = null;
-                if (renderSettings != null)
-                {
-                    fillBrush = new SolidBrush(renderSettings.FillColor);
-                    outlinePen = new Pen(renderSettings.OutlineColor,1f);
-                }
-                else
-                {
-                    fillBrush = new SolidBrush(Color.Black);
-                    outlinePen = new Pen(Color.White,1f);
-                }
-                try
-                {                   
-                    int index = 0;
-                    float halfPointSize = pointSize * 0.5f;
-                    while (index < Recs.Length)
-                    {
-                        PointRecordEx nextRec = Recs[index];
-                        if (actualExtent.Contains(nextRec.pt) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
-                        {
-                            if(useCustomRenderSettings)
-                            {
-                                Color customColor = customRenderSettings.GetRecordOutlineColor(index);
-                                if (customColor.ToArgb() != currentPenColor.ToArgb())
-                                {
-                                    outlinePen = new Pen(customColor, 1);
-                                    currentPenColor = customColor;
-                                }
-                                if (renderInterior)
-                                {
-                                    customColor = customRenderSettings.GetRecordFillColor(index);
-                                    if (customColor.ToArgb() != currentBrushColor.ToArgb())
-                                    {
-                                        fillBrush = new SolidBrush(customColor);
-                                        currentBrushColor = customColor;
-                                    }
-                                }
-                                if (useCustomImageSymbols)
-                                {
-                                    symbol = customRenderSettings.GetRecordImageSymbol(index);
-                                    if (symbol != null)
-                                    {
-                                        symbolSize = symbol.Size;
-                                        drawPoint = false;
-                                    }
-                                    else
-                                    {
-                                        drawPoint = true;
-                                    }
-                                }
-                            }
-
-                            PointD ptD = MercProj ? LLToProjection((PointD)nextRec.pt) : (PointD)nextRec.pt; //LLToProjection((PointD)nextRec.pt);
-                        
-                            PointF pt = new PointF((float)((ptD.X + offX) * scaleX), (float)((ptD.Y + offY) * scaleY));
-                            if (drawPoint)
-                            {
-                                if (pointSize > 0)
-                                {
-                                    if (renderInterior)
-                                    {
-                                        g.FillEllipse(fillBrush, pt.X - halfPointSize, pt.Y - halfPointSize, pointSize, pointSize);
-                                    }
-                                    g.DrawEllipse(outlinePen, pt.X - halfPointSize, pt.Y - halfPointSize, pointSize, pointSize);
-                                }
-                                if (labelFields)
-                                {
-                                    renderPtObjList.Add(new RenderPtObj(pt, index, (int)halfPointSize + 5, -((int)halfPointSize + 5)));
-                                }
-                            }
-                            else
-                            {                        
-                                g.DrawImage(symbol, pt.X - (symbolSize.Width >> 1), pt.Y -(symbolSize.Height>>1));
-                                if (labelFields)
-                                {
-                                    renderPtObjList.Add(new RenderPtObj(pt, index, ((symbolSize.Width + 1) >> 1)+5, -(((symbolSize.Height + 1) >> 1) + 5) ));
-                                }
-                            }
-                            
-                            
-                        }                        
-                        index++;
-                    }
-                    
-                }
-                finally
-                {                    
-                    if(fillBrush!= null) fillBrush.Dispose();
-                    if (outlinePen != null) outlinePen.Dispose();  
-                }
-            }
-            
-            if (labelFields)
-            {                
-                Brush fontBrush = new SolidBrush(renderSettings.FontColor);
-                int count = renderPtObjList.Count;
-                bool shadowText = (renderSettings != null && renderSettings.ShadowText);
-                LabelPlacementMap labelPlacementMap = new LabelPlacementMap(clientArea.Width, clientArea.Height);
-                
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
-                pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
-                float ssm = shadowText ? 0.8f : 1f;
-                Color currentFontColor = renderSettings.FontColor;
-                bool useCustomFontColor = customRenderSettings != null;				                        
-                for (int n = 0; n < count; n++)
-                {
-                    string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
-                    if (strLabel.Length > 0)
-                    {
-                        SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
-                        int x0 = renderPtObjList[n].offX;
-                        int y0 = renderPtObjList[n].offY;
-                        if (labelPlacementMap.addLabelToMap(Point.Round(renderPtObjList[n].Pt), x0, y0, (int)Math.Round(labelSize.Width*ssm), (int)Math.Round(labelSize.Height*ssm)))
-                        {
-                            if (useCustomFontColor)
-                            {
-                                Color customColor = customRenderSettings.GetRecordFontColor(renderPtObjList[n].RecordIndex);
-                                if (customColor.ToArgb() != currentFontColor.ToArgb())
-                                {
-                                    fontBrush.Dispose();
-                                    fontBrush = new SolidBrush(customColor);
-                                    currentFontColor = customColor;
-                                }
-                            }
-
-                            if (shadowText)
-                            {
-                                System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
-                                gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0), new StringFormat());
-                                g.DrawPath(pen, gp);
-                                g.FillPath(fontBrush, gp);
-                            }
-                            else
-                            {
-                                g.DrawRectangle(Pens.Red, renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0, labelSize.Width * ssm, labelSize.Height * ssm);
-                                g.DrawString(strLabel, renderSettings.Font, fontBrush, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0));
-                            }
-                        }
-                    }
-                }
-                pen.Dispose();
-                fontBrush.Dispose();
-            }
-            
-		}
-
-        private struct RenderPtObj
-        {
-            public PointF Pt;
-            public int RecordIndex;
-
-            public int offX, offY;
-
-            public RenderPtObj(PointF p, int recordIndexParam, int x0, int y0)
-            {
-                Pt = p;
-                RecordIndex = recordIndexParam;
-                offX = x0;
-                offY = y0;
-            }
-
-        }
-        
-    }
-
-#endregion
 
 
     #region Derived SFRecordCol classes
@@ -7185,7 +7312,9 @@ namespace EGIS.ShapeFileLib
                 // setup our pen and brush                
                 gdiplusBrush = new SolidBrush(renderSettings.FillColor);
                 gdiplusPen = new Pen(renderSettings.OutlineColor, 1);
-                selectPen = new Pen(renderSettings.SelectOutlineColor, 4f);
+                selectPen = new Pen(renderSettings.SelectOutlineColor, 4f);                
+                gdiplusPen.DashStyle = renderSettings.LineDashStyle;
+                selectPen.DashStyle = renderSettings.LineDashStyle;
                 selectBrush = new SolidBrush(renderSettings.SelectFillColor);
                 byte* dataPtrZero=(byte*)IntPtr.Zero.ToPointer();
                 //shapeFileStream.Seek(ShapeFileMainHeader.MAIN_HEADER_LENGTH, SeekOrigin.Begin);
@@ -7237,6 +7366,7 @@ namespace EGIS.ShapeFileLib
                                 {
                                     gdiplusPen = new Pen(customColor, 1);
                                     currentPenColor = customColor;
+                                    gdiplusPen.DashStyle = renderSettings.LineDashStyle;                                    
                                 }
                                 if (renderInterior)
                                 {
@@ -7430,7 +7560,7 @@ namespace EGIS.ShapeFileLib
                 }
 
                 color = ColorToGDIColor(renderSettings.OutlineColor);                
-                gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, color);
+                gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, 1, color);
                 oldGdiPen = NativeMethods.SelectObject(dc, gdiPen);
 
                 selectPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 4, ColorToGDIColor(renderSettings.SelectOutlineColor));
@@ -7485,7 +7615,7 @@ namespace EGIS.ShapeFileLib
                                 Color customColor = customRenderSettings.GetRecordOutlineColor(index);
                                 if (customColor.ToArgb() != currentPenColor.ToArgb())
                                 {
-                                    gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, ColorToGDIColor(customColor));
+                                    gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, 1, ColorToGDIColor(customColor));
                                     NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
                                     currentPenColor = customColor;
                                 }
@@ -7631,8 +7761,6 @@ namespace EGIS.ShapeFileLib
         }
 
 
-
-
         internal unsafe bool ContainsPoint(int shapeIndex, PointD pt, System.IO.FileStream shapeFileStream)
         {
             byte[] data = SFRecordCol.SharedBuffer;
@@ -7656,7 +7784,7 @@ namespace EGIS.ShapeFileLib
                         numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
                     }                    
                     bool isHole = false;
-                    bool partInPolygon = PointInPolygon(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, pt.X, pt.Y, numParts == 1, ref isHole); //ignore holes if only 1 part
+                    bool partInPolygon = GeometryAlgorithms.PointInPolygon(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, pt.X, pt.Y, numParts == 1, ref isHole); //ignore holes if only 1 part
                     inPolygon |= partInPolygon;
                     if (isHole && partInPolygon)
                     {
@@ -7666,120 +7794,8 @@ namespace EGIS.ShapeFileLib
             }
             return inPolygon;            
         }
-
-        /// <summary>
-        /// tests whether point is inside a polygon
-        /// </summary>
-        /// <param name="points"></param>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
-        /// <param name="ignoreHoles"></param>
-        /// <param name="isHole"></param>
-        /// <returns></returns>
-        private static bool PointInPolygon(PointD[] points, double x, double y, bool ignoreHoles, ref bool isHole)
-        {
-            if (ignoreHoles) return PointInPolygon(points, x, y);
-
-            //if we are detecting holes then we need to calculate the area
-            double area = 0;
-            //latitude = y
-            int j = points.Length - 1;
-            bool inPoly = false;
-
-            for (int i = 0; i < points.Length; ++i)
-            {
-                if (points[i].X < x && points[j].X >= x || points[j].X < x && points[i].X >= x)
-                {
-                    if (points[i].Y + (x - points[i].X) / (points[j].X - points[i].X) * (points[j].Y - points[i].Y) < y)
-                    {
-                        inPoly = !inPoly;
-                    }
-                }
-
-                area += (points[j].X * points[i].Y - points[i].X * points[j].Y);
-
-                j = i;
-            }
-            area *= 0.5;
-            //Console.Out.WriteLine("area = " + area);
-            isHole = area > 0;
-            return inPoly;// && isHole;             
-        }
-
-        private static bool PointInPolygon(PointD[] points, double x, double y)
-        {
-            int j = points.Length - 1;
-            bool inPoly = false;
-
-            for (int i = 0; i < points.Length; ++i)
-            {
-                if (points[i].X < x && points[j].X >= x || points[j].X < x && points[i].X >= x)
-                {
-                    if (points[i].Y + (x - points[i].X) / (points[j].X - points[i].X) * (points[j].Y - points[i].Y) < y)
-                    {
-                        inPoly = !inPoly;
-                    }
-                }
-                j = i;
-            }
-
-            return inPoly;
-        }
-
-        private static unsafe bool PointInPolygon(byte[] data, int offset, int numPoints, double x, double y, bool ignoreHoles, ref bool isHole)
-        {
-            if (ignoreHoles) return PointInPolygon(data,offset,numPoints, x, y);
-
-            //if we are detecting holes then we need to calculate the area
-            double area = 0;
-            int j = numPoints - 1;
-            bool inPoly = false;
-
-            fixed (byte* bPtr = data)
-            {
-                PointD* points = (PointD*)(bPtr + offset);
-                for (int i = 0; i < numPoints; ++i)
-                {
-                    if (points[i].X < x && points[j].X >= x || points[j].X < x && points[i].X >= x)
-                    {
-                        if (points[i].Y + (x - points[i].X) / (points[j].X - points[i].X) * (points[j].Y - points[i].Y) < y)
-                        {
-                            inPoly = !inPoly;
-                        }
-                    }
-                    area += (points[j].X * points[i].Y - points[i].X * points[j].Y);
-                    j = i;
-                }
-            }
-            area *= 0.5;
-            isHole = area > 0;
-            return inPoly;            
-        }
-
-        protected static unsafe bool PointInPolygon(byte[] data, int offset, int numPoints, double x, double y)
-        {
-            int j = numPoints-1;
-            bool inPoly = false;
-            fixed (byte* bPtr = data)
-            {
-                PointD* points = (PointD*)(bPtr + offset);
-                for (int i = 0; i < numPoints; ++i)
-                {
-                    if (points[i].X < x && points[j].X >= x || points[j].X < x && points[i].X >= x)
-                    {
-                        if (points[i].Y + (x - points[i].X) / (points[j].X - points[i].X) * (points[j].Y - points[i].Y) < y)
-                        {
-                            inPoly = !inPoly;
-                        }
-                    }
-                    j = i;
-                }
-            }
-            return inPoly;
-        }
-
-
-        internal unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        
+        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
         {
             //first check if the record's bounds intersects with rect
             if (!GetRecordBoundsD(shapeIndex, shapeFileStream).IntersectsWith(rect)) return false;
@@ -7812,26 +7828,10 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        private static unsafe bool IsHole(byte[] data, int offset, int numPoints)
-        {           
-            //if we are detecting holes then we need to calculate the area
-            double area = 0;
-            int j = numPoints - 1;            
-            fixed (byte* bPtr = data)
-            {
-                PointD* points = (PointD*)(bPtr + offset);
-                for (int i = 0; i < numPoints; ++i)
-                {                    
-                    area += (points[j].X * points[i].Y - points[i].X * points[j].Y);
-                    j = i;
-                }
-            }
-            return area > 0;           
-        }
-
+        
         private static unsafe bool IntersectsRect(byte[] data, int offset, int numPoints, ref RectangleD rect)
         {
-            if (IsHole(data, offset, numPoints))
+            if (GeometryAlgorithms.IsPolygonHole(data, offset, numPoints))
             {
                 //We need to check if the hole contains the rect
                 //but for the moment we will return false.
@@ -7844,6 +7844,41 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+
+        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            //first check if the record's bounds intersects with the circle
+            RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            if (!GeometryAlgorithms.RectangleCircleIntersects(ref recBounds, ref centre, radius)) return false;
+
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolygonRecordP* nextRec = (PolygonRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->DataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+                    if (GeometryAlgorithms.PolygonCircleIntersects(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, radius, numParts==1))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
 
         #region QTNodeHelper Members
 
@@ -8068,8 +8103,9 @@ namespace EGIS.ShapeFileLib
                 outlinePen = new Pen(renderSettings.OutlineColor, 1f);
                 selectPen = new Pen(renderSettings.SelectOutlineColor, 2f);
                 selectBrush = new SolidBrush(renderSettings.SelectFillColor);
-
-                
+                outlinePen.DashStyle = renderSettings.LineDashStyle;
+                selectPen.DashStyle = renderSettings.LineDashStyle;
+                                
                 try
                 {
                     int index = 0;
@@ -8116,6 +8152,7 @@ namespace EGIS.ShapeFileLib
                                     {
                                         outlinePen = new Pen(customColor, 1);
                                         currentPenColor = customColor;
+                                        outlinePen.DashStyle = renderSettings.LineDashStyle;                                        
                                     }
                                     if (renderInterior)
                                     {
@@ -8345,7 +8382,7 @@ namespace EGIS.ShapeFileLib
                     }
 
                     color = ColorToGDIColor(renderSettings.OutlineColor);
-                    gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, color);
+                    gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, 1, color);
                     oldGdiPen = NativeMethods.SelectObject(dc, gdiPen);
 
                     selectPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 2, ColorToGDIColor(renderSettings.SelectOutlineColor));
@@ -8395,7 +8432,7 @@ namespace EGIS.ShapeFileLib
                                     Color customColor = customRenderSettings.GetRecordOutlineColor(index);
                                     if (customColor.ToArgb() != currentPenColor.ToArgb())
                                     {
-                                        gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, ColorToGDIColor(customColor));
+                                        gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, 1, ColorToGDIColor(customColor));
                                         NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
                                         currentPenColor = customColor;
                                     }
@@ -8580,6 +8617,20 @@ namespace EGIS.ShapeFileLib
             return new RectangleD(pt.X, pt.Y, double.Epsilon, double.Epsilon);
         }
 
+        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        {
+            return rect.Contains(GetPointD(recordIndex, shapeFileStream));
+        }
+
+        public override bool IntersectCircle(int recordIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            PointD pt = GetPointD(recordIndex, shapeFileStream);
+
+            return (pt.X - centre.X) * (pt.X - centre.X) + (pt.Y - centre.Y) * (pt.Y - centre.Y) < (radius * radius);
+        }
+        
+       
+
         #endregion
     }
 
@@ -8690,6 +8741,17 @@ namespace EGIS.ShapeFileLib
             return dataList;
         }
 
+        public override bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        {
+            return rect.Contains(GetPointD(shapeIndex, shapeFileStream));
+        }
+
+        public override bool IntersectCircle(int recordIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            PointD pt = GetPointD(recordIndex, shapeFileStream);
+            return (pt.X - centre.X) * (pt.X - centre.X) + (pt.Y - centre.Y) * (pt.Y - centre.Y) < (radius * radius);
+        }
+
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
             paint(g, clientArea, extent, shapeFileStream, null, projectionType);
@@ -8780,7 +8842,8 @@ namespace EGIS.ShapeFileLib
                 outlinePen = new Pen(renderSettings.OutlineColor, 1f);
                 selectPen = new Pen(renderSettings.SelectOutlineColor, 2f);
                 selectBrush = new SolidBrush(renderSettings.SelectFillColor);
-
+                outlinePen.DashStyle = renderSettings.LineDashStyle;
+                selectPen.DashStyle = renderSettings.LineDashStyle;                
 
                 try
                 {
@@ -8828,6 +8891,7 @@ namespace EGIS.ShapeFileLib
                                     {
                                         outlinePen = new Pen(customColor, 1);
                                         currentPenColor = customColor;
+                                        outlinePen.DashStyle = renderSettings.LineDashStyle;
                                     }
                                     if (renderInterior)
                                     {
@@ -9057,7 +9121,7 @@ namespace EGIS.ShapeFileLib
                     }
 
                     color = ColorToGDIColor(renderSettings.OutlineColor);
-                    gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, color);
+                    gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, 1, color);
                     oldGdiPen = NativeMethods.SelectObject(dc, gdiPen);
 
                     selectPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 2, ColorToGDIColor(renderSettings.SelectOutlineColor));
@@ -9106,7 +9170,7 @@ namespace EGIS.ShapeFileLib
                                     Color customColor = customRenderSettings.GetRecordOutlineColor(index);
                                     if (customColor.ToArgb() != currentPenColor.ToArgb())
                                     {
-                                        gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, ColorToGDIColor(customColor));
+                                        gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, 1, ColorToGDIColor(customColor));
                                         NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
                                         currentPenColor = customColor;
                                     }
@@ -9347,10 +9411,7 @@ namespace EGIS.ShapeFileLib
             }
             return renderPoints.Count - count; ;
         }
-
-
     }
-
 
     class SFPolyLineCol : SFRecordCol, QTNodeHelper
     {
@@ -9453,7 +9514,6 @@ namespace EGIS.ShapeFileLib
             {
                 PaintHighQuality(g, clientArea, extent, shapeFileStream, renderer, projectionType);
             }
-
         }
 
         private unsafe void PaintHighQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
@@ -9565,10 +9625,15 @@ namespace EGIS.ShapeFileLib
                             }
                             gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
                             gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-                            gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                            gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;                            
                             selectPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
                             selectPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
                             selectPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                            if (renderSettings.LineType == LineType.Solid)
+                            {
+                                gdiplusPen.DashStyle = renderSettings.LineDashStyle;
+                                selectPen.DashStyle = renderSettings.LineDashStyle;
+                            }
                             byte* dataPtrZero = (byte*)IntPtr.Zero.ToPointer();
                             if (fileMapped)
                             {
@@ -9668,6 +9733,11 @@ namespace EGIS.ShapeFileLib
                                                 gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
                                                 gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
                                                 gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                                                if (renderSettings.LineType == LineType.Solid)
+                                                {
+                                                    gdiplusPen.DashStyle = renderSettings.LineDashStyle;
+                                                    selectPen.DashStyle = renderSettings.LineDashStyle;
+                                                }
                                             }
                                         }
 
@@ -9915,6 +9985,8 @@ namespace EGIS.ShapeFileLib
                     maxPaintCount = 1;
                 }
 
+                NativeMethods.SetBkMode(dc, NativeMethods.TRANSPARENT);
+
                 for (int paintCount = 0; paintCount < maxPaintCount; paintCount++)
                 {
                     try
@@ -9934,17 +10006,23 @@ namespace EGIS.ShapeFileLib
                             color = (color << 8) | (renderSettings.FillColor.R & 0xff);
                             penWidth -= 2;
                         }
-                        
-                        gdiPen = NativeMethods.CreatePen(0, penWidth, color);
+
+                        int penStyle = NativeMethods.PS_SOLID;
+                        if (renderSettings.LineType == LineType.Solid)
+                        {
+                            penStyle= (int)renderSettings.LineDashStyle;                            
+                        }
+
+                        gdiPen = NativeMethods.CreatePen(penStyle, penWidth, color);
                         oldGdiObj = NativeMethods.SelectObject(dc, gdiPen);
 
                         if (paintCount == 0)
                         {
-                            selectPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, penWidth+4, ColorToGDIColor(renderSettings.SelectOutlineColor));
+                            selectPen = NativeMethods.CreatePen(penStyle, penWidth+4, ColorToGDIColor(renderSettings.SelectOutlineColor));
                         }
                         else
                         {
-                            selectPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, penWidth, ColorToGDIColor(renderSettings.SelectFillColor));                    
+                            selectPen = NativeMethods.CreatePen(penStyle, penWidth, ColorToGDIColor(renderSettings.SelectFillColor));                    
                         }
                         byte* dataPtrZero = (byte*)IntPtr.Zero.ToPointer();
                         if (fileMapped)
@@ -10042,7 +10120,12 @@ namespace EGIS.ShapeFileLib
                                         Color customColor = (paintCount == 0) ? customRenderSettings.GetRecordOutlineColor(index) : customRenderSettings.GetRecordFillColor(index);                                       
                                         if (customColor.ToArgb() != currentPenColor.ToArgb())
                                         {
-                                            gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, penWidth, ColorToGDIColor(customColor));
+                                            penStyle = NativeMethods.PS_SOLID;
+                                            if (renderSettings.LineType == LineType.Solid)
+                                            {
+                                                penStyle = (int)renderSettings.LineDashStyle;
+                                            }
+                                            gdiPen = NativeMethods.CreatePen(penStyle, penWidth, ColorToGDIColor(customColor));
                                             NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
                                             currentPenColor = customColor;
                                         }                                        
@@ -10218,7 +10301,7 @@ namespace EGIS.ShapeFileLib
                         {
                             numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
                         }
-                        if (PointOnPolyLine(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, pt, minDist))
+                        if (GeometryAlgorithms.PointOnPolyline(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, pt, minDist))
                         {
                             return true;
                         }
@@ -10226,70 +10309,17 @@ namespace EGIS.ShapeFileLib
                 }
             }
             return false;
-        }
+        }        
 
-        private static unsafe bool PointOnPolyLine(byte[] data, int offset, int numPoints, PointD pt, double minDist)
-        {
-            fixed (byte* bPtr = data)
-            {
-                PointD* points = (PointD*)(bPtr + offset);
-
-                for (int i = 0; i < numPoints - 1; i++)
-                {
-                    if (lineSegPointDist(ref points[i], ref points[i + 1], ref pt) <= minDist)
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-
-        //compute the dot product AB*BC         
-        static double dot(ref PointD a, ref PointD b, ref PointD c)
-        {
-            PointD ab = new PointD(b.X - a.X, b.Y - a.Y);
-            PointD bc = new PointD(c.X - b.X, c.Y - b.Y);
-            return (ab.X * bc.X) + (ab.Y * bc.Y);
-        }
-
-        //Compute the cross product AB x AC
-        static double cross(ref PointD a, ref PointD b, ref PointD c)
-        {
-            PointD ab = new PointD(b.X - a.X, b.Y - a.Y);
-            PointD ac = new PointD(c.X - a.X, c.Y - a.Y);
-            return (ab.X * ac.Y) - (ab.Y * ac.X);
-        }
-
-        private static double distance(ref PointD a, ref PointD b)
-        {
-            double d1 = a.X - b.X;
-            double d2 = a.Y - b.Y;
-            return Math.Sqrt((d1 * d1) + (d2 * d2));
-        }
-
-        //Compute the distance from AB to C
-        //if isSegment is true, AB is a segment, not a line.
-        private static double lineSegPointDist(ref PointD a, ref PointD b, ref PointD c)
-        {
-            //float dist = cross(a,b,c) / distance(a,b);
-
-            if (dot(ref a, ref b, ref c) > 0)
-            {
-                return distance(ref b, ref c);
-            }
-            if (dot(ref b, ref a, ref c) > 0)
-            {
-                return distance(ref a, ref c);
-            }
-            return Math.Abs(cross(ref a, ref b, ref c) / distance(ref a, ref b));
-        }
-
-
-        internal unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
         {
             //first check if the record's bounds intersects with rect
-            if (!GetRecordBoundsD(shapeIndex, shapeFileStream).IntersectsWith(rect)) return false;
+            RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            if (!recBounds.IntersectsWith(rect)) return false;
+
+            //next check if rect entirely contains the polyline
+            if (rect.Contains(recBounds)) return true;
+
             //now do an accurate intersection check
             byte[] data = SFRecordCol.SharedBuffer;
             shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
@@ -10320,6 +10350,8 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
+
+
         private static unsafe bool IntersectsRect(byte[] data, int offset, int numPoints, ref RectangleD rect)
         {
            
@@ -10329,6 +10361,43 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+
+        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            //first check if the record's bounds intersects with the circle
+            RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            if (!GeometryAlgorithms.RectangleCircleIntersects(ref recBounds, ref centre, radius)) return false;
+
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            
+            fixed (byte* dataPtr = data)
+            {
+                PolyLineRecordP* nextRec = (PolyLineRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->DataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+                    if (GeometryAlgorithms.PolylineCircleIntersects(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, radius))
+                    {
+                        return true;
+                    }
+                    
+                }
+            }
+            return false;
+        }
 
 
         #region QTNodeHelper Members
@@ -10536,7 +10605,6 @@ namespace EGIS.ShapeFileLib
                     renderPenWidth = Math.Min(renderPenWidth, 7f);
                 }
 
-
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
                 g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
@@ -10586,7 +10654,11 @@ namespace EGIS.ShapeFileLib
                             selectPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
                             selectPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
                             selectPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
-
+                            if (renderSettings.LineType == LineType.Solid)
+                            {
+                                gdiplusPen.DashStyle = renderSettings.LineDashStyle;
+                                selectPen.DashStyle = renderSettings.LineDashStyle;
+                            }
 
                             byte* dataPtrZero = (byte*)IntPtr.Zero.ToPointer();
                             if (fileMapped)
@@ -10687,6 +10759,10 @@ namespace EGIS.ShapeFileLib
                                                 gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
                                                 gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
                                                 gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                                                if (renderSettings.LineType == LineType.Solid)
+                                                {
+                                                    gdiplusPen.DashStyle = renderSettings.LineDashStyle;                                                    
+                                                }
                                             }
                                         }
 
@@ -10938,6 +11014,7 @@ namespace EGIS.ShapeFileLib
                 {
                     maxPaintCount = 1;
                 }
+                NativeMethods.SetBkMode(dc, NativeMethods.TRANSPARENT);
 
                 for (int paintCount = 0; paintCount < maxPaintCount; paintCount++)
                 {
@@ -10960,7 +11037,7 @@ namespace EGIS.ShapeFileLib
                             penWidth -= 2;
                         }
 
-                        gdiPen = NativeMethods.CreatePen(0, penWidth, color);
+                        gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, penWidth, color);
                         oldGdiObj = NativeMethods.SelectObject(dc, gdiPen);
 
                         if (paintCount == 0)
@@ -11066,7 +11143,7 @@ namespace EGIS.ShapeFileLib
                                         Color customColor = (paintCount == 0) ? customRenderSettings.GetRecordOutlineColor(index) : customRenderSettings.GetRecordFillColor(index);
                                         if (customColor.ToArgb() != currentPenColor.ToArgb())
                                         {
-                                            gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, penWidth, ColorToGDIColor(customColor));
+                                            gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, penWidth, ColorToGDIColor(customColor));
                                             NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
                                             currentPenColor = customColor;
                                         }
@@ -11225,8 +11302,8 @@ namespace EGIS.ShapeFileLib
                 shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
                 fixed (byte* dataPtr = data)
                 {
-                    PolyLineRecordP* nextRec = (PolyLineRecordP*)(dataPtr + 8);
-                    int dataOffset = nextRec->DataOffset;
+                    PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + 8);
+                    int dataOffset = nextRec->PointDataOffset;
                     int numParts = nextRec->NumParts;
                     for (int partNum = 0; partNum < numParts; partNum++)
                     {
@@ -11239,7 +11316,7 @@ namespace EGIS.ShapeFileLib
                         {
                             numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
                         }
-                        if (PointOnPolyLine(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, pt, minDist))
+                        if (GeometryAlgorithms.PointOnPolyline(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, pt, minDist))
                         {
                             return true;
                         }
@@ -11249,15 +11326,37 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        private static unsafe bool PointOnPolyLine(byte[] data, int offset, int numPoints, PointD pt, double minDist)
+        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
         {
-            fixed (byte* bPtr = data)
-            {
-                PointD* points = (PointD*)(bPtr + offset);
+            //first check if the record's bounds intersects with rect
+            RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            if (!recBounds.IntersectsWith(rect)) return false;
 
-                for (int i = 0; i < numPoints - 1; i++)
+            //next check if rect entirely contains the polyline
+            if (rect.Contains(recBounds)) return true;
+
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->PointDataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
                 {
-                    if (lineSegPointDist(ref points[i], ref points[i + 1], ref pt) <= minDist)
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+
+                    if (IntersectsRect(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref rect))
                     {
                         return true;
                     }
@@ -11266,46 +11365,51 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        //compute the dot product AB*BC         
-        static double dot(ref PointD a, ref PointD b, ref PointD c)
+        private static unsafe bool IntersectsRect(byte[] data, int offset, int numPoints, ref RectangleD rect)
         {
-            PointD ab = new PointD(b.X - a.X, b.Y - a.Y);
-            PointD bc = new PointD(c.X - b.X, c.Y - b.Y);
-            return (ab.X * bc.X) + (ab.Y * bc.Y);
-        }
-
-        //Compute the cross product AB x AC
-        static double cross(ref PointD a, ref PointD b, ref PointD c)
-        {
-            PointD ab = new PointD(b.X - a.X, b.Y - a.Y);
-            PointD ac = new PointD(c.X - a.X, c.Y - a.Y);
-            return (ab.X * ac.Y) - (ab.Y * ac.X);
-        }
-
-        private static double distance(ref PointD a, ref PointD b)
-        {
-            double d1 = a.X - b.X;
-            double d2 = a.Y - b.Y;
-            return Math.Sqrt((d1 * d1) + (d2 * d2));
-        }
-
-        //Compute the distance from AB to C
-        //if isSegment is true, AB is a segment, not a line.
-        private static double lineSegPointDist(ref PointD a, ref PointD b, ref PointD c)
-        {
-            //float dist = cross(a,b,c) / distance(a,b);
-
-            if (dot(ref a, ref b, ref c) > 0)
+            fixed (byte* ptr = data)
             {
-                return distance(ref b, ref c);
+                return NativeMethods.PolyLineRectIntersect(ptr + offset, numPoints, rect.Left, rect.Top, rect.Right, rect.Bottom);
             }
-            if (dot(ref b, ref a, ref c) > 0)
-            {
-                return distance(ref a, ref c);
-            }
-            return Math.Abs(cross(ref a, ref b, ref c) / distance(ref a, ref b));
         }
 
+        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            //first check if the record's bounds intersects with the circle
+            RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            if (!GeometryAlgorithms.RectangleCircleIntersects(ref recBounds, ref centre, radius)) return false;
+
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->PointDataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+
+                    if (GeometryAlgorithms.PolylineCircleIntersects(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, radius))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        
         #region QTNodeHelper Members
 
         public bool IsPointData()
@@ -11546,8 +11650,10 @@ namespace EGIS.ShapeFileLib
                 gdiplusBrush = new SolidBrush(renderSettings.FillColor);
                 gdiplusPen = new Pen(renderSettings.OutlineColor, 1);                
                 selectPen = new Pen(renderSettings.SelectOutlineColor, 4f);
-                selectBrush = new SolidBrush(renderSettings.SelectFillColor);
-                            
+                selectBrush = new SolidBrush(renderSettings.SelectFillColor);                
+                gdiplusPen.DashStyle = renderSettings.LineDashStyle;
+                selectPen.DashStyle = renderSettings.LineDashStyle;
+                
                 byte* dataPtrZero = (byte*)IntPtr.Zero.ToPointer();
                 if (fileMapped)
                 {
@@ -11598,6 +11704,7 @@ namespace EGIS.ShapeFileLib
                                 if (customColor.ToArgb() != currentPenColor.ToArgb())
                                 {
                                     gdiplusPen = new Pen(customColor, 1);
+                                    gdiplusPen.DashStyle = renderSettings.LineDashStyle;
                                     currentPenColor = customColor;
                                 }
                                 if (renderInterior)
@@ -11728,7 +11835,6 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-
         private unsafe void paintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
             IntPtr dc = IntPtr.Zero;
@@ -11794,7 +11900,7 @@ namespace EGIS.ShapeFileLib
                 }
 
                 color = ColorToGDIColor(renderSettings.OutlineColor);                
-                gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, color);
+                gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, 1, color);
                 oldGdiPen = NativeMethods.SelectObject(dc, gdiPen);
 
                 selectPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 4, ColorToGDIColor(renderSettings.SelectOutlineColor));
@@ -11848,7 +11954,7 @@ namespace EGIS.ShapeFileLib
                                 Color customColor = customRenderSettings.GetRecordOutlineColor(index);
                                 if (customColor.ToArgb() != currentPenColor.ToArgb())
                                 {
-                                    gdiPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 1, ColorToGDIColor(customColor));
+                                    gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, 1, ColorToGDIColor(customColor));
                                     NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
                                     currentPenColor = customColor;
                                 }
@@ -12016,7 +12122,7 @@ namespace EGIS.ShapeFileLib
                         numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
                     }
                     bool isHole = false;
-                    bool partInPolygon = PointInPolygon(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, pt.X, pt.Y, numParts == 1, ref isHole); //ignore holes if only 1 part
+                    bool partInPolygon = GeometryAlgorithms.PointInPolygon(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, pt.X, pt.Y, numParts == 1, ref isHole); //ignore holes if only 1 part
                     inPolygon |= partInPolygon;
                     if (isHole && partInPolygon)
                     {
@@ -12026,120 +12132,8 @@ namespace EGIS.ShapeFileLib
             }
             return inPolygon;
         }
-
-        /// <summary>
-        /// tests whether point is inside a polygon
-        /// </summary>
-        /// <param name="points"></param>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
-        /// <param name="ignoreHoles"></param>
-        /// <param name="isHole"></param>
-        /// <returns></returns>
-        private static bool PointInPolygon(PointD[] points, double x, double y, bool ignoreHoles, ref bool isHole)
-        {
-            if (ignoreHoles) return PointInPolygon(points, x, y);
-
-            //if we are detecting holes then we need to calculate the area
-            double area = 0;
-            //latitude = y
-            int j = points.Length - 1;
-            bool inPoly = false;
-
-            for (int i = 0; i < points.Length; ++i)
-            {
-                if (points[i].X < x && points[j].X >= x || points[j].X < x && points[i].X >= x)
-                {
-                    if (points[i].Y + (x - points[i].X) / (points[j].X - points[i].X) * (points[j].Y - points[i].Y) < y)
-                    {
-                        inPoly = !inPoly;
-                    }
-                }
-
-                area += (points[j].X * points[i].Y - points[i].X * points[j].Y);
-
-                j = i;
-            }
-            area *= 0.5;
-            //Console.Out.WriteLine("area = " + area);
-            isHole = area > 0;
-            return inPoly;// && isHole;             
-        }
-
-        private static bool PointInPolygon(PointD[] points, double x, double y)
-        {
-            int j = points.Length - 1;
-            bool inPoly = false;
-
-            for (int i = 0; i < points.Length; ++i)
-            {
-                if (points[i].X < x && points[j].X >= x || points[j].X < x && points[i].X >= x)
-                {
-                    if (points[i].Y + (x - points[i].X) / (points[j].X - points[i].X) * (points[j].Y - points[i].Y) < y)
-                    {
-                        inPoly = !inPoly;
-                    }
-                }
-                j = i;
-            }
-
-            return inPoly;
-        }
-
-        private static unsafe bool PointInPolygon(byte[] data, int offset, int numPoints, double x, double y, bool ignoreHoles, ref bool isHole)
-        {
-            if (ignoreHoles) return PointInPolygon(data, offset, numPoints, x, y);
-
-            //if we are detecting holes then we need to calculate the area
-            double area = 0;
-            int j = numPoints - 1;
-            bool inPoly = false;
-
-            fixed (byte* bPtr = data)
-            {
-                PointD* points = (PointD*)(bPtr + offset);
-                for (int i = 0; i < numPoints; ++i)
-                {
-                    if (points[i].X < x && points[j].X >= x || points[j].X < x && points[i].X >= x)
-                    {
-                        if (points[i].Y + (x - points[i].X) / (points[j].X - points[i].X) * (points[j].Y - points[i].Y) < y)
-                        {
-                            inPoly = !inPoly;
-                        }
-                    }
-                    area += (points[j].X * points[i].Y - points[i].X * points[j].Y);
-                    j = i;
-                }
-            }
-            area *= 0.5;
-            isHole = area > 0;
-            return inPoly;
-        }
-
-        protected static unsafe bool PointInPolygon(byte[] data, int offset, int numPoints, double x, double y)
-        {
-            int j = numPoints - 1;
-            bool inPoly = false;
-            fixed (byte* bPtr = data)
-            {
-                PointD* points = (PointD*)(bPtr + offset);
-                for (int i = 0; i < numPoints; ++i)
-                {
-                    if (points[i].X < x && points[j].X >= x || points[j].X < x && points[i].X >= x)
-                    {
-                        if (points[i].Y + (x - points[i].X) / (points[j].X - points[i].X) * (points[j].Y - points[i].Y) < y)
-                        {
-                            inPoly = !inPoly;
-                        }
-                    }
-                    j = i;
-                }
-            }
-            return inPoly;
-        }
-
-
-        internal unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        
+        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
         {
             //first check if the record's bounds intersects with rect
             if (!GetRecordBoundsD(shapeIndex, shapeFileStream).IntersectsWith(rect)) return false;
@@ -12170,28 +12164,11 @@ namespace EGIS.ShapeFileLib
                 }
             }
             return false;
-        }
-       
-        private static unsafe bool IsHole(byte[] data, int offset, int numPoints)
-        {
-            //if we are detecting holes then we need to calculate the area
-            double area = 0;
-            int j = numPoints - 1;
-            fixed (byte* bPtr = data)
-            {
-                PointD* points = (PointD*)(bPtr + offset);
-                for (int i = 0; i < numPoints; ++i)
-                {
-                    area += (points[j].X * points[i].Y - points[i].X * points[j].Y);
-                    j = i;
-                }
-            }
-            return area > 0;
-        }
-
+        }       
+        
         private static unsafe bool IntersectsRect(byte[] data, int offset, int numPoints, ref RectangleD rect)
         {
-            if (IsHole(data, offset, numPoints))
+            if (GeometryAlgorithms.IsPolygonHole(data, offset, numPoints))
             {
                 //We need to check if the hole contains the rect
                 //but for the moment we will return false.
@@ -12203,6 +12180,42 @@ namespace EGIS.ShapeFileLib
                 return NativeMethods.PolygonRectIntersect(ptr + offset, numPoints, rect.Left, rect.Top, rect.Right, rect.Bottom);
             }
         }
+
+        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            //first check if the record's bounds intersects with the circle
+            RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            if (!GeometryAlgorithms.RectangleCircleIntersects(ref recBounds, ref centre, radius)) return false;
+
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolygonZRecordP* nextRec = (PolygonZRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->PointDataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+                    if (GeometryAlgorithms.PolygonCircleIntersects(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, radius, numParts == 1))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
 
 
         #region QTNodeHelper Members
@@ -12516,6 +12529,12 @@ namespace EGIS.ShapeFileLib
                             selectPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
                             selectPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
                             selectPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                            if (renderSettings.LineType == LineType.Solid)
+                            {
+                                gdiplusPen.DashStyle = renderSettings.LineDashStyle;
+                                selectPen.DashStyle = renderSettings.LineDashStyle;
+                            }
+                            
                             byte* dataPtrZero = (byte*)IntPtr.Zero.ToPointer();
                             if (fileMapped)
                             {
@@ -12615,6 +12634,11 @@ namespace EGIS.ShapeFileLib
                                                 gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
                                                 gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
                                                 gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                                                if (renderSettings.LineType == LineType.Solid)
+                                                {
+                                                    gdiplusPen.DashStyle = renderSettings.LineDashStyle;
+                                                    selectPen.DashStyle = renderSettings.LineDashStyle;
+                                                }                                                                                                
                                             }
                                         }
 
@@ -13186,7 +13210,7 @@ namespace EGIS.ShapeFileLib
                         {
                             numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
                         }
-                        if (PointOnPolyLine(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, pt, minDist))
+                        if (GeometryAlgorithms.PointOnPolyline(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, pt, minDist))
                         {
                             return true;
                         }
@@ -13196,15 +13220,37 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        private static unsafe bool PointOnPolyLine(byte[] data, int offset, int numPoints, PointD pt, double minDist)
+        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
         {
-            fixed (byte* bPtr = data)
-            {
-                PointD* points = (PointD*)(bPtr + offset);
+            //first check if the record's bounds intersects with rect
+            RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            if (!recBounds.IntersectsWith(rect)) return false;
 
-                for (int i = 0; i < numPoints - 1; i++)
+            //next check if rect entirely contains the polyline
+            if (rect.Contains(recBounds)) return true;
+
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->PointDataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
                 {
-                    if (lineSegPointDist(ref points[i], ref points[i + 1], ref pt) <= minDist)
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+
+                    if (IntersectsRect(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref rect))
                     {
                         return true;
                     }
@@ -13213,46 +13259,52 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        //compute the dot product AB*BC         
-        static double dot(ref PointD a, ref PointD b, ref PointD c)
+        private static unsafe bool IntersectsRect(byte[] data, int offset, int numPoints, ref RectangleD rect)
         {
-            PointD ab = new PointD(b.X - a.X, b.Y - a.Y);
-            PointD bc = new PointD(c.X - b.X, c.Y - b.Y);
-            return (ab.X * bc.X) + (ab.Y * bc.Y);
-        }
-
-        //Compute the cross product AB x AC
-        static double cross(ref PointD a, ref PointD b, ref PointD c)
-        {
-            PointD ab = new PointD(b.X - a.X, b.Y - a.Y);
-            PointD ac = new PointD(c.X - a.X, c.Y - a.Y);
-            return (ab.X * ac.Y) - (ab.Y * ac.X);
-        }
-
-        private static double distance(ref PointD a, ref PointD b)
-        {
-            double d1 = a.X - b.X;
-            double d2 = a.Y - b.Y;
-            return Math.Sqrt((d1 * d1) + (d2 * d2));
-        }
-
-        //Compute the distance from AB to C
-        //if isSegment is true, AB is a segment, not a line.
-        private static double lineSegPointDist(ref PointD a, ref PointD b, ref PointD c)
-        {
-            //float dist = cross(a,b,c) / distance(a,b);
-
-            if (dot(ref a, ref b, ref c) > 0)
+            fixed (byte* ptr = data)
             {
-                return distance(ref b, ref c);
+                return NativeMethods.PolyLineRectIntersect(ptr + offset, numPoints, rect.Left, rect.Top, rect.Right, rect.Bottom);
             }
-            if (dot(ref b, ref a, ref c) > 0)
-            {
-                return distance(ref a, ref c);
-            }
-            return Math.Abs(cross(ref a, ref b, ref c) / distance(ref a, ref b));
         }
 
+        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            //first check if the record's bounds intersects with the circle
+            RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            if (!GeometryAlgorithms.RectangleCircleIntersects(ref recBounds, ref centre, radius)) return false;
+
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->PointDataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+
+                    if (GeometryAlgorithms.PolylineCircleIntersects(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, radius))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        
+
+        
         #region QTNodeHelper Members
 
         public bool IsPointData()
@@ -13402,6 +13454,8 @@ namespace EGIS.ShapeFileLib
     #endregion
 
 
+
+
     #region "DBF types"
 
     
@@ -13430,8 +13484,16 @@ namespace EGIS.ShapeFileLib
             
 
 			try
-			{                
-                dbfFileStream = new FileStream(System.IO.Path.ChangeExtension(filePath, ".dbf"), FileMode.Open, FileAccess.Read, FileShare.Read, FileBufSize);				
+			{
+                if (filePath.EndsWith(".shp", StringComparison.OrdinalIgnoreCase))
+                {
+                    filePath = System.IO.Path.ChangeExtension(filePath, "dbf");
+                }
+                else if (!filePath.EndsWith(".dbf", StringComparison.OrdinalIgnoreCase))
+                {
+                    filePath += ".dbf";
+                }
+                dbfFileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, FileBufSize);				
 				dBFRecordHeader = new DbfFileHeader();
 				dBFRecordHeader.Read(dbfFileStream);
                 try
@@ -14411,9 +14473,90 @@ namespace EGIS.ShapeFileLib
         [DllImport("gdipluslib.dll")]
         internal static extern void ReleaseGdiplusPen(IntPtr pen);
 
+//        internal static unsafe void TestGeometry()
+//{
+//    double[] pts = {0,0, 0,10, 5,10, 5,5, 1,5, 1,0, 0,0};
 
-        [DllImport("geomutil_lib.dll")]
-        internal static unsafe extern int SimplifyDouglasPeuckerInt(int* input, int inputCount, int tolerance, int* output, ref int outputCount);
+//            fixed(double* ptr = pts)
+//            {
+
+//    bool intersects;
+//    intersects = PolygonRectIntersect(ptr, 7, 0,0, 10,11);
+	
+//    Console.Out.WriteLine("TestGeometry test1 pass:" + intersects);
+	
+//    intersects = PolygonRectIntersect(ptr, 7, 100,0, 110,10);
+//    Console.Out.WriteLine("TestGeometry test2 pass:" + !intersects);
+	
+//    intersects = PolygonRectIntersect(ptr, 7, 2,0, 10,4);
+//    Console.Out.WriteLine("TestGeometry test3 pass:" + !intersects);
+	
+//            }
+//}
+
+
+        class NativeGeomUtilWin32
+        {
+            [DllImport("geomutil_lib.dll")]
+            internal static unsafe extern int SimplifyDouglasPeuckerInt(int* input, int inputCount, int tolerance, int* output, ref int outputCount);
+
+            [DllImport("geomutil_lib.dll")]
+            internal static unsafe extern int PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
+
+            [DllImport("geomutil_lib.dll")]
+            internal static unsafe extern int PolyLineRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
+
+        }
+
+        class NativeGeomUtilX64
+        {
+            [DllImport("geomutil_libx64.dll")]
+            internal static unsafe extern int SimplifyDouglasPeuckerInt(int* input, int inputCount, int tolerance, int* output, ref int outputCount);
+
+            [DllImport("geomutil_libx64.dll")]
+            internal static unsafe extern int PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
+
+            [DllImport("geomutil_libx64.dll")]
+            internal static unsafe extern int PolyLineRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
+
+        }
+
+
+        static bool IsWin32Process()
+        {
+            return (IntPtr.Size == 4);
+        }
+
+        internal static unsafe int SimplifyDouglasPeuckerInt(int* input, int inputCount, int tolerance, int* output, ref int outputCount)
+        {
+            if (IsWin32Process())
+            {
+                return NativeGeomUtilWin32.SimplifyDouglasPeuckerInt(input, inputCount, tolerance, output, ref outputCount);
+            }
+            return NativeGeomUtilX64.SimplifyDouglasPeuckerInt(input, inputCount, tolerance, output, ref outputCount);
+
+        }
+       
+
+        internal static unsafe bool PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY)
+        {
+            if (IsWin32Process())
+            {
+                return (NativeGeomUtilWin32.PolygonRectIntersect(points, pointCount, rMinX, rMinY, rMaxX, rMaxY) !=0);
+            }
+            return (NativeGeomUtilX64.PolygonRectIntersect(points, pointCount, rMinX, rMinY, rMaxX, rMaxY)!=0);
+        }
+
+        internal static unsafe bool PolyLineRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY)
+        {
+            if (IsWin32Process())
+            {
+                int c = NativeGeomUtilWin32.PolyLineRectIntersect(points, pointCount, rMinX, rMinY, rMaxX, rMaxY);
+                //Console.Out.WriteLine("c = " + c);
+                return c != 0;
+            }
+            return NativeGeomUtilX64.PolyLineRectIntersect(points, pointCount, rMinX, rMinY, rMaxX, rMaxY) !=0;
+        }
 
         internal static unsafe int SimplifyDouglasPeucker(Point[] input, int inputCount, int tolerance, Point[] output, ref int outputCount)
         {
@@ -14426,9 +14569,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        [DllImport("geomutil_lib.dll")]        
-        internal static unsafe extern bool PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
-
+        
         internal static unsafe bool PolygonRectIntersect(double[] data, int dataLength, double rMinX, double rMinY, double rMaxX, double rMaxY)
         {
             fixed (double* ptr = data)
@@ -14437,9 +14578,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        [DllImport("geomutil_lib.dll")]
-        internal static unsafe extern bool PolyLineRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
-
+        
         internal static unsafe bool PolyLineRectIntersect(double[] data, int dataLength, double rMinX, double rMinY, double rMaxX, double rMaxY)
         {
             fixed (double* ptr = data)
@@ -14715,7 +14854,7 @@ namespace EGIS.ShapeFileLib
         public bool MoveNext()
         {
             currentIndex++;
-            if (myShapeFile.ShapeType == ShapeType.Point)
+            if (myShapeFile.ShapeType == ShapeType.Point || myShapeFile.ShapeType == ShapeType.PointZ)
             {
                 while (currentIndex < totalRecords && !this.extent.Contains(myShapeFile.GetShapeBoundsD(currentIndex)))
                 {
@@ -14726,11 +14865,11 @@ namespace EGIS.ShapeFileLib
             {
                 if (this.intersectType == IntersectionType.Intersects)
                 {
-                    if (myShapeFile.ShapeType == ShapeType.Polygon ||
+                    if (true || myShapeFile.ShapeType == ShapeType.Polygon ||
                         myShapeFile.ShapeType == ShapeType.PolygonZ ||
                         myShapeFile.ShapeType == ShapeType.PolyLine)
                     {
-                        while (currentIndex < totalRecords && !this.myShapeFile.ShapeIntersectsRect(currentIndex, this.extent))
+                        while (currentIndex < totalRecords && !this.myShapeFile.ShapeIntersectsRect(currentIndex, ref this.extent))
                         {
                             currentIndex++;
                         }

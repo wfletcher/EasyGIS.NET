@@ -83,6 +83,8 @@ namespace EGIS.ShapeFileLib
         private bool _fillInterior = true;
         private LineType _lineType = LineType.Outline;
 
+        private System.Drawing.Drawing2D.DashStyle _lineDashStyle = System.Drawing.Drawing2D.DashStyle.Solid;
+
         private float _minRenderZoomLevel = -1f;
         private float _maxRenderZoomLevel = -1f;
 
@@ -464,6 +466,31 @@ namespace EGIS.ShapeFileLib
                 _lineType = value;
             }
         }
+
+        /// <summary>
+        /// Gets / Sets the Line DashStyle to use when rending solid lines and the outline of polygons
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The Line DashStyle is ignored if LineType is not LineType.Solid when rendering PolyLine, polyLineM or PolyLineZ shapefiles</br>
+        /// When rendering Polygon or PolygonZ shapefiles the DashStyle is used when rendering the outline of polygons        
+        /// </para>
+        /// <para>
+        /// The DasyStyle Custom is not supported
+        /// </para>
+        /// </remarks>
+        [Category("Layer Render Settings"), Description("The Line  DashStyle to use when rending solid lines and the outline of polygons")]
+        public System.Drawing.Drawing2D.DashStyle LineDashStyle
+        {
+            get
+            {
+                return _lineDashStyle;
+            }
+            set
+            {
+                _lineDashStyle = value;
+            }
+        } 
 
         /// <summary>
         /// Gets / Sets whether to fill the interior of each shape (Polygon)

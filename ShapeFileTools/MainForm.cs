@@ -808,21 +808,37 @@ namespace egis
         private void tsBtnPanLeft_Click(object sender, EventArgs e)
         {
             PanLeft();
+            tsBtnSelectCircle.Checked = false;
+            tsBtnSelectRect.Checked = false;
+            tsLblSelectMessage.Visible = false;
+            sfMap1.PanSelectMode = EGIS.Controls.PanSelectMode.Pan;            
         }
 
         private void tsBtnPanRight_Click(object sender, EventArgs e)
         {
-            PanRight();            
+            PanRight();
+            tsBtnSelectCircle.Checked = false;
+            tsBtnSelectRect.Checked = false;
+            tsLblSelectMessage.Visible = false;
+            sfMap1.PanSelectMode = EGIS.Controls.PanSelectMode.Pan;
         }
 
         private void tsBtnPanUp_Click(object sender, EventArgs e)
         {
             PanUp();
+            tsBtnSelectCircle.Checked = false;
+            tsBtnSelectRect.Checked = false;
+            tsLblSelectMessage.Visible = false;
+            sfMap1.PanSelectMode = EGIS.Controls.PanSelectMode.Pan;
         }
 
         private void tsBtnPanDown_Click(object sender, EventArgs e)
         {
             PanDown();
+            tsBtnSelectCircle.Checked = false;
+            tsBtnSelectRect.Checked = false;
+            tsLblSelectMessage.Visible = false;
+            sfMap1.PanSelectMode = EGIS.Controls.PanSelectMode.Pan;
         }
 
         private void tsBtnZoomFull_Click(object sender, EventArgs e)
@@ -839,7 +855,7 @@ namespace egis
         {
             PointD pt = sfMap1.PixelCoordToGisPoint(new Point(e.X, e.Y));
 
-            string msg = string.Format("[{0},{1}]", new object[] { pt.X, pt.Y});
+            string msg = string.Format("[{0:0.0000},{1:0.0000}]", new object[] { pt.X, pt.Y});
             tsLblMapMousePos.Text = msg;            
         }
         
@@ -1059,6 +1075,44 @@ namespace egis
         {
             this.useNativeFileMappingToolStripMenuItem.Checked = !this.useNativeFileMappingToolStripMenuItem.Checked;
             EGIS.ShapeFileLib.ShapeFile.MapFilesInMemory = useNativeFileMappingToolStripMenuItem.Checked;
+        }
+
+        private void sfMap1_KeyDown(object sender, KeyEventArgs e)
+        {
+            this.tsLblSelectMessage.Visible = true;
+        }
+
+        private void sfMap1_KeyUp(object sender, KeyEventArgs e)
+        {
+            this.tsLblSelectMessage.Visible = (tsBtnSelectRect.Checked || tsBtnSelectCircle.Checked);
+        }
+
+        private void tsBtnSelectRect_Click(object sender, EventArgs e)
+        {
+            tsBtnSelectRect.Checked = !tsBtnSelectRect.Checked;
+            tsBtnSelectCircle.Checked = false;
+            tsLblSelectMessage.Visible = tsBtnSelectRect.Checked;            
+            sfMap1.PanSelectMode = tsBtnSelectRect.Checked? EGIS.Controls.PanSelectMode.SelectRectangle: EGIS.Controls.PanSelectMode.Pan;            
+        }
+
+        private void tsBtnSelectCircle_Click(object sender, EventArgs e)
+        {
+            tsBtnSelectCircle.Checked = !tsBtnSelectCircle.Checked;
+            tsBtnSelectRect.Checked = false;
+            tsLblSelectMessage.Visible = tsBtnSelectCircle.Checked;
+            sfMap1.PanSelectMode = tsBtnSelectCircle.Checked ? EGIS.Controls.PanSelectMode.SelectCircle : EGIS.Controls.PanSelectMode.Pan;
+        }
+
+        private void sfMap1_MouseDown(object sender, MouseEventArgs e)
+        {
+            this.tsLblSelectMessage.Visible = true;
+
+        }
+
+        private void sfMap1_MouseUp(object sender, MouseEventArgs e)
+        {
+            this.tsLblSelectMessage.Visible = false;
+
         }
 
 

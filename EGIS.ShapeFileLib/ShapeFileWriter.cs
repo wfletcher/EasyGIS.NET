@@ -402,7 +402,7 @@ namespace EGIS.ShapeFileLib
                 //write the field length
                 dbfStream.WriteByte((byte)dataFields[n].FieldLength);
                 //write the decimal count(just use zero)
-                dbfStream.WriteByte(0x0);
+                dbfStream.WriteByte((byte)dataFields[n].DecimalCount);                
                 //write the multi-user stuff (just use zeros)
                 dbfStream.WriteByte(0x0);
                 dbfStream.WriteByte(0x0);

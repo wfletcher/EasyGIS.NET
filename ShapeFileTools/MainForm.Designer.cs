@@ -75,6 +75,9 @@ namespace egis
             this.tsBtnZoomOut = new System.Windows.Forms.ToolStripButton();
             this.tsBtnZoomFull = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.tsBtnSelectRect = new System.Windows.Forms.ToolStripButton();
+            this.tsBtnSelectCircle = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparator10 = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
             this.tsTxtFind = new System.Windows.Forms.ToolStripTextBox();
             this.toolStripLabel3 = new System.Windows.Forms.ToolStripLabel();
@@ -87,6 +90,7 @@ namespace egis
             this.tsLabelVisibleArea = new System.Windows.Forms.ToolStripStatusLabel();
             this.tsLblMapMousePos = new System.Windows.Forms.ToolStripStatusLabel();
             this.mainProgressBar = new System.Windows.Forms.ToolStripProgressBar();
+            this.tsLblSelectMessage = new System.Windows.Forms.ToolStripStatusLabel();
             this.shapeFileListControl1 = new EGIS.Controls.ShapeFileListControl();
             this.sfMap1 = new EGIS.Controls.SFMap();
             this.sfdMapImage = new System.Windows.Forms.SaveFileDialog();
@@ -347,6 +351,9 @@ namespace egis
             this.tsBtnZoomOut,
             this.tsBtnZoomFull,
             this.toolStripSeparator1,
+            this.tsBtnSelectRect,
+            this.tsBtnSelectCircle,
+            this.toolStripSeparator10,
             this.toolStripLabel2,
             this.tsTxtFind,
             this.toolStripLabel3,
@@ -486,11 +493,39 @@ namespace egis
             this.toolStripSeparator1.Name = "toolStripSeparator1";
             this.toolStripSeparator1.Size = new System.Drawing.Size(6, 39);
             // 
+            // tsBtnSelectRect
+            // 
+            this.tsBtnSelectRect.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsBtnSelectRect.Image = ((System.Drawing.Image)(resources.GetObject("tsBtnSelectRect.Image")));
+            this.tsBtnSelectRect.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsBtnSelectRect.Name = "tsBtnSelectRect";
+            this.tsBtnSelectRect.Size = new System.Drawing.Size(36, 36);
+            this.tsBtnSelectRect.Text = "Select Rectangle";
+            this.tsBtnSelectRect.Visible = false;
+            this.tsBtnSelectRect.Click += new System.EventHandler(this.tsBtnSelectRect_Click);
+            // 
+            // tsBtnSelectCircle
+            // 
+            this.tsBtnSelectCircle.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsBtnSelectCircle.Image = ((System.Drawing.Image)(resources.GetObject("tsBtnSelectCircle.Image")));
+            this.tsBtnSelectCircle.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsBtnSelectCircle.Name = "tsBtnSelectCircle";
+            this.tsBtnSelectCircle.Size = new System.Drawing.Size(36, 36);
+            this.tsBtnSelectCircle.Text = "Select Circle";
+            this.tsBtnSelectCircle.Visible = false;
+            this.tsBtnSelectCircle.Click += new System.EventHandler(this.tsBtnSelectCircle_Click);
+            // 
+            // toolStripSeparator10
+            // 
+            this.toolStripSeparator10.Name = "toolStripSeparator10";
+            this.toolStripSeparator10.Size = new System.Drawing.Size(6, 39);
+            // 
             // toolStripLabel2
             // 
             this.toolStripLabel2.Name = "toolStripLabel2";
             this.toolStripLabel2.Size = new System.Drawing.Size(30, 36);
             this.toolStripLabel2.Text = "Find";
+            this.toolStripLabel2.Visible = false;
             // 
             // tsTxtFind
             // 
@@ -498,6 +533,7 @@ namespace egis
             this.tsTxtFind.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.CustomSource;
             this.tsTxtFind.Name = "tsTxtFind";
             this.tsTxtFind.Size = new System.Drawing.Size(130, 39);
+            this.tsTxtFind.Visible = false;
             this.tsTxtFind.KeyDown += new System.Windows.Forms.KeyEventHandler(this.tsTxtFind_KeyDown);
             this.tsTxtFind.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tsTxtFind_KeyPress);
             // 
@@ -509,6 +545,7 @@ namespace egis
             this.toolStripLabel3.Name = "toolStripLabel3";
             this.toolStripLabel3.Size = new System.Drawing.Size(17, 36);
             this.toolStripLabel3.Text = "in";
+            this.toolStripLabel3.Visible = false;
             // 
             // tscbSearchLayers
             // 
@@ -519,6 +556,7 @@ namespace egis
             this.tscbSearchLayers.Margin = new System.Windows.Forms.Padding(0, 0, 1, 0);
             this.tscbSearchLayers.Name = "tscbSearchLayers";
             this.tscbSearchLayers.Size = new System.Drawing.Size(90, 39);
+            this.tscbSearchLayers.Visible = false;
             this.tscbSearchLayers.SelectedIndexChanged += new System.EventHandler(this.tscbSearchLayers_SelectedIndexChanged);
             // 
             // toolStripSeparator2
@@ -526,6 +564,7 @@ namespace egis
             this.toolStripSeparator2.Margin = new System.Windows.Forms.Padding(3, 0, 3, 0);
             this.toolStripSeparator2.Name = "toolStripSeparator2";
             this.toolStripSeparator2.Size = new System.Drawing.Size(6, 39);
+            this.toolStripSeparator2.Visible = false;
             // 
             // helpToolStripButton
             // 
@@ -545,7 +584,8 @@ namespace egis
             this.tsLabelCurrentZoom,
             this.tsLabelVisibleArea,
             this.tsLblMapMousePos,
-            this.mainProgressBar});
+            this.mainProgressBar,
+            this.tsLblSelectMessage});
             this.statusStrip1.Location = new System.Drawing.Point(0, 543);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(949, 22);
@@ -572,16 +612,26 @@ namespace egis
             // 
             // tsLblMapMousePos
             // 
+            this.tsLblMapMousePos.AutoSize = false;
             this.tsLblMapMousePos.Margin = new System.Windows.Forms.Padding(5, 3, 3, 2);
             this.tsLblMapMousePos.Name = "tsLblMapMousePos";
-            this.tsLblMapMousePos.Size = new System.Drawing.Size(30, 17);
+            this.tsLblMapMousePos.Size = new System.Drawing.Size(150, 17);
             this.tsLblMapMousePos.Text = "[0,0]";
+            this.tsLblMapMousePos.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // mainProgressBar
             // 
             this.mainProgressBar.Name = "mainProgressBar";
             this.mainProgressBar.Size = new System.Drawing.Size(150, 16);
             this.mainProgressBar.Visible = false;
+            // 
+            // tsLblSelectMessage
+            // 
+            this.tsLblSelectMessage.AutoSize = false;
+            this.tsLblSelectMessage.Name = "tsLblSelectMessage";
+            this.tsLblSelectMessage.Size = new System.Drawing.Size(350, 17);
+            this.tsLblSelectMessage.Text = "Hold Shift to select. Hold Ctrl to toggle select";
+            this.tsLblSelectMessage.Visible = false;
             // 
             // shapeFileListControl1
             // 
@@ -600,18 +650,26 @@ namespace egis
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.sfMap1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.sfMap1.CentrePoint = ((System.Drawing.PointF)(resources.GetObject("sfMap1.CentrePoint")));
+            this.sfMap1.CentrePoint2D = ((EGIS.ShapeFileLib.PointD)(resources.GetObject("sfMap1.CentrePoint2D")));
             this.sfMap1.Location = new System.Drawing.Point(267, 68);
             this.sfMap1.MapBackColor = System.Drawing.SystemColors.Control;
             this.sfMap1.Name = "sfMap1";
+            this.sfMap1.PanSelectMode = EGIS.Controls.PanSelectMode.Pan;
             this.sfMap1.RenderQuality = EGIS.ShapeFileLib.RenderQuality.Auto;
             this.sfMap1.Size = new System.Drawing.Size(674, 468);
             this.sfMap1.TabIndex = 7;
             this.sfMap1.UseMercatorProjection = true;
+            this.sfMap1.ZoomLevel = 1;
             this.sfMap1.ZoomLevelChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_ZoomLevelChanged);
             this.sfMap1.ShapeFilesChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_ShapeFilesChanged);
             this.sfMap1.TooltipDisplayed += new System.EventHandler<EGIS.Controls.SFMap.TooltipEventArgs>(this.sfMap1_TooltipDisplayed);
             this.sfMap1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseMove);
+            this.sfMap1.KeyUp += new System.Windows.Forms.KeyEventHandler(this.sfMap1_KeyUp);
+            this.sfMap1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseDown);
+            this.sfMap1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseUp);
             this.sfMap1.ClientSizeChanged += new System.EventHandler(this.sfMap1_ClientSizeChanged);
+            this.sfMap1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.sfMap1_KeyDown);
             // 
             // sfdMapImage
             // 
@@ -712,6 +770,10 @@ namespace egis
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator8;
         private System.Windows.Forms.ToolStripMenuItem useNativeFileMappingToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator9;
+        private System.Windows.Forms.ToolStripStatusLabel tsLblSelectMessage;
+        private System.Windows.Forms.ToolStripButton tsBtnSelectRect;
+        private System.Windows.Forms.ToolStripButton tsBtnSelectCircle;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator10;
     }
 }
 

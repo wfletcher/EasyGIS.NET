@@ -41,6 +41,8 @@ namespace EGIS.Controls
 {
     public delegate void ProgressLoadStatusHandler(int totalLayers, int numberLayersLoaded);
 
+    public enum PanSelectMode { Pan, SelectRectangle, SelectCircle };
+
     
     /// <summary>
     /// SFMap (ShapeFile Map) is a .NET ShapeFile Control which displays shapefiles in a .NET Windows Form application
@@ -211,6 +213,23 @@ namespace EGIS.Controls
             }
         }
 
+        /// <summary>
+        /// event fired when selected records of a shapefile change        
+        /// </summary>
+        /// <remarks>To obtain the selected records iterate over each shapefile and call the SelectedRecordIndices method</remarks>
+        /// <see cref="EGIS.ShapeFileLib.ShapeFile.SelectedRecordIndices"/>        
+        public event EventHandler<EventArgs> SelectedRecordsChanged;
+
+        protected void OnSelectedRecordChanged(EventArgs args)
+        {
+            if (SelectedRecordsChanged != null)
+            {
+                SelectedRecordsChanged(this, args);
+            }
+        }
+
+       
+
 #endregion
 
         /// <summary>
@@ -220,6 +239,7 @@ namespace EGIS.Controls
         {
             InitializeComponent();
             this.SetStyle(ControlStyles.ResizeRedraw, true);
+            this.SetStyle(ControlStyles.Selectable, true);
             _mapBackColor = BackColor;
             this.layerTooltip.IsBalloon = _useBalloonToolTip;
             if (_useBalloonToolTip)
@@ -256,7 +276,7 @@ namespace EGIS.Controls
         {
             ReadXml(projectElement, null);
         }
-
+        
 
 
         public void ReadXml(XmlElement projectElement, ProgressLoadStatusHandler loadingDelegate)
@@ -991,15 +1011,62 @@ namespace EGIS.Controls
             }
             if (screenBuf != null)
             {
-                //change this to only draw invalid area
-                if ((mouseOffPt.X == 0) && (mouseOffPt.Y == 0))
+               // bool selecting = (_panSelectMode != PanSelectMode.Pan);
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                if (_panSelectMode == PanSelectMode.SelectRectangle)
                 {
                     e.Graphics.DrawImage(screenBuf, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
+                    using (Pen p = new Pen(Color.Red, 1))
+                    {
+                        using(Brush b = new SolidBrush(Color.FromArgb(20, Color.Red)))
+                        {
+                            p.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+                            
+                            Rectangle selectRect = new Rectangle(mouseOffPt.X>=0?mouseDownPt.X:mouseDownPt.X+mouseOffPt.X,
+                                mouseOffPt.Y>=0?mouseDownPt.Y:mouseDownPt.Y+mouseOffPt.Y,
+                                mouseOffPt.X>=0?mouseOffPt.X:-mouseOffPt.X,
+                                mouseOffPt.Y>=0?mouseOffPt.Y:-mouseOffPt.Y);
+                            
+                            e.Graphics.FillRectangle(b, selectRect);
+                            e.Graphics.DrawRectangle(p, selectRect);
+                        }
+                    }
                 }
-                else
+                else if (_panSelectMode == PanSelectMode.SelectCircle)
                 {
-                    e.Graphics.DrawImage(screenBuf, mouseOffPt.X, mouseOffPt.Y);
-                }                
+                    e.Graphics.DrawImage(screenBuf, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
+                    using (Pen p = new Pen(Color.Red, 1))
+                    {
+                        using (Brush b = new SolidBrush(Color.FromArgb(20, Color.Red)))
+                        {
+                            p.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+
+                            int radius = (int)Math.Round(Math.Sqrt(mouseOffPt.X * mouseOffPt.X + mouseOffPt.Y * mouseOffPt.Y));
+                            Rectangle selectRect = new Rectangle(mouseDownPt.X -radius,
+                                mouseDownPt.Y -radius,
+                                radius*2,
+                                radius*2);
+
+                            //e.Graphics.FillRectangle(b, selectRect);
+                            //e.Graphics.DrawRectangle(p, selectRect);
+                            e.Graphics.FillEllipse(b, selectRect);
+                            e.Graphics.DrawEllipse(p, selectRect);
+                        }
+                    }
+
+                }
+                else// if (_panSelectMode == PanSelectMode.Pan)
+                {
+                    //change this to only draw invalid area
+                    if ((mouseOffPt.X == 0) && (mouseOffPt.Y == 0))
+                    {
+                        e.Graphics.DrawImage(screenBuf, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
+                    }
+                    else
+                    {
+                        e.Graphics.DrawImage(screenBuf, mouseOffPt.X, mouseOffPt.Y);
+                    }
+                }
             }
 
             System.Drawing.Drawing2D.Matrix m = e.Graphics.Transform;
@@ -1038,7 +1105,111 @@ namespace EGIS.Controls
             Refresh();
         }
 
-        #region "Mouse Handling Methods"
+        #region "Mouse and key Handling Methods"
+
+        private void PanLeft()
+        {
+            RectangleD r = ProjectedExtent;
+            PointD pt = CentrePoint2D;
+            pt.X -= (ClientSize.Width >> 2) / ZoomLevel; ;// (0.0025f * r.Width);
+            CentrePoint2D = pt;
+        }
+
+        private void PanRight()
+        {
+            RectangleD r = ProjectedExtent;
+            PointD pt = CentrePoint2D;
+            pt.X += (ClientSize.Width >> 2) / ZoomLevel;// (0.0025f * r.Width);
+            CentrePoint2D = pt;
+        }
+
+        private void PanUp()
+        {
+            RectangleD r = ProjectedExtent;
+            PointD pt = CentrePoint2D;
+            pt.Y += (ClientSize.Height >> 2) / ZoomLevel; //(0.0025f * r.Height);
+            CentrePoint2D = pt;
+        }
+
+        private void PanDown()
+        {
+            RectangleD r = ProjectedExtent;
+            PointD pt = CentrePoint2D;
+            pt.Y -= (ClientSize.Height >> 2) / ZoomLevel;
+            CentrePoint2D = pt;
+        }
+
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            
+            ctrlDown = (e.KeyCode == Keys.ControlKey || e.KeyCode == Keys.LControlKey || e.KeyCode == Keys.RControlKey);
+            shiftDown = (e.KeyCode == Keys.ShiftKey);
+            switch (e.KeyCode)
+            {
+                case Keys.Left:
+                    PanLeft();
+                    break;
+                case Keys.Right:
+                    PanRight();
+                    break;
+                case Keys.Up:
+                    PanUp();
+                    break;
+                case Keys.Down:
+                    PanDown();
+                    break;
+            }            
+        }
+
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            base.OnKeyUp(e);
+            ctrlDown = false;
+            shiftDown = false;
+        }
+
+        protected override bool IsInputKey(Keys keyData)
+        {
+            switch (keyData)
+            {
+                case Keys.Left:
+                    return true;
+                case Keys.Right:
+                    return true;
+                case Keys.Up:
+                    return true;
+                case Keys.Down:
+                    return true;
+                default:
+                    return base.IsInputKey(keyData);
+            }            
+        }
+
+                
+        private PanSelectMode controlPanSelectMode = PanSelectMode.Pan;
+
+        public PanSelectMode PanSelectMode
+        {
+            get
+            {
+                return controlPanSelectMode;
+            }
+            set
+            {
+                controlPanSelectMode = value;
+            }
+        }
+
+        /// <summary>
+        /// _panSelectMode is set by keys or controlPanSelectMode
+        /// </summary>
+        private PanSelectMode _panSelectMode = PanSelectMode.Pan;
+
+        private bool ctrlDown = false;
+        private bool shiftDown = false;
+        private bool toggleSelect = false;
 
         private MouseButtons mouseDownButton = MouseButtons.None;
         private Point mouseDownPt = Point.Empty;
@@ -1052,9 +1223,28 @@ namespace EGIS.Controls
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
-
             mouseDownButton = e.Button;
             mouseDownPt = new Point(e.X, e.Y);
+
+            if (PanSelectMode != PanSelectMode.Pan)
+            {
+                _panSelectMode = PanSelectMode;
+                toggleSelect = !shiftDown && ctrlDown;
+            }            
+            else
+            {
+                if (shiftDown)
+                {
+                    _panSelectMode = (e.Button == MouseButtons.Left) ? PanSelectMode.SelectRectangle : PanSelectMode.SelectCircle;
+                    toggleSelect = false;
+                }
+                else if (ctrlDown)
+                {
+                    _panSelectMode = (e.Button == MouseButtons.Left) ? PanSelectMode.SelectRectangle : PanSelectMode.SelectCircle;
+                    toggleSelect = true;
+                }
+                else _panSelectMode = PanSelectMode.Pan;
+            }
         }
 
         /// <summary>
@@ -1065,20 +1255,122 @@ namespace EGIS.Controls
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-            if (mouseDownButton == MouseButtons.Left)
+
+            Cursor oldCursor = Cursor;
+            try
             {
-                mouseOffPt = new Point(e.X - mouseDownPt.X, e.Y - mouseDownPt.Y);
-                if (!mouseOffPt.IsEmpty)
+                Cursor = Cursors.WaitCursor;
+                if (_panSelectMode == PanSelectMode.SelectRectangle)
                 {
-                    double s = 1d / ZoomLevel;
-                    _centrePoint.X -= (s * mouseOffPt.X);
-                    _centrePoint.Y += (s * mouseOffPt.Y);
+                    PointD pt1 = PixelCoordToGisPoint(mouseDownPt);
+                    PointD pt2 = PixelCoordToGisPoint(e.X, e.Y);
+                    RectangleD selRect = RectangleD.FromLTRB(Math.Min(pt1.X, pt2.X),
+                        Math.Min(pt1.Y, pt2.Y),
+                        Math.Max(pt1.X, pt2.X),
+                        Math.Max(pt1.Y, pt2.Y));
+                    //if we've just clicked then expand the rectangle
+                    if (Math.Abs(e.X - mouseDownPt.X) < 2 && Math.Abs(e.Y - mouseDownPt.Y) < 2)
+                    {
+                        selRect.Inflate(4f / ZoomLevel, 4f / ZoomLevel);
+                    }
+                    bool fireEvent = false;
+                    for (int n = 0; n < this.ShapeFileCount; ++n)
+                    {
+                        if (!myShapefiles[n].IsSelectable) continue;
+                        fireEvent = true;
+                        List<int> ind = new List<int>();
+                        myShapefiles[n].GetShapeIndiciesIntersectingRect(ind, selRect);
+
+                        if (toggleSelect)
+                        {
+                            foreach (int index in ind)
+                            {
+                                myShapefiles[n].SelectRecord(index, !myShapefiles[n].IsRecordSelected(index));
+                            }
+                        }
+                        else
+                        {
+                            myShapefiles[n].ClearSelectedRecords();
+                            foreach (int index in ind)
+                            {
+                                myShapefiles[n].SelectRecord(index, true);
+                            }
+                        }
+                    }
+
                     mouseOffPt = new Point(0, 0);
 
                     Refresh(true);
+
+                    if(fireEvent) OnSelectedRecordChanged(new EventArgs());
+                }
+                else if (_panSelectMode == PanSelectMode.SelectCircle)
+                {
+
+                    PointD pt1 = PixelCoordToGisPoint(mouseDownPt);
+                    PointD pt2 = PixelCoordToGisPoint(e.X, e.Y);
+                    double radius = Math.Sqrt((pt1.X - pt2.X) * (pt1.X - pt2.X) + (pt1.Y - pt2.Y) * (pt1.Y - pt2.Y));
+
+                    //if we've just clicked then expand the radius
+                    if (Math.Abs(e.X - mouseDownPt.X) < 2 && Math.Abs(e.Y - mouseDownPt.Y) < 2)
+                    {
+                        radius += (4f / ZoomLevel);
+                    }
+                    bool fireEvent = false;
+                    for (int n = 0; n < this.ShapeFileCount; ++n)
+                    {
+                        if (!myShapefiles[n].IsSelectable) continue;
+                        fireEvent = true;
+                        
+                        List<int> ind = new List<int>();
+                        myShapefiles[n].GetShapeIndiciesIntersectingCircle(ind, pt1, radius);
+
+                        if (toggleSelect)
+                        {
+                            foreach (int index in ind)
+                            {
+                                myShapefiles[n].SelectRecord(index, !myShapefiles[n].IsRecordSelected(index));
+                            }
+                        }
+                        else
+                        {
+                            myShapefiles[n].ClearSelectedRecords();
+                            foreach (int index in ind)
+                            {
+                                myShapefiles[n].SelectRecord(index, true);
+                            }
+                        }
+                    }
+
+
+                    mouseOffPt = new Point(0, 0);
+
+                    Refresh(true);
+
+                    if(fireEvent) OnSelectedRecordChanged(new EventArgs());
+
+                }
+                else
+                {
+                    mouseOffPt = new Point(e.X - mouseDownPt.X, e.Y - mouseDownPt.Y);
+                    if (!mouseOffPt.IsEmpty)
+                    {
+                        double s = 1d / ZoomLevel;
+                        _centrePoint.X -= (s * mouseOffPt.X);
+                        _centrePoint.Y += (s * mouseOffPt.Y);
+
+                        mouseOffPt = new Point(0, 0);
+
+                        Refresh(true);
+                    }
                 }
             }
-            mouseDownButton = MouseButtons.None;
+            finally
+            {
+                mouseDownButton = MouseButtons.None;
+                Cursor = oldCursor;
+            }
+            
         }
 
         /// <summary>
@@ -1089,7 +1381,7 @@ namespace EGIS.Controls
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
-            if (mouseDownButton == MouseButtons.Left)
+            if (e.Button != MouseButtons.None)
             {
                 mouseOffPt = new Point(e.X - mouseDownPt.X, e.Y - mouseDownPt.Y);
                 Invalidate();
@@ -1098,7 +1390,6 @@ namespace EGIS.Controls
             {
                 if(this.ShapeFileCount > 0)
                 {
-                    //PointD pt =MousePosToGisPoint(e.X, e.Y);
                     PointD pt = PixelCoordToGisPoint(e.X, e.Y);
                     LocateShape(pt, new Point(e.X,e.Y));                    
                 }
@@ -1118,8 +1409,7 @@ namespace EGIS.Controls
             {
                 layerTooltip.Hide(this);
                 layerTooltipVisible = false;
-                OnTooltipDisplayed(-1, -1, Point.Empty, PointD.Empty);
-                
+                OnTooltipDisplayed(-1, -1, Point.Empty, PointD.Empty);                
             }            
         }
 

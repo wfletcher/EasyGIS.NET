@@ -41,15 +41,13 @@
         }
         
         </script>
-        
+        <div>
          <cc1:TiledSFMap ID="SFMap1" runat="server" BackColor="#C0C0FF" Height="435px" Width="750px" BorderColor="LightGray" BorderStyle="Dashed" BorderWidth="2px"
          ProjectName="~/demos/demo2.egp"  HttpHandlerName="EGPMapTileHandler.ashx" CacheOnServer="true" ServerCacheDirectoryUrl="cache" CacheOnClient="True"  MinZoomLevel="20" MaxZoomLevel="50000" Style="margin:5px"
          OnClientBoundsChanged="MapBoundsChanged" OnClientZoomChanged="MapZoomChanged"/>
                 
-        
-        <%--ZoomInImageUrl property allows changing the controls button images--%>
-        <cc1:MapPanControl  MapReferenceId="SFMap1" CssClass="test" ID="MapPanControl1" runat="server" Style="z-index: 102; position:absolute; top: 125px; left:25px; width:75px;text-align: center; padding-right: 2px; padding-left: 2px; padding-bottom: 2px; padding-top: 2px;" ZoomInImageUrl="zoomin.png"  BorderColor="White" BorderWidth="2px" />
-        
+        <cc1:MapPanControl  CssClass="test" MapReferenceId="SFMap1" ID="MapPanControl1" runat="server" Style="z-index: 102; position:absolute; top: 75px; left:25px; text-align: center; padding: 2px;"  BorderColor="White" BorderWidth="2px" />
+         </div>
         
     </div>
     <div id = "debugpanel" style="width: 750px; height: 86px; border:solid 2px #404040;  overflow:auto; font-size:0.75em; margin:5px">

@@ -63,6 +63,32 @@ namespace EGIS.ShapeFileLib
         }
 
 
+        public List<int> GetIndices(ref RectangleD rect)
+        {
+            if (rootNode.Bounds.IntersectsWith(rect))
+            {
+                List<int> indices = new List<int>();
+                Dictionary<int, int> duplicates = new Dictionary<int, int>();
+                rootNode.GetIndices(ref rect, indices, duplicates);
+                return indices;
+            } 
+            return null;
+        }
+
+        public List<int> GetIndices(PointD centre, double radius)
+        {
+            RectangleD r = rootNode.Bounds;
+            if (GeometryAlgorithms.RectangleCircleIntersects(ref r, ref centre, radius))
+            {
+                List<int> indices = new List<int>();
+                Dictionary<int, int> duplicates = new Dictionary<int, int>();
+                rootNode.GetIndices(centre, radius, indices, duplicates);
+                return indices;
+            }
+            return null;
+        }
+
+
     }
 
     internal class QTNode
@@ -275,6 +301,91 @@ namespace EGIS.ShapeFileLib
             {              
                 //assumes already checked node's Bounds contains pt
                 return this.indexList;                
+            }
+
+        }
+
+        internal void GetIndices(ref RectangleD rect, List<int> indices, System.Collections.Generic.Dictionary<int, int> foundIndicies)
+        {
+            if (children != null)
+            {
+                //check each child bounds
+                if (children[TL].Bounds.IntersectsWith(rect))
+                {
+                    children[TL].GetIndices(ref rect, indices, foundIndicies);
+                }
+                if (children[TR].Bounds.IntersectsWith(rect))
+                {
+                    children[TR].GetIndices(ref rect, indices, foundIndicies);
+                }
+                if (children[BL].Bounds.IntersectsWith(rect))
+                {
+                    children[BL].GetIndices(ref rect, indices, foundIndicies);
+                }
+                if (children[BR].Bounds.IntersectsWith(rect))
+                {
+                    children[BR].GetIndices(ref rect, indices, foundIndicies);
+                }                
+            }
+            else
+            {
+                if (indexList != null)
+                {
+                    //assumes already checked node's Bounds intersect rect
+                    //add the node'x indices, checking if it has already been added
+                    //We need to check for duplicates as a shape may intersect more than 1 node
+                    for (int n = indexList.Count - 1; n >= 0; --n)
+                    {
+                        if (!foundIndicies.ContainsKey(indexList[n]))
+                        {
+                            indices.Add(indexList[n]);
+                            foundIndicies.Add(indexList[n], 0);
+                        }
+                    }
+                }
+            }
+
+        }
+
+
+        internal void GetIndices(PointD centre, double radius, List<int> indices, System.Collections.Generic.Dictionary<int, int> foundIndicies)
+        {
+            if (children != null)
+            {
+                //check each child bounds
+                if (GeometryAlgorithms.RectangleCircleIntersects(ref children[TL]._bounds, ref centre, radius))
+                {
+                    children[TL].GetIndices(centre, radius, indices, foundIndicies);
+                }
+                if (GeometryAlgorithms.RectangleCircleIntersects(ref children[TR]._bounds, ref centre, radius))
+                {
+                    children[TR].GetIndices(centre, radius, indices, foundIndicies);
+                }
+                if (GeometryAlgorithms.RectangleCircleIntersects(ref children[BL]._bounds, ref centre, radius))                
+                {
+                    children[BL].GetIndices(centre, radius, indices, foundIndicies);
+                }
+                if (GeometryAlgorithms.RectangleCircleIntersects(ref children[BR]._bounds, ref centre, radius))                
+                {
+                    children[BR].GetIndices(centre, radius, indices, foundIndicies);
+                }
+            }
+            else
+            {
+                if (indexList != null)
+                {
+                    //assumes already checked node's Bounds intersect rect
+                    //add the node'x indices, checking if it has already been added
+                    //We need to check for duplicates as a shape may intersect more than 1 node
+                    for (int n = indexList.Count - 1; n >= 0; --n)
+                    {
+                        if (!foundIndicies.ContainsKey(indexList[n]))
+                        {
+                            indices.Add(indexList[n]);
+                            foundIndicies.Add(indexList[n], 0);
+                        }
+                    }
+                }
             }
 
         }

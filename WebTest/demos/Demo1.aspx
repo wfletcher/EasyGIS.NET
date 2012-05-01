@@ -20,6 +20,8 @@
         Note that the map looks and behaves the same in both the desktop and web version
         of the SFMap control.<br />
         <br />
+        </p>
+        
         <script type="text/javascript" language="javascript" >
         function MapZoomChanged(type, args, obj)
         {        
@@ -41,18 +43,19 @@
         }
         
         </script>
-        <asp:Panel ID="panel1" runat="server">
-        <cc1:MapPanControl  MapReferenceId="SFMap1" CssClass="test" ID="MapPanControl1" runat="server" Style="z-index: 102;  position: absolute; top: 164px; left:25px; text-align: center; padding-right: 2px; padding-left: 2px; padding-bottom: 2px; padding-top: 2px;" ZoomInImageUrl="zoomin.png"  BorderColor="White" BorderWidth="2px" />
+        <div>
+        <cc1:MapPanControl  MapReferenceId="SFMap1" CssClass="test" ID="MapPanControl1" runat="server" Style="z-index: 102;  position: absolute; top: 120px; left:25px; text-align: center; padding-right: 2px; padding-left: 2px; padding-bottom: 2px; padding-top: 2px;" ZoomInImageUrl="zoomin.png"  BorderColor="White" BorderWidth="2px" />
         
         <cc1:SFMap ID="SFMap1" runat="server" BackColor="#C0C0FF" Height="420px" Width="750px" BorderColor="LightGray" BorderStyle="Dashed" BorderWidth="2px"
          ProjectName="~/demos/demo2.egp" CacheOnClient="False"  MinZoomLevel="20" MaxZoomLevel="50000" OnClientBoundsChanged="MapBoundsChanged" OnClientZoomChanged="MapZoomChanged" />
                  
-        </asp:Panel>        
-        </p>
-        <div id = "debugpanel" style="width: 769px; height: 86px; border:solid 2px #404040; overflow:auto; font-size:0.75em">
+        </div>
+        <div id = "debugpanel" style="width: 750px; height: 86px; border:solid 2px #404040; overflow:auto; font-size:0.75em">
         </div>
         
     </div>
+        <%--<cc1:SFMap ID="SFMap1" runat="server" BackColor="#C0C0FF" Height="420px" Width="750px" BorderColor="LightGray" BorderStyle="Dashed" BorderWidth="2px"
+         ProjectName="~/demos/demo2.egp" CacheOnClient="False"  MinZoomLevel="20" MaxZoomLevel="50000" OnClientBoundsChanged="MapBoundsChanged" OnClientZoomChanged="MapZoomChanged" />--%>
     </form>
 </body>
 </html>

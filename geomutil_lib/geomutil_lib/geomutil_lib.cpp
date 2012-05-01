@@ -22,7 +22,7 @@ EXTERN_C GEOMUTIL_LIB_API int SimplifyDouglasPeuckerInt(int* input, int inputCou
 	return 0;
 }
 
-EXTERN_C GEOMUTIL_LIB_API bool PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY)
+EXTERN_C GEOMUTIL_LIB_API int /*bool*/ PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY)
 {
 	typedef boost::geometry::model::d2::point_xy<double> Point2D;
 	typedef boost::geometry::model::ring<Point2D> Ring2D;
@@ -35,7 +35,8 @@ EXTERN_C GEOMUTIL_LIB_API bool PolygonRectIntersect(void* points, int pointCount
 	boost::geometry::assign(boxPolygon, box);
 	boost::geometry::correct(boxPolygon); //closing point
 
-	return boost::geometry::intersects(boxPolygon, ring);
+	if( boost::geometry::intersects(boxPolygon, ring)) return 1;
+	return 0;
 }
 
 
@@ -104,7 +105,7 @@ public:
 
 	
 
-EXTERN_C GEOMUTIL_LIB_API bool PolyLineRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY)
+EXTERN_C GEOMUTIL_LIB_API int PolyLineRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY)
 {
 	struct Point
 	{
@@ -112,13 +113,13 @@ EXTERN_C GEOMUTIL_LIB_API bool PolyLineRectIntersect(void* points, int pointCoun
 		double y;
 	};
 
-	if(pointCount <2) return false;
+	if(pointCount <2) return 0;
 	Rect r(rMinX, rMinY, rMaxX-rMinX, rMaxY-rMinY);
 	Point* pPtr = (Point*)points;
 	for(int n=0;n<pointCount-1;++n)
 	{
-		if(Rect::intersectsLine(pPtr[n].x, pPtr[n].y, pPtr[n+1].x, pPtr[n+1].y, r)) return true;		
+		if(Rect::intersectsLine(pPtr[n].x, pPtr[n].y, pPtr[n+1].x, pPtr[n+1].y, r)) return 1;		
 	}
-	return false;
+	return 0;
 
 }

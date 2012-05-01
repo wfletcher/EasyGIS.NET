@@ -79,7 +79,7 @@ namespace EGIS.ShapeFileLib
         {
             int numFields = dataFields.Length;
             int recordLength = 1; //first byte used for deletion flag
-            for(int n=numFields-1;n>=0;n--)
+            for (int n = numFields-1;n>=0;n--)
             {
                 recordLength+= dataFields[n].FieldLength;
             }
@@ -110,7 +110,8 @@ namespace EGIS.ShapeFileLib
             //MDX flag
             dbfStream.WriteByte(0x0);
             //language driver
-            dbfStream.WriteByte(0x57);
+            //dbfStream.WriteByte(0x57); //ANSI
+            dbfStream.WriteByte(0x0); //empty - use .cpg file to specify utf-8            
             //2 reserved bytes
             dbfStream.WriteByte(0x0);
             dbfStream.WriteByte(0x0);

@@ -180,7 +180,7 @@ namespace EGIS.Controls
             this.lstShapefiles.Items.AddRange(shapefiles);
             if (lstShapefiles.Items.Count > 0)
             {
-                this.lstShapefiles.SelectedIndex = 0;
+                this.lstShapefiles.SelectedIndex = lstShapefiles.Items.Count-1;
             }
         }
 
