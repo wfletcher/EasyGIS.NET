@@ -13,7 +13,13 @@ namespace WebTest.demos
     /// </summary>
     public class EGPExampleMapHandler : TiledMapHandler
     {
-
+        protected override Color MapBackgroundColor
+        {
+            get
+            {
+                return Color.White;
+            }
+        }
         protected override bool CacheOnServer
         {
             get
@@ -28,7 +34,17 @@ namespace WebTest.demos
         protected override List<ShapeFile> CreateMapLayers(HttpContext context)
         {
             MapProject project = SFMap.ReadEGPProject(context.Server.MapPath(EGPName));
-            return project.Layers;
+            List<ShapeFile> layers =  project.Layers;
+            //string shapeFilePath = context.Server.MapPath("/demos/us_demo_files/counties.shp");
+            //ShapeFile sf = new ShapeFile(shapeFilePath);
+            ////set the field name used to label the shapes
+            //sf.RenderSettings.FieldName = "NAME";
+            //sf.RenderSettings.FillColor = Color.Red;
+            //sf.RenderSettings.FontColor = Color.Blue;
+            //sf.RenderSettings.Font = new Font("Arial", 16);
+            ////sf.RenderSettings.CustomRenderSettings = CreatePopulationRenderSettings(sf);
+            //layers.Add(sf);
+            return layers;
         }
 
        

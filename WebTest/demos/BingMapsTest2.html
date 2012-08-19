@@ -140,9 +140,9 @@ function AjaxStateChanged(AjaxObj)
     {         
 		layer = new VEShapeLayer();
 	    map.AddShapeLayer(layer);
-		var bounds = [new VELatLongRectangle(new VELatLong(-33,140),new VELatLong(-39,150))];
+		var bounds = [new VELatLongRectangle(new VELatLong(80,-180),new VELatLong(-39,150))];
         var tileSource = "1";
-        var tileSourceSpec = new VETileSourceSpecification(layerID, tileSource, 1, bounds, 4,18,GetEGISTile,0.5,100);
+        var tileSourceSpec = new VETileSourceSpecification(layerID, tileSource, 1, bounds, 8,18,GetEGISTile,0.5,100);
         tileSourceSpec.NumServers = 1;
         tileSourceSpec.Bounds     = bounds;
         tileSourceSpec.Opacity    = 0.65;

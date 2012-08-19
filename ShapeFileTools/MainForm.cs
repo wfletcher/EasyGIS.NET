@@ -1115,6 +1115,12 @@ namespace egis
 
         }
 
+        private void sfMap1_SelectedRecordsChanged(object sender, EventArgs e)
+        {
+            Console.Out.WriteLine("records changed");
+            
+        }
+
 
                                 
         

@@ -25,6 +25,10 @@
         <asp:HyperLink ID="HyperLink5" runat="server" NavigateUrl="~/demos/GoogleMapsTest.html">Google Maps Demo</asp:HyperLink> - Demo of overlaying tiles on Google Maps
     </div>
     
+    <div>
+        <asp:HyperLink ID="HyperLink6" runat="server" NavigateUrl="~/demos/EsriTest.html">ESRI ArcGIS API for JavaScript Demo</asp:HyperLink> - Demo of displaying a shapefile in a web page using the ESRI ArcGIS API for JavaScript
+    </div>
+    
     </form>
 </body>
 </html>

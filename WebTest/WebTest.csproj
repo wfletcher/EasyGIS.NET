@@ -305,6 +305,7 @@
     <None Include="demos\demo2maps\Vegetation\j5505_nativevegetationareas.shpx" />
     <None Include="demos\demo2maps\Vegetation\j5505_nativevegetationareas.shx" />
     <Content Include="demos\BingMapsTest2.html" />
+    <Content Include="demos\EsriTest.html" />
     <Content Include="demos\ExampleMapHandler.ashx" />
     <Content Include="demos\EGPExampleMapHandler.ashx" />
     <Content Include="demos\GoogleMapsTest.html" />

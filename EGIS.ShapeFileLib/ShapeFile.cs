@@ -7357,7 +7357,7 @@ namespace EGIS.ShapeFileLib
                         }
                         PolygonRecordP* nextRec = (PolygonRecordP*)(dataPtr + 8);// new PolygonRecordP(pgRecs[index]);
                         int dataOffset = nextRec->DataOffset;// nextRec.read(data, 8);
-                        if (actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                        if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                         {
                             if (useCustomRenderSettings)
                             {
@@ -7506,6 +7506,7 @@ namespace EGIS.ShapeFileLib
             IntPtr selectBrush = IntPtr.Zero;  
 
             IntPtr fileMappingPtr = IntPtr.Zero;
+            long fileSize = shapeFileStream.Length;
             if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
@@ -7592,9 +7593,18 @@ namespace EGIS.ShapeFileLib
                     {
                         Rectangle partBounds = Rectangle.Empty;
                         //PolygonRecordEx nextRec = pgRecs[index];
+                        //if (index == 2627 || (index >= 6035 && index <= 6036))
+                        //{
+                        //    Console.Out.WriteLine("index:" + index);
+                        //    RecordHeader rh = pgRecs[index];
+                        //    Console.Out.WriteLine(rh.Offset + "," + rh.ContentLength);
+                        //    Console.Out.WriteLine("filelength:" + fileSize);
+
+                        //}        
                         if (fileMapped)
                         {
                             dataPtr = dataPtrZero + pgRecs[index].Offset;
+                            
                         }
                         else
                         {
@@ -7607,8 +7617,20 @@ namespace EGIS.ShapeFileLib
                         }
                         //shapeFileStream.Read(data, 0, pgRecs[index].ContentLength + 8);
                         PolygonRecordP* nextRec = (PolygonRecordP*)(dataPtr+8);
+                        //if (index == 2627 || (index >= 6035 && index <= 6036))
+                        //{
+                        //    Console.Out.WriteLine("nextRec->NumParts: " + nextRec->NumParts);
+                        //    Console.Out.WriteLine("nextRec->NumPoints: " + nextRec->NumPoints);
+
+                        //}
+                        //if (nextRec->NumParts > 100 && index < 6035)
+                        //{
+                        //    Console.Out.WriteLine("10 parts index = " + index + ", num parts: " + nextRec->NumParts + ",num pts:" + nextRec->NumPoints);
+
+                        //}
                         int dataOffset = nextRec->DataOffset;// read(data, 8);
-                        if (actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                        //if (nextRec->ShapeType == ShapeType.NullShape) recordSelected[index] = true;
+                        if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                         {
                             if (useCustomRenderSettings)
                             {
@@ -8142,8 +8164,8 @@ namespace EGIS.ShapeFileLib
                                 shapeFileStream.Read(buffer, 0, RecordHeaders[index].ContentLength + 8);
                             }
                             PointRecordP* nextRec = (PointRecordP*)(dataPtr + 8);
-                            
-                            if (actualExtent.Contains(nextRec->X, nextRec->Y) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+
+                            if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.Contains(nextRec->X, nextRec->Y) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                             {
                                 if (useCustomRenderSettings)
                                 {
@@ -8424,8 +8446,8 @@ namespace EGIS.ShapeFileLib
                                 shapeFileStream.Read(buffer, 0, RecordHeaders[index].ContentLength + 8);
                             }
                             
-                            PointRecordP* nextRec = (PointRecordP*)(dataPtr + 8);                
-                            if (actualExtent.Contains(nextRec->X, nextRec->Y) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                            PointRecordP* nextRec = (PointRecordP*)(dataPtr + 8);
+                            if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.Contains(nextRec->X, nextRec->Y) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                             {
                                 if (useCustomRenderSettings)
                                 {
@@ -8881,8 +8903,8 @@ namespace EGIS.ShapeFileLib
                                 shapeFileStream.Read(buffer, 0, RecordHeaders[index].ContentLength + 8);
                             }
                             PointZRecordP* nextRec = (PointZRecordP*)(dataPtr + 8);
-                               
-                            if (actualExtent.Contains(nextRec->X, nextRec->Y) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+
+                            if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.Contains(nextRec->X, nextRec->Y) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                             {
                                 if (useCustomRenderSettings)
                                 {
@@ -9162,8 +9184,8 @@ namespace EGIS.ShapeFileLib
                                 }
                                 shapeFileStream.Read(buffer, 0, RecordHeaders[index].ContentLength + 8);
                             }
-                            PointZRecordP* nextRec = (PointZRecordP*)(dataPtr + 8);                               
-                            if (actualExtent.Contains(nextRec->X, nextRec->Y) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                            PointZRecordP* nextRec = (PointZRecordP*)(dataPtr + 8);
+                            if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.Contains(nextRec->X, nextRec->Y) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                             {
                                 if (useCustomRenderSettings)
                                 {
@@ -9671,7 +9693,7 @@ namespace EGIS.ShapeFileLib
                                     }
                                     PolyLineRecordP* nextRec = (PolyLineRecordP*)(dataPtr + 8);
                                     int dataOffset = nextRec->DataOffset;//nextRec.Read(data, 8);
-                                    if (actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                                    if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                                     {
                                         int numParts = nextRec->NumParts;
                                         Point[] pts;
@@ -10064,7 +10086,7 @@ namespace EGIS.ShapeFileLib
                                 }
                                 PolyLineRecordP* nextRec = (PolyLineRecordP*)(dataPtr + 8);
                                 int dataOffset = nextRec->DataOffset;
-                                if (actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                                if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                                 {
                                     int numParts = nextRec->NumParts;
                                     
@@ -10697,7 +10719,7 @@ namespace EGIS.ShapeFileLib
                                     }
                                     PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + 8);
                                     int dataOffset = nextRec->PointDataOffset;
-                                    if (actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                                    if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                                     {
                                         int numParts = nextRec->NumParts;
                                         Point[] pts;
@@ -11086,7 +11108,7 @@ namespace EGIS.ShapeFileLib
                                 }
                                 PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + 8);
                                 int dataOffset = nextRec->PointDataOffset;
-                                if (actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                                if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                                 {
                                     int numParts = nextRec->NumParts;
                                     Point[] pts;
@@ -11696,7 +11718,7 @@ namespace EGIS.ShapeFileLib
                         
                         PolygonZRecordP* nextRec = (PolygonZRecordP*)(dataPtr + 8);// new PolygonRecordP(pgRecs[index]);
                         int dataOffset = nextRec->PointDataOffset;
-                        if (actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                        if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                         {
                             if (useCustomRenderSettings)
                             {
@@ -11947,7 +11969,7 @@ namespace EGIS.ShapeFileLib
                         }
                         PolygonZRecordP* nextRec = (PolygonZRecordP*)(dataPtr + 8);
                         int dataOffset = nextRec->PointDataOffset;
-                        if (actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                        if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                         {
                             if (useCustomRenderSettings)
                             {
@@ -12492,7 +12514,6 @@ namespace EGIS.ShapeFileLib
 
                     for (int paintCount = 0; paintCount < maxPaintCount; paintCount++)
                     {
-
                         try
                         {
                             Color currentPenColor = renderSettings.OutlineColor;
@@ -12572,7 +12593,7 @@ namespace EGIS.ShapeFileLib
                                     }
                                     PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
                                     int dataOffset = nextRec->PointDataOffset+8;
-                                    if (actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                                    if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                                     {
                                         int numParts = nextRec->NumParts;
                                         Point[] pts;
@@ -12945,7 +12966,7 @@ namespace EGIS.ShapeFileLib
                                 }
                                 PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
                                 int dataOffset = nextRec->PointDataOffset + 8;
-                                if (actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                                if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
                                 {
                                     //++numPainted;
                                     int numParts = nextRec->NumParts;
@@ -13302,9 +13323,7 @@ namespace EGIS.ShapeFileLib
             }
             return false;
         }
-        
-
-        
+                
         #region QTNodeHelper Members
 
         public bool IsPointData()
@@ -14865,22 +14884,12 @@ namespace EGIS.ShapeFileLib
             {
                 if (this.intersectType == IntersectionType.Intersects)
                 {
-                    if (true || myShapeFile.ShapeType == ShapeType.Polygon ||
-                        myShapeFile.ShapeType == ShapeType.PolygonZ ||
-                        myShapeFile.ShapeType == ShapeType.PolyLine)
+                    
+                    while (currentIndex < totalRecords && !this.myShapeFile.ShapeIntersectsRect(currentIndex, ref this.extent))
                     {
-                        while (currentIndex < totalRecords && !this.myShapeFile.ShapeIntersectsRect(currentIndex, ref this.extent))
-                        {
-                            currentIndex++;
-                        }
+                        currentIndex++;
                     }
-                    else
-                    {
-                        while (currentIndex < totalRecords && !recordExtents[currentIndex].IntersectsWith(this.extent))
-                        {
-                            currentIndex++;
-                        }
-                    }
+                    
                 }
                 else if (this.intersectType == IntersectionType.Contains)
                 {

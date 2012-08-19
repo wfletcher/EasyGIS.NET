@@ -519,6 +519,7 @@ namespace egis
             // 
             this.toolStripSeparator10.Name = "toolStripSeparator10";
             this.toolStripSeparator10.Size = new System.Drawing.Size(6, 39);
+            this.toolStripSeparator10.Visible = false;
             // 
             // toolStripLabel2
             // 
@@ -668,6 +669,7 @@ namespace egis
             this.sfMap1.KeyUp += new System.Windows.Forms.KeyEventHandler(this.sfMap1_KeyUp);
             this.sfMap1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseDown);
             this.sfMap1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseUp);
+            this.sfMap1.SelectedRecordsChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_SelectedRecordsChanged);
             this.sfMap1.ClientSizeChanged += new System.EventHandler(this.sfMap1_ClientSizeChanged);
             this.sfMap1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.sfMap1_KeyDown);
             // 
