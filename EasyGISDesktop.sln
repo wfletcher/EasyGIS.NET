@@ -1,13 +1,13 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C# Express 2010
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DBFB9E97-1251-4B26-BC51-24F6FE727759}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "egis", "ShapeFileTools\egis.csproj", "{9B44F499-6935-4FD7-8078-4FAEEEDA1CF4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EGIS.ShapeFileLib", "egis.ShapeFileLib\EGIS.ShapeFileLib.csproj", "{C89DEB9B-4DCA-4792-B216-F00808606AF7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EGIS.Controls", "egis.controls\EGIS.Controls.csproj", "{EB97525D-0906-4A14-A995-93667B565521}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DBFB9E97-1251-4B26-BC51-24F6FE727759}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

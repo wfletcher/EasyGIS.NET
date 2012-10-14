@@ -642,8 +642,8 @@ namespace egis
             this.shapeFileListControl1.Name = "shapeFileListControl1";
             this.shapeFileListControl1.Size = new System.Drawing.Size(251, 237);
             this.shapeFileListControl1.TabIndex = 14;
-            this.shapeFileListControl1.AddLayerClicked += new System.EventHandler(this.shapeFileListControl1_AddLayerClicked);
             this.shapeFileListControl1.SelectedShapeFileChanged += new System.EventHandler<System.EventArgs>(this.shapeFileListControl1_SelectedShapeFileChanged);
+            this.shapeFileListControl1.AddLayerClicked += new System.EventHandler(this.shapeFileListControl1_AddLayerClicked);
             // 
             // sfMap1
             // 
@@ -661,17 +661,17 @@ namespace egis
             this.sfMap1.Size = new System.Drawing.Size(674, 468);
             this.sfMap1.TabIndex = 7;
             this.sfMap1.UseMercatorProjection = true;
-            this.sfMap1.ZoomLevel = 1;
-            this.sfMap1.ZoomLevelChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_ZoomLevelChanged);
+            this.sfMap1.ZoomLevel = 1D;
             this.sfMap1.ShapeFilesChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_ShapeFilesChanged);
+            this.sfMap1.ZoomLevelChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_ZoomLevelChanged);
             this.sfMap1.TooltipDisplayed += new System.EventHandler<EGIS.Controls.SFMap.TooltipEventArgs>(this.sfMap1_TooltipDisplayed);
-            this.sfMap1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseMove);
-            this.sfMap1.KeyUp += new System.Windows.Forms.KeyEventHandler(this.sfMap1_KeyUp);
-            this.sfMap1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseDown);
-            this.sfMap1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseUp);
             this.sfMap1.SelectedRecordsChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_SelectedRecordsChanged);
             this.sfMap1.ClientSizeChanged += new System.EventHandler(this.sfMap1_ClientSizeChanged);
             this.sfMap1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.sfMap1_KeyDown);
+            this.sfMap1.KeyUp += new System.Windows.Forms.KeyEventHandler(this.sfMap1_KeyUp);
+            this.sfMap1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseDown);
+            this.sfMap1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseMove);
+            this.sfMap1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseUp);
             // 
             // sfdMapImage
             // 
@@ -694,10 +694,10 @@ namespace egis
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "MainForm";
             this.Text = "Easy GIS .NET Desktop Edition";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.MainForm_DragDrop);
             this.DragEnter += new System.Windows.Forms.DragEventHandler(this.MainForm_DragEnter);
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             this.mainToolStrip.ResumeLayout(false);
