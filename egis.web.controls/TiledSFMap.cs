@@ -38,7 +38,7 @@ using System.Drawing;
 using System.Security.Permissions;
 using System.Drawing.Design;
 using System.Drawing.Imaging;
-using System.Web.UI.Design;
+//using System.Web.UI.Design;
 using System.Configuration;
 using System.Web.Configuration;
 using System.Collections.Specialized;
@@ -46,6 +46,7 @@ using System.IO;
 using System.Xml;
 using System.Security.Cryptography;
 using EGIS.ShapeFileLib;
+using System.Web.UI.Design;
 
 namespace EGIS.Web.Controls
 {

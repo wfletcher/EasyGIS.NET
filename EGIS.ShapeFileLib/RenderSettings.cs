@@ -1098,23 +1098,51 @@ namespace EGIS.ShapeFileLib
 
     
     
-    class ImageFileNameEditor : System.Windows.Forms.Design.FileNameEditor
+    //class ImageFileNameEditor : System.Windows.Forms.Design.FileNameEditor
+    //{
+    //    public ImageFileNameEditor()
+    //    {
+            
+    //    }
+
+    //    protected override void InitializeDialog(System.Windows.Forms.OpenFileDialog openFileDialog)
+    //    {
+
+    //        base.InitializeDialog(openFileDialog);
+    //        openFileDialog.Filter = "Image Files(*.BMP;*.JPG;*.GIF;*.PNG)|*.BMP;*.JPG;*.GIF;*.PNG|All files (*.*)|*.*";
+    //        openFileDialog.Title = "Select Symbol Image to Label Points.";
+            
+    //    }
+    //}
+
+
+    /// <summary>
+    /// implementing our own editor instead of deriving FileNameEditor due to Client Profile compilation issues
+    /// </summary>
+    class ImageFileNameEditor : System.Drawing.Design.UITypeEditor
     {
-        public ImageFileNameEditor()
+        public override System.Drawing.Design.UITypeEditorEditStyle GetEditStyle(ITypeDescriptorContext context)
         {
-            
+            return System.Drawing.Design.UITypeEditorEditStyle.Modal;
         }
 
-        protected override void InitializeDialog(System.Windows.Forms.OpenFileDialog openFileDialog)
+        public override object EditValue(ITypeDescriptorContext context, IServiceProvider provider, object value)
         {
+            using (System.Windows.Forms.OpenFileDialog f = new System.Windows.Forms.OpenFileDialog())
+            {
+                f.AddExtension = true;
+                f.CheckFileExists = true;
+                f.Filter = "Image Files(*.BMP;*.JPG;*.GIF;*.PNG)|*.BMP;*.JPG;*.GIF;*.PNG|All files (*.*)|*.*";
+                f.Title = "Select Symbol Image to Label Points.";
+                f.DefaultExt = "bmp";
+                f.FileName = value as string;
 
-            base.InitializeDialog(openFileDialog);
-            openFileDialog.Filter = "Image Files(*.BMP;*.JPG;*.GIF;*.PNG)|*.BMP;*.JPG;*.GIF;*.PNG|All files (*.*)|*.*";
-            openFileDialog.Title = "Select Symbol Image to Label Points.";
-            
+                if (f.ShowDialog() == System.Windows.Forms.DialogResult.OK) return f.FileName;
+                return value;
+            }
         }
-    }
 
+    } 
 
     class EncodingConverter : StringConverter
     {

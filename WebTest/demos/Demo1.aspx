@@ -44,7 +44,10 @@
         
         </script>
         <div>
-        <cc1:MapPanControl  MapReferenceId="SFMap1" CssClass="test" ID="MapPanControl1" runat="server" Style="z-index: 102;  position: absolute; top: 120px; left:25px; text-align: center; padding-right: 2px; padding-left: 2px; padding-bottom: 2px; padding-top: 2px;" ZoomInImageUrl="zoomin.png"  BorderColor="White" BorderWidth="2px" />
+        <cc1:MapPanControl  MapReferenceId="SFMap1" CssClass="test" ID="MapPanControl1" 
+                runat="server" 
+                Style="padding: 2px; z-index: 102;  position: absolute; top: 120px; left:25px; text-align: center; width: 68px; right: 825px;" 
+                ZoomInImageUrl="zoomin.png"  BorderColor="White" BorderWidth="2px" />
         
         <cc1:SFMap ID="SFMap1" runat="server" BackColor="#C0C0FF" Height="420px" Width="750px" BorderColor="LightGray" BorderStyle="Dashed" BorderWidth="2px"
          ProjectName="~/demos/demo2.egp" CacheOnClient="False"  MinZoomLevel="20" MaxZoomLevel="50000" OnClientBoundsChanged="MapBoundsChanged" OnClientZoomChanged="MapZoomChanged" />

@@ -651,7 +651,6 @@ namespace egis
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.sfMap1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.sfMap1.CentrePoint = ((System.Drawing.PointF)(resources.GetObject("sfMap1.CentrePoint")));
             this.sfMap1.CentrePoint2D = ((EGIS.ShapeFileLib.PointD)(resources.GetObject("sfMap1.CentrePoint2D")));
             this.sfMap1.Location = new System.Drawing.Point(267, 68);
             this.sfMap1.MapBackColor = System.Drawing.SystemColors.Control;

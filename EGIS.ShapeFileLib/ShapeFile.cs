@@ -806,7 +806,12 @@ namespace EGIS.ShapeFileLib
                 case ShapeType.PolyLineZ:
                     this.sfRecordCol = new SFPolyLineZCol(recordHeaders, ref mainHeader);
                     break;
-                
+                case ShapeType.MultiPoint:
+                    this.sfRecordCol = new SFMultiPointCol(recordHeaders, ref mainHeader);
+                    break;
+                case ShapeType.MultiPointZ:
+                    this.sfRecordCol = new SFMultiPointZCol(recordHeaders, ref mainHeader);
+                    break;
                 default:
                     this.Close();
                     throw new NotSupportedException("ShapeType: " + mainHeader.ShapeType + " not supported");
@@ -1325,6 +1330,10 @@ namespace EGIS.ShapeFileLib
                         return GetShapeIndexContainingPoint(pt, minDistance, sfRecordCol as SFPolyLineMCol);
                     case ShapeType.PolyLineZ:
                         return GetShapeIndexContainingPoint(pt, minDistance, sfRecordCol as SFPolyLineZCol);
+                    case ShapeType.MultiPoint:
+                        return GetShapeIndexContainingPoint(pt, minDistance, sfRecordCol as SFMultiPointCol, this.shapeFileStream);
+                    case ShapeType.MultiPointZ:
+                        return GetShapeIndexContainingPoint(pt, minDistance, sfRecordCol as SFMultiPointZCol, this.shapeFileStream);                        
                     
                     default:
                         return -1;
@@ -1628,7 +1637,66 @@ namespace EGIS.ShapeFileLib
                 return -1;
             }
         }
-        
+
+
+        private int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFMultiPointCol col, FileStream shapefileStream)
+        {
+            //if (col.RecordHeaders.Length < 200)
+            {
+                double distSqr = minDistance * minDistance;
+                int numRecs = col.RecordHeaders.Length;
+                for (int n = 0; n < numRecs; n++)
+                {
+                    List<PointD[]> pts = col.GetShapeDataD(n, shapeFileStream);
+                    if (pts.Count > 0)
+                    {
+                        for (int p = pts[0].Length-1; p >= 0; --p)
+                        {
+                            PointD shapePt = pts[0][p];
+                            double x = (pt.X - shapePt.X);
+                            double y = (pt.Y - shapePt.Y);
+                            double d = x * x + y * y;
+                            if (d <= distSqr)
+                            {
+                                return n;
+                            }
+                        }
+                    }
+                }
+                return -1;
+            }
+            
+        }
+
+        private int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFMultiPointZCol col, FileStream shapefileStream)
+        {
+            //if (col.RecordHeaders.Length < 200)
+            {
+                double distSqr = minDistance * minDistance;
+                int numRecs = col.RecordHeaders.Length;
+                for (int n = 0; n < numRecs; n++)
+                {
+                    List<PointD[]> pts = col.GetShapeDataD(n, shapeFileStream);
+                    if (pts.Count > 0)
+                    {
+                        for (int p = pts[0].Length - 1; p >= 0; --p)
+                        {
+                            PointD shapePt = pts[0][p];
+                            double x = (pt.X - shapePt.X);
+                            double y = (pt.Y - shapePt.Y);
+                            double d = x * x + y * y;
+                            if (d <= distSqr)
+                            {
+                                return n;
+                            }
+                        }
+                    }
+                }
+                return -1;
+            }
+
+        }
+
         private int GetShapeIndexContainingPoint(PointD pt, SFPolygonCol col)
         {
             if (shapeQuadTree == null)
@@ -1757,7 +1825,7 @@ namespace EGIS.ShapeFileLib
             return -1;
         }
 
-
+       
         public void GetShapeIndiciesIntersectingRect(List<int> indicies, RectangleD rect)
         {
             if (indicies == null) return;
@@ -3044,6 +3112,16 @@ namespace EGIS.ShapeFileLib
         public double Y;
         public double Z;
         public double Measure;
+    }
+    
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    unsafe struct MultiPointRecordP
+    {
+        public ShapeType ShapeType;
+        public Box bounds;
+        public int NumPoints;
+        public fixed double Points[2];        
     }
 	
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -9435,6 +9513,1501 @@ namespace EGIS.ShapeFileLib
         }
     }
 
+
+    class SFMultiPointCol : SFRecordCol, QTNodeHelper
+    {
+    
+        public SFMultiPointCol(RecordHeader[] recs, ref ShapeFileMainHeader head)
+            : base(ref head, recs)
+        {
+            
+        }
+
+        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
+        {
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            List<PointF[]> dataList = new List<PointF[]>();
+            unsafe
+            {
+                byte[] data = SharedBuffer;
+                shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
+                fixed (byte* dataPtr = data)
+                {
+                    MultiPointRecordP* nextRec = (MultiPointRecordP*)(dataPtr + 8);
+                    PointF[] pts = new PointF[nextRec->NumPoints];
+                    for (int p = 0; p < nextRec->NumPoints; ++p)
+                    {
+                        pts[p] = new PointF((float)nextRec->Points[p<<1], (float)nextRec->Points[(p<<1)+1]);
+                    }
+                    dataList.Add(pts);
+                }
+            }
+            return dataList;
+        }
+
+        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            return GetShapeData(recordIndex, shapeFileStream);
+        }
+
+        public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+
+            List<PointD[]> dataList = new List<PointD[]>();
+            unsafe
+            {
+                byte[] data = dataBuffer;
+                shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
+                fixed (byte* dataPtr = data)
+                {
+                    MultiPointRecordP* nextRec = (MultiPointRecordP*)(dataPtr + 8);
+                    PointD[] pts = new PointD[nextRec->NumPoints];
+                    for (int p = 0; p < nextRec->NumPoints; ++p)
+                    {
+                        pts[p] = new PointD(nextRec->Points[p<<1], nextRec->Points[(p<<1)+1]);
+                    }
+                    dataList.Add(pts);
+                }
+            }
+            return dataList;
+        }
+
+        
+        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream)
+        {
+            return null;
+        }
+
+        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            return null;
+        }
+
+        public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            return null;
+        }
+
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
+        {
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
+        }
+
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        {
+            bool useGDI = (this.UseGDI(extent) && renderSettings.GetImageSymbol() == null);
+
+            if (useGDI)
+            {
+                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
+            }
+            else
+            {
+                PaintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
+            }
+        }
+
+        public unsafe void PaintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        {
+            List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
+            double scaleX = (double)(clientArea.Width / extent.Width);
+            double scaleY = -scaleX;
+            RectangleD actualExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+            double offX = -actualExtent.Left;
+            double offY = -actualExtent.Bottom;
+            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            bool renderInterior = true;
+
+            IntPtr fileMappingPtr = IntPtr.Zero;
+            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            IntPtr mapView = IntPtr.Zero;
+            byte* dataPtr = null;
+            if (fileMappingPtr != IntPtr.Zero)
+            {
+                mapView = NativeMethods.MapViewOfFile(fileMappingPtr, NativeMethods.FileMapAccess.FILE_MAP_READ, 0, 0, 0);
+            }
+            bool fileMapped = (mapView != IntPtr.Zero);
+
+
+            try
+            {
+                Image symbol = null;
+                Size symbolSize = Size.Empty;
+
+                float pointSize = 6f;
+
+                if (renderSettings != null)
+                {
+                    renderInterior = renderSettings.FillInterior;
+                    pointSize = renderSettings.PointSize;
+                    symbol = renderSettings.GetImageSymbol();
+                    if (symbol != null)
+                    {
+                        symbolSize = symbol.Size;
+                    }
+                    else
+                    {
+                        symbolSize = new Size((int)pointSize, (int)pointSize);
+                    }
+                }
+
+
+                ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+                bool useCustomRenderSettings = (customRenderSettings != null);
+
+                Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
+                bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
+
+                bool drawPoint = (symbol == null && !useCustomImageSymbols);
+                bool MercProj = projectionType == ProjectionType.Mercator;
+                if (MercProj)
+                {
+                    //if we're using a Mercator Projection then convert the actual Extent to LL coords
+                    PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
+                    PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
+                    actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+                }
+
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                Brush fillBrush = null;
+                Pen outlinePen = null;
+                Pen selectPen = null;
+                Brush selectBrush = null;
+
+                fillBrush = new SolidBrush(renderSettings.FillColor);
+                outlinePen = new Pen(renderSettings.OutlineColor, 1f);
+                selectPen = new Pen(renderSettings.SelectOutlineColor, 2f);
+                selectBrush = new SolidBrush(renderSettings.SelectFillColor);
+                outlinePen.DashStyle = renderSettings.LineDashStyle;
+                selectPen.DashStyle = renderSettings.LineDashStyle;
+
+                try
+                {
+                    int index = 0;
+                    float halfPointSize = pointSize * 0.5f;
+                    byte* dataPtrZero = (byte*)IntPtr.Zero.ToPointer();
+                    if (fileMapped)
+                    {
+                        dataPtrZero = (byte*)mapView.ToPointer();
+                        dataPtr = (byte*)(((byte*)mapView.ToPointer()) + ShapeFileMainHeader.MAIN_HEADER_LENGTH);
+                    }
+                    else
+                    {
+                        shapeFileStream.Seek(ShapeFileMainHeader.MAIN_HEADER_LENGTH, SeekOrigin.Begin);
+                    }
+                    //shapeFileStream.Seek(ShapeFileMainHeader.MAIN_HEADER_LENGTH, SeekOrigin.Begin);
+                    byte[] buffer = SharedBuffer;
+                    fixed (byte* bufPtr = buffer)
+                    {
+                        if (!fileMapped) dataPtr = bufPtr;
+
+                        while (index < RecordHeaders.Length)
+                        {
+                            if (fileMapped)
+                            {
+                                dataPtr = dataPtrZero + RecordHeaders[index].Offset;
+                            }
+                            else
+                            {
+                                if (shapeFileStream.Position != RecordHeaders[index].Offset)
+                                {
+                                    Console.Out.WriteLine("offset wrong");
+                                    shapeFileStream.Seek(RecordHeaders[index].Offset, SeekOrigin.Begin);
+                                }
+                                shapeFileStream.Read(buffer, 0, RecordHeaders[index].ContentLength + 8);
+                            }
+                            MultiPointRecordP* nextRec = (MultiPointRecordP*)(dataPtr + 8);
+
+                            if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                            {
+                                if (useCustomRenderSettings)
+                                {
+                                    Color customColor = customRenderSettings.GetRecordOutlineColor(index);
+                                    if (customColor.ToArgb() != currentPenColor.ToArgb())
+                                    {
+                                        outlinePen = new Pen(customColor, 1);
+                                        currentPenColor = customColor;
+                                        outlinePen.DashStyle = renderSettings.LineDashStyle;
+                                    }
+                                    if (renderInterior)
+                                    {
+                                        customColor = customRenderSettings.GetRecordFillColor(index);
+                                        if (customColor.ToArgb() != currentBrushColor.ToArgb())
+                                        {
+                                            fillBrush = new SolidBrush(customColor);
+                                            currentBrushColor = customColor;
+                                        }
+                                    }
+                                    if (useCustomImageSymbols)
+                                    {
+                                        symbol = customRenderSettings.GetRecordImageSymbol(index);
+                                        if (symbol != null)
+                                        {
+                                            symbolSize = symbol.Size;
+                                            drawPoint = false;
+                                        }
+                                        else
+                                        {
+                                            drawPoint = true;
+                                        }
+                                    }
+                                }
+                                for (int p = 0; p < nextRec->NumPoints; ++p)
+                                {
+                                    double px, py;
+                                    if (MercProj)
+                                    {
+                                        LLToProjection(ref nextRec->Points[p<<1], ref nextRec->Points[(p<<1)+1], out px, out py);
+                                    }
+                                    else
+                                    {
+                                        px = nextRec->Points[p<<1];
+                                        py = nextRec->Points[(p<<1)+1];
+                                    }
+
+                                    PointF pt = new PointF((float)((px + offX) * scaleX), (float)((py + offY) * scaleY));
+                                    if (drawPoint)
+                                    {
+                                        if (pointSize > 0)
+                                        {
+                                            if (renderInterior)
+                                            {
+                                                if (recordSelected[index])
+                                                {
+                                                    g.FillEllipse(selectBrush, pt.X - halfPointSize, pt.Y - halfPointSize, pointSize, pointSize);
+                                                }
+                                                else
+                                                {
+                                                    g.FillEllipse(fillBrush, pt.X - halfPointSize, pt.Y - halfPointSize, pointSize, pointSize);
+                                                }
+                                            }
+                                            if (recordSelected[index])
+                                            {
+                                                g.DrawEllipse(selectPen, pt.X - halfPointSize, pt.Y - halfPointSize, pointSize, pointSize);
+                                            }
+                                            else
+                                            {
+                                                g.DrawEllipse(outlinePen, pt.X - halfPointSize, pt.Y - halfPointSize, pointSize, pointSize);
+                                            }
+                                        }
+                                        if (labelFields)
+                                        {
+                                            renderPtObjList.Add(new RenderPtObj(pt, index, (int)halfPointSize + 5, -((int)halfPointSize + 5)));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        g.DrawImage(symbol, pt.X - (symbolSize.Width >> 1), pt.Y - (symbolSize.Height >> 1));
+                                        if (recordSelected[index])
+                                        {
+                                            g.DrawRectangle(selectPen, pt.X - (symbolSize.Width >> 1), pt.Y - (symbolSize.Height >> 1), symbolSize.Width, symbolSize.Height);
+                                        }
+                                        if (labelFields)
+                                        {
+                                            renderPtObjList.Add(new RenderPtObj(pt, index, ((symbolSize.Width + 1) >> 1) + 5, -(((symbolSize.Height + 1) >> 1) + 5)));
+                                        }
+                                    }
+                                }
+
+                            }
+                            //if (fileMapped)
+                            //{
+                            //    dataPtr += this.RecordHeaders[index].ContentLength + 8;
+                            //}
+                            index++;
+                        }
+                    }
+                }
+                finally
+                {
+                    if (fillBrush != null) fillBrush.Dispose();
+                    if (outlinePen != null) outlinePen.Dispose();
+                    if (selectPen != null) selectPen.Dispose();
+                    if (selectBrush != null) selectBrush.Dispose();
+                }
+
+                if (labelFields)
+                {
+                    Brush fontBrush = new SolidBrush(renderSettings.FontColor);
+                    int count = renderPtObjList.Count;
+                    bool shadowText = (renderSettings != null && renderSettings.ShadowText);
+                    LabelPlacementMap labelPlacementMap = new LabelPlacementMap(clientArea.Width, clientArea.Height);
+
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+                    g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                    float ssm = shadowText ? 0.8f : 1f;
+                    Color currentFontColor = renderSettings.FontColor;
+                    bool useCustomFontColor = customRenderSettings != null;
+                    for (int n = 0; n < count; n++)
+                    {
+                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (strLabel.Length > 0)
+                        {
+                            SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
+                            int x0 = renderPtObjList[n].offX;
+                            int y0 = renderPtObjList[n].offY;
+                            if (labelPlacementMap.addLabelToMap(Point.Round(renderPtObjList[n].Pt), x0, y0, (int)Math.Round(labelSize.Width * ssm), (int)Math.Round(labelSize.Height * ssm)))
+                            {
+                                if (useCustomFontColor)
+                                {
+                                    Color customColor = customRenderSettings.GetRecordFontColor(renderPtObjList[n].RecordIndex);
+                                    if (customColor.ToArgb() != currentFontColor.ToArgb())
+                                    {
+                                        fontBrush.Dispose();
+                                        fontBrush = new SolidBrush(customColor);
+                                        currentFontColor = customColor;
+                                    }
+                                }
+
+                                if (shadowText)
+                                {
+                                    System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
+                                    gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0), new StringFormat());
+                                    g.DrawPath(pen, gp);
+                                    g.FillPath(fontBrush, gp);
+                                }
+                                else
+                                {
+                                    g.DrawRectangle(Pens.Red, renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0, labelSize.Width * ssm, labelSize.Height * ssm);
+                                    g.DrawString(strLabel, renderSettings.Font, fontBrush, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0));
+                                }
+                            }
+                        }
+                    }
+                    pen.Dispose();
+                    fontBrush.Dispose();
+                }
+            }
+            finally
+            {
+                if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
+                if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
+            }
+        }
+
+        public unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        {
+            List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
+            double scaleX = (double)(clientArea.Width / extent.Width);
+            double scaleY = -scaleX;
+            RectangleD actualExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+            double offX = -actualExtent.Left;
+            double offY = -actualExtent.Bottom;
+            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            bool renderInterior = true;
+
+            IntPtr fileMappingPtr = IntPtr.Zero;
+            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            IntPtr mapView = IntPtr.Zero;
+            byte* dataPtr = null;
+            if (fileMappingPtr != IntPtr.Zero)
+            {
+                mapView = NativeMethods.MapViewOfFile(fileMappingPtr, NativeMethods.FileMapAccess.FILE_MAP_READ, 0, 0, 0);
+            }
+            bool fileMapped = (mapView != IntPtr.Zero);
+
+
+            try
+            {
+
+                float pointSize = 6f;
+                renderInterior = renderSettings.FillInterior;
+                pointSize = renderSettings.PointSize;
+
+                ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+                bool useCustomRenderSettings = (customRenderSettings != null);
+
+                Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
+                bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
+                bool MercProj = projectionType == ProjectionType.Mercator;
+                if (MercProj)
+                {
+                    //if we're using a Mercator Projection then convert the actual Extent to LL coords
+                    PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
+                    PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
+                    actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+                }
+
+                IntPtr dc = IntPtr.Zero;
+                IntPtr gdiPen = IntPtr.Zero;
+                IntPtr gdiBrush = IntPtr.Zero;
+                IntPtr oldGdiPen = IntPtr.Zero;
+                IntPtr oldGdiBrush = IntPtr.Zero;
+
+                IntPtr selectPen = IntPtr.Zero;
+                IntPtr selectBrush = IntPtr.Zero;
+
+                // obtain a handle to the Device Context so we can use GDI to perform the painting.
+                dc = g.GetHdc();
+
+                try
+                {
+                    int color = 0x70c09b;
+
+                    color = ColorToGDIColor(renderSettings.FillColor);
+                    if (renderInterior)
+                    {
+                        gdiBrush = NativeMethods.CreateSolidBrush(color);
+                        oldGdiBrush = NativeMethods.SelectObject(dc, gdiBrush);
+                    }
+                    else
+                    {
+                        oldGdiBrush = NativeMethods.SelectObject(dc, NativeMethods.GetStockObject(NativeMethods.NULL_BRUSH));
+                    }
+
+                    color = ColorToGDIColor(renderSettings.OutlineColor);
+                    gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, 1, color);
+                    oldGdiPen = NativeMethods.SelectObject(dc, gdiPen);
+
+                    selectPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 2, ColorToGDIColor(renderSettings.SelectOutlineColor));
+                    selectBrush = NativeMethods.CreateSolidBrush(ColorToGDIColor(renderSettings.SelectFillColor));
+
+                    NativeMethods.SetBkMode(dc, NativeMethods.TRANSPARENT);
+
+                    int index = 0;
+                    Point pt = new Point();
+                    int halfPointSize = (int)Math.Round(pointSize * 0.5);
+                    int pointSizeInt = (int)Math.Round(pointSize);
+                    byte* dataPtrZero = (byte*)IntPtr.Zero.ToPointer();
+                    if (fileMapped)
+                    {
+                        dataPtrZero = (byte*)mapView.ToPointer();
+                        dataPtr = (byte*)(((byte*)mapView.ToPointer()) + ShapeFileMainHeader.MAIN_HEADER_LENGTH);
+                    }
+                    else
+                    {
+                        shapeFileStream.Seek(ShapeFileMainHeader.MAIN_HEADER_LENGTH, SeekOrigin.Begin);
+                    }
+                    byte[] buffer = SharedBuffer;
+                    fixed (byte* bufPtr = buffer)
+                    {
+                        if (!fileMapped) dataPtr = bufPtr;
+                        while (index < RecordHeaders.Length)
+                        {
+                            if (fileMapped)
+                            {
+                                dataPtr = dataPtrZero + RecordHeaders[index].Offset;
+                            }
+                            else
+                            {
+                                if (shapeFileStream.Position != RecordHeaders[index].Offset)
+                                {
+                                    Console.Out.WriteLine("offset wrong");
+                                    shapeFileStream.Seek(RecordHeaders[index].Offset, SeekOrigin.Begin);
+                                }
+                                shapeFileStream.Read(buffer, 0, RecordHeaders[index].ContentLength + 8);
+                            }
+
+                            MultiPointRecordP* nextRec = (MultiPointRecordP*)(dataPtr + 8);
+                            if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))                            
+                            {
+                                if (useCustomRenderSettings)
+                                {
+                                    Color customColor = customRenderSettings.GetRecordOutlineColor(index);
+                                    if (customColor.ToArgb() != currentPenColor.ToArgb())
+                                    {
+                                        gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, 1, ColorToGDIColor(customColor));
+                                        NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
+                                        currentPenColor = customColor;
+                                    }
+                                    if (renderInterior)
+                                    {
+                                        customColor = customRenderSettings.GetRecordFillColor(index);
+                                        if (customColor.ToArgb() != currentBrushColor.ToArgb())
+                                        {
+                                            gdiBrush = NativeMethods.CreateSolidBrush(ColorToGDIColor(customColor));
+                                            NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiBrush));
+                                            currentBrushColor = customColor;
+                                        }
+                                    }
+                                }
+                                for (int p = 0; p < nextRec->NumPoints; ++p)
+                                {
+                                    double px, py;
+                                    //PointD ptf = LLToProjection(new PointD(nextRec.X,nextRec.Y));
+                                    if (MercProj)
+                                    {
+                                        LLToProjection(ref nextRec->Points[p<<1], ref nextRec->Points[(p<<1)+1], out px, out py);
+                                    }
+                                    else
+                                    {
+                                        px = nextRec->Points[p << 1];
+                                        py = nextRec->Points[(p << 1) + 1];
+                                    }
+                                    pt.X = (int)Math.Round((px + offX) * scaleX);
+                                    pt.Y = (int)Math.Round((py + offY) * scaleY);
+
+                                    if (pointSizeInt > 0)
+                                    {
+                                        if (recordSelected[index])
+                                        {
+                                            IntPtr tempPen = IntPtr.Zero;
+                                            IntPtr tempBrush = IntPtr.Zero;
+                                            try
+                                            {
+                                                tempPen = NativeMethods.SelectObject(dc, selectPen);
+                                                if (renderInterior)
+                                                {
+                                                    tempBrush = NativeMethods.SelectObject(dc, selectBrush);
+                                                }
+                                                NativeMethods.Ellipse(dc, pt.X - halfPointSize, pt.Y - halfPointSize, pt.X + halfPointSize, pt.Y + halfPointSize);
+                                            }
+                                            finally
+                                            {
+                                                if (tempPen != IntPtr.Zero) NativeMethods.SelectObject(dc, tempPen);
+                                                if (tempBrush != IntPtr.Zero) NativeMethods.SelectObject(dc, tempBrush);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            NativeMethods.Ellipse(dc, pt.X - halfPointSize, pt.Y - halfPointSize, pt.X + halfPointSize, pt.Y + halfPointSize);
+                                        }
+                                    }
+                                    if (labelFields)
+                                    {
+                                        renderPtObjList.Add(new RenderPtObj(pt, index, halfPointSize + 5, -(halfPointSize + 5)));
+                                    }
+                                }
+                            }
+                            ++index;
+                        }
+                    }
+                }
+                finally
+                {
+                    if (oldGdiPen != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiPen);
+                    if (gdiPen != IntPtr.Zero) NativeMethods.DeleteObject(gdiPen);
+                    if (oldGdiBrush != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiBrush);
+                    if (gdiBrush != IntPtr.Zero) NativeMethods.DeleteObject(gdiBrush);
+                    if (selectBrush != IntPtr.Zero) NativeMethods.DeleteObject(selectBrush);
+                    if (selectPen != IntPtr.Zero) NativeMethods.DeleteObject(selectPen);
+                    g.ReleaseHdc(dc);
+                }
+
+                if (labelFields)
+                {
+                    Brush fontBrush = new SolidBrush(renderSettings.FontColor);
+                    int count = renderPtObjList.Count;
+                    bool shadowText = (renderSettings != null && renderSettings.ShadowText);
+                    LabelPlacementMap labelPlacementMap = new LabelPlacementMap(clientArea.Width, clientArea.Height);
+
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+                    g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                    float ssm = shadowText ? 0.8f : 1f;
+                    Color currentFontColor = renderSettings.FontColor;
+                    bool useCustomFontColor = customRenderSettings != null;
+                    for (int n = 0; n < count; n++)
+                    {
+                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (strLabel.Length > 0)
+                        {
+                            SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
+                            int x0 = renderPtObjList[n].offX;
+                            int y0 = renderPtObjList[n].offY;
+                            if (labelPlacementMap.addLabelToMap(Point.Round(renderPtObjList[n].Pt), x0, y0, (int)Math.Round(labelSize.Width * ssm), (int)Math.Round(labelSize.Height * ssm)))
+                            {
+                                if (useCustomFontColor)
+                                {
+                                    Color customColor = customRenderSettings.GetRecordFontColor(renderPtObjList[n].RecordIndex);
+                                    if (customColor.ToArgb() != currentFontColor.ToArgb())
+                                    {
+                                        fontBrush.Dispose();
+                                        fontBrush = new SolidBrush(customColor);
+                                        currentFontColor = customColor;
+                                    }
+                                }
+
+                                if (shadowText)
+                                {
+                                    System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
+                                    gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0), new StringFormat());
+                                    g.DrawPath(pen, gp);
+                                    g.FillPath(fontBrush, gp);
+                                }
+                                else
+                                {
+                                    g.DrawRectangle(Pens.Red, renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0, labelSize.Width * ssm, labelSize.Height * ssm);
+                                    g.DrawString(strLabel, renderSettings.Font, fontBrush, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0));
+                                }
+                            }
+                        }
+                    }
+                    pen.Dispose();
+                    fontBrush.Dispose();
+                }
+            }
+            finally
+            {
+                if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
+                if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
+            }
+        }
+
+
+
+        private struct RenderPtObj
+        {
+            public PointF Pt;
+            public int RecordIndex;
+
+            public int offX, offY;
+
+            public RenderPtObj(PointF p, int recordIndexParam, int x0, int y0)
+            {
+                Pt = p;
+                RecordIndex = recordIndexParam;
+                offX = x0;
+                offY = y0;
+            }
+
+        }
+
+
+        #region QTNodeHelper Members
+
+        public bool IsPointData()
+        {
+            //yes it multi points are points but the record has a "bounds" used in the quad tree
+            return false;
+        }
+
+        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+        {
+            //throw new Exception("The method or operation is not implemented.");
+            return PointF.Empty;
+        }
+
+        public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
+        {
+            if (recordIndex < 0 || recordIndex >= this.RecordHeaders.Length) return RectangleF.Empty;
+            shapeFileStream.Seek(RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Read(data, 0, 32 + 12);
+            Box bounds = new Box(data, 12);
+
+            return bounds.ToRectangleF();
+        }
+
+        public override RectangleD GetRecordBoundsD(int recordIndex, System.IO.Stream shapeFileStream)
+        {
+            if (recordIndex < 0 || recordIndex >= this.RecordHeaders.Length) return RectangleF.Empty;
+            shapeFileStream.Seek(RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Read(data, 0, 32 + 12);
+            Box bounds = new Box(data, 12);
+            return bounds.ToRectangleD();
+        }
+
+        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        {
+            List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
+            if (pts != null && pts.Count > 0)
+            {
+                for (int n = pts[0].Length - 1; n >= 0; --n)
+                {
+                    if (rect.Contains(pts[0][n])) return true;
+                }
+            }
+            return false;
+        }
+
+        public override bool IntersectCircle(int recordIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
+            if (pts != null && pts.Count > 0)
+            {
+                for (int n = pts[0].Length - 1; n >= 0; --n)
+                {
+                    if ((pts[0][n].X - centre.X) * (pts[0][n].X - centre.X) + (pts[0][n].Y - centre.Y) * (pts[0][n].Y - centre.Y) < (radius * radius))
+                    {
+                        return true;
+                    }
+                    
+                }
+            }
+            return false;
+        }
+
+
+
+        #endregion
+    }
+
+    class SFMultiPointZCol : SFRecordCol, QTNodeHelper
+    {
+
+        public SFMultiPointZCol(RecordHeader[] recs, ref ShapeFileMainHeader head)
+            : base(ref head, recs)
+        {
+
+        }
+
+        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
+        {
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            List<PointF[]> dataList = new List<PointF[]>();
+            unsafe
+            {
+                byte[] data = SharedBuffer;
+                shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
+                fixed (byte* dataPtr = data)
+                {
+                    MultiPointRecordP* nextRec = (MultiPointRecordP*)(dataPtr + 8);
+                    PointF[] pts = new PointF[nextRec->NumPoints];
+                    for (int p = 0; p < nextRec->NumPoints; ++p)
+                    {
+                        pts[p] = new PointF((float)nextRec->Points[p << 1], (float)nextRec->Points[(p << 1) + 1]);
+                    }
+                    dataList.Add(pts);
+                }
+            }
+            return dataList;
+        }
+
+        public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            return GetShapeData(recordIndex, shapeFileStream);
+        }
+
+        public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+
+            List<PointD[]> dataList = new List<PointD[]>();
+            unsafe
+            {
+                byte[] data = dataBuffer;
+                shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
+                fixed (byte* dataPtr = data)
+                {
+                    MultiPointRecordP* nextRec = (MultiPointRecordP*)(dataPtr + 8);
+                    PointD[] pts = new PointD[nextRec->NumPoints];
+                    for (int p = 0; p < nextRec->NumPoints; ++p)
+                    {
+                        pts[p] = new PointD(nextRec->Points[p << 1], nextRec->Points[(p << 1) + 1]);
+                    }
+                    dataList.Add(pts);
+                }
+            }
+            return dataList;
+        }
+
+        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            List<float[]> dataList = new List<float[]>();
+            unsafe
+            {
+                byte[] data = dataBuffer;
+                shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
+                fixed (byte* dataPtr = data)
+                {
+                    MultiPointRecordP* nextRec = (MultiPointRecordP*)(dataPtr + 8);
+                    float[] heights = new float[nextRec->NumPoints];
+                    double* dPtr = (double*)(dataPtr + 8 + 40 + (16 * nextRec->NumPoints) + 16);
+                    for (int p = 0; p < nextRec->NumPoints; ++p)
+                    {
+                        heights[p] = (float)dPtr[p];
+                    }
+                    dataList.Add(heights);
+                }
+            }
+            return dataList;
+        }
+
+        public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream)
+        {
+            return GetShapeHeightData(recordIndex, shapeFileStream, SharedBuffer);
+        }
+
+        public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            List<double[]> dataList = new List<double[]>();
+            unsafe
+            {
+                byte[] data = dataBuffer;
+                shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
+                fixed (byte* dataPtr = data)
+                {
+                    MultiPointRecordP* nextRec = (MultiPointRecordP*)(dataPtr + 8);
+                    double[] heights = new double[nextRec->NumPoints];
+                    double* dPtr = (double*)(dataPtr + 8 + 40 + (16 * nextRec->NumPoints) + 16);
+                    for (int p = 0; p < nextRec->NumPoints; ++p)
+                    {
+                        heights[p] = dPtr[p];
+                    }
+                    dataList.Add(heights);
+                }
+            }
+            return dataList;
+        }
+
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
+        {
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
+        }
+
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        {
+            bool useGDI = (this.UseGDI(extent) && renderSettings.GetImageSymbol() == null);
+
+            if (useGDI)
+            {
+                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
+            }
+            else
+            {
+                PaintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
+            }
+        }
+
+        public unsafe void PaintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        {
+            List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
+            double scaleX = (double)(clientArea.Width / extent.Width);
+            double scaleY = -scaleX;
+            RectangleD actualExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+            double offX = -actualExtent.Left;
+            double offY = -actualExtent.Bottom;
+            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            bool renderInterior = true;
+
+            IntPtr fileMappingPtr = IntPtr.Zero;
+            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            IntPtr mapView = IntPtr.Zero;
+            byte* dataPtr = null;
+            if (fileMappingPtr != IntPtr.Zero)
+            {
+                mapView = NativeMethods.MapViewOfFile(fileMappingPtr, NativeMethods.FileMapAccess.FILE_MAP_READ, 0, 0, 0);
+            }
+            bool fileMapped = (mapView != IntPtr.Zero);
+
+
+            try
+            {
+                Image symbol = null;
+                Size symbolSize = Size.Empty;
+
+                float pointSize = 6f;
+
+                if (renderSettings != null)
+                {
+                    renderInterior = renderSettings.FillInterior;
+                    pointSize = renderSettings.PointSize;
+                    symbol = renderSettings.GetImageSymbol();
+                    if (symbol != null)
+                    {
+                        symbolSize = symbol.Size;
+                    }
+                    else
+                    {
+                        symbolSize = new Size((int)pointSize, (int)pointSize);
+                    }
+                }
+
+
+                ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+                bool useCustomRenderSettings = (customRenderSettings != null);
+
+                Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
+                bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
+
+                bool drawPoint = (symbol == null && !useCustomImageSymbols);
+                bool MercProj = projectionType == ProjectionType.Mercator;
+                if (MercProj)
+                {
+                    //if we're using a Mercator Projection then convert the actual Extent to LL coords
+                    PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
+                    PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
+                    actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+                }
+
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                Brush fillBrush = null;
+                Pen outlinePen = null;
+                Pen selectPen = null;
+                Brush selectBrush = null;
+
+                fillBrush = new SolidBrush(renderSettings.FillColor);
+                outlinePen = new Pen(renderSettings.OutlineColor, 1f);
+                selectPen = new Pen(renderSettings.SelectOutlineColor, 2f);
+                selectBrush = new SolidBrush(renderSettings.SelectFillColor);
+                outlinePen.DashStyle = renderSettings.LineDashStyle;
+                selectPen.DashStyle = renderSettings.LineDashStyle;
+
+                try
+                {
+                    int index = 0;
+                    float halfPointSize = pointSize * 0.5f;
+                    byte* dataPtrZero = (byte*)IntPtr.Zero.ToPointer();
+                    if (fileMapped)
+                    {
+                        dataPtrZero = (byte*)mapView.ToPointer();
+                        dataPtr = (byte*)(((byte*)mapView.ToPointer()) + ShapeFileMainHeader.MAIN_HEADER_LENGTH);
+                    }
+                    else
+                    {
+                        shapeFileStream.Seek(ShapeFileMainHeader.MAIN_HEADER_LENGTH, SeekOrigin.Begin);
+                    }
+                    //shapeFileStream.Seek(ShapeFileMainHeader.MAIN_HEADER_LENGTH, SeekOrigin.Begin);
+                    byte[] buffer = SharedBuffer;
+                    fixed (byte* bufPtr = buffer)
+                    {
+                        if (!fileMapped) dataPtr = bufPtr;
+
+                        while (index < RecordHeaders.Length)
+                        {
+                            if (fileMapped)
+                            {
+                                dataPtr = dataPtrZero + RecordHeaders[index].Offset;
+                            }
+                            else
+                            {
+                                if (shapeFileStream.Position != RecordHeaders[index].Offset)
+                                {
+                                    Console.Out.WriteLine("offset wrong");
+                                    shapeFileStream.Seek(RecordHeaders[index].Offset, SeekOrigin.Begin);
+                                }
+                                shapeFileStream.Read(buffer, 0, RecordHeaders[index].ContentLength + 8);
+                            }
+                            MultiPointRecordP* nextRec = (MultiPointRecordP*)(dataPtr + 8);
+
+                            if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                            {
+                                if (useCustomRenderSettings)
+                                {
+                                    Color customColor = customRenderSettings.GetRecordOutlineColor(index);
+                                    if (customColor.ToArgb() != currentPenColor.ToArgb())
+                                    {
+                                        outlinePen = new Pen(customColor, 1);
+                                        currentPenColor = customColor;
+                                        outlinePen.DashStyle = renderSettings.LineDashStyle;
+                                    }
+                                    if (renderInterior)
+                                    {
+                                        customColor = customRenderSettings.GetRecordFillColor(index);
+                                        if (customColor.ToArgb() != currentBrushColor.ToArgb())
+                                        {
+                                            fillBrush = new SolidBrush(customColor);
+                                            currentBrushColor = customColor;
+                                        }
+                                    }
+                                    if (useCustomImageSymbols)
+                                    {
+                                        symbol = customRenderSettings.GetRecordImageSymbol(index);
+                                        if (symbol != null)
+                                        {
+                                            symbolSize = symbol.Size;
+                                            drawPoint = false;
+                                        }
+                                        else
+                                        {
+                                            drawPoint = true;
+                                        }
+                                    }
+                                }
+                                for (int p = 0; p < nextRec->NumPoints; ++p)
+                                {
+                                    double px, py;
+                                    if (MercProj)
+                                    {
+                                        LLToProjection(ref nextRec->Points[p << 1], ref nextRec->Points[(p << 1) + 1], out px, out py);
+                                    }
+                                    else
+                                    {
+                                        px = nextRec->Points[p << 1];
+                                        py = nextRec->Points[(p << 1) + 1];
+                                    }
+
+                                    PointF pt = new PointF((float)((px + offX) * scaleX), (float)((py + offY) * scaleY));
+                                    if (drawPoint)
+                                    {
+                                        if (pointSize > 0)
+                                        {
+                                            if (renderInterior)
+                                            {
+                                                if (recordSelected[index])
+                                                {
+                                                    g.FillEllipse(selectBrush, pt.X - halfPointSize, pt.Y - halfPointSize, pointSize, pointSize);
+                                                }
+                                                else
+                                                {
+                                                    g.FillEllipse(fillBrush, pt.X - halfPointSize, pt.Y - halfPointSize, pointSize, pointSize);
+                                                }
+                                            }
+                                            if (recordSelected[index])
+                                            {
+                                                g.DrawEllipse(selectPen, pt.X - halfPointSize, pt.Y - halfPointSize, pointSize, pointSize);
+                                            }
+                                            else
+                                            {
+                                                g.DrawEllipse(outlinePen, pt.X - halfPointSize, pt.Y - halfPointSize, pointSize, pointSize);
+                                            }
+                                        }
+                                        if (labelFields)
+                                        {
+                                            renderPtObjList.Add(new RenderPtObj(pt, index, (int)halfPointSize + 5, -((int)halfPointSize + 5)));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        g.DrawImage(symbol, pt.X - (symbolSize.Width >> 1), pt.Y - (symbolSize.Height >> 1));
+                                        if (recordSelected[index])
+                                        {
+                                            g.DrawRectangle(selectPen, pt.X - (symbolSize.Width >> 1), pt.Y - (symbolSize.Height >> 1), symbolSize.Width, symbolSize.Height);
+                                        }
+                                        if (labelFields)
+                                        {
+                                            renderPtObjList.Add(new RenderPtObj(pt, index, ((symbolSize.Width + 1) >> 1) + 5, -(((symbolSize.Height + 1) >> 1) + 5)));
+                                        }
+                                    }
+                                }
+
+                            }
+                            //if (fileMapped)
+                            //{
+                            //    dataPtr += this.RecordHeaders[index].ContentLength + 8;
+                            //}
+                            index++;
+                        }
+                    }
+                }
+                finally
+                {
+                    if (fillBrush != null) fillBrush.Dispose();
+                    if (outlinePen != null) outlinePen.Dispose();
+                    if (selectPen != null) selectPen.Dispose();
+                    if (selectBrush != null) selectBrush.Dispose();
+                }
+
+                if (labelFields)
+                {
+                    Brush fontBrush = new SolidBrush(renderSettings.FontColor);
+                    int count = renderPtObjList.Count;
+                    bool shadowText = (renderSettings != null && renderSettings.ShadowText);
+                    LabelPlacementMap labelPlacementMap = new LabelPlacementMap(clientArea.Width, clientArea.Height);
+
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+                    g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                    float ssm = shadowText ? 0.8f : 1f;
+                    Color currentFontColor = renderSettings.FontColor;
+                    bool useCustomFontColor = customRenderSettings != null;
+                    for (int n = 0; n < count; n++)
+                    {
+                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (strLabel.Length > 0)
+                        {
+                            SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
+                            int x0 = renderPtObjList[n].offX;
+                            int y0 = renderPtObjList[n].offY;
+                            if (labelPlacementMap.addLabelToMap(Point.Round(renderPtObjList[n].Pt), x0, y0, (int)Math.Round(labelSize.Width * ssm), (int)Math.Round(labelSize.Height * ssm)))
+                            {
+                                if (useCustomFontColor)
+                                {
+                                    Color customColor = customRenderSettings.GetRecordFontColor(renderPtObjList[n].RecordIndex);
+                                    if (customColor.ToArgb() != currentFontColor.ToArgb())
+                                    {
+                                        fontBrush.Dispose();
+                                        fontBrush = new SolidBrush(customColor);
+                                        currentFontColor = customColor;
+                                    }
+                                }
+
+                                if (shadowText)
+                                {
+                                    System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
+                                    gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0), new StringFormat());
+                                    g.DrawPath(pen, gp);
+                                    g.FillPath(fontBrush, gp);
+                                }
+                                else
+                                {
+                                    g.DrawRectangle(Pens.Red, renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0, labelSize.Width * ssm, labelSize.Height * ssm);
+                                    g.DrawString(strLabel, renderSettings.Font, fontBrush, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0));
+                                }
+                            }
+                        }
+                    }
+                    pen.Dispose();
+                    fontBrush.Dispose();
+                }
+            }
+            finally
+            {
+                if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
+                if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
+            }
+        }
+
+        public unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        {
+            List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
+            double scaleX = (double)(clientArea.Width / extent.Width);
+            double scaleY = -scaleX;
+            RectangleD actualExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+            double offX = -actualExtent.Left;
+            double offY = -actualExtent.Bottom;
+            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            bool renderInterior = true;
+
+            IntPtr fileMappingPtr = IntPtr.Zero;
+            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            IntPtr mapView = IntPtr.Zero;
+            byte* dataPtr = null;
+            if (fileMappingPtr != IntPtr.Zero)
+            {
+                mapView = NativeMethods.MapViewOfFile(fileMappingPtr, NativeMethods.FileMapAccess.FILE_MAP_READ, 0, 0, 0);
+            }
+            bool fileMapped = (mapView != IntPtr.Zero);
+
+
+            try
+            {
+
+                float pointSize = 6f;
+                renderInterior = renderSettings.FillInterior;
+                pointSize = renderSettings.PointSize;
+
+                ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+                bool useCustomRenderSettings = (customRenderSettings != null);
+
+                Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
+                bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
+                bool MercProj = projectionType == ProjectionType.Mercator;
+                if (MercProj)
+                {
+                    //if we're using a Mercator Projection then convert the actual Extent to LL coords
+                    PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
+                    PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
+                    actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+                }
+
+                IntPtr dc = IntPtr.Zero;
+                IntPtr gdiPen = IntPtr.Zero;
+                IntPtr gdiBrush = IntPtr.Zero;
+                IntPtr oldGdiPen = IntPtr.Zero;
+                IntPtr oldGdiBrush = IntPtr.Zero;
+
+                IntPtr selectPen = IntPtr.Zero;
+                IntPtr selectBrush = IntPtr.Zero;
+
+                // obtain a handle to the Device Context so we can use GDI to perform the painting.
+                dc = g.GetHdc();
+
+                try
+                {
+                    int color = 0x70c09b;
+
+                    color = ColorToGDIColor(renderSettings.FillColor);
+                    if (renderInterior)
+                    {
+                        gdiBrush = NativeMethods.CreateSolidBrush(color);
+                        oldGdiBrush = NativeMethods.SelectObject(dc, gdiBrush);
+                    }
+                    else
+                    {
+                        oldGdiBrush = NativeMethods.SelectObject(dc, NativeMethods.GetStockObject(NativeMethods.NULL_BRUSH));
+                    }
+
+                    color = ColorToGDIColor(renderSettings.OutlineColor);
+                    gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, 1, color);
+                    oldGdiPen = NativeMethods.SelectObject(dc, gdiPen);
+
+                    selectPen = NativeMethods.CreatePen(NativeMethods.PS_SOLID, 2, ColorToGDIColor(renderSettings.SelectOutlineColor));
+                    selectBrush = NativeMethods.CreateSolidBrush(ColorToGDIColor(renderSettings.SelectFillColor));
+
+                    NativeMethods.SetBkMode(dc, NativeMethods.TRANSPARENT);
+
+                    int index = 0;
+                    Point pt = new Point();
+                    int halfPointSize = (int)Math.Round(pointSize * 0.5);
+                    int pointSizeInt = (int)Math.Round(pointSize);
+                    byte* dataPtrZero = (byte*)IntPtr.Zero.ToPointer();
+                    if (fileMapped)
+                    {
+                        dataPtrZero = (byte*)mapView.ToPointer();
+                        dataPtr = (byte*)(((byte*)mapView.ToPointer()) + ShapeFileMainHeader.MAIN_HEADER_LENGTH);
+                    }
+                    else
+                    {
+                        shapeFileStream.Seek(ShapeFileMainHeader.MAIN_HEADER_LENGTH, SeekOrigin.Begin);
+                    }
+                    byte[] buffer = SharedBuffer;
+                    fixed (byte* bufPtr = buffer)
+                    {
+                        if (!fileMapped) dataPtr = bufPtr;
+                        while (index < RecordHeaders.Length)
+                        {
+                            if (fileMapped)
+                            {
+                                dataPtr = dataPtrZero + RecordHeaders[index].Offset;
+                            }
+                            else
+                            {
+                                if (shapeFileStream.Position != RecordHeaders[index].Offset)
+                                {
+                                    Console.Out.WriteLine("offset wrong");
+                                    shapeFileStream.Seek(RecordHeaders[index].Offset, SeekOrigin.Begin);
+                                }
+                                shapeFileStream.Read(buffer, 0, RecordHeaders[index].ContentLength + 8);
+                            }
+
+                            MultiPointRecordP* nextRec = (MultiPointRecordP*)(dataPtr + 8);
+                            if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && (!useCustomRenderSettings || customRenderSettings.RenderShape(index)))
+                            {
+                                if (useCustomRenderSettings)
+                                {
+                                    Color customColor = customRenderSettings.GetRecordOutlineColor(index);
+                                    if (customColor.ToArgb() != currentPenColor.ToArgb())
+                                    {
+                                        gdiPen = NativeMethods.CreatePen((int)renderSettings.LineDashStyle, 1, ColorToGDIColor(customColor));
+                                        NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiPen));
+                                        currentPenColor = customColor;
+                                    }
+                                    if (renderInterior)
+                                    {
+                                        customColor = customRenderSettings.GetRecordFillColor(index);
+                                        if (customColor.ToArgb() != currentBrushColor.ToArgb())
+                                        {
+                                            gdiBrush = NativeMethods.CreateSolidBrush(ColorToGDIColor(customColor));
+                                            NativeMethods.DeleteObject(NativeMethods.SelectObject(dc, gdiBrush));
+                                            currentBrushColor = customColor;
+                                        }
+                                    }
+                                }
+                                for (int p = 0; p < nextRec->NumPoints; ++p)
+                                {
+                                    double px, py;
+                                    //PointD ptf = LLToProjection(new PointD(nextRec.X,nextRec.Y));
+                                    if (MercProj)
+                                    {
+                                        LLToProjection(ref nextRec->Points[p << 1], ref nextRec->Points[(p << 1) + 1], out px, out py);
+                                    }
+                                    else
+                                    {
+                                        px = nextRec->Points[p << 1];
+                                        py = nextRec->Points[(p << 1) + 1];
+                                    }
+                                    pt.X = (int)Math.Round((px + offX) * scaleX);
+                                    pt.Y = (int)Math.Round((py + offY) * scaleY);
+
+                                    if (pointSizeInt > 0)
+                                    {
+                                        if (recordSelected[index])
+                                        {
+                                            IntPtr tempPen = IntPtr.Zero;
+                                            IntPtr tempBrush = IntPtr.Zero;
+                                            try
+                                            {
+                                                tempPen = NativeMethods.SelectObject(dc, selectPen);
+                                                if (renderInterior)
+                                                {
+                                                    tempBrush = NativeMethods.SelectObject(dc, selectBrush);
+                                                }
+                                                NativeMethods.Ellipse(dc, pt.X - halfPointSize, pt.Y - halfPointSize, pt.X + halfPointSize, pt.Y + halfPointSize);
+                                            }
+                                            finally
+                                            {
+                                                if (tempPen != IntPtr.Zero) NativeMethods.SelectObject(dc, tempPen);
+                                                if (tempBrush != IntPtr.Zero) NativeMethods.SelectObject(dc, tempBrush);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            NativeMethods.Ellipse(dc, pt.X - halfPointSize, pt.Y - halfPointSize, pt.X + halfPointSize, pt.Y + halfPointSize);
+                                        }
+                                    }
+                                    if (labelFields)
+                                    {
+                                        renderPtObjList.Add(new RenderPtObj(pt, index, halfPointSize + 5, -(halfPointSize + 5)));
+                                    }
+                                }
+                            }
+                            ++index;
+                        }
+                    }
+                }
+                finally
+                {
+                    if (oldGdiPen != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiPen);
+                    if (gdiPen != IntPtr.Zero) NativeMethods.DeleteObject(gdiPen);
+                    if (oldGdiBrush != IntPtr.Zero) NativeMethods.SelectObject(dc, oldGdiBrush);
+                    if (gdiBrush != IntPtr.Zero) NativeMethods.DeleteObject(gdiBrush);
+                    if (selectBrush != IntPtr.Zero) NativeMethods.DeleteObject(selectBrush);
+                    if (selectPen != IntPtr.Zero) NativeMethods.DeleteObject(selectPen);
+                    g.ReleaseHdc(dc);
+                }
+
+                if (labelFields)
+                {
+                    Brush fontBrush = new SolidBrush(renderSettings.FontColor);
+                    int count = renderPtObjList.Count;
+                    bool shadowText = (renderSettings != null && renderSettings.ShadowText);
+                    LabelPlacementMap labelPlacementMap = new LabelPlacementMap(clientArea.Width, clientArea.Height);
+
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+                    g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                    float ssm = shadowText ? 0.8f : 1f;
+                    Color currentFontColor = renderSettings.FontColor;
+                    bool useCustomFontColor = customRenderSettings != null;
+                    for (int n = 0; n < count; n++)
+                    {
+                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (strLabel.Length > 0)
+                        {
+                            SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
+                            int x0 = renderPtObjList[n].offX;
+                            int y0 = renderPtObjList[n].offY;
+                            if (labelPlacementMap.addLabelToMap(Point.Round(renderPtObjList[n].Pt), x0, y0, (int)Math.Round(labelSize.Width * ssm), (int)Math.Round(labelSize.Height * ssm)))
+                            {
+                                if (useCustomFontColor)
+                                {
+                                    Color customColor = customRenderSettings.GetRecordFontColor(renderPtObjList[n].RecordIndex);
+                                    if (customColor.ToArgb() != currentFontColor.ToArgb())
+                                    {
+                                        fontBrush.Dispose();
+                                        fontBrush = new SolidBrush(customColor);
+                                        currentFontColor = customColor;
+                                    }
+                                }
+
+                                if (shadowText)
+                                {
+                                    System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
+                                    gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0), new StringFormat());
+                                    g.DrawPath(pen, gp);
+                                    g.FillPath(fontBrush, gp);
+                                }
+                                else
+                                {
+                                    g.DrawRectangle(Pens.Red, renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0, labelSize.Width * ssm, labelSize.Height * ssm);
+                                    g.DrawString(strLabel, renderSettings.Font, fontBrush, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0));
+                                }
+                            }
+                        }
+                    }
+                    pen.Dispose();
+                    fontBrush.Dispose();
+                }
+            }
+            finally
+            {
+                if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
+                if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
+            }
+        }
+
+
+
+        private struct RenderPtObj
+        {
+            public PointF Pt;
+            public int RecordIndex;
+
+            public int offX, offY;
+
+            public RenderPtObj(PointF p, int recordIndexParam, int x0, int y0)
+            {
+                Pt = p;
+                RecordIndex = recordIndexParam;
+                offX = x0;
+                offY = y0;
+            }
+
+        }
+
+
+        #region QTNodeHelper Members
+
+        public bool IsPointData()
+        {
+            //yes multi points are points but the record has a "bounds" used in the quad tree
+            return false;
+        }
+
+        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+        {
+            //throw new Exception("The method or operation is not implemented.");
+            return PointF.Empty;
+        }
+
+        public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
+        {
+            if (recordIndex < 0 || recordIndex >= this.RecordHeaders.Length) return RectangleF.Empty;
+            shapeFileStream.Seek(RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Read(data, 0, 32 + 12);
+            Box bounds = new Box(data, 12);
+
+            return bounds.ToRectangleF();
+        }
+
+        public override RectangleD GetRecordBoundsD(int recordIndex, System.IO.Stream shapeFileStream)
+        {
+            if (recordIndex < 0 || recordIndex >= this.RecordHeaders.Length) return RectangleF.Empty;
+            shapeFileStream.Seek(RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Read(data, 0, 32 + 12);
+            Box bounds = new Box(data, 12);
+            return bounds.ToRectangleD();
+        }
+
+        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        {
+            List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
+            if (pts != null && pts.Count > 0)
+            {
+                for (int n = pts[0].Length - 1; n >= 0; --n)
+                {
+                    if (rect.Contains(pts[0][n])) return true;
+                }
+            }
+            return false;
+        }
+
+        public override bool IntersectCircle(int recordIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
+            if (pts != null && pts.Count > 0)
+            {
+                for (int n = pts[0].Length - 1; n >= 0; --n)
+                {
+                    if ((pts[0][n].X - centre.X) * (pts[0][n].X - centre.X) + (pts[0][n].Y - centre.Y) * (pts[0][n].Y - centre.Y) < (radius * radius))
+                    {
+                        return true;
+                    }
+
+                }
+            }
+            return false;
+        }
+
+
+
+        #endregion
+    }
+
+
     class SFPolyLineCol : SFRecordCol, QTNodeHelper
     {
 
@@ -14472,25 +16045,25 @@ namespace EGIS.ShapeFileLib
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern int CloseHandle(IntPtr handle);
 
-        [DllImport("gdipluslib.dll")]
-        internal static extern IntPtr CreateGraphics(IntPtr hdc);
+        //[DllImport("gdipluslib.dll")]
+        //internal static extern IntPtr CreateGraphics(IntPtr hdc);
 
-        [DllImport("gdipluslib.dll")]
-        internal static extern IntPtr CreateGraphicsFromImage(ref Bitmap bm);
+        //[DllImport("gdipluslib.dll")]
+        //internal static extern IntPtr CreateGraphicsFromImage(ref Bitmap bm);
         
 
-        [DllImport("gdipluslib.dll")]
-        internal static extern void ReleaseGraphics(IntPtr graphics);
+        //[DllImport("gdipluslib.dll")]
+        //internal static extern void ReleaseGraphics(IntPtr graphics);
 
-        [DllImport("gdipluslib.dll")]
-        //internal static extern void DrawLines(ref Graphics graphics, IntPtr pen, Point[] points, int count);
-        internal static extern void DrawLines(IntPtr graphics, IntPtr pen, Point[] points, int count);
+        //[DllImport("gdipluslib.dll")]
+        ////internal static extern void DrawLines(ref Graphics graphics, IntPtr pen, Point[] points, int count);
+        //internal static extern void DrawLines(IntPtr graphics, IntPtr pen, Point[] points, int count);
 
-        [DllImport("gdipluslib.dll")]
-        internal static extern IntPtr CreateGdiplusPen(int color, float width);
+        //[DllImport("gdipluslib.dll")]
+        //internal static extern IntPtr CreateGdiplusPen(int color, float width);
 
-        [DllImport("gdipluslib.dll")]
-        internal static extern void ReleaseGdiplusPen(IntPtr pen);
+        //[DllImport("gdipluslib.dll")]
+        //internal static extern void ReleaseGdiplusPen(IntPtr pen);
 
 //        internal static unsafe void TestGeometry()
 //{
@@ -14516,26 +16089,26 @@ namespace EGIS.ShapeFileLib
 
         class NativeGeomUtilWin32
         {
-            [DllImport("geomutil_lib.dll")]
+            [DllImport("geomutil_lib.dll", CallingConvention = CallingConvention.Cdecl)]
             internal static unsafe extern int SimplifyDouglasPeuckerInt(int* input, int inputCount, int tolerance, int* output, ref int outputCount);
 
-            [DllImport("geomutil_lib.dll")]
+            [DllImport("geomutil_lib.dll", CallingConvention=CallingConvention.Cdecl)]
             internal static unsafe extern int PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
 
-            [DllImport("geomutil_lib.dll")]
+            [DllImport("geomutil_lib.dll", CallingConvention = CallingConvention.Cdecl)]
             internal static unsafe extern int PolyLineRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
 
         }
 
         class NativeGeomUtilX64
         {
-            [DllImport("geomutil_libx64.dll")]
+            [DllImport("geomutil_libx64.dll", CallingConvention = CallingConvention.Cdecl)]
             internal static unsafe extern int SimplifyDouglasPeuckerInt(int* input, int inputCount, int tolerance, int* output, ref int outputCount);
 
-            [DllImport("geomutil_libx64.dll")]
+            [DllImport("geomutil_libx64.dll", CallingConvention = CallingConvention.Cdecl)]
             internal static unsafe extern int PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
 
-            [DllImport("geomutil_libx64.dll")]
+            [DllImport("geomutil_libx64.dll", CallingConvention = CallingConvention.Cdecl)]
             internal static unsafe extern int PolyLineRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
 
         }

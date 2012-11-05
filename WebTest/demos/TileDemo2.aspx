@@ -82,7 +82,10 @@
          OnClientBoundsChanged="MapBoundsChanged" OnClientZoomChanged="MapZoomChanged"/>
             &nbsp;
                 
-        <cc1:MapPanControl  CssClass="test" MapReferenceId="SFMap1" ID="MapPanControl1" runat="server" Style="z-index: 102; position:absolute; top: 75px; left:25px; text-align: center; padding: 2px;"  BorderColor="White" BorderWidth="2px" />
+        <cc1:MapPanControl  CssClass="test" MapReferenceId="SFMap1" ID="MapPanControl1" 
+                runat="server" 
+                Style="z-index: 102; position:absolute; top: 75px; left:25px; text-align: center; padding: 2px; width: 69px;"  
+                BorderColor="White" BorderWidth="2px" />
         <asp:Button ID="Button1" runat="server" Text="Set Map Location" OnClientClick="return SetMapLocation();"/></div>
         
     </div>

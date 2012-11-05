@@ -373,7 +373,8 @@ namespace EGIS.Controls
         /// <para>This property should no longer be used. Use CentrePoint2D instead, which uses double-precision floating-point coordinates</para>
         /// </remarks>
         /// <seealso cref="ZoomLevel"/>
-        [Obsolete("Superceded by CentrePoint2D to use double-precision floating-point coordinates"), Browsable(false)] 
+        [Obsolete("Superceded by CentrePoint2D to use double-precision floating-point coordinates"), Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public PointF CentrePoint
         {
             get
