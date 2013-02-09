@@ -87,9 +87,9 @@ namespace EGIS.Web.Controls
         protected string PanLeftClientJS
         {
             get
-            {
-                
-                return mapReference==null?"":"return panLeft('" + mapReference.GisImageClientId + "')";
+            {                
+                //return mapReference==null?"":"return egis.panLeft('" + mapReference.GisImageClientId + "')";
+                return "return egis.panLeft()";
             }
         }
 
@@ -100,7 +100,8 @@ namespace EGIS.Web.Controls
         {
             get
             {
-                return mapReference == null ? "" : "return panRight('" + mapReference.GisImageClientId + "')";
+                //return mapReference == null ? "" : "return egis.panRight('" + mapReference.GisImageClientId + "')";
+                return "return egis.panRight()";
             }
         }
 
@@ -111,7 +112,8 @@ namespace EGIS.Web.Controls
         {
             get
             {
-                return mapReference == null ? "" : "return panUp('" + mapReference.GisImageClientId + "')";
+                //return mapReference == null ? "" : "return egis.panUp('" + mapReference.GisImageClientId + "')";
+                return "return egis.panUp()";
             }
         }
 
@@ -122,7 +124,8 @@ namespace EGIS.Web.Controls
         {
             get
             {
-                return mapReference == null ? "" : "return panDown('" + mapReference.GisImageClientId + "')";
+                //return mapReference == null ? "" : "return egis.panDown('" + mapReference.GisImageClientId + "')";
+                return "return egis.panDown()";
             }
         }
 
@@ -133,7 +136,8 @@ namespace EGIS.Web.Controls
         {
             get
             {
-                return mapReference == null ? "" : "return zoomIn('" + mapReference.GisImageClientId + "')";
+                //return mapReference == null ? "" : "return egis.zoomIn('" + mapReference.GisImageClientId + "')";
+                return "return egis.zoomIn()";
             }
         }
 
@@ -144,7 +148,8 @@ namespace EGIS.Web.Controls
         {
             get
             {
-                return mapReference == null ? "" : "return zoomOut('" + mapReference.GisImageClientId + "')";
+                //return mapReference == null ? "" : "return egis.zoomOut('" + mapReference.GisImageClientId + "')";
+                return "return egis.zoomOut()";
             }
         }
 

@@ -171,7 +171,7 @@ namespace EGIS.Web.Controls
 
             if (!foundCompulsoryParameters) throw new InvalidOperationException("compulsory parameters 'tx','ty' or 'zoom' missing");
 
-
+            
             string cachePath = "";
             bool useCache = CacheOnServer;
 

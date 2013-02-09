@@ -76,8 +76,7 @@ namespace egis
             recordAttributesForm = new RecordAttributesForm();
             //recordAttributesForm.Show(this);
             recordAttributesForm.Owner = this;
-            recordAttributesForm.VisibleChanged += new EventHandler(recordAttributesForm_VisibleChanged);
-
+            recordAttributesForm.VisibleChanged += new EventHandler(recordAttributesForm_VisibleChanged);            
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -160,9 +159,28 @@ namespace egis
         {
             string name = path.Substring(path.LastIndexOf("\\")+1);
             EGIS.ShapeFileLib.ShapeFile sf = sfMap1.AddShapeFile(path, name, "NAME");
-            //RectangleF r = sfMap1.Extent;
-            //sf.RenderSettings.MinRenderLabelZoom = 25.0f * 512f / r.Width;
-            this.shapeFileRenderPropertyGrid.SelectedObject = sf.RenderSettings;
+            this.shapeFileRenderPropertyGrid.SelectedObject = sf.RenderSettings;            
+        }
+
+        private void SelectAndCenterRecord(int index, ShapeFile sf)
+        {
+                RectangleF bounds = sf.GetShapeBounds(index);
+                if (bounds != RectangleF.Empty)
+                {
+                    sfMap1.CentrePoint2D = new PointD((bounds.Left + bounds.Right) / 2, (bounds.Top + bounds.Bottom) / 2);
+                    double r1 = sfMap1.ClientSize.Width * bounds.Height;
+                    double r2 = sfMap1.ClientSize.Height * bounds.Width;
+                    if (r1 < r2)
+                    {
+                        sfMap1.ZoomLevel = 0.5*(sfMap1.ClientSize.Width / bounds.Width);
+                    }
+                    else
+                    {
+                        sfMap1.ZoomLevel = 0.5*(sfMap1.ClientSize.Height / bounds.Height);
+                    }
+                    sf.SelectRecord(index, true);
+                }
+           
         }
 
         #region "Pan and Zoom methods"

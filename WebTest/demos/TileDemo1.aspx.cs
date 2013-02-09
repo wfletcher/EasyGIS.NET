@@ -19,7 +19,7 @@ namespace WebTest.demos
             if (!IsPostBack)
             {
                 SFMap1.CenterPoint = EGIS.ShapeFileLib.ShapeFile.LLToMercator(new EGIS.ShapeFileLib.PointD(144.99, -37.8));
-                SFMap1.Zoom = (float)EGIS.ShapeFileLib.TileUtil.ZoomLevelToScale(10);// 2500;
+                SFMap1.ZoomLevel = 10;// = (float)EGIS.ShapeFileLib.TileUtil.ZoomLevelToScale(10);// 2500;
             }
 
            

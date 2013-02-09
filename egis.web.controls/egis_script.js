@@ -51,729 +51,627 @@ if(EU.isIE){YAHOO.util.Event.onDOMReady(YAHOO.util.Event._tryPreloadAttach,YAHOO
 
 // END YAHOO Javascriipt
 
+var egis = new function () {
 
-var mapObjectsArray = new Array();
+    function Debug(msg) {
 
-if(typeof Array.prototype.push!="function")
-{
-    Array.prototype.push=ArrayPush;
-    function ArrayPush(obj)
-    {
-        this[this.length]=obj;
-        return this.length;
-    }
-}
+        //        if (window.console) {
+        //            if (msg != null) {
+        //                window.console.log(msg.toString());
+        //            }
+        //        }
+    };
 
+    var mapObjectsArray = new Array();
 
-function DocGetElementsByClassName(re,tag,cn)
-{
-    var _5=(tag=="*"&&re.all)?re.all:re.getElementsByTagName(tag);
-    var _6=new Array();
-    cn=cn.replace(/\-/g,"\\-");
-    var _7=new RegExp("(^|\\s)"+cn+"(\\s|$)");
-    var _8;
-    for(var i=0;i<_5.length;i++)
-    {
-        _8=_5[i];
-        if(_7.test(_8.className))
-        {
-            _6.push(_8);
+    if (typeof Array.prototype.push != "function") {
+        Array.prototype.push = ArrayPush;
+        function ArrayPush(obj) {
+            this[this.length] = obj;
+            return this.length;
         }
     }
-    return (_6);
-}
-
-//returns the left,top position of an element
-function findPos(obj)
-{
-    var curleft = curtop = 0;
-    if(obj.offsetParent)
-    {
-        curleft = obj.offsetLeft;
-        curtop = obj.offsetTop;
-        while(obj = obj.offsetParent)
-        {
-            curleft+= obj.offsetLeft;
-            curtop += obj.offsetTop;
-        }
-    }
-    return [curleft,curtop];
-}
-
-function setOpacity(obj, op)
-{
-    obj.style.filter="alpha(opacity=" + op + ")";
-    op = op/100.0;
-    obj.style.opacity = "" + op;
-}
 
 
-function GetXmlHttpObject()
-{    
-    var xmlHttp=null;
-    try
-    {
-      // Firefox, Opera 8.0+, Safari
-      xmlHttp=new XMLHttpRequest();
-    }
-    catch (e)
-    {
-      // Internet Explorer
-      try
-      {
-        xmlHttp=new ActiveXObject("Msxml2.XMLHTTP");
-      }
-      catch (e)
-      {
-        xmlHttp=new ActiveXObject("Microsoft.XMLHTTP");
-      }
-    }
-    return xmlHttp;
-}
-
-function panLeft(imgid)
-{
-    var index = IndexOfMapObject(mapObjectsArray, document.getElementById(imgid));
-    if(index >=0)    
-    {
-        mapObjectsArray[index].panLeft();            
-    }
-    return false;
-}
-
-function panRight(imgid)
-{
-    var index = IndexOfMapObject(mapObjectsArray, document.getElementById(imgid));
-    if(index >=0)    
-    {
-        mapObjectsArray[index].panRight();            
-    }
-    return false;
-}
-
-function panUp(imgid)
-{
-    var index = IndexOfMapObject(mapObjectsArray, document.getElementById(imgid));
-    if(index >=0)    
-    {
-        mapObjectsArray[index].panUp();            
-    }
-    return false;
-}
-
-function panDown(imgid)
-{
-    var index = IndexOfMapObject(mapObjectsArray, document.getElementById(imgid));
-    if(index >=0)    
-    {
-        mapObjectsArray[index].panDown();            
-    }
-    return false;
-}
-
-function zoomIn(imgid)
-{
-    var index = IndexOfMapObject(mapObjectsArray, document.getElementById(imgid));
-    if(index >=0)    
-    {
-        mapObjectsArray[index].zoomIn();            
-    }
-    return false;
-}
-
-function zoomOut(imgid)
-{
-    var index = IndexOfMapObject(mapObjectsArray, document.getElementById(imgid));
-    if(index >=0)    
-    {
-        mapObjectsArray[index].zoomOut();            
-    }
-    return false;
-}
-
-
-function refreshMap(img, handlerUrl, px,py,z, mapid)
-{
-    img.src = handlerUrl + "?w=" + img.width + "&h=" + img.height +"&x=" + px + "&y=" + py + "&zoom=" + z + "&mapid=" + mapid;
-}
-
-function IndexOfMapObject(arr, evtPnl)
-{
-    if(arr==null) return (-1);
-    for(var i=0;i<arr.length;i++)
-    {
-        if(arr[i].evtpnl == evtPnl || arr[i].img == evtPnl || arr[i].loadingImage == evtPnl) return i;
-    }
-    return (-1);
-}
-
-
-
-function MapObject(img, handlerUrl, mapid, hfx, hfy, hfz, evtpnl, dcrs, coc)
-{
-    this.img = img;
-    this.handlerUrl = handlerUrl;
-    this.mapId = mapid;
-    this.hfx = hfx;
-    this.hfy = hfy;
-    this.hfz = hfz;         
-    this.mouseIsDown = false;
-    this.offsetX = 0;
-    this.offsetY = 0;        
-    this.evtpnl = evtpnl;        
-    this.parentColor = img.parentNode.style.backgroundColor;
-    if(this.parentColor == null) this.parentColor = "";    
-    
-    this.loadingImage = new Image();document.createElement("img");
-    this.loadingImage.id = "li_" + img.id;    
-    this.dcrs = dcrs;
-    this.coc = coc;
-    
-    this.MinZoom = Number.MIN_VALUE;
-    this.MaxZoom = Number.MAX_VALUE;
-    
-    this.ZoomChangedEvent = new YAHOO.util.CustomEvent("ZoomChanged", this);             
-    this.BoundsChangedEvent = new YAHOO.util.CustomEvent("BoundsChanged", this);    
-    this.TooltipTimer = setInterval("GlobalTooltipTimer('" + this.evtpnl + "')", 100);
-    this.ShowTooltip = false;
-    var d = new Date();
-    this.ShowTooltipTime = d.getTime() + 2000;
-    this.TooltipX = 0;
-    this.TooltipY = 0;
-    this.TooltipPanel = this.CreateTooltipPanel();    
-    var bgUrl = this.img.parentNode.parentNode.childNodes[this.img.parentNode.parentNode.childNodes.length-2].value;
-    this.TooltipPanel.style.backgroundImage='url(' + bgUrl + ')';
-    this.TooltipPanel.style.backgroundRepeat="no-repeat";
-    this.img.parentNode.appendChild(this.TooltipPanel);
-    this.LastTooltipDisplayTime = d.getTime();    
-    this.refreshMap();
- }               
-    
-
- MapObject.prototype.CreateTooltipPanel = function()
- {
-    var TooltipPanel = document.createElement("div");
-    TooltipPanel.className = "sfmaptooltip";
-    TooltipPanel.style.width = "190px";
-    TooltipPanel.style.left = "-50px";
-    TooltipPanel.style.top = "-100px";
-    TooltipPanel.style.height = "110px";
-    TooltipPanel.style.position="absolute";
-    TooltipPanel.style.padding ="25px";
-    TooltipPanel.style.visibility = "hidden";
-    TooltipPanel.style.backgroundRepeat="no-repeat";
-    TooltipPanel.style.zIndex=99999;
-    TooltipPanel.style.overflow="hidden";
-    TooltipPanel.style.verticalAlign="middle";
-    return TooltipPanel; 
- }
-
- MapObject.prototype.DisplayTooltip = function(text, x, y)
- {
-    this.TooltipPanel.innerHTML = text;
-    this.TooltipPanel.style.left = (x+5) + "px";    
-    this.TooltipPanel.style.top = (y+5) + "px";    
-    this.TooltipPanel.style.visibility = "visible";   
-    var d = new Date();
-    this.LastTooltipDisplayTime = d.getTime();    
- }
- 
- MapObject.prototype.HideTooltip = function()
- {
-    this.TooltipPanel.style.visibility = "hidden";     
- }
-     
- function GlobalTooltipTimer(mapid)
- {
-    var index = IndexOfMapObject(mapObjectsArray, mapid);
-    if(index >=0)
-    {
-        mapObjectsArray[index].TooltipTimerElapsed();
-    } 
- } 
- 
- 
- MapObject.prototype.TooltipTimerElapsed = function()
- {    
-        var d = new Date();
-        if(this.ShowTooltip && d.getTime() >= this.ShowTooltipTime)
-        {
-            this.SendTooltipRequest(this.handlerUrl,this.TooltipX,this.TooltipY, this.hfz.value, this.mapId);
-        }        
- }
- 
- 
- MapObject.prototype.SendTooltipRequest = function(handlerUrl, px, py, zoom, mapId) 
- {
-    var AjaxObj = GetXmlHttpObject();
-    if (AjaxObj==null)
-    {
-        alert ("Your browser does not support AJAX!");
-        return;
-    }
-    var url=handlerUrl + "?getshape=true&x=" + px + "&y=" + py + "&zoom=" + zoom + "&mapid=" +  encodeURIComponent(mapId) + "&dcrs="+this.dcrs;
-    
-    var mapobj = this;
-    AjaxObj.onreadystatechange=function()
-    {
-        mapobj.AjaxStateChanged(AjaxObj)
-    }
-    AjaxObj.open("GET",url,true);
-    AjaxObj.send(null);
-}
-
- 
- MapObject.prototype.AjaxStateChanged = function(AjaxObj)
- {    
-    if(AjaxObj == null) return;
-    
-    if(AjaxObj.readyState==4)
-    {
-        var lines = AjaxObj.responseText.split('\n');
-        if(lines[0] == 'true')
-        {
-            var point = lines[1].split(',');
-            var x = 1.0 * point[0];
-            var y = 1.0 * point[1];
-            var mousePos = this.GisPointToMousePos(x,y);
-            this.DisplayTooltip(lines[2], mousePos[0], mousePos[1]);
-        }
-        else
-        {
-            this.HideTooltip();
-        }
-    }          
- }
- 
- MapObject.prototype.FireZoomChangedEvent = function()
- {
-    this.ZoomChangedEvent.fire(this.hfz.value);
- }
- 
- MapObject.prototype.FireBoundsChangedEvent = function()
- {
-    var scale = 1.0/(1.0*this.hfz.value);   
-    var px = (1.0*this.hfx.value);
-    var py = (1.0*this.hfy.value);
-    var w = this.img.width * scale;
-    var h = this.img.height * scale;        
-    this.BoundsChangedEvent.fire(px-(w*0.5), py-(h*0.50), px+(w*0.5), py+(h*0.5));
- }
-
-MapObject.prototype.restoreParent = function()
-{
-    this.img.parentNode.style.backgroundColor = this.parentColor;
-}
-
-MapObject.prototype.dimParent = function()
-{
-    this.img.parentNode.style.backgroundColor = "#606060";    
-}
-
-MapObject.prototype.toString = function()
-{
-    return "MapObject";        
-}
-
-MapObject.prototype.zoomOut = function()
-{        
-    var z = this.hfz.value*1;
-    z*=0.5;
-    if(z > this.MinZoom)
-    {
-        this.hfz.value = z;      
-        this.refreshMap();        
-        this.HideTooltip();
-        this.FireZoomChangedEvent();
-    }
-}
-
-MapObject.prototype.zoomIn = function()
-{
-    var z = this.hfz.value*1;
-    z*=2;
-    if(z < this.MaxZoom)
-    {
-        this.hfz.value = z;  
-        this.refreshMap();   
-        this.HideTooltip();
-        this.FireZoomChangedEvent(); 
-    }
-}
-
-MapObject.prototype.panLeft = function()
-{
-    var x = this.hfx.value*1;
-    x -= ((this.img.width/4)/(this.hfz.value));
-    this.hfx.value = x;              
-    this.HideTooltip();
-    this.refreshMap();    
-    
-    this.FireBoundsChangedEvent();
-}
-
-MapObject.prototype.panRight = function()
-{
-    var x = this.hfx.value*1;
-    x += ((this.img.width/4)/(this.hfz.value));
-    this.hfx.value = x;      
-    this.refreshMap(); 
-    this.HideTooltip();   
-    this.FireBoundsChangedEvent();
-}
-
-MapObject.prototype.panUp = function()
-{
-    var y = this.hfy.value*1;
-    y += ((this.img.height/4)/(1.0*this.hfz.value));
-    this.hfy.value = y;          
-    this.refreshMap(); 
-    this.HideTooltip();   
-    this.FireBoundsChangedEvent();
-}
-
-MapObject.prototype.panDown = function()
-{
-    var y = this.hfy.value*1;
-    y -= ((this.img.height/4)/(1.0*this.hfz.value));
-    this.hfy.value = y;          
-    this.refreshMap(); 
-    this.HideTooltip();   
-    this.FireBoundsChangedEvent();
-}
-
-MapObject.prototype.MousePosToGisPoint = function(x,y)
-{
-    var scale = 1.0/(1.0*this.hfz.value);   
-    var w = this.img.width;
-    var h = this.img.height;    
-    var dx = ((w/2) - 1.0*x)*scale;
-    var dy = ((h/2) - 1.0*y)*scale;        
-    return [(1.0*this.hfx.value)-dx, (1.0*this.hfy.value)+dy];      
-}
-
-MapObject.prototype.GisPointToMousePos = function(x,y)
-{
-    var scale = (1.0*this.hfz.value);   
-    var dx = x - (1.0*this.hfx.value);
-    var dy = (1.0*this.hfy.value) - y; 
-    var w = this.img.width;
-    var h = this.img.height;    
-    dx = dx*scale;
-    dy = dy*scale;           
-    return [Math.round((w/2) + dx), Math.round((h/2) + dy)];      
-}
-
-MapObject.prototype.refreshMap = function()
-{    
-    this.evtpnl.style.cursor = "wait";        
-    var left = this.img.style.left;
-    left = left.substring(0,left.length-2);
-    var top = this.img.style.top;
-    top = top.substring(0,top.length-2); 
-    var scale = 1.0/(1.0*this.hfz.value);   
-    var dx = (1.0*left)*scale;
-    var dy = (1.0*top)*scale;
-    px = (1.0*this.hfx.value)-dx;
-    py = (1.0*this.hfy.value)+dy;
-    z = this.hfz.value;
-    this.hfy.value = py;
-    this.hfx.value = px;
-    var w = this.img.width;
-    var h = this.img.height;    
-    setOpacity(this.evtpnl, 60);
-    var url = this.handlerUrl + "?w=" + w + "&h=" + h +"&x=" + px + "&y=" + py + "&zoom=" + z + "&mapid=" + encodeURIComponent(this.mapId) + "&dcrs="+this.dcrs;
-    if(this.coc !=null && this.coc.value.toLowerCase()!='true')
-    {
-        var d = new Date();
-        url = url + "&coc=" + d.getTime();
-    } 
-    this.loadingImage.src = url;
-}
-    
-
-function AddMapEventHandlers(mapObj)
-{
-    if(window.addEventListener)
-    {
-        mapObj.evtpnl.addEventListener("mousedown",MapMouseDown,true);
-        mapObj.evtpnl.addEventListener("mouseup",MapMouseUp,true);
-        mapObj.evtpnl.addEventListener("mousemove",MapMouseMove,true);  
-        mapObj.evtpnl.addEventListener("mouseout",MapMouseOut,false); 
-        mapObj.evtpnl.addEventListener("DOMMouseScroll", MapMouseWheel, false);
-        mapObj.evtpnl.addEventListener("mousewheel", MapMouseWheel, false);            
-        mapObj.loadingImage.addEventListener("load", function() {LoadingImageLoad(mapObj); }, false); 
-    }
-    else
-    {
-        mapObj.evtpnl.attachEvent("onmousedown",MapMouseDown);
-        mapObj.evtpnl.attachEvent("onmouseup",MapMouseUp);
-        document.attachEvent("onmousemove",MapMouseMove);
-        mapObj.evtpnl.attachEvent("onmouseout",MapMouseOut);
-        mapObj.evtpnl.attachEvent("onmousewheel",MapMouseWheel);        
-        mapObj.loadingImage.attachEvent("onload", function() {LoadingImageLoad(mapObj); }); 
-    }
-}
-
-
-function GetEventTarget(evt)
-{
-    var target;
-    if(evt["srcElement"])
-    {
-	    target=evt["srcElement"];
-    }
-    else
-    {
-	    target=evt["target"];
-    }
-    return target;
-}
-
-function GetMouseOffset(evt, target)
-{
-    var parentPos = findPos(target.parentNode);        
-    var left = 0;
-    var top = 0;
-    if(evt.pageX || evt.pageY)
-    {
-        left = evt.pageX - parentPos[0];
-        top = evt.pageY - parentPos[1];
-    }
-    else if (evt.clientX || evt.clientY)
-    {
-        left = evt.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - parentPos[0];
-        top = evt.clientY + document.body.scrollTop + document.documentElement.scrollTop - parentPos[1];            
-    }    
-    return [left,top];
-}
-
-
-function MapMouseDown(evt)
-{
-    var target = GetEventTarget(evt);
-    var index = IndexOfMapObject(mapObjectsArray, target);
-    if(index >=0)
-    {
-        mapobj = mapObjectsArray[index];
-        var mousePos = GetMouseOffset(evt, mapobj.img);
-        var left = mapobj.img.style.left;
-        left = left.substring(0,left.length-2);
-        var top = mapobj.img.style.top;
-        top = top.substring(0,top.length-2);
-        mapobj.mouseIsDown = true;
-        mapobj.offsetX = mousePos[0] - (1*left);
-        mapobj.offsetY = mousePos[1] - (1*top);   
-        mapobj.ShowTooltip = false;   
-        mapobj.HideTooltip();               
-    }   
-    if(evt.preventDefault)
-    {
-        evt.preventDefault();
-    }
-    if(evt.stopPropagation)
-    {
-        evt.stopPropagation();
-    }         
-    if(window.event)
-    {    
-        window.event.cancelBubble=true;
-    }
-    return false;              
-}
-
-function MapMouseUp(evt)
-{
-    var target = GetEventTarget(evt);    
-    var index = IndexOfMapObject(mapObjectsArray, target);
-    if(index >=0)
-    {
-        mapobj = mapObjectsArray[index];                
-        if(mapobj.mouseIsDown)
-        {
-            mapobj.mouseIsDown = false;   
-            mapobj.refreshMap();    
-            mapobj.FireBoundsChangedEvent(); 
-            mapobj.ShowTooltip = true;
-            var d = new Date();
-            mapobj.ShowTooltipTime = d.getTime() + 2000;
-        }
-    }    
-    if(evt.preventDefault)
-    {
-        evt.preventDefault();
-    }    
-    if(evt.stopPropagation)
-    {
-        evt.stopPropagation();
-    }         
-    if(window.event)
-    {    
-        window.event.cancelBubble=true;
-    }
-    return false;
-}
-
-function MapMouseOut(evt)
-{
-    var target = GetEventTarget(evt);    
-    var index = IndexOfMapObject(mapObjectsArray, target);
-    if(index >=0)
-    {
-        mapobj = mapObjectsArray[index];                
-        if(mapobj.mouseIsDown)
-        {
-            mapobj.mouseIsDown = false;   
-            mapobj.refreshMap();    
-            mapobj.FireBoundsChangedEvent(); 
-        }
-        mapobj.ShowTooltip = false;  
-        mapobj.HideTooltip();      
-    }    
-    return false;
-}
-
-
-var lmx = -1;
-var lmy = -1;
-
-function MapMouseMove(evt)
-{
-    var target = GetEventTarget(evt);    
-    var index = IndexOfMapObject(mapObjectsArray, target);
-    if(index >=0)
-    {
-        var d = new Date();
-        mapobj = mapObjectsArray[index];             
-        if(mapobj.mouseIsDown)
-        {
-            var mousePos = GetMouseOffset(evt, mapobj.img);
-            var x = mousePos[0]-mapobj.offsetX;
-            var y = mousePos[1]-mapobj.offsetY;
-            mapobj.img.style.left = x + "px";
-            mapobj.img.style.top = y + "px";            
-        }
-        else
-        {
-            var mousePos = GetMouseOffset(evt, mapobj.img);
-            if(mousePos[0] != lmx && mousePos[1] != lmy)
-            {
-                lmy = mousePos[0];
-                lmx = mousePos[1];
-                mapobj.ShowTooltip = true;            
-                mapobj.ShowTooltipTime = d.getTime() + 200;    
-                var gisPoint = mapobj.MousePosToGisPoint(mousePos[0], mousePos[1]);
-                mapobj.TooltipX = gisPoint[0];
-                mapobj.TooltipY = gisPoint[1];
+    function DocGetElementsByClassName(re, tag, cn) {
+        var _5 = (tag == "*" && re.all) ? re.all : re.getElementsByTagName(tag);
+        var _6 = new Array();
+        cn = cn.replace(/\-/g, "\\-");
+        var _7 = new RegExp("(^|\\s)" + cn + "(\\s|$)");
+        var _8;
+        for (var i = 0; i < _5.length; i++) {
+            _8 = _5[i];
+            if (_7.test(_8.className)) {
+                _6.push(_8);
             }
-        }  
-        
-        if(d.getTime() > (mapobj.LastTooltipDisplayTime + 500))
-        {
-            mapobj.HideTooltip();                      
-        }                
-    }
-    if(evt.preventDefault)
-    {
-        evt.preventDefault();
-    }    
-    if(evt.stopPropagation)
-    {
-        evt.stopPropagation();
-    }         
-    if(window.event)
-    {    
-        window.event.cancelBubble=true;
-    }
-    return false;                
-}
-
-function MapMouseWheel(evt)
-{
-    var target = GetEventTarget(evt);    
-    var index = IndexOfMapObject(mapObjectsArray, target);
-    if(index >=0)
-    {
-        var wheelData = evt.detail? evt.detail*-1 : evt.wheelDelta/40;
-        mapobj = mapObjectsArray[index];        
-        if(wheelData > 0)
-        {
-            mapobj.zoomIn();                    
         }
-        else
-        {
-            mapobj.zoomOut();        
-        }        
-    }    
-    return false;                
-}          
-
-function LoadingImageLoad(mapObj)
-{
-   mapObj.img.src = mapObj.loadingImage.src;                                
-}
-    
-function mapLoad(handlerUrl, hfxid, hfyid, hfzid, img, mapid, epid, dcrs, coc)
-{
-    var evtpnl = document.getElementById(epid);  
-    var index = IndexOfMapObject(mapObjectsArray, evtpnl);
-    if(index < 0)
-    {        
-        var hfx = document.getElementById(hfxid);
-        var hfy = document.getElementById(hfyid);
-        var hfz = document.getElementById(hfzid);  
-        var hfcoc = document.getElementById(coc);  
-        var mo = new MapObject(img,handlerUrl, mapid,hfx,hfy,hfz, evtpnl, dcrs, hfcoc);  
-        AddMapEventHandlers(mo);        
-        mapObjectsArray.push(mo);           
+        return (_6);
     }
-    //reset the image to top left
-    img.style.left = "0px";
-    img.style.top = "0px";
-    evtpnl.style.cursor = "pointer";
-    evtpnl.style.left = "0px";
-    evtpnl.style.top = "0px";                              
-    setOpacity(evtpnl, 1);        
-}
 
-function setupMap(epid, minz, maxz)
-{
-    var evtpnl = document.getElementById(epid);  
-    var index = IndexOfMapObject(mapObjectsArray, evtpnl);
-    if(index >= 0)
-    {                
-        mapobj = mapObjectsArray[index];     
-        mapobj.MinZoom = minz;
-        mapobj.MaxZoom = maxz;        
+    //returns the left,top position of an element
+    function findPos(obj) {
+        var curleft = curtop = 0;
+        if (obj.offsetParent) {
+            curleft = obj.offsetLeft;
+            curtop = obj.offsetTop;
+            while (obj = obj.offsetParent) {
+                curleft += obj.offsetLeft;
+                curtop += obj.offsetTop;
+            }
+        }
+        return [curleft, curtop];
     }
-    else
-    {
-        alert('no map found - check egismap.axd handler added to web.config');
-    }    
-}
+
+    function setOpacity(obj, op) {
+        obj.style.filter = "alpha(opacity=" + op + ")";
+        op = op / 100.0;
+        obj.style.opacity = "" + op;
+    }
 
 
-function setupMapEventHandlers(epid, zoomHandler, boundsHandler)
-{
-    var evtpnl = document.getElementById(epid);  
-    var index = IndexOfMapObject(mapObjectsArray, evtpnl);
-    if(index >= 0)
-    {                
-        mapobj = mapObjectsArray[index];     
-        if(zoomHandler != null)
-        {
-            mapobj.ZoomChangedEvent.subscribe(zoomHandler, mapobj);                    
+    function GetXmlHttpObject() {
+        var xmlHttp = null;
+        try {
+            // Firefox, Opera 8.0+, Safari
+            xmlHttp = new XMLHttpRequest();
         }
-        if(boundsHandler != null)
-        {
-            mapobj.BoundsChangedEvent.subscribe(boundsHandler, mapobj);                               
+        catch (e) {
+            // Internet Explorer
+            try {
+                xmlHttp = new ActiveXObject("Msxml2.XMLHTTP");
+            }
+            catch (e) {
+                xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
+            }
         }
-    }        
-}
+        return xmlHttp;
+    };
 
-function GetMap(index)
-{
-    if(mapObjectsArray==null) return null;
-    if(index >= mapObjectsArray.length) return null;
-    return mapObjectsArray[index];    
-}
+    this.panLeft = function (imgid) {
+        if (mapObjectsArray.length > 0) {
+            mapObjectsArray[0].panLeft();
+        }
+        return false;
+    };
+
+    this.panRight = function (imgid) {
+        if (mapObjectsArray.length > 0) {
+            mapObjectsArray[0].panRight();
+        }
+        return false;
+    };
+
+    this.panUp = function (imgid) {
+        if (mapObjectsArray.length > 0) {
+            mapObjectsArray[0].panUp();
+        }
+        return false;
+    };
+
+    this.panDown = function (imgid) {
+        if (mapObjectsArray.length > 0) {
+            mapObjectsArray[0].panDown();
+        }
+        return false;
+    };
+
+    this.zoomIn = function (imgid) {
+        if (mapObjectsArray.length > 0) {
+            mapObjectsArray[0].zoomIn();
+        }
+        return false;
+    };
+
+    this.zoomOut = function (imgid) {
+        if (mapObjectsArray.length > 0) {
+            mapObjectsArray[0].zoomOut();
+        }
+        return false;
+    };
+
+
+    function refreshMap(img, handlerUrl, px, py, z, mapid) {
+        img.src = handlerUrl + "?w=" + img.width + "&h=" + img.height + "&x=" + px + "&y=" + py + "&zoom=" + z + "&mapid=" + mapid;
+    }
+
+    function IndexOfMapObject(arr, evtPnl) {
+        if (arr == null) return (-1);
+        for (var i = 0; i < arr.length; i++) {
+            if (arr[i].evtpnl == evtPnl || arr[i].img == evtPnl || arr[i].loadingImage == evtPnl) return i;
+        }
+        return (-1);
+    }
+
+
+
+    function MapObject(img, handlerUrl, mapid, hfx, hfy, hfz, evtpnl, dcrs, coc) {
+        this.img = img;
+        this.handlerUrl = handlerUrl;
+        this.mapId = mapid;
+        this.hfx = hfx;
+        this.hfy = hfy;
+        this.hfz = hfz;
+        this.mouseIsDown = false;
+        this.offsetX = 0;
+        this.offsetY = 0;
+        this.evtpnl = evtpnl;
+        this.parentColor = img.parentNode.style.backgroundColor;
+        if (this.parentColor == null) this.parentColor = "";
+
+        this.loadingImage = new Image(); document.createElement("img");
+        this.loadingImage.id = "li_" + img.id;
+        this.dcrs = dcrs;
+        this.coc = coc;
+
+        this.MinZoom = Number.MIN_VALUE;
+        this.MaxZoom = Number.MAX_VALUE;
+
+        this.ZoomChangedEvent = new YAHOO.util.CustomEvent("ZoomChanged", this);
+        this.BoundsChangedEvent = new YAHOO.util.CustomEvent("BoundsChanged", this);
+        this.TooltipTimer = setInterval("egis.GlobalTooltipTimer('" + this.evtpnl + "')", 100);
+        this.ShowTooltip = false;
+        var d = new Date();
+        this.ShowTooltipTime = d.getTime() + 2000;
+        this.TooltipX = 0;
+        this.TooltipY = 0;
+        this.TooltipPanel = this.CreateTooltipPanel();
+        var bgUrl = this.img.parentNode.parentNode.childNodes[this.img.parentNode.parentNode.childNodes.length - 2].value;
+        this.TooltipPanel.style.backgroundImage = 'url(' + bgUrl + ')';
+        this.TooltipPanel.style.backgroundRepeat = "no-repeat";
+        this.img.parentNode.appendChild(this.TooltipPanel);
+        this.LastTooltipDisplayTime = d.getTime();
+        this.refreshMap();
+    }
+
+
+    MapObject.prototype.CreateTooltipPanel = function () {
+        var TooltipPanel = document.createElement("div");
+        TooltipPanel.className = "sfmaptooltip";
+        TooltipPanel.style.width = "190px";
+        TooltipPanel.style.left = "-50px";
+        TooltipPanel.style.top = "-100px";
+        TooltipPanel.style.height = "110px";
+        TooltipPanel.style.position = "absolute";
+        TooltipPanel.style.padding = "25px";
+        TooltipPanel.style.visibility = "hidden";
+        TooltipPanel.style.backgroundRepeat = "no-repeat";
+        TooltipPanel.style.zIndex = 99999;
+        TooltipPanel.style.overflow = "hidden";
+        TooltipPanel.style.verticalAlign = "middle";
+        return TooltipPanel;
+    }
+
+    MapObject.prototype.DisplayTooltip = function (text, x, y) {
+        this.TooltipPanel.innerHTML = text;
+        this.TooltipPanel.style.left = (x + 5) + "px";
+        this.TooltipPanel.style.top = (y + 5) + "px";
+        this.TooltipPanel.style.visibility = "visible";
+        var d = new Date();
+        this.LastTooltipDisplayTime = d.getTime();
+    }
+
+    MapObject.prototype.HideTooltip = function () {
+        this.TooltipPanel.style.visibility = "hidden";
+    }
+
+    this.GlobalTooltipTimer = function (mapid) {
+        var index = IndexOfMapObject(mapObjectsArray, mapid);
+        if (index >= 0) {
+            mapObjectsArray[index].TooltipTimerElapsed();
+        }
+    };
+
+
+    MapObject.prototype.TooltipTimerElapsed = function () {
+        var d = new Date();
+        if (this.ShowTooltip && d.getTime() >= this.ShowTooltipTime) {
+            this.SendTooltipRequest(this.handlerUrl, this.TooltipX, this.TooltipY, this.hfz.value, this.mapId);
+        }
+    }
+
+
+    MapObject.prototype.SendTooltipRequest = function (handlerUrl, px, py, zoom, mapId) {
+        var AjaxObj = GetXmlHttpObject();
+        if (AjaxObj == null) {
+            alert("Your browser does not support AJAX!");
+            return;
+        }
+        var url = handlerUrl + "?getshape=true&x=" + px + "&y=" + py + "&zoom=" + zoom + "&mapid=" + encodeURIComponent(mapId) + "&dcrs=" + this.dcrs;
+
+        var mapobj = this;
+        AjaxObj.onreadystatechange = function () {
+            mapobj.AjaxStateChanged(AjaxObj)
+        }
+        AjaxObj.open("GET", url, true);
+        AjaxObj.send(null);
+    }
+
+
+    MapObject.prototype.AjaxStateChanged = function (AjaxObj) {
+        if (AjaxObj == null) return;
+
+        if (AjaxObj.readyState == 4) {
+            var lines = AjaxObj.responseText.split('\n');
+            if (lines[0] == 'true') {
+                var point = lines[1].split(',');
+                var x = 1.0 * point[0];
+                var y = 1.0 * point[1];
+                var mousePos = this.GisPointToMousePos(x, y);
+                this.DisplayTooltip(lines[2], mousePos[0], mousePos[1]);
+            }
+            else {
+                this.HideTooltip();
+            }
+        }
+    }
+
+    MapObject.prototype.FireZoomChangedEvent = function () {
+        this.ZoomChangedEvent.fire(this.hfz.value);
+    }
+
+    MapObject.prototype.FireBoundsChangedEvent = function () {
+        var scale = 1.0 / (1.0 * this.hfz.value);
+        var px = (1.0 * this.hfx.value);
+        var py = (1.0 * this.hfy.value);
+        var w = this.img.width * scale;
+        var h = this.img.height * scale;
+        this.BoundsChangedEvent.fire(px - (w * 0.5), py - (h * 0.50), px + (w * 0.5), py + (h * 0.5));
+    }
+
+    MapObject.prototype.restoreParent = function () {
+        this.img.parentNode.style.backgroundColor = this.parentColor;
+    }
+
+    MapObject.prototype.dimParent = function () {
+        this.img.parentNode.style.backgroundColor = "#606060";
+    }
+
+    MapObject.prototype.toString = function () {
+        return "MapObject";
+    }
+
+    MapObject.prototype.zoomOut = function () {
+        var z = this.hfz.value * 1;
+        z *= 0.5;
+        if (z > this.MinZoom) {
+            this.hfz.value = z;
+            this.refreshMap();
+            this.HideTooltip();
+            this.FireZoomChangedEvent();
+        }
+    }
+
+    MapObject.prototype.zoomIn = function () {
+        var z = this.hfz.value * 1;
+        z *= 2;
+        if (z < this.MaxZoom) {
+            this.hfz.value = z;
+            this.refreshMap();
+            this.HideTooltip();
+            this.FireZoomChangedEvent();
+        }
+    }
+
+    MapObject.prototype.panLeft = function () {
+        var x = this.hfx.value * 1;
+        x -= ((this.img.width / 4) / (this.hfz.value));
+        this.hfx.value = x;
+        this.HideTooltip();
+        this.refreshMap();
+
+        this.FireBoundsChangedEvent();
+    }
+
+    MapObject.prototype.panRight = function () {
+        var x = this.hfx.value * 1;
+        x += ((this.img.width / 4) / (this.hfz.value));
+        this.hfx.value = x;
+        this.refreshMap();
+        this.HideTooltip();
+        this.FireBoundsChangedEvent();
+    }
+
+    MapObject.prototype.panUp = function () {
+        var y = this.hfy.value * 1;
+        y += ((this.img.height / 4) / (1.0 * this.hfz.value));
+        this.hfy.value = y;
+        this.refreshMap();
+        this.HideTooltip();
+        this.FireBoundsChangedEvent();
+    }
+
+    MapObject.prototype.panDown = function () {
+        var y = this.hfy.value * 1;
+        y -= ((this.img.height / 4) / (1.0 * this.hfz.value));
+        this.hfy.value = y;
+        this.refreshMap();
+        this.HideTooltip();
+        this.FireBoundsChangedEvent();
+    }
+
+    MapObject.prototype.MousePosToGisPoint = function (x, y) {
+        var scale = 1.0 / (1.0 * this.hfz.value);
+        var w = this.img.width;
+        var h = this.img.height;
+        var dx = ((w / 2) - 1.0 * x) * scale;
+        var dy = ((h / 2) - 1.0 * y) * scale;
+        return [(1.0 * this.hfx.value) - dx, (1.0 * this.hfy.value) + dy];
+    }
+
+    MapObject.prototype.GisPointToMousePos = function (x, y) {
+        var scale = (1.0 * this.hfz.value);
+        var dx = x - (1.0 * this.hfx.value);
+        var dy = (1.0 * this.hfy.value) - y;
+        var w = this.img.width;
+        var h = this.img.height;
+        dx = dx * scale;
+        dy = dy * scale;
+        return [Math.round((w / 2) + dx), Math.round((h / 2) + dy)];
+    }
+
+    MapObject.prototype.refreshMap = function () {
+        this.evtpnl.style.cursor = "wait";
+        var left = this.img.style.left;
+        left = left.substring(0, left.length - 2);
+        var top = this.img.style.top;
+        top = top.substring(0, top.length - 2);
+        var scale = 1.0 / (1.0 * this.hfz.value);
+        var dx = (1.0 * left) * scale;
+        var dy = (1.0 * top) * scale;
+        px = (1.0 * this.hfx.value) - dx;
+        py = (1.0 * this.hfy.value) + dy;
+        z = this.hfz.value;
+        this.hfy.value = py;
+        this.hfx.value = px;
+        var w = this.img.width;
+        var h = this.img.height;
+        setOpacity(this.evtpnl, 60);
+        var url = this.handlerUrl + "?w=" + w + "&h=" + h + "&x=" + px + "&y=" + py + "&zoom=" + z + "&mapid=" + encodeURIComponent(this.mapId) + "&dcrs=" + this.dcrs;
+        if (this.coc != null && this.coc.value.toLowerCase() != 'true') {
+            var d = new Date();
+            url = url + "&coc=" + d.getTime();
+        }
+        this.loadingImage.src = url;
+    }
+
+
+    function AddMapEventHandlers(mapObj) {
+        if (window.addEventListener) {
+            mapObj.evtpnl.addEventListener("mousedown", MapMouseDown, true);
+            mapObj.evtpnl.addEventListener("mouseup", MapMouseUp, true);
+            mapObj.evtpnl.addEventListener("mousemove", MapMouseMove, true);
+            mapObj.evtpnl.addEventListener("mouseout", MapMouseOut, false);
+            mapObj.evtpnl.addEventListener("DOMMouseScroll", MapMouseWheel, false);
+            mapObj.evtpnl.addEventListener("mousewheel", MapMouseWheel, false);
+            mapObj.loadingImage.addEventListener("load", function () { LoadingImageLoad(mapObj); }, false);
+        }
+        else {
+            mapObj.evtpnl.attachEvent("onmousedown", MapMouseDown);
+            mapObj.evtpnl.attachEvent("onmouseup", MapMouseUp);
+            document.attachEvent("onmousemove", MapMouseMove);
+            mapObj.evtpnl.attachEvent("onmouseout", MapMouseOut);
+            mapObj.evtpnl.attachEvent("onmousewheel", MapMouseWheel);
+            mapObj.loadingImage.attachEvent("onload", function () { LoadingImageLoad(mapObj); });
+        }
+    }
+
+
+    function GetEventTarget(evt) {
+        var target;
+        if (evt["srcElement"]) {
+            target = evt["srcElement"];
+        }
+        else {
+            target = evt["target"];
+        }
+        return target;
+    }
+
+    function GetMouseOffset(evt, target) {
+        var parentPos = findPos(target.parentNode);
+        var left = 0;
+        var top = 0;
+        if (evt.pageX || evt.pageY) {
+            left = evt.pageX - parentPos[0];
+            top = evt.pageY - parentPos[1];
+        }
+        else if (evt.clientX || evt.clientY) {
+            left = evt.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - parentPos[0];
+            top = evt.clientY + document.body.scrollTop + document.documentElement.scrollTop - parentPos[1];
+        }
+        return [left, top];
+    }
+
+
+    function MapMouseDown(evt) {
+        var target = GetEventTarget(evt);
+        var index = IndexOfMapObject(mapObjectsArray, target);
+        if (index >= 0) {
+            mapobj = mapObjectsArray[index];
+            var mousePos = GetMouseOffset(evt, mapobj.img);
+            var left = mapobj.img.style.left;
+            left = left.substring(0, left.length - 2);
+            var top = mapobj.img.style.top;
+            top = top.substring(0, top.length - 2);
+            mapobj.mouseIsDown = true;
+            mapobj.offsetX = mousePos[0] - (1 * left);
+            mapobj.offsetY = mousePos[1] - (1 * top);
+            mapobj.ShowTooltip = false;
+            mapobj.HideTooltip();
+        }
+        if (evt.preventDefault) {
+            evt.preventDefault();
+        }
+        if (evt.stopPropagation) {
+            evt.stopPropagation();
+        }
+        if (window.event) {
+            window.event.cancelBubble = true;
+        }
+        return false;
+    }
+
+    function MapMouseUp(evt) {
+        var target = GetEventTarget(evt);
+        var index = IndexOfMapObject(mapObjectsArray, target);
+        if (index >= 0) {
+            mapobj = mapObjectsArray[index];
+            if (mapobj.mouseIsDown) {
+                mapobj.mouseIsDown = false;
+                mapobj.refreshMap();
+                mapobj.FireBoundsChangedEvent();
+                mapobj.ShowTooltip = true;
+                var d = new Date();
+                mapobj.ShowTooltipTime = d.getTime() + 2000;
+            }
+        }
+        if (evt.preventDefault) {
+            evt.preventDefault();
+        }
+        if (evt.stopPropagation) {
+            evt.stopPropagation();
+        }
+        if (window.event) {
+            window.event.cancelBubble = true;
+        }
+        return false;
+    }
+
+    function MapMouseOut(evt) {
+        var target = GetEventTarget(evt);
+        var index = IndexOfMapObject(mapObjectsArray, target);
+        if (index >= 0) {
+            mapobj = mapObjectsArray[index];
+            if (mapobj.mouseIsDown) {
+                mapobj.mouseIsDown = false;
+                mapobj.refreshMap();
+                mapobj.FireBoundsChangedEvent();
+            }
+            mapobj.ShowTooltip = false;
+            mapobj.HideTooltip();
+        }
+        return false;
+    }
+
+
+    var lmx = -1;
+    var lmy = -1;
+
+    function MapMouseMove(evt) {
+        var target = GetEventTarget(evt);
+        var index = IndexOfMapObject(mapObjectsArray, target);
+        if (index >= 0) {
+            var d = new Date();
+            mapobj = mapObjectsArray[index];
+            if (mapobj.mouseIsDown) {
+                var mousePos = GetMouseOffset(evt, mapobj.img);
+                var x = mousePos[0] - mapobj.offsetX;
+                var y = mousePos[1] - mapobj.offsetY;
+                mapobj.img.style.left = x + "px";
+                mapobj.img.style.top = y + "px";
+            }
+            else {
+                var mousePos = GetMouseOffset(evt, mapobj.img);
+                if (mousePos[0] != lmx && mousePos[1] != lmy) {
+                    lmy = mousePos[0];
+                    lmx = mousePos[1];
+                    mapobj.ShowTooltip = true;
+                    mapobj.ShowTooltipTime = d.getTime() + 200;
+                    var gisPoint = mapobj.MousePosToGisPoint(mousePos[0], mousePos[1]);
+                    mapobj.TooltipX = gisPoint[0];
+                    mapobj.TooltipY = gisPoint[1];
+                }
+            }
+
+            if (d.getTime() > (mapobj.LastTooltipDisplayTime + 500)) {
+                mapobj.HideTooltip();
+            }
+        }
+        if (evt.preventDefault) {
+            evt.preventDefault();
+        }
+        if (evt.stopPropagation) {
+            evt.stopPropagation();
+        }
+        if (window.event) {
+            window.event.cancelBubble = true;
+        }
+        return false;
+    }
+
+    function MapMouseWheel(evt) {
+        var target = GetEventTarget(evt);
+        var index = IndexOfMapObject(mapObjectsArray, target);
+        if (index >= 0) {
+            var wheelData = evt.detail ? evt.detail * -1 : evt.wheelDelta / 40;
+            mapobj = mapObjectsArray[index];
+            if (wheelData > 0) {
+                mapobj.zoomIn();
+            }
+            else {
+                mapobj.zoomOut();
+            }
+        }
+        return false;
+    }
+
+    function LoadingImageLoad(mapObj) {
+        mapObj.img.src = mapObj.loadingImage.src;
+    };
+
+    this.mapLoad = function (handlerUrl, hfxid, hfyid, hfzid, img, mapid, epid, dcrs, coc) {
+        var evtpnl = document.getElementById(epid);
+        var index = IndexOfMapObject(mapObjectsArray, evtpnl);
+        if (index < 0) {
+            var hfx = document.getElementById(hfxid);
+            var hfy = document.getElementById(hfyid);
+            var hfz = document.getElementById(hfzid);
+            var hfcoc = document.getElementById(coc);
+            var mo = new MapObject(img, handlerUrl, mapid, hfx, hfy, hfz, evtpnl, dcrs, hfcoc);
+            AddMapEventHandlers(mo);
+            mapObjectsArray.push(mo);
+        }
+        //reset the image to top left
+        img.style.left = "0px";
+        img.style.top = "0px";
+        evtpnl.style.cursor = "pointer";
+        evtpnl.style.left = "0px";
+        evtpnl.style.top = "0px";
+        setOpacity(evtpnl, 1);
+    };
+
+    this.setupMap = function (epid, minz, maxz) {
+        var evtpnl = document.getElementById(epid);
+        var index = IndexOfMapObject(mapObjectsArray, evtpnl);
+        if (index >= 0) {
+            mapobj = mapObjectsArray[index];
+            mapobj.MinZoom = minz;
+            mapobj.MaxZoom = maxz;
+        }
+        else {
+            alert('no map found - check egismap.axd handler added to web.config');
+        }
+    };
+
+
+    this.setupMapEventHandlers = function (epid, zoomHandler, boundsHandler) {
+        var evtpnl = document.getElementById(epid);
+        var index = IndexOfMapObject(mapObjectsArray, evtpnl);
+        if (index >= 0) {
+            mapobj = mapObjectsArray[index];
+            if (zoomHandler != null) {
+                mapobj.ZoomChangedEvent.subscribe(zoomHandler, mapobj);
+            }
+            if (boundsHandler != null) {
+                mapobj.BoundsChangedEvent.subscribe(boundsHandler, mapobj);
+            }
+        }
+    };
+
+    function GetMap(index) {
+        if (mapObjectsArray == null) return null;
+        if (index >= mapObjectsArray.length) return null;
+        return mapObjectsArray[index];
+    };
+
+};

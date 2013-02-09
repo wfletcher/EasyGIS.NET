@@ -333,7 +333,7 @@ namespace EGIS.Web.Controls
             csm.RegisterClientScriptResource(this.GetType(), egisScriipt);    
         
             string mapId = Page.ResolveUrl(ProjectName);
-            string onloadStr = "mapLoad('" + HttpHandlerName + "' , '" + CenterXFieldClientId + "','" + CenterYFieldClientId + "','" + ZoomFieldClientId + "',this,'" + mapId +
+            string onloadStr = "egis.mapLoad('" + HttpHandlerName + "' , '" + CenterXFieldClientId + "','" + CenterYFieldClientId + "','" + ZoomFieldClientId + "',this,'" + mapId +
                 "','" + this.eventPanel.ClientID + "','" + this.DCRSSessionKey + "','" + this.CacheOnClientFieldClientId + "');";
             
             gisImage.Attributes["onload"] = onloadStr;
@@ -563,7 +563,7 @@ namespace EGIS.Web.Controls
         private void RenderJS(HtmlTextWriter writer)
         {
             //add init function            
-            string js = "function initMap(){setupMap('" + eventPanel.ClientID + "'," + this.MinZoomLevel + "," + MaxZoomLevel + ");";
+            string js = "function initMap(){egis.setupMap('" + eventPanel.ClientID + "'," + this.MinZoomLevel + "," + MaxZoomLevel + ");";
             string clientZoomChanged = this.OnClientZoomChanged;            
             string zoomFunction = "null";
             if (clientZoomChanged != null)
@@ -579,7 +579,7 @@ namespace EGIS.Web.Controls
                 boundsFunction = clientBoundsChanged;
             }
 
-            js += "setupMapEventHandlers('" + eventPanel.ClientID + "'," + zoomFunction + "," + boundsFunction + ");";
+            js += "egis.setupMapEventHandlers('" + eventPanel.ClientID + "'," + zoomFunction + "," + boundsFunction + ");";
 
             js += "}";
 
