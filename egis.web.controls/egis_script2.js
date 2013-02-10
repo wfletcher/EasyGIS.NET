@@ -57,11 +57,11 @@ var egis = new function () {
 
     function Debug(msg) {
 
-        //        if (window.console) {
-        //            if (msg != null) {
-        //                window.console.log(msg.toString());
-        //            }
-        //        }
+//        if (window.console) {
+//            if (msg != null) {
+//                window.console.log(msg.toString());
+//            }
+//        }
     };
 
     var _mapObject = null;
@@ -1123,6 +1123,7 @@ var egis = new function () {
         var evtpnl = document.getElementById(epid);
         if (_mapObject == null) {
             //var hfcoc = document.getElementById(coc);
+            Debug(handlerUrl);
             _mapObject = new MapObject(handlerUrl, mapid, lon, lat, zoomLevel, evtpnl, dcrs, cacheOnClient);
             AddMapEventHandlers(_mapObject);
             _mapObject.MinZoom = minz;
