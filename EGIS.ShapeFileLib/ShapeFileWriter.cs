@@ -91,7 +91,7 @@ namespace EGIS.ShapeFileLib
     /// <seealso cref="AddRecord"/>
     /// <seealso cref="Close"/>
     [ObfuscationAttribute(Exclude = true, ApplyToMembers = true)]
-    public abstract class ShapeFileWriter
+    public abstract class ShapeFileWriter : IDisposable
     {
 
         private string baseDirectory;
@@ -147,10 +147,13 @@ namespace EGIS.ShapeFileLib
         /// Destructor
         /// </summary>
         ~ShapeFileWriter()
-        {            
-            if (this.indexStream != null) indexStream.Close();
-            if (this.dbfStream != null) dbfStream.Close();
-            if (this.shapeStream != null) shapeStream.Close();
+        {
+            try
+            {
+                Dispose(false);
+            }
+            catch { }
+            
         }
 
 
@@ -468,7 +471,7 @@ namespace EGIS.ShapeFileLib
             }
             finally
             {
-                indexStream.Close();
+                indexStream.Close();                
             }
         }
 
@@ -487,7 +490,7 @@ namespace EGIS.ShapeFileLib
             }
             finally
             {
-                dbfStream.Close();
+                dbfStream.Close();                
             }
 
         }
@@ -643,9 +646,9 @@ namespace EGIS.ShapeFileLib
                     throw new ArgumentException("Unknown ShapeType");
             }        
         }
-        
-        
-        
+
+
+        private bool closed = false;
      
         /// <summary>
         /// Updates the headers inside the individual shapefile files and closes any used streams.    
@@ -657,11 +660,57 @@ namespace EGIS.ShapeFileLib
         /// </remarks>
         public void Close()
         {
-            CloseIndexFile();
-            CloseShapeFile();
-            CloseDbfFile();            
+            if (!closed)
+            {
+                try
+                {
+                    CloseIndexFile();                    
+                }
+                finally
+                {                    
+                    try
+                    {
+                        CloseShapeFile();
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            CloseDbfFile();
+                        }
+                        finally
+                        {
+                            closed = true;
+                        }
+                    }                                        
+                }
+            }
         }
-        
+
+
+        #region IDisposable Members
+
+        /// <summary>
+        /// Releases all resources used by the DbfWriter
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private bool disposed = false;
+
+        private void Dispose(bool disposing)
+        {
+            if (!disposed) //dispose managed resources
+            {                                    
+                if(disposing) Close();
+                disposed = true;
+            }
+        }
+
+        #endregion
         
         
         //Used for padding field data with spaces if neccessary
