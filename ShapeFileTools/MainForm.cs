@@ -35,6 +35,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Xml;
 using EGIS.ShapeFileLib;
+using System.Drawing.Printing;
 
 namespace egis
 {
@@ -872,8 +873,7 @@ namespace egis
         private void sfMap1_MouseMove(object sender, MouseEventArgs e)
         {
             PointD pt = sfMap1.PixelCoordToGisPoint(new Point(e.X, e.Y));
-
-            string msg = string.Format("[{0:0.0000},{1:0.0000}]", new object[] { pt.X, pt.Y});
+            string msg = string.Format("[{0:0.0000},{1:0.0000}]", new object[] { pt.X, pt.Y}); 
             tsLblMapMousePos.Text = msg;            
         }
         
@@ -1137,6 +1137,68 @@ namespace egis
         {
             Console.Out.WriteLine("records changed");
             
+        }
+
+        private void tsLblMapMousePos_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void printToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            PrintDocument pd = new PrintDocument();                        
+            pd.PrintPage += new PrintPageEventHandler(pd_PrintPage);
+            PrintDialog ppd = new PrintDialog();
+            try
+            {
+                pd.DefaultPageSettings.Landscape = true;
+                ppd.Document = pd;
+                if (ppd.ShowDialog(this) == DialogResult.OK)
+                {
+                    pd.Print();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Printing Error", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1);
+            }
+            finally
+            {
+                pd.Dispose();
+                ppd.Dispose();
+            }
+        }
+
+       
+        void pd_PrintPage(object sender, PrintPageEventArgs e)
+        {
+            //save the current Render Quality settings
+            RenderQuality currentRenderQuality = ShapeFile.RenderQuality;
+            try
+            {
+                //printing does not render correctly if quality is not high
+                ShapeFile.RenderQuality = RenderQuality.High;
+                Graphics g = e.Graphics;
+                g.SetClip(e.MarginBounds);
+                g.TranslateTransform(e.MarginBounds.Left, e.MarginBounds.Top);
+                g.Clear(sfMap1.MapBackColor);
+                //calculate scale to ensure the map fills the printer page
+                double scale = sfMap1.ZoomLevel * e.MarginBounds.Width / sfMap1.ClientSize.Width;
+                PointD centre = sfMap1.CentrePoint2D;
+                //CentrePoint2D always returns coorinates in lat/lon check if mercator projection is used and transform if neccessary
+                if (sfMap1.UseMercatorProjection) centre = ShapeFile.LatLongToProjection(centre);
+                for (int n = 0; n < sfMap1.ShapeFileCount; ++n)
+                {
+                    sfMap1[n].Render(g, e.MarginBounds.Size, centre, scale, sfMap1.UseMercatorProjection ? ProjectionType.Mercator : ProjectionType.None);
+                }
+                g.ResetTransform();
+                //g.DrawRectangle(Pens.Red, e.MarginBounds);
+                e.HasMorePages = false;
+            }
+            finally
+            {
+                ShapeFile.RenderQuality = currentRenderQuality;
+            }
         }
 
 

@@ -32,17 +32,18 @@ namespace egis
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.miNewProject = new System.Windows.Forms.ToolStripMenuItem();
             this.newProjectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.miOpenProject = new System.Windows.Forms.ToolStripMenuItem();
+            this.recentProjectsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
+            this.miOpenShapeFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.miSaveProject = new System.Windows.Forms.ToolStripMenuItem();
             this.saveProjectAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.recentProjectsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
-            this.miOpenShapeFile = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
             this.exportProjectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
             this.saveMapImageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator11 = new System.Windows.Forms.ToolStripSeparator();
+            this.printToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.miMapBackgroundColor = new System.Windows.Forms.ToolStripMenuItem();
             this.miMercatorProjection = new System.Windows.Forms.ToolStripMenuItem();
@@ -115,17 +116,18 @@ namespace egis
             // 
             this.miNewProject.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.newProjectToolStripMenuItem,
-            this.toolStripSeparator5,
             this.miOpenProject,
+            this.recentProjectsMenuItem,
+            this.toolStripSeparator5,
+            this.miOpenShapeFile,
+            this.toolStripSeparator4,
             this.miSaveProject,
             this.saveProjectAsToolStripMenuItem,
-            this.recentProjectsMenuItem,
-            this.toolStripSeparator4,
-            this.miOpenShapeFile,
-            this.toolStripSeparator6,
             this.exportProjectToolStripMenuItem,
             this.toolStripSeparator7,
-            this.saveMapImageToolStripMenuItem});
+            this.saveMapImageToolStripMenuItem,
+            this.toolStripSeparator11,
+            this.printToolStripMenuItem});
             this.miNewProject.Name = "miNewProject";
             this.miNewProject.Size = new System.Drawing.Size(37, 20);
             this.miNewProject.Text = "File";
@@ -133,77 +135,84 @@ namespace egis
             // newProjectToolStripMenuItem
             // 
             this.newProjectToolStripMenuItem.Name = "newProjectToolStripMenuItem";
-            this.newProjectToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+            this.newProjectToolStripMenuItem.Size = new System.Drawing.Size(272, 22);
             this.newProjectToolStripMenuItem.Text = "New Project";
             this.newProjectToolStripMenuItem.Click += new System.EventHandler(this.newProjectToolStripMenuItem_Click);
-            // 
-            // toolStripSeparator5
-            // 
-            this.toolStripSeparator5.Name = "toolStripSeparator5";
-            this.toolStripSeparator5.Size = new System.Drawing.Size(158, 6);
             // 
             // miOpenProject
             // 
             this.miOpenProject.Name = "miOpenProject";
-            this.miOpenProject.Size = new System.Drawing.Size(161, 22);
+            this.miOpenProject.Size = new System.Drawing.Size(272, 22);
             this.miOpenProject.Text = "Open Project";
             this.miOpenProject.Click += new System.EventHandler(this.miOpenProject_Click);
+            // 
+            // recentProjectsMenuItem
+            // 
+            this.recentProjectsMenuItem.Name = "recentProjectsMenuItem";
+            this.recentProjectsMenuItem.Size = new System.Drawing.Size(272, 22);
+            this.recentProjectsMenuItem.Text = "Recent Projects";
+            // 
+            // toolStripSeparator5
+            // 
+            this.toolStripSeparator5.Name = "toolStripSeparator5";
+            this.toolStripSeparator5.Size = new System.Drawing.Size(269, 6);
+            // 
+            // miOpenShapeFile
+            // 
+            this.miOpenShapeFile.Name = "miOpenShapeFile";
+            this.miOpenShapeFile.Size = new System.Drawing.Size(272, 22);
+            this.miOpenShapeFile.Text = "Add Shape File";
+            this.miOpenShapeFile.Click += new System.EventHandler(this.miOpenShapeFile_Click);
+            // 
+            // toolStripSeparator4
+            // 
+            this.toolStripSeparator4.Name = "toolStripSeparator4";
+            this.toolStripSeparator4.Size = new System.Drawing.Size(269, 6);
             // 
             // miSaveProject
             // 
             this.miSaveProject.Name = "miSaveProject";
-            this.miSaveProject.Size = new System.Drawing.Size(161, 22);
+            this.miSaveProject.Size = new System.Drawing.Size(272, 22);
             this.miSaveProject.Text = "Save Project";
             this.miSaveProject.Click += new System.EventHandler(this.miSaveProject_Click);
             // 
             // saveProjectAsToolStripMenuItem
             // 
             this.saveProjectAsToolStripMenuItem.Name = "saveProjectAsToolStripMenuItem";
-            this.saveProjectAsToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+            this.saveProjectAsToolStripMenuItem.Size = new System.Drawing.Size(272, 22);
             this.saveProjectAsToolStripMenuItem.Text = "Save Project As";
             this.saveProjectAsToolStripMenuItem.Click += new System.EventHandler(this.saveProjectAsToolStripMenuItem_Click);
-            // 
-            // recentProjectsMenuItem
-            // 
-            this.recentProjectsMenuItem.Name = "recentProjectsMenuItem";
-            this.recentProjectsMenuItem.Size = new System.Drawing.Size(161, 22);
-            this.recentProjectsMenuItem.Text = "Recent Projects";
-            // 
-            // toolStripSeparator4
-            // 
-            this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(158, 6);
-            // 
-            // miOpenShapeFile
-            // 
-            this.miOpenShapeFile.Name = "miOpenShapeFile";
-            this.miOpenShapeFile.Size = new System.Drawing.Size(161, 22);
-            this.miOpenShapeFile.Text = "Add Shape File";
-            this.miOpenShapeFile.Click += new System.EventHandler(this.miOpenShapeFile_Click);
-            // 
-            // toolStripSeparator6
-            // 
-            this.toolStripSeparator6.Name = "toolStripSeparator6";
-            this.toolStripSeparator6.Size = new System.Drawing.Size(158, 6);
             // 
             // exportProjectToolStripMenuItem
             // 
             this.exportProjectToolStripMenuItem.Name = "exportProjectToolStripMenuItem";
-            this.exportProjectToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
-            this.exportProjectToolStripMenuItem.Text = "Export Project";
+            this.exportProjectToolStripMenuItem.Size = new System.Drawing.Size(272, 22);
+            this.exportProjectToolStripMenuItem.Text = "Export Project (for use in web edition)";
             this.exportProjectToolStripMenuItem.Click += new System.EventHandler(this.exportProjectToolStripMenuItem_Click);
             // 
             // toolStripSeparator7
             // 
             this.toolStripSeparator7.Name = "toolStripSeparator7";
-            this.toolStripSeparator7.Size = new System.Drawing.Size(158, 6);
+            this.toolStripSeparator7.Size = new System.Drawing.Size(269, 6);
             // 
             // saveMapImageToolStripMenuItem
             // 
             this.saveMapImageToolStripMenuItem.Name = "saveMapImageToolStripMenuItem";
-            this.saveMapImageToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+            this.saveMapImageToolStripMenuItem.Size = new System.Drawing.Size(272, 22);
             this.saveMapImageToolStripMenuItem.Text = "Save Map Image";
             this.saveMapImageToolStripMenuItem.Click += new System.EventHandler(this.saveMapImageToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator11
+            // 
+            this.toolStripSeparator11.Name = "toolStripSeparator11";
+            this.toolStripSeparator11.Size = new System.Drawing.Size(269, 6);
+            // 
+            // printToolStripMenuItem
+            // 
+            this.printToolStripMenuItem.Name = "printToolStripMenuItem";
+            this.printToolStripMenuItem.Size = new System.Drawing.Size(272, 22);
+            this.printToolStripMenuItem.Text = "Print Map";
+            this.printToolStripMenuItem.Click += new System.EventHandler(this.printToolStripMenuItem_Click);
             // 
             // optionsToolStripMenuItem
             // 
@@ -251,14 +260,14 @@ namespace egis
             // highToolStripMenuItem
             // 
             this.highToolStripMenuItem.Name = "highToolStripMenuItem";
-            this.highToolStripMenuItem.Size = new System.Drawing.Size(100, 22);
+            this.highToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.highToolStripMenuItem.Text = "High";
             this.highToolStripMenuItem.Click += new System.EventHandler(this.highToolStripMenuItem_Click);
             // 
             // lowToolStripMenuItem
             // 
             this.lowToolStripMenuItem.Name = "lowToolStripMenuItem";
-            this.lowToolStripMenuItem.Size = new System.Drawing.Size(100, 22);
+            this.lowToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.lowToolStripMenuItem.Text = "Low";
             this.lowToolStripMenuItem.Click += new System.EventHandler(this.lowToolStripMenuItem_Click);
             // 
@@ -267,7 +276,7 @@ namespace egis
             this.autoToolStripMenuItem.Checked = true;
             this.autoToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.autoToolStripMenuItem.Name = "autoToolStripMenuItem";
-            this.autoToolStripMenuItem.Size = new System.Drawing.Size(100, 22);
+            this.autoToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.autoToolStripMenuItem.Text = "Auto";
             this.autoToolStripMenuItem.Click += new System.EventHandler(this.autoToolStripMenuItem_Click);
             // 
@@ -616,9 +625,10 @@ namespace egis
             this.tsLblMapMousePos.AutoSize = false;
             this.tsLblMapMousePos.Margin = new System.Windows.Forms.Padding(5, 3, 3, 2);
             this.tsLblMapMousePos.Name = "tsLblMapMousePos";
-            this.tsLblMapMousePos.Size = new System.Drawing.Size(150, 17);
+            this.tsLblMapMousePos.Size = new System.Drawing.Size(250, 17);
             this.tsLblMapMousePos.Text = "[0,0]";
             this.tsLblMapMousePos.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.tsLblMapMousePos.Click += new System.EventHandler(this.tsLblMapMousePos_Click);
             // 
             // mainProgressBar
             // 
@@ -761,7 +771,6 @@ namespace egis
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
         private System.Windows.Forms.ToolStripMenuItem saveProjectAsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem recentProjectsMenuItem;
-        private System.Windows.Forms.ToolStripSeparator toolStripSeparator6;
         private System.Windows.Forms.ToolStripMenuItem exportProjectToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem autoToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator7;
@@ -775,6 +784,8 @@ namespace egis
         private System.Windows.Forms.ToolStripButton tsBtnSelectRect;
         private System.Windows.Forms.ToolStripButton tsBtnSelectCircle;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator10;
+        private System.Windows.Forms.ToolStripMenuItem printToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator11;
     }
 }
 

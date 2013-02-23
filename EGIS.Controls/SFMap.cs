@@ -959,7 +959,6 @@ namespace EGIS.Controls
             }
             Graphics g = Graphics.FromImage(screenBuf);
             
-
             try
             {
                 g.Clear(MapBackColor);
@@ -967,7 +966,6 @@ namespace EGIS.Controls
                 {
                     sf.Render(g, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType);
                 }
-
             }
             finally
             {
