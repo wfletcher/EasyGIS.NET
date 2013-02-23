@@ -18,6 +18,10 @@
     <div>
         <asp:HyperLink ID="HyperLink3" runat="server" NavigateUrl="~/demos/TileDemo1.aspx">Tile Demo 1</asp:HyperLink> - Demo of using the TiledSFMap control in a webpage
     </div>
+
+    <div>
+        <asp:HyperLink ID="HyperLink7" runat="server" NavigateUrl="~/demos/TileDemo2.aspx">Tile Demo 2</asp:HyperLink> - Demo of Adding Markers to a map in a webpage
+    </div>
     
     <div>
         <asp:HyperLink ID="HyperLink4" runat="server" NavigateUrl="~/demos/BingMapsTest.html">Bing Maps Demo</asp:HyperLink> - Demo of overlaying tiles on Bing Maps
