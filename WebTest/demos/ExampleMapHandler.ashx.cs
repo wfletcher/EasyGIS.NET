@@ -95,7 +95,11 @@ namespace WebTest.demos
             string file = string.Format("{0}_{1}_{2}_{3}.png", new object[] { tileX, tileY, zoom, renderType });
             return System.IO.Path.Combine(cacheDirectory, file);
         }
-                       
+
+        protected override void OnBeginRequest(HttpContext context)
+        {
+            base.OnBeginRequest(context);
+        }
     }
 
 }

@@ -231,18 +231,25 @@ namespace EGIS.Web.Controls
         /// <param name="e"></param>
         protected override void OnPreRender(EventArgs e)
         {
-            if (this.eventPanel != null)
+            if (DesignMode == false)
             {
-                eventPanel.BackColor = Color.Black;
-                eventPanel.BackImageUrl = Page.ClientScript.GetWebResourceUrl(this.GetType(), "EGIS.Web.Controls.ajax-loader2.gif");
+                if (this.eventPanel != null)
+                {
+                    eventPanel.BackColor = Color.Black;
+                    eventPanel.BackImageUrl = Page.ClientScript.GetWebResourceUrl(this.GetType(), "EGIS.Web.Controls.ajax-loader2.gif");
+                }
+                this.CheckHiddenFieldsSet();
+
+                string pn = Page.ResolveUrl(ProjectName);
+
+                Page.Application[pn + "_CacheOnServer"] = CacheOnServer;
+                Page.Application[pn + "_ServerCacheDirectory"] = this.ServerCacheDirectoryUrl;
+
+                //register the script
+                string egisScript = ClientJSResouceName;
+                ClientScriptManager csm = this.Page.ClientScript;
+                csm.RegisterClientScriptResource(this.GetType(), egisScript);
             }
-            this.CheckHiddenFieldsSet();
-            
-            string pn = Page.ResolveUrl(ProjectName);
-
-            Page.Application[pn + "_CacheOnServer"] = CacheOnServer;
-            Page.Application[pn + "_ServerCacheDirectory"] = this.ServerCacheDirectoryUrl;
-
 
             base.OnPreRender(e);
         }
@@ -483,7 +490,9 @@ namespace EGIS.Web.Controls
 
             writer.RenderBeginTag(HtmlTextWriterTag.Script);
             writer.WriteLine(js);
-            writer.WriteLine("egis.AddWindowLoadEventHandler(initMap);");
+            //writer.WriteLine("egis.AddWindowLoadEventHandler(initMap);");
+            writer.WriteLine("initMap();");
+            
             writer.RenderEndTag();            
             
         }        
@@ -546,37 +555,41 @@ namespace EGIS.Web.Controls
         /// <param name="writer">The html writer.</param>
         protected virtual void RenderDesignTime(HtmlTextWriter writer)
         {
-            if (null == this.Page.Site)
-            {
-                writer.Write("Error");
-                return;
-            }
             
-            //set the width and height
-            if ((Unit.Empty != this.Width) || (Unit.Empty != this.Height))
-            {
-                if (Unit.Empty != this.Width)
+                if (null == this.Page.Site)
                 {
-                    writer.AddAttribute(HtmlTextWriterAttribute.Width, this.Width.ToString());
-                    if (this.cntrlPanel != null) cntrlPanel.Width = this.Width;
+                    writer.Write("Error");
+                    return;
                 }
-                if (Unit.Empty != this.Height)
-                {
-                    writer.AddAttribute(HtmlTextWriterAttribute.Height, this.Height.ToString());
-                    if (this.cntrlPanel != null) cntrlPanel.Height = this.Height;
-                }
-            }
-            else
-            {
-                writer.AddAttribute(HtmlTextWriterAttribute.Width, "150px");
-                writer.AddAttribute(HtmlTextWriterAttribute.Height, "100px");
-            }
 
-            writer.AddStyleAttribute(HtmlTextWriterStyle.BackgroundImage, Page.ClientScript.GetWebResourceUrl(this.GetType(), "EGIS.Web.Controls.globetsfm.gif"));
-            writer.AddStyleAttribute("background-repeat", "no-repeat");
-            writer.AddStyleAttribute("background-position", "center center");
+                //set the width and height
+                if ((Unit.Empty != this.Width) || (Unit.Empty != this.Height))
+                {
+                    if (Unit.Empty != this.Width)
+                    {
+                        writer.AddAttribute(HtmlTextWriterAttribute.Width, this.Width.ToString());
+                        if (this.cntrlPanel != null) cntrlPanel.Width = this.Width;
+                    }
+                    if (Unit.Empty != this.Height)
+                    {
+                        writer.AddAttribute(HtmlTextWriterAttribute.Height, this.Height.ToString());
+                        if (this.cntrlPanel != null) cntrlPanel.Height = this.Height;
+                    }
+                }
+                else
+                {
+                    writer.AddAttribute(HtmlTextWriterAttribute.Width, "150px");
+                    writer.AddAttribute(HtmlTextWriterAttribute.Height, "100px");
+                }
+
+                writer.AddStyleAttribute(HtmlTextWriterStyle.BackgroundImage, Page.ClientScript.GetWebResourceUrl(this.GetType(), "EGIS.Web.Controls.globetsfm.gif"));
+                writer.AddStyleAttribute("background-repeat", "no-repeat");
+                writer.AddStyleAttribute("background-position", "center center");
+
+                //RegisterHandlerInConfiguration();
+                writer.Write("Ensure that entry is made in HttpHandlers section of web.config");
             
-            RegisterHandlerInConfiguration();
+            
         }
 
         
@@ -867,7 +880,7 @@ namespace EGIS.Web.Controls
         {
             get
             {
-                return (string)ViewState["OnClientZoomChanged"];
+                return ViewState["OnClientZoomChanged"] as string;
             }
             set
             {
@@ -917,7 +930,7 @@ namespace EGIS.Web.Controls
         {
             get
             {
-                return (string)ViewState["OnClientBoundsChanged"];
+                return ViewState["OnClientBoundsChanged"] as string;
             }
             set
             {
@@ -1388,7 +1401,7 @@ namespace EGIS.Web.Controls
             string cacheDirectory = "";
             bool useCache = CacheOnServer(context, mapid, ref cacheDirectory);
             cacheDirectory = context.Server.MapPath("cache");
-            useCache = true;
+            //useCache = true;
             if(int.TryParse(context.Request["tx"], out tileX))
             {
                 if (int.TryParse(context.Request["ty"], out tileY))
@@ -1405,7 +1418,7 @@ namespace EGIS.Web.Controls
             
             if(cachePath == "") useCache = false;
 
-            System.Diagnostics.Debug.WriteLine(cachePath);
+            System.Diagnostics.Debug.WriteLine("TiledSFMap handler: " + cachePath);
 
             dcrsSessionKey = context.Request["dcrs"];
 

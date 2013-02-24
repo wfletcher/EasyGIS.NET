@@ -24,7 +24,7 @@ namespace EGIS.Web.Controls
         }
 
         public void ProcessRequest(HttpContext context)
-        {
+        {            
             OnBeginRequest(context);
             try
             {

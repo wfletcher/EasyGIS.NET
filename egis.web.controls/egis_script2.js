@@ -57,11 +57,11 @@ var egis = new function () {
 
     function Debug(msg) {
 
-//        if (window.console) {
-//            if (msg != null) {
-//                window.console.log(msg.toString());
-//            }
-//        }
+        if (window.console) {
+            if (msg != null) {
+                window.console.log(msg.toString());
+            }
+        }
     };
 
     var _mapObject = null;
@@ -231,7 +231,7 @@ var egis = new function () {
 
     this.zoomIn = function () {
         var mapobj = this.GetMap();
-        Debug(mapobj.Markers);
+        //Debug(mapobj.Markers);
 
         if (mapobj != null) {
             mapobj.zoomIn();
@@ -254,7 +254,7 @@ var egis = new function () {
         img.src = handlerUrl + "?w=" + img.width + "&h=" + img.height + "&x=" + px + "&y=" + py + "&zoom=" + z + "&mapid=" + mapid;
     };
 
-    function MapTile(idX, idY, zoomLevel, backgroundImage) {
+    function MapTile(idX, idY, zoomLevel, backgroundImage, _cacheOnClient) {
         this.IdX = idX;
         this.IdY = idY;
         this.ZoomLevel = zoomLevel;
@@ -269,6 +269,7 @@ var egis = new function () {
         this.Img.style.backgroundColor = "#dedede";
         this.Img.alt = "" + this.Img.id;
         this.LoadingPanel = this.CreateLoadingPanel(backgroundImage);
+        this.CacheOnClient = _cacheOnClient;
         this.Img.src = "";
     };
 
@@ -291,7 +292,11 @@ var egis = new function () {
 
     MapTile.prototype.LoadImage = function (handlerUrl, mapId, dcrs) {
         var url = handlerUrl + "?tx=" + this.IdX + "&ty=" + this.IdY + "&zoom=" + this.ZoomLevel + "&mapid=" + encodeURIComponent(mapId) + "&dcrs=" + dcrs + "&version=3";
-        Debug(url);
+        if (this.CacheOnClient == false) {
+            var d = new Date();
+            url = url + "&coc=" + d.getTime();
+        }
+        //Debug(url);
         this.Img.style.visibility = "hidden";
         this.LoadingPanel.style.visibility = "visible";
         if (this.IsSafari()) this.Img.src = ""; //only for safari
@@ -333,7 +338,7 @@ var egis = new function () {
     };
 
 
-    function TileCollection(handlerUrl, mapid, mapcenter, zoomLevel, mapPixWidth, mapPixHeight, evtpnl) {
+    function TileCollection(handlerUrl, mapid, mapcenter, zoomLevel, mapPixWidth, mapPixHeight, evtpnl, _cacheOnClient) {
         this.CountX = Math.ceil(mapPixWidth / 256.0) + 1;
         this.CountY = Math.ceil(mapPixHeight / 256.0) + 1;
         this.HandlerUrl = handlerUrl;
@@ -350,7 +355,7 @@ var egis = new function () {
             this.Tiles[x] = new Array(this.CountY);
             var dy = this.MapPixOffset[1];
             for (var y = 0; y < this.CountY; ++y) {
-                this.Tiles[x][y] = this.CreateTile(this.TileOffset[0] + x, this.TileOffset[1] + y, zoomLevel, dx, dy, evtpnl);
+                this.Tiles[x][y] = this.CreateTile(this.TileOffset[0] + x, this.TileOffset[1] + y, zoomLevel, dx, dy, evtpnl, _cacheOnClient);
                 dy += 256;
                 this.Tiles[x][y].LoadImage(this.HandlerUrl, this.MapId, "dcrs");
             }
@@ -358,7 +363,7 @@ var egis = new function () {
         }
     };
 
-    TileCollection.prototype.CreateTile = function (tilex, tiley, zoomLevel, pixOffX, pixOffY, evtpnl) {
+    TileCollection.prototype.CreateTile = function (tilex, tiley, zoomLevel, pixOffX, pixOffY, evtpnl, _cacheOnClient) {
         var backgroundImg;
         if (evtpnl.currentStyle) {
             //ie opera
@@ -369,7 +374,7 @@ var egis = new function () {
             backgroundImg = getComputedStyle(evtpnl, '').getPropertyValue('background-image');
         }
 
-        var tile = new MapTile(tilex, tiley, zoomLevel, backgroundImg);
+        var tile = new MapTile(tilex, tiley, zoomLevel, backgroundImg, _cacheOnClient);
         tile.Img.style.left = "" + pixOffX + "px";
         tile.Img.style.top = "" + pixOffY + "px";
         tile.LoadingPanel.style.left = tile.Img.style.left;
@@ -433,7 +438,7 @@ var egis = new function () {
     };
 
 
-    function MapObject(handlerUrl, mapid, _lon, _lat, _zoomLevel, evtpnl, dcrs, cacheOnClient) {
+    function MapObject(handlerUrl, mapid, _lon, _lat, _zoomLevel, evtpnl, dcrs, _cacheOnClient) {
         this.handlerUrl = handlerUrl;
         this.mapId = mapid;
         this.lon = _lon;
@@ -448,10 +453,15 @@ var egis = new function () {
 
         this.width = this.evtpnl.style.width.substring(0, this.evtpnl.style.width.length - 2);
         this.height = this.evtpnl.style.height.substring(0, this.evtpnl.style.height.length - 2);
-        Debug(this.width);
 
         this.dcrs = dcrs;
-        this.cacheOnClient = cacheOnClient;
+
+        if (_cacheOnClient != null && _cacheOnClient.toLowerCase() == 'true') {
+            this.CacheOnClient = true;
+        }
+        else {
+            this.CacheOnClient = false;
+        }
 
         this.MinZoom = Number.MIN_VALUE;
         this.MaxZoom = Number.MAX_VALUE;
@@ -466,17 +476,17 @@ var egis = new function () {
         this.TooltipY = 0;
         this.TooltipPanel = this.CreateTooltipPanel();
         var bgUrl = this.evtpnl.parentNode.parentNode.childNodes[this.evtpnl.parentNode.parentNode.childNodes.length - 2].value;
-        Debug(this.evtpnl.parentNode.parentNode.childNodes[this.evtpnl.parentNode.parentNode.childNodes.length - 2].id);
+        //Debug(this.evtpnl.parentNode.parentNode.childNodes[this.evtpnl.parentNode.parentNode.childNodes.length - 2].id);
         this.TooltipPanel.style.backgroundImage = 'url(' + bgUrl + ')';
         this.TooltipPanel.style.backgroundRepeat = "no-repeat";
         this.evtpnl.parentNode.appendChild(this.TooltipPanel);
         this.LastTooltipDisplayTime = d.getTime();
         this.LastKeydownTime = d.getTime();
-
-        this.MapTiles = new TileCollection(handlerUrl, mapid, [1.0 * this.lon, 1.0 * this.lat], this.zoomLevel/*GisUtil.ScaleToZoomLevel(1.0 * this.hfz.value)*/, this.width, this.height, this.evtpnl);
+        this.lastMouseDowntime = d.getTime();
+        this.MapTiles = new TileCollection(handlerUrl, mapid, [1.0 * this.lon, 1.0 * this.lat], this.zoomLevel/*GisUtil.ScaleToZoomLevel(1.0 * this.hfz.value)*/, this.width, this.height, this.evtpnl, this.CacheOnClient);
         this.refreshMap();
 
-        Debug(evtpnl.id);
+        //Debug(evtpnl.id);
     };
 
 
@@ -582,7 +592,7 @@ var egis = new function () {
 
         if (level > 0 && level < 32) {
 
-            if (level >= this.MinZoom && z <= this.MaxZoom) {
+            if (level >= this.MinZoom && level <= this.MaxZoom) {
                 this.zoomLevel = level;
                 fireZoomEvent = true;
             }
@@ -654,12 +664,12 @@ var egis = new function () {
     };
 
     MapObject.prototype.zoomIn = function () {
-        Debug("zoomLevel = " + this.zoomLevel);
+        //Debug("zoomLevel = " + this.zoomLevel);
         var z = (this.zoomLevel * 1) + 1; // this.hfz.value * 1;
         //z *= 2;
         if (z <= this.MaxZoom) {
             this.zoomLevel = z;
-            Debug("zoomLevel now = " + this.zoomLevel);
+            //Debug("zoomLevel now = " + this.zoomLevel);
             this.refreshMap();
             this.HideTooltip();
             this.FireZoomChangedEvent();
@@ -724,7 +734,7 @@ var egis = new function () {
     };
 
     MapObject.prototype.refreshMap = function () {
-        Debug("w:" + this.evtpnl.style.width + ", left:" + this.evtpnl.style.left);
+        //Debug("w:" + this.evtpnl.style.width + ", left:" + this.evtpnl.style.left);
         var left = this.MapTiles.PanOffset[0]; //0;//this.img.style.left;
         var top = this.MapTiles.PanOffset[1]; //this.img.style.top;
         var scale = 1.0 / GisUtil.ZoomLevelToScale(this.zoomLevel); //(1.0 * this.hfz.value);
@@ -827,7 +837,8 @@ var egis = new function () {
             mapObj.evtpnl.addEventListener('touchstart', MapTouchStart, false);
             mapObj.evtpnl.addEventListener('touchend', MapTouchEnd, false);
 
-
+//            mapObj.evtpnl.addEventListener("click", MapDblClick, false);
+//            window.addEventListener("contextmenu", ContxtMenu, false);
 
         }
         else {
@@ -837,6 +848,12 @@ var egis = new function () {
             mapObj.evtpnl.attachEvent("onmouseout", MapMouseOut);
             mapObj.evtpnl.attachEvent("onmousewheel", MapMouseWheel);
             mapObj.evtpnl.attachEvent("onkeydown", MapKeyDown);
+
+            //            mapObj.evtpnl.attachEvent("ondblclick", MapDblClick);
+            //mapObj.evtpnl.attachEvent("onclick", MapDblClick);
+
+
+
         }
     };
 
@@ -867,10 +884,25 @@ var egis = new function () {
         return [left, top];
     };
 
+
+    function ContxtMenu(evt) {
+
+        if (evt.preventDefault) {
+            evt.preventDefault();
+        }
+        if (evt.stopPropagation) {
+            evt.stopPropagation();
+        }
+        if (window.event) {
+            window.event.cancelBubble = true;
+        }
+        return false;
+    };
+
     function MapMouseDown(evt) {
         Debug("mouseDown");
         var target = GetEventTarget(evt);
-        Debug(target.id);
+        //Debug(target.id);
         var mapobj = egis.GetMap();
         if (mapobj != null) {
             var mousePos = GetMouseOffset(evt, mapobj.evtpnl);
@@ -893,6 +925,41 @@ var egis = new function () {
         }
         return false;
     };
+
+    function detectLeftButton(event) {
+        if ('buttons' in event) {
+            Debug("event.buttons:" + event.buttons);
+            return event.buttons === 0;
+        } else if ('which' in event) {
+            Debug("event.which:" + event.which);
+
+            return event.which === 0;
+        } else {
+            Debug("event.button:" + event.button);
+
+            return event.button === 0;
+        }
+    };
+
+    function MapDblClick(evt) {
+        var target = GetEventTarget(evt);
+        var leftButton = detectLeftButton(evt);
+        var mapobj = egis.GetMap();
+        if (mapobj != null) {
+            if (leftButton) mapobj.zoomIn();
+            else mapobj.zoomOut();
+        }
+        if (evt.preventDefault) {
+            evt.preventDefault();
+        }
+        if (evt.stopPropagation) {
+            evt.stopPropagation();
+        }
+        if (window.event) {
+            window.event.cancelBubble = true;
+        }
+        return false;
+    }
 
     function MapMouseUp(evt) {
         //   var target = GetEventTarget(evt);

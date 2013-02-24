@@ -50,6 +50,7 @@
   <ItemGroup>
     <Content Include="demos\Demo1.aspx" />
     <Content Include="demos\mappin.png" />
+    <Content Include="demos\SimpleMapMarker.aspx" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>
@@ -84,6 +85,13 @@
     </Compile>
     <Compile Include="demos\ExampleMapHandler.ashx.cs">
       <DependentUpon>ExampleMapHandler.ashx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\SimpleMapMarker.aspx.cs">
+      <DependentUpon>SimpleMapMarker.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="demos\SimpleMapMarker.aspx.designer.cs">
+      <DependentUpon>SimpleMapMarker.aspx</DependentUpon>
     </Compile>
     <Compile Include="demos\TileDemo1.aspx.cs">
       <SubType>ASPXCodeBehind</SubType>
@@ -323,6 +331,10 @@
     <Content Include="demos\TileDemo2.aspx" />
     <Content Include="demos\EGPMapTileHandler.ashx" />
     <None Include="demos\us_demo.egp" />
+    <None Include="demos\world.egp" />
+    <None Include="demos\world_files\world_adm0.dbf" />
+    <None Include="demos\world_files\world_adm0.shp" />
+    <None Include="demos\world_files\world_adm0.shx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EGIS.ShapeFileLib\EGIS.ShapeFileLib.csproj">

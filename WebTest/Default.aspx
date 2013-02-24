@@ -35,6 +35,11 @@
         <asp:HyperLink ID="HyperLink6" runat="server" NavigateUrl="~/demos/EsriTest.html">ESRI ArcGIS API for JavaScript Demo</asp:HyperLink> - Demo of displaying a shapefile in a web page using the ESRI ArcGIS API for JavaScript
     </div>
     
+    <div>
+        <asp:HyperLink ID="HyperLink8" runat="server" NavigateUrl="~/demos/SimpleMapMarker.aspx">SimpleMapMarker</asp:HyperLink> - Simple demo showing how to add map markers at run-time using javascript
+    </div>
+    
+
     </form>
 </body>
 </html>
