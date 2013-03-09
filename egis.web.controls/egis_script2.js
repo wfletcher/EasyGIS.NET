@@ -284,7 +284,16 @@ var egis = new function () {
     MapTile.prototype.IsSafari = function () {
         var ua = navigator.userAgent.toLowerCase();
         if (ua.indexOf('safari') >= 0 && ua.indexOf('chrome') < 0) {
-            Debug("is safari!");
+           // Debug("is safari!");
+            return true;
+        }
+        return false;
+    }
+
+    MapTile.prototype.IsChrome = function () {
+        var ua = navigator.userAgent.toLowerCase();
+        if (ua.indexOf('chrome') >= 0) {
+            Debug("is chrome!!");
             return true;
         }
         return false;
@@ -299,7 +308,7 @@ var egis = new function () {
         //Debug(url);
         this.Img.style.visibility = "hidden";
         this.LoadingPanel.style.visibility = "visible";
-        if (this.IsSafari()) this.Img.src = ""; //only for safari
+        if (this.IsSafari() || this.IsChrome()) this.Img.src = ""; //only for safari and chrome
         this.Img.src = url;
     };
 
@@ -468,6 +477,8 @@ var egis = new function () {
 
         this.ZoomChangedEvent = new YAHOO.util.CustomEvent("ZoomChanged", this);
         this.BoundsChangedEvent = new YAHOO.util.CustomEvent("BoundsChanged", this);
+        this.MapClickedEvent = new YAHOO.util.CustomEvent("MapClicked", this);
+
         this.TooltipTimer = setInterval("egis.GlobalTooltipTimer('" + this.evtpnl + "')", 100);
         this.ShowTooltip = false;
         var d = new Date();
@@ -486,6 +497,7 @@ var egis = new function () {
         this.MapTiles = new TileCollection(handlerUrl, mapid, [1.0 * this.lon, 1.0 * this.lat], this.zoomLevel/*GisUtil.ScaleToZoomLevel(1.0 * this.hfz.value)*/, this.width, this.height, this.evtpnl, this.CacheOnClient);
         this.refreshMap();
 
+        this.suppressTooltipDisplay = false;
         //Debug(evtpnl.id);
     };
 
@@ -508,6 +520,7 @@ var egis = new function () {
     };
 
     MapObject.prototype.DisplayTooltip = function (text, x, y) {
+        if (this.suppressTooltipDisplay) return;
         this.TooltipPanel.innerHTML = text;
         this.TooltipPanel.style.left = (x + 5) + "px";
         this.TooltipPanel.style.top = (y + 5) + "px";
@@ -821,6 +834,23 @@ var egis = new function () {
         }
     };
 
+    MapObject.prototype.SetMapClickHandler = function (handler) {
+        this.MapClickedEvent.subscribe(handler, this);
+    }
+
+    MapObject.prototype.FireMapClickdEvent = function (px, py, lat, lon) {
+        var e = new Object();
+        e.name = "onclick";
+        e.px = px;
+        e.py = py;
+        e.lat = lat;
+        e.lon = lon;
+        this.MapClickedEvent.fire(e);
+    };
+
+    MapObject.prototype.SuppressTooltipDisplay = function (suppress) {
+        this.suppressTooltipDisplay = suppress;
+    }
 
     function AddMapEventHandlers(mapObj) {
         Debug("attaching events to : " + mapObj.evtpnl.id);
@@ -837,8 +867,10 @@ var egis = new function () {
             mapObj.evtpnl.addEventListener('touchstart', MapTouchStart, false);
             mapObj.evtpnl.addEventListener('touchend', MapTouchEnd, false);
 
-//            mapObj.evtpnl.addEventListener("click", MapDblClick, false);
-//            window.addEventListener("contextmenu", ContxtMenu, false);
+            mapObj.evtpnl.addEventListener("click", MapClick, true);
+
+            //            mapObj.evtpnl.addEventListener("click", MapDblClick, false);
+            //            window.addEventListener("contextmenu", ContxtMenu, false);
 
         }
         else {
@@ -851,10 +883,12 @@ var egis = new function () {
 
             //            mapObj.evtpnl.attachEvent("ondblclick", MapDblClick);
             //mapObj.evtpnl.attachEvent("onclick", MapDblClick);
-
+            mapObj.evtpnl.attachEvent("onclick", MapClick);
 
 
         }
+
+
     };
 
 
@@ -882,6 +916,19 @@ var egis = new function () {
             top = evt.clientY + document.body.scrollTop + document.documentElement.scrollTop - parentPos[1];
         }
         return [left, top];
+    };
+
+
+    function MapClick(evt) {
+        var target = GetEventTarget(evt);
+        var mapobj = egis.GetMap();
+        var mousePos = GetMouseOffset(evt, mapobj.evtpnl);
+        var mapCoord = mapobj.MousePosToGisPoint(mousePos[0], mousePos[1]);
+        var ll = egis.gisUtil.MercProjectionToLL(mapCoord[0], mapCoord[1]);
+        //ll holds the lat/long coords that were clicked on the map
+        //ll[0] = longitude, ll[1] = latitude  
+        mapobj.FireMapClickdEvent(mousePos[0], mousePos[1], ll[1], ll[0]);
+
     };
 
 

@@ -48,7 +48,7 @@
         </script>
         
          <cc1:TiledSFMap ID="SFMap1" runat="server" BackColor="#C0C0FF" Height="435px" Width="750px" BorderColor="LightGray" BorderStyle="Dashed" BorderWidth="2px"
-         ProjectName="~/demos/demo2.egp"  CacheOnServer="true" ServerCacheDirectoryUrl="cache" CacheOnClient="True"  MinZoomLevel="10" MaxZoomLevel="16" Style="margin:5px"
+         ProjectName="~/demos/demo2.egp"  CacheOnServer="true" ServerCacheDirectoryUrl="cache" CacheOnClient="True"  MinZoomLevel="8" MaxZoomLevel="16" Style="margin:5px"
          OnClientBoundsChanged="MapBoundsChanged" OnClientZoomChanged="MapZoomChanged"/>
         
         <%--ZoomInImageUrl property allows changing the controls button images--%>

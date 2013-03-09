@@ -12,7 +12,7 @@
 
     <div style="height: 600px; width: 700px">
         <cc1:TiledSFMap ID="TiledSFMap1" runat="server" Height="500px" Width="650px"
-          CacheOnServer="false" ProjectName="~/demos/world.egp" CacheOnClient="true" ZoomLevel = "1"
+          CacheOnServer="false" ProjectName="~/demos/world.egp" CacheOnClient="true" ZoomLevel = "5"
           style = "border:2px solid #dddddd" />          
     </div>
     
@@ -21,8 +21,8 @@
         //Add the map pins once the page has finshed loading to ensure that the map is ready
         egis.AddWindowLoadEventHandler(AddMarkersToMap);
 
-
-        function MarkerClicked(evt) {
+        
+        function GetEventTarget(evt) {
             var target;
             if (evt["srcElement"]) {
                 target = evt["srcElement"];
@@ -30,6 +30,27 @@
             else {
                 target = evt["target"];
             }
+            return target;
+        };
+
+
+        function MapClick(type, args, obj) {
+            //Mapclicked event handler
+            //type = "MapClicked"
+            //args[0].lat = latitude
+            //args[0].lon = "longitude"
+            //args[0].px = mouse x position
+            //args[0].py = mouse y position
+            //alert(args[0].lat + "," + args[0].lon);    
+        };
+
+        function SetupMapEventHandlers(map)
+        {
+            map.SetMapClickHandler(MapClick);
+        };
+
+        function MarkerClicked(evt) {
+            var target = GetEventTarget(evt);
             alert("Marker " + target.id + " clicked");
         };
 
@@ -65,7 +86,10 @@
                     clickHandler: MarkerClicked
                 });
 
-                map.SetMapCenterAndZoomLevel(90, 0, 2);                
+                map.SetMapCenterAndZoomLevel(90, -0, 2);
+
+                SetupMapEventHandlers(map);
+                             
             }
 
             else {

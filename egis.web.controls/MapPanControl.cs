@@ -200,18 +200,19 @@ namespace EGIS.Web.Controls
                 string egisScriipt = mapReference.ClientJSResouceName;
                 ClientScriptManager csm = this.Page.ClientScript;
                 csm.RegisterClientScriptResource(this.GetType(), egisScriipt);
-
-                btnPanLeft.OnClientClick = PanLeftClientJS;
-                btnPanRight.OnClientClick = PanRightClientJS;
-                btnPanUp.OnClientClick = PanUpClientJS;
-                btnPanDown.OnClientClick = PanDownClientJS;
-                btnZoomIn.OnClientClick = ZoomInClientJS;
-                btnZoomOut.OnClientClick = ZoomOutClientJS;
             }
             else
             {
                 System.Diagnostics.Debug.WriteLine("could not find " + MapReferenceId);
             }
+            
+            btnPanLeft.OnClientClick = PanLeftClientJS;
+            btnPanRight.OnClientClick = PanRightClientJS;
+            btnPanUp.OnClientClick = PanUpClientJS;
+            btnPanDown.OnClientClick = PanDownClientJS;
+            btnZoomIn.OnClientClick = ZoomInClientJS;
+            btnZoomOut.OnClientClick = ZoomOutClientJS;
+            
 
             base.OnPreRender(e);
         }

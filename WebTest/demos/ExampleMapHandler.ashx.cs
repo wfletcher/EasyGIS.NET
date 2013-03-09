@@ -67,7 +67,7 @@ namespace WebTest.demos
             else
             {                
                 layers[0].RenderSettings.CustomRenderSettings = CustomRenderSettingsUtil.CreateRandomColorCustomRenderSettings(layers[0].RenderSettings, 1);
-            }
+            }            
 
             return layers;           
         }

@@ -13,7 +13,7 @@
    function GetMap()
    {
         var latlng = new google.maps.LatLng(35, -100);
-        var myOptions = {zoom: 4, minZoom:3, maxZoom:14, center: latlng, mapTypeId: google.maps.MapTypeId.ROADMAP };
+        var myOptions = {zoom: 4, minZoom:3, maxZoom:18, center: latlng, mapTypeId: google.maps.MapTypeId.ROADMAP };
         map = new google.maps.Map(document.getElementById("myMap"), myOptions);
         map.overlayMapTypes.insertAt(0, CreateLayer()); 
     }
