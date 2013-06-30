@@ -41,7 +41,7 @@
             //args[0].lon = "longitude"
             //args[0].px = mouse x position
             //args[0].py = mouse y position
-            //alert(args[0].lat + "," + args[0].lon);    
+            alert(args[0].lat + "," + args[0].lon);    
         };
 
         function SetupMapEventHandlers(map)

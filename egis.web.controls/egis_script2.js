@@ -251,7 +251,8 @@ var egis = new function () {
 
 
     function refreshMap(img, handlerUrl, px, py, z, mapid) {
-        img.src = handlerUrl + "?w=" + img.width + "&h=" + img.height + "&x=" + px + "&y=" + py + "&zoom=" + z + "&mapid=" + mapid;
+        img.src = handlerUrl + (handlerUrl.indexOf("?") < 0 ? "?" : "&") + "w=" + img.width + "&h=" + img.height + "&x=" + px + "&y=" + py + "&zoom=" + z + "&mapid=" + mapid;
+
     };
 
     function MapTile(idX, idY, zoomLevel, backgroundImage, _cacheOnClient) {
@@ -284,7 +285,7 @@ var egis = new function () {
     MapTile.prototype.IsSafari = function () {
         var ua = navigator.userAgent.toLowerCase();
         if (ua.indexOf('safari') >= 0 && ua.indexOf('chrome') < 0) {
-           // Debug("is safari!");
+            // Debug("is safari!");
             return true;
         }
         return false;
@@ -300,7 +301,7 @@ var egis = new function () {
     }
 
     MapTile.prototype.LoadImage = function (handlerUrl, mapId, dcrs) {
-        var url = handlerUrl + "?tx=" + this.IdX + "&ty=" + this.IdY + "&zoom=" + this.ZoomLevel + "&mapid=" + encodeURIComponent(mapId) + "&dcrs=" + dcrs + "&version=3";
+        var url = handlerUrl + (handlerUrl.indexOf("?") < 0 ? "?" : "&") + "tx=" + this.IdX + "&ty=" + this.IdY + "&zoom=" + this.ZoomLevel + "&mapid=" + encodeURIComponent(mapId) + "&dcrs=" + dcrs + "&version=3";
         if (this.CacheOnClient == false) {
             var d = new Date();
             url = url + "&coc=" + d.getTime();
@@ -446,6 +447,13 @@ var egis = new function () {
         return [mapcenter[0] - dx, mapcenter[1] + dy];
     };
 
+    TileCollection.prototype.SetMapHandler = function (handlerUrl) {
+        this.HandlerUrl = handlerUrl;
+    };
+
+    TileCollection.prototype.GetMapHandler = function () {
+        return this.HandlerUrl;
+    };
 
     function MapObject(handlerUrl, mapid, _lon, _lat, _zoomLevel, evtpnl, dcrs, _cacheOnClient) {
         this.handlerUrl = handlerUrl;
@@ -501,6 +509,14 @@ var egis = new function () {
         //Debug(evtpnl.id);
     };
 
+    MapObject.prototype.SetMapHandler = function (handlerUrl) {
+        this.handlerUrl = handlerUrl;
+        this.MapTiles.SetMapHandler(handlerUrl);
+    };
+
+    MapObject.prototype.GetMapHandler = function () {
+        return this.handlerUrl;
+    };
 
     MapObject.prototype.CreateTooltipPanel = function () {
         var TooltipPanel = document.createElement("div");
@@ -557,7 +573,7 @@ var egis = new function () {
             alert("Your browser does not support AJAX!");
             return;
         }
-        var url = handlerUrl + "?getshape=true&x=" + px + "&y=" + py + "&zoom=" + zoom + "&mapid=" + encodeURIComponent(mapId) + "&dcrs=" + this.dcrs;
+        var url = handlerUrl + (handlerUrl.indexOf("?") < 0 ? "?" : "&") + "getshape=true&x=" + px + "&y=" + py + "&zoom=" + zoom + "&mapid=" + encodeURIComponent(mapId) + "&dcrs=" + this.dcrs;
 
         var mapobj = this;
         AjaxObj.onreadystatechange = function () {
@@ -920,6 +936,7 @@ var egis = new function () {
 
 
     function MapClick(evt) {
+        Debug("Mapclick");
         var target = GetEventTarget(evt);
         var mapobj = egis.GetMap();
         var mousePos = GetMouseOffset(evt, mapobj.evtpnl);

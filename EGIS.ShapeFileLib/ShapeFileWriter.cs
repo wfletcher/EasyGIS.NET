@@ -1606,7 +1606,7 @@ namespace EGIS.ShapeFileLib
         //update the entire shapefile bounds
         if (RecordCount == 1)
         {
-            ShapeBounds = new RectangleF((float)pts[0], (float)pts[1], float.MinValue, float.MinValue);
+            ShapeBounds = new RectangleF((float)pts[0], (float)pts[1], float.Epsilon, float.Epsilon);
         }
         else
         {
@@ -1647,7 +1647,7 @@ namespace EGIS.ShapeFileLib
             //update the entire shapefile bounds
             if (RecordCount == 1)
             {
-                ShapeBounds = new RectangleF(pts[0].X, (float)pts[0].Y, float.MinValue, float.MinValue);
+                ShapeBounds = new RectangleF(pts[0].X, (float)pts[0].Y, float.Epsilon, float.Epsilon);
             }
             else
             {
@@ -1688,7 +1688,7 @@ namespace EGIS.ShapeFileLib
             //update the entire shapefile bounds
             if (RecordCount == 1)
             {
-                ShapeBounds = new RectangleF((float)pts[0].X, (float)pts[0].Y, float.MinValue, float.MinValue);
+                ShapeBounds = new RectangleF((float)pts[0].X, (float)pts[0].Y, float.Epsilon, float.Epsilon);
             }
             else
             {

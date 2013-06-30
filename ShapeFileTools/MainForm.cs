@@ -77,7 +77,8 @@ namespace egis
             recordAttributesForm = new RecordAttributesForm();
             //recordAttributesForm.Show(this);
             recordAttributesForm.Owner = this;
-            recordAttributesForm.VisibleChanged += new EventHandler(recordAttributesForm_VisibleChanged);            
+            recordAttributesForm.VisibleChanged += new EventHandler(recordAttributesForm_VisibleChanged);
+
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -123,7 +124,7 @@ namespace egis
                 {
                     //OpenShapeFile(ofdShapeFile.FileName);
                     foreach (string file in ofdShapeFile.FileNames)
-                    {                        
+                    {
                         OpenShapeFile(file);
                     }
                     /*
@@ -141,7 +142,7 @@ namespace egis
                 catch (Exception ex)
                 {
                     Log(ex.ToString());
-                    MessageBox.Show(this, "Error opening shapefile\n" + ex.Message, "Error opening shapefile",MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, "Error opening shapefile\n" + ex.Message, "Error opening shapefile", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -158,30 +159,30 @@ namespace egis
         /// <param name="path">path to the shapefile to be opened</param>
         public void OpenShapeFile(string path)
         {
-            string name = path.Substring(path.LastIndexOf("\\")+1);
+            string name = path.Substring(path.LastIndexOf("\\") + 1);
             EGIS.ShapeFileLib.ShapeFile sf = sfMap1.AddShapeFile(path, name, "NAME");
-            this.shapeFileRenderPropertyGrid.SelectedObject = sf.RenderSettings;            
+            this.shapeFileRenderPropertyGrid.SelectedObject = sf.RenderSettings;
         }
 
         private void SelectAndCenterRecord(int index, ShapeFile sf)
         {
-                RectangleF bounds = sf.GetShapeBounds(index);
-                if (bounds != RectangleF.Empty)
+            RectangleF bounds = sf.GetShapeBounds(index);
+            if (bounds != RectangleF.Empty)
+            {
+                sfMap1.CentrePoint2D = new PointD((bounds.Left + bounds.Right) / 2, (bounds.Top + bounds.Bottom) / 2);
+                double r1 = sfMap1.ClientSize.Width * bounds.Height;
+                double r2 = sfMap1.ClientSize.Height * bounds.Width;
+                if (r1 < r2)
                 {
-                    sfMap1.CentrePoint2D = new PointD((bounds.Left + bounds.Right) / 2, (bounds.Top + bounds.Bottom) / 2);
-                    double r1 = sfMap1.ClientSize.Width * bounds.Height;
-                    double r2 = sfMap1.ClientSize.Height * bounds.Width;
-                    if (r1 < r2)
-                    {
-                        sfMap1.ZoomLevel = 0.5*(sfMap1.ClientSize.Width / bounds.Width);
-                    }
-                    else
-                    {
-                        sfMap1.ZoomLevel = 0.5*(sfMap1.ClientSize.Height / bounds.Height);
-                    }
-                    sf.SelectRecord(index, true);
+                    sfMap1.ZoomLevel = 0.5 * (sfMap1.ClientSize.Width / bounds.Width);
                 }
-           
+                else
+                {
+                    sfMap1.ZoomLevel = 0.5 * (sfMap1.ClientSize.Height / bounds.Height);
+                }
+                sf.SelectRecord(index, true);
+            }
+
         }
 
         #region "Pan and Zoom methods"
@@ -193,14 +194,14 @@ namespace egis
             pt.X -= (sfMap1.ClientSize.Width >> 2) / sfMap1.ZoomLevel; ;// (0.0025f * r.Width);
             sfMap1.CentrePoint2D = pt;
         }
-       
+
         private void PanRight()
         {
             RectangleD r = sfMap1.ProjectedExtent;
             PointD pt = sfMap1.CentrePoint2D;
             pt.X += (sfMap1.ClientSize.Width >> 2) / sfMap1.ZoomLevel;// (0.0025f * r.Width);
             sfMap1.CentrePoint2D = pt;
-            
+
         }
 
         private void PanUp()
@@ -210,7 +211,7 @@ namespace egis
             pt.Y += (sfMap1.ClientSize.Height >> 2) / sfMap1.ZoomLevel; //(0.0025f * r.Height);
             sfMap1.CentrePoint2D = pt;
         }
-        
+
         private void PanDown()
         {
             RectangleD r = sfMap1.ProjectedExtent;
@@ -221,17 +222,17 @@ namespace egis
 
         }
 
-        
+
         private void ZoomIn()
         {
             double z = sfMap1.ZoomLevel;
-            sfMap1.ZoomLevel = z * 2d;            
+            sfMap1.ZoomLevel = z * 2d;
         }
 
         private void ZoomOut()
         {
             double z = sfMap1.ZoomLevel;
-            sfMap1.ZoomLevel = z / 2d;            
+            sfMap1.ZoomLevel = z / 2d;
         }
 
         private void ZoomFull()
@@ -242,7 +243,7 @@ namespace egis
 
         #endregion
 
-        
+
         private void shapeFileListControl1_SelectedShapeFileChanged(object sender, EventArgs args)
         {
             shapeFileRenderPropertyGrid.SelectedObject = shapeFileListControl1.SelectedShapeFile.RenderSettings;
@@ -256,7 +257,7 @@ namespace egis
 
         private void LoadFindTextAutoCompleteData(EGIS.ShapeFileLib.ShapeFile shapeFile, bool clearExisting)
         {
-            if(clearExisting) this.tsTxtFind.AutoCompleteCustomSource.Clear();
+            if (clearExisting) this.tsTxtFind.AutoCompleteCustomSource.Clear();
             if (shapeFile == null || shapeFile.RenderSettings == null) return;
             if (shapeFile.RenderSettings.FieldIndex >= 0 && shapeFile.RenderSettings.IsSelectable)
             {
@@ -268,7 +269,7 @@ namespace egis
         private void LoadFindTextAutoCompleteDataFromAllLayers()
         {
             this.tsTxtFind.AutoCompleteCustomSource.Clear();
-            for (int n = this.sfMap1.ShapeFileCount-1; n >=0; n--)
+            for (int n = this.sfMap1.ShapeFileCount - 1; n >= 0; n--)
             {
                 LoadFindTextAutoCompleteData(sfMap1[n], false);
             }
@@ -286,9 +287,9 @@ namespace egis
 
         private void NewProject()
         {
-            DialogResult dr = MessageBox.Show(this, "The current project will be closed.\nDo you wish to save your changes before creating a new project?", "Save Project?",MessageBoxButtons.YesNoCancel,MessageBoxIcon.Question);
-            if(dr == DialogResult.Cancel) return;
-            if(dr == DialogResult.Yes)
+            DialogResult dr = MessageBox.Show(this, "The current project will be closed.\nDo you wish to save your changes before creating a new project?", "Save Project?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+            if (dr == DialogResult.Cancel) return;
+            if (dr == DialogResult.Yes)
             {
                 if (projectStatus == ProjectState.UnsavedNewProject || projectStatus == ProjectState.UnsavedOpenProject)
                 {
@@ -302,7 +303,7 @@ namespace egis
             System.GC.Collect();
 
         }
-        
+
         private void WriteProject(string path)
         {
             XmlWriterSettings settings = new XmlWriterSettings();
@@ -343,7 +344,7 @@ namespace egis
             {
                 mainProgressBar.Visible = false;
                 this.Cursor = Cursors.Default;
-            }            
+            }
         }
 
         private void OpenProject()
@@ -353,8 +354,8 @@ namespace egis
                 DialogResult dr = MessageBox.Show(this, "The current project will be closed.\nDo you wish to save your changes before opening a new project?", "Save Project?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
                 if (dr == DialogResult.Cancel) return;
                 if (dr == DialogResult.Yes)
-                {                    
-                    this.SaveProject(this.currentProjectPath);                    
+                {
+                    this.SaveProject(this.currentProjectPath);
                 }
             }
 
@@ -388,7 +389,7 @@ namespace egis
                 }
             }
 
-            
+
             try
             {
                 ReadProject(projectPath);
@@ -402,7 +403,7 @@ namespace egis
                 System.Diagnostics.Debug.WriteLine("Error reading project :" + ex.ToString());
                 MessageBox.Show(this, "Error opening project\n" + ex.Message, "Error opening project", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            
+
         }
 
 
@@ -456,13 +457,13 @@ namespace egis
                     }
                 }
             }
-            
+
         }
 
 
         private void ExportProject()
         {
-            
+
             if (projectStatus == ProjectState.UnsavedNewProject || projectStatus == ProjectState.UnsavedOpenProject)
             {
                 DialogResult dr = MessageBox.Show(this, "Do you wish to save your changes before exporting the project?", "Save Project?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
@@ -500,7 +501,7 @@ namespace egis
                             {
                                 shapePath = System.IO.Path.GetDirectoryName(this.currentProjectPath) + "/" + shapePath;
                             }
-                            
+
                             //copy the .shpx and dbf files, then update the path in the shapeElement
                             //if (!System.IO.File.Exists(absSubDir + "\\" + shapeFilename + ".shpx"))
                             //{
@@ -539,9 +540,9 @@ namespace egis
                             //copy the .image file and then update the path in the image Element
                             if (!System.IO.File.Exists(absSubDir + "\\" + imageFilename))
                             {
-                                System.IO.File.Copy(imagePath , absSubDir + "\\" + imageFilename);
+                                System.IO.File.Copy(imagePath, absSubDir + "\\" + imageFilename);
                             }
-                            
+
                             imgElement.InnerText = subDir + "/" + imageFilename;
                         }
                     }
@@ -565,7 +566,7 @@ namespace egis
 
         private void ProjectLoadStatus(int totalLayers, int layersLoaded)
         {
-            if(mainProgressBar.Maximum != totalLayers) this.mainProgressBar.Maximum = totalLayers;
+            if (mainProgressBar.Maximum != totalLayers) this.mainProgressBar.Maximum = totalLayers;
             this.mainProgressBar.Value = layersLoaded;
             this.mainProgressBar.Visible = (totalLayers != layersLoaded);
         }
@@ -584,7 +585,7 @@ namespace egis
             foreach (string s in Properties.Settings.Default.RecentProjects)
             {
                 ToolStripMenuItem i = new ToolStripMenuItem(s);
-                i.Click+=new EventHandler(i_Click);
+                i.Click += new EventHandler(i_Click);
                 recentProjectsMenuItem.DropDownItems.Add(i);
             }
         }
@@ -602,7 +603,7 @@ namespace egis
                     {
                         this.SaveProject(this.currentProjectPath);
                     }
-                }                
+                }
                 try
                 {
                     ReadProject(item.Text);
@@ -614,20 +615,20 @@ namespace egis
                 {
                     System.Diagnostics.Debug.WriteLine("Error reading project :" + ex.ToString());
                     MessageBox.Show(this, "Error opening project " + item.Text + "\n" + ex.Message, "Error opening project", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }            
+                }
             }
         }
 
         private void AddToRecentProjects(string path)
         {
-            if(string.IsNullOrEmpty(path) || !System.IO.File.Exists(path)) return;
+            if (string.IsNullOrEmpty(path) || !System.IO.File.Exists(path)) return;
 
             try
             {
                 int foundIndex = -1;
                 for (int n = Properties.Settings.Default.RecentProjects.Count - 1; foundIndex <= 0 && n >= 0; n--)
                 {
-                    if (string.Compare(Properties.Settings.Default.RecentProjects[n], path, true)==0)
+                    if (string.Compare(Properties.Settings.Default.RecentProjects[n], path, true) == 0)
                     {
                         foundIndex = n;
                     }
@@ -661,7 +662,7 @@ namespace egis
 
         private void miOpenProject_Click(object sender, EventArgs e)
         {
-            OpenProject();            
+            OpenProject();
         }
 
         private void miSaveProject_Click(object sender, EventArgs e)
@@ -739,7 +740,7 @@ namespace egis
 
         private void tsTxtFind_KeyPress(object sender, KeyPressEventArgs e)
         {
-           
+
         }
 
         private void tsTxtFind_KeyDown(object sender, KeyEventArgs e)
@@ -753,8 +754,8 @@ namespace egis
         private void FindShape(string recordValue)
         {
             if (shapeFileListControl1.SelectedShapeFile == null) return;
-            if(shapeFileListControl1.SelectedShapeFile.RenderSettings.FieldIndex < 0) return;
-            int index = shapeFileListControl1.SelectedShapeFile.RenderSettings.DbfReader.IndexOf(recordValue,shapeFileListControl1.SelectedShapeFile.RenderSettings.FieldIndex, true);
+            if (shapeFileListControl1.SelectedShapeFile.RenderSettings.FieldIndex < 0) return;
+            int index = shapeFileListControl1.SelectedShapeFile.RenderSettings.DbfReader.IndexOf(recordValue, shapeFileListControl1.SelectedShapeFile.RenderSettings.FieldIndex, true);
             if (index >= 0)
             {
                 RectangleF bounds = shapeFileListControl1.SelectedShapeFile.GetShapeBounds(index);
@@ -763,7 +764,7 @@ namespace egis
                     //shapeFileListControl1.SelectedShapeFile.SelectedRecordIndex = index;
                     shapeFileListControl1.SelectedShapeFile.ClearSelectedRecords();
                     shapeFileListControl1.SelectedShapeFile.SelectRecord(index, true);
-                    sfMap1.CentrePoint2D = new PointD((bounds.Left + bounds.Right) / 2, (bounds.Top + bounds.Bottom) / 2);                    
+                    sfMap1.CentrePoint2D = new PointD((bounds.Left + bounds.Right) / 2, (bounds.Top + bounds.Bottom) / 2);
                 }
             }
         }
@@ -808,7 +809,7 @@ namespace egis
 
         private void helpToolStripButton_Click(object sender, EventArgs e)
         {
-            DisplayAbout();            
+            DisplayAbout();
         }
 
         private void DisplayAbout()
@@ -830,7 +831,7 @@ namespace egis
             tsBtnSelectCircle.Checked = false;
             tsBtnSelectRect.Checked = false;
             tsLblSelectMessage.Visible = false;
-            sfMap1.PanSelectMode = EGIS.Controls.PanSelectMode.Pan;            
+            sfMap1.PanSelectMode = EGIS.Controls.PanSelectMode.Pan;
         }
 
         private void tsBtnPanRight_Click(object sender, EventArgs e)
@@ -873,22 +874,22 @@ namespace egis
         private void sfMap1_MouseMove(object sender, MouseEventArgs e)
         {
             PointD pt = sfMap1.PixelCoordToGisPoint(new Point(e.X, e.Y));
-            string msg = string.Format("[{0:0.0000},{1:0.0000}]", new object[] { pt.X, pt.Y}); 
-            tsLblMapMousePos.Text = msg;            
+            string msg = string.Format("[{0:0.0000},{1:0.0000}]", new object[] { pt.X, pt.Y });
+            tsLblMapMousePos.Text = msg;
         }
-        
+
         private void aboutMenuItem_Click(object sender, EventArgs e)
         {
             DisplayAbout();
-        }        
+        }
 
         private void miMercatorProjection_Click(object sender, EventArgs e)
         {
             bool useProjection = !sfMap1.UseMercatorProjection;
             bool ok = true;
-            if(useProjection)
+            if (useProjection)
             {
-                if(!IsMapFitForMercator())
+                if (!IsMapFitForMercator())
                 {
                     ok = (DialogResult.Yes == MessageBox.Show(this, "Warning: The current project does not appear to be using Lat Long Coords.\nIf you use the Mercator Projection all parts of the map may not be visibe.\nAre you sure you wish to use the Mercator Projection?", "Confirm Mercator Projection", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning));
                 }
@@ -947,7 +948,7 @@ namespace egis
             if (projectStatus == ProjectState.UnsavedNewProject || projectStatus == ProjectState.UnsavedOpenProject)
             {
                 DialogResult dr = MessageBox.Show(this, "The current project has changed.\nDo you wish to save your changes before closing?", "Save Project?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
-                if (dr == DialogResult.Cancel) e.Cancel=true;
+                if (dr == DialogResult.Cancel) e.Cancel = true;
                 else if (dr == DialogResult.Yes)
                 {
                     this.SaveProject(this.currentProjectPath);
@@ -982,7 +983,7 @@ namespace egis
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                if (string.Compare(System.IO.Path.GetExtension(files[0]), ".shp", StringComparison.OrdinalIgnoreCase)==0)
+                if (string.Compare(System.IO.Path.GetExtension(files[0]), ".shp", StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     e.Effect = DragDropEffects.Copy;
                 }
@@ -1042,7 +1043,7 @@ namespace egis
                     MessageBox.Show(ex.Message);
                 }
             }
-            
+
         }
 
         private void SaveMapBitmap(string path)
@@ -1062,11 +1063,11 @@ namespace egis
         {
             if (e.ShapeFileIndex >= 0 && e.RecordIndex >= 0)
             {
-                if(recordAttributesForm.Visible)
+                if (recordAttributesForm.Visible)
                 {
                     string[] names = sfMap1[e.ShapeFileIndex].GetAttributeFieldNames();
                     string[] values = sfMap1[e.ShapeFileIndex].GetAttributeFieldValues(e.RecordIndex);
-                    recordAttributesForm.SetRecordData(e.ShapeFileIndex, sfMap1[e.ShapeFileIndex].Name,e.RecordIndex,names, values); 
+                    recordAttributesForm.SetRecordData(e.ShapeFileIndex, sfMap1[e.ShapeFileIndex].Name, e.RecordIndex, names, values);
                 }
                 //PointD ptd = sfMap1.PixelCoordToGisPoint(e.MousePosition);
                 //int recIndex = sfMap1[e.ShapeFileIndex].GetShapeIndexContainingPoint(new PointF((float)ptd.X, (float)ptd.Y), 0.00001F);
@@ -1086,7 +1087,7 @@ namespace egis
 
         void recordAttributesForm_VisibleChanged(object sender, EventArgs e)
         {
-            this.displayShapeAttributesWindowToolStripMenuItem.Checked = recordAttributesForm.Visible;            
+            this.displayShapeAttributesWindowToolStripMenuItem.Checked = recordAttributesForm.Visible;
         }
 
         private void useNativeFileMappingToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1109,8 +1110,8 @@ namespace egis
         {
             tsBtnSelectRect.Checked = !tsBtnSelectRect.Checked;
             tsBtnSelectCircle.Checked = false;
-            tsLblSelectMessage.Visible = tsBtnSelectRect.Checked;            
-            sfMap1.PanSelectMode = tsBtnSelectRect.Checked? EGIS.Controls.PanSelectMode.SelectRectangle: EGIS.Controls.PanSelectMode.Pan;            
+            tsLblSelectMessage.Visible = tsBtnSelectRect.Checked;
+            sfMap1.PanSelectMode = tsBtnSelectRect.Checked ? EGIS.Controls.PanSelectMode.SelectRectangle : EGIS.Controls.PanSelectMode.Pan;
         }
 
         private void tsBtnSelectCircle_Click(object sender, EventArgs e)
@@ -1136,7 +1137,7 @@ namespace egis
         private void sfMap1_SelectedRecordsChanged(object sender, EventArgs e)
         {
             Console.Out.WriteLine("records changed");
-            
+
         }
 
         private void tsLblMapMousePos_Click(object sender, EventArgs e)
@@ -1146,7 +1147,7 @@ namespace egis
 
         private void printToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            PrintDocument pd = new PrintDocument();                        
+            PrintDocument pd = new PrintDocument();
             pd.PrintPage += new PrintPageEventHandler(pd_PrintPage);
             PrintDialog ppd = new PrintDialog();
             try
@@ -1169,7 +1170,7 @@ namespace egis
             }
         }
 
-       
+
         void pd_PrintPage(object sender, PrintPageEventArgs e)
         {
             //save the current Render Quality settings
@@ -1200,10 +1201,11 @@ namespace egis
                 ShapeFile.RenderQuality = currentRenderQuality;
             }
         }
-
-
-                                
         
+
+        [System.Runtime.InteropServices.DllImport("shell32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto, SetLastError = true)]
+        public static extern void SHChangeNotify(uint wEventId, uint uFlags, IntPtr dwItem1, IntPtr dwItem2);
+
     }
-   
+  
 }

@@ -11,16 +11,19 @@
 <body>
     <form id="form1" runat="server">
     <div>
-        <asp:HyperLink ID="HyperLink1" runat="server" NavigateUrl="~/demos/Demo1.aspx">Demo 1</asp:HyperLink> - Demo of using the SFMap control in a webpage</div>
+        <asp:HyperLink ID="HyperLink1" runat="server" NavigateUrl="~/demos/Demo1.aspx">SFMap Demo 1</asp:HyperLink> - Demo of using the SFMap control in a webpage</div>
     <div>
-        <asp:HyperLink ID="HyperLink2" runat="server" NavigateUrl="~/demos/Demo3.aspx">Demo 2</asp:HyperLink> - Demo of using the SFMap control in a webpage with custom render settings</div>
-    
+        <asp:HyperLink ID="HyperLink2" runat="server" NavigateUrl="~/demos/Demo3.aspx">SFMap Demo 2</asp:HyperLink> - Demo of using the SFMap control in a webpage with custom render settings</div>    
     <div>
-        <asp:HyperLink ID="HyperLink3" runat="server" NavigateUrl="~/demos/TileDemo1.aspx">Tile Demo 1</asp:HyperLink> - Demo of using the TiledSFMap control in a webpage
+        <asp:HyperLink ID="HyperLink3" runat="server" NavigateUrl="~/demos/TileDemo1.aspx">TiledSFMap Demo 1</asp:HyperLink> - Demo of using the TiledSFMap control in a webpage
     </div>
 
     <div>
-        <asp:HyperLink ID="HyperLink7" runat="server" NavigateUrl="~/demos/TileDemo2.aspx">Tile Demo 2</asp:HyperLink> - Demo of Adding Markers to a map in a webpage
+        <asp:HyperLink ID="HyperLink7" runat="server" NavigateUrl="~/demos/TileDemo2.aspx">TiledSFMap Demo 2</asp:HyperLink> - Demo of Adding Markers to a map in a webpage
+    </div>
+
+    <div>
+        <asp:HyperLink ID="HyperLink9" runat="server" NavigateUrl="~/demos/TileDemo3.aspx">TiledSFMap Demo 3</asp:HyperLink> - Demo of using the TiledSFMap control in a webpage with custom render settings
     </div>
     
     <div>

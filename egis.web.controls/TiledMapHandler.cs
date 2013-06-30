@@ -24,7 +24,8 @@ namespace EGIS.Web.Controls
         }
 
         public void ProcessRequest(HttpContext context)
-        {            
+        {
+            
             OnBeginRequest(context);
             try
             {
@@ -106,8 +107,6 @@ namespace EGIS.Web.Controls
         /// <remarks>Derived classes must implement the CreateMapLayers method</remarks>
         protected abstract List<ShapeFile> CreateMapLayers(HttpContext context);
 
-
-
         protected virtual void OnBeginRequest(HttpContext context)
         {
             //System.Diagnostics.Debug.WriteLine("begin request");
@@ -138,8 +137,7 @@ namespace EGIS.Web.Controls
         }
 
         private void ProcessRequestCore(HttpContext context)
-        {
-            
+        {            
             DateTime dts = DateTime.Now;
             if (context.Request.Params["getshape"] != null)
             {
