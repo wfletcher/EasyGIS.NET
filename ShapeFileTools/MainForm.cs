@@ -1136,7 +1136,7 @@ namespace egis
 
         private void sfMap1_SelectedRecordsChanged(object sender, EventArgs e)
         {
-            Console.Out.WriteLine("records changed");
+            //Console.Out.WriteLine("records changed");
 
         }
 
@@ -1205,6 +1205,11 @@ namespace egis
 
         [System.Runtime.InteropServices.DllImport("shell32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto, SetLastError = true)]
         public static extern void SHChangeNotify(uint wEventId, uint uFlags, IntPtr dwItem1, IntPtr dwItem2);
+
+        private void disablePanSelectToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            sfMap1.PanSelectMode = disablePanSelectToolStripMenuItem.Checked ? EGIS.Controls.PanSelectMode.None : EGIS.Controls.PanSelectMode.Pan;
+        }
 
     }
   

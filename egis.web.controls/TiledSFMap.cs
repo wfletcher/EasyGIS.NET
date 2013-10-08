@@ -1051,7 +1051,7 @@ namespace EGIS.Web.Controls
                 base.LoadViewState(savedState);
                 if (this.ViewState["CenterPoint"] != null)
                 {
-                    this.CenterPoint = (PointF)this.ViewState["CenterPoint"];
+                    this.CenterPoint = (PointD)this.ViewState["CenterPoint"];
                 }
                 if (this.ViewState["ZoomLevel"] != null)
                 {

@@ -41,7 +41,7 @@ namespace EGIS.Controls
 {
     public delegate void ProgressLoadStatusHandler(int totalLayers, int numberLayersLoaded);
 
-    public enum PanSelectMode { Pan, SelectRectangle, SelectCircle };
+    public enum PanSelectMode { None, Pan, SelectRectangle, SelectCircle };
 
     
     /// <summary>
@@ -245,7 +245,7 @@ namespace EGIS.Controls
             if (_useBalloonToolTip)
             {
                 this.toolTipOffset = new Point(5, 5);
-            }            
+            }                    
         }
 
         #region XmlMethods
@@ -1222,6 +1222,9 @@ namespace EGIS.Controls
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
+               
+            if (PanSelectMode == EGIS.Controls.PanSelectMode.None) return;
+
             mouseDownButton = e.Button;
             mouseDownPt = new Point(e.X, e.Y);
 
@@ -1254,7 +1257,7 @@ namespace EGIS.Controls
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-
+            if (PanSelectMode == EGIS.Controls.PanSelectMode.None) return;
             Cursor oldCursor = Cursor;
             try
             {
@@ -1380,6 +1383,7 @@ namespace EGIS.Controls
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
+            if (PanSelectMode == EGIS.Controls.PanSelectMode.None) return;
             if (e.Button != MouseButtons.None)
             {
                 mouseOffPt = new Point(e.X - mouseDownPt.X, e.Y - mouseDownPt.Y);
@@ -1403,7 +1407,6 @@ namespace EGIS.Controls
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
-
             if (layerTooltipVisible)
             {
                 layerTooltip.Hide(this);
@@ -1422,14 +1425,20 @@ namespace EGIS.Controls
             base.OnMouseWheel(e);
             if (e.Delta > 0)
             {
+                //zoom in
                 double z = ZoomLevel;
-                ZoomLevel = z * 2d;
+                double x = ((ClientSize.Width * 0.5) + e.X) * 0.5;
+                double y = ((ClientSize.Height * 0.5) + e.Y) * 0.5;
+                SetZoomAndCentre(z * 2d, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));
             }
             else if (e.Delta < 0)
             {
+                //zoom out
                 double z = ZoomLevel;
-                ZoomLevel = z * 0.5d;
-            }
+                int x = ClientSize.Width - e.X;
+                int y = ClientSize.Height - e.Y;
+                SetZoomAndCentre(z * 0.5, PixelCoordToGisPoint(x, y));
+            }            
         }
 
         private ToolTip layerTooltip = new ToolTip();
@@ -1515,28 +1524,18 @@ namespace EGIS.Controls
             if (mouseDownButton == MouseButtons.Left)
             {
                 //zoom in
-                PointD pt = this._centrePoint;// ShapeFile.LatLongToProjection(CentrePoint2D);
                 double z = ZoomLevel;
-                pt.Y -= (mouseDownPt.Y-(ClientSize.Height >> 1)) / z;
-                pt.X += (mouseDownPt.X - (ClientSize.Width >> 1)) / z;
-                if (UseMercatorProjection)
-                {
-                    pt = ShapeFile.ProjectionToLatLong(pt);
-                }
-                SetZoomAndCentre(z * 2, pt);
+                double x = ((ClientSize.Width*0.5) + mouseDownPt.X)*0.5;
+                double y = ((ClientSize.Height*0.5) + mouseDownPt.Y)*0.5;
+                SetZoomAndCentre(z*2d, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));               
             }
             else if (mouseDownButton == MouseButtons.Right)
             {
                 //zoom out
-                PointD pt = this._centrePoint;// ShapeFile.LatLongToProjection(CentrePoint2D);
                 double z = ZoomLevel;
-                pt.Y -= (mouseDownPt.Y - (ClientSize.Height >> 1)) / z;
-                pt.X += (mouseDownPt.X - (ClientSize.Width >> 1)) / z;
-                if (UseMercatorProjection)
-                {
-                    pt = ShapeFile.ProjectionToLatLong(pt);
-                }
-                SetZoomAndCentre(z / 2, pt);
+                double x = ClientSize.Width - mouseDownPt.X;
+                double y = ClientSize.Height - mouseDownPt.Y;
+                SetZoomAndCentre(z * 0.5, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));
             }
         }
 
