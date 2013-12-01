@@ -74,6 +74,14 @@ namespace egis
             //double dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, ll, ll2);
             //Console.Out.WriteLine("dist = " + dist);
 
+            double lat1 = -37, lon1 = 116.25;
+            double lat2 = -30, lon2 = 117.25;
+            double dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, lat1, lon1, lat2, lon2);
+            Console.Out.WriteLine("dist bw points:" + dist);
+            dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(23, lat1, lon1, lat2, lon2);
+            Console.Out.WriteLine("dist bw points:" + dist);    
+            
+            
             recordAttributesForm = new RecordAttributesForm();
             //recordAttributesForm.Show(this);
             recordAttributesForm.Owner = this;
@@ -169,16 +177,19 @@ namespace egis
             RectangleF bounds = sf.GetShapeBounds(index);
             if (bounds != RectangleF.Empty)
             {
-                sfMap1.CentrePoint2D = new PointD((bounds.Left + bounds.Right) / 2, (bounds.Top + bounds.Bottom) / 2);
-                double r1 = sfMap1.ClientSize.Width * bounds.Height;
-                double r2 = sfMap1.ClientSize.Height * bounds.Width;
-                if (r1 < r2)
+                if (ClientSize.Width > 0 && ClientSize.Height > 0)
                 {
-                    sfMap1.ZoomLevel = 0.5 * (sfMap1.ClientSize.Width / bounds.Width);
-                }
-                else
-                {
-                    sfMap1.ZoomLevel = 0.5 * (sfMap1.ClientSize.Height / bounds.Height);
+                    sfMap1.CentrePoint2D = new PointD((bounds.Left + bounds.Right) / 2, (bounds.Top + bounds.Bottom) / 2);
+                    double r1 = sfMap1.ClientSize.Width * bounds.Height;
+                    double r2 = sfMap1.ClientSize.Height * bounds.Width;
+                    if (r1 < r2)
+                    {
+                        sfMap1.ZoomLevel = 0.5 * (sfMap1.ClientSize.Width / bounds.Width);
+                    }
+                    else
+                    {
+                        sfMap1.ZoomLevel = 0.5 * (sfMap1.ClientSize.Height / bounds.Height);
+                    }
                 }
                 sf.SelectRecord(index, true);
             }
@@ -218,8 +229,6 @@ namespace egis
             PointD pt = sfMap1.CentrePoint2D;
             pt.Y -= (sfMap1.ClientSize.Height >> 2) / sfMap1.ZoomLevel;
             sfMap1.CentrePoint2D = pt;
-
-
         }
 
 
@@ -238,7 +247,6 @@ namespace egis
         private void ZoomFull()
         {
             sfMap1.ZoomToFullExtent();
-
         }
 
         #endregion
@@ -898,6 +906,7 @@ namespace egis
             {
                 sfMap1.UseMercatorProjection = useProjection;
                 miMercatorProjection.Checked = useProjection;
+                UpdateVisibleAreaLabel();
             }
         }
 
@@ -1132,6 +1141,8 @@ namespace egis
         {
             this.tsLblSelectMessage.Visible = false;
 
+            //TestLinearReferencing(e.X, e.Y);
+
         }
 
         private void sfMap1_SelectedRecordsChanged(object sender, EventArgs e)
@@ -1209,6 +1220,55 @@ namespace egis
         private void disablePanSelectToolStripMenuItem_Click(object sender, EventArgs e)
         {
             sfMap1.PanSelectMode = disablePanSelectToolStripMenuItem.Checked ? EGIS.Controls.PanSelectMode.None : EGIS.Controls.PanSelectMode.Pan;
+        }
+
+
+        private void TestLinearReferencing(int mouseX, int mouseY)
+        {
+            PointD coords = sfMap1.PixelCoordToGisPoint(mouseX, mouseY);
+            PointD coords2 = sfMap1.PixelCoordToGisPoint(mouseX + 8, mouseY + 8);
+            double dist = Math.Sqrt((coords.X - coords2.X)*(coords.X - coords2.X) + (coords.Y - coords2.Y)*(coords.Y - coords2.Y));
+            //dist = 50;// 50m
+            for (int i = sfMap1.ShapeFileCount - 1; i >= 0; --i)
+            {
+                ShapeFile sf = sfMap1[i];                
+                PolylineDistanceInfo polylineDistanceInfo;
+                DateTime tick = DateTime.Now;
+                int index;
+                //for (int n = 0; n < 99; ++n)
+                //{
+                //    index = sf.GetClosestShape(coords, dist, out polylineDistanceInfo);                    
+                //}
+                index = sf.GetClosestShape(coords, dist, out polylineDistanceInfo);
+                //Console.Out.WriteLine("ClosestPointOnPolyline time: " + DateTime.Now.Subtract(tick).Milliseconds / 100.0 + "ms");
+                if (index >= 0)
+                {     
+                    Console.Out.WriteLine("tVal: " + polylineDistanceInfo.TVal);
+                    Console.Out.WriteLine("coords:" + coords);
+                    Console.Out.WriteLine("polylinePoint:" + polylineDistanceInfo.PolylinePoint);
+                    using (Graphics g = sfMap1.CreateGraphics())
+                    {
+                        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                        Point pt = sfMap1.GisPointToPixelCoord(polylineDistanceInfo.PolylinePoint);
+                        g.FillEllipse(Brushes.Red, pt.X - 5, pt.Y - 5, 10, 10);
+
+                        Point mousePoint = new Point(mouseX, mouseY);
+                        if ((mousePoint.X - pt.X) * (mousePoint.X - pt.X) + (mousePoint.Y - pt.Y) * (mousePoint.Y - pt.Y) > 50 * 50)
+                        {
+                            g.FillEllipse(Brushes.Red, mousePoint.X - 2, mousePoint.Y - 2, 4,4);
+                            g.DrawLine(Pens.Red, mousePoint, pt);
+                        }
+                    }
+
+                    if (sf.ShapeType == ShapeType.PolyLineM)
+                    {
+                        double[] measures = sf.GetShapeMDataD(index)[0];
+                        double distance = measures[polylineDistanceInfo.PointIndex] + polylineDistanceInfo.TVal *(measures[polylineDistanceInfo.PointIndex+1] - measures[polylineDistanceInfo.PointIndex]);
+                        Console.Out.WriteLine("distance from start of shape: " + distance);
+                    }
+
+                }                
+            }            
         }
 
     }

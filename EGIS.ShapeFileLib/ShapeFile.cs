@@ -1098,8 +1098,7 @@ namespace EGIS.ShapeFileLib
         #endregion
 
 
-        #region "Find shapes by position methods"
-
+        
         /// <summary>
         /// Gets the raw shape data at given record index.        
         /// </summary>
@@ -1212,6 +1211,7 @@ namespace EGIS.ShapeFileLib
 #endif
         }
 
+
         /// <summary>
         /// Gets the raw shape Z(height) data in double precision format at given record index, using a supplied dataBuffer to read the data.         
         /// </summary>
@@ -1226,6 +1226,34 @@ namespace EGIS.ShapeFileLib
         public System.Collections.ObjectModel.ReadOnlyCollection<double[]> GetShapeZDataD(int recordIndex, byte[] dataBuffer)
         {
             List<double[]> data = sfRecordCol.GetShapeHeightDataD(recordIndex, this.shapeFileStream, dataBuffer);
+            if (data == null) return null;
+            return new System.Collections.ObjectModel.ReadOnlyCollection<double[]>(data);
+        }
+
+
+
+        /// <summary>
+        /// Gets the raw shape M(Measures) data in double precision format at given record index, using a supplied dataBuffer to read the data.         
+        /// </summary>
+        /// <param name="recordIndex"> The zero based index of the shape data to return</param>
+        /// <param name="dataBuffer"> A supplied data buffer to use when reading the raw shape data from the shapefile. The buffer must be large enough to read the raw
+        /// shape data.</param>
+        /// <returns></returns>
+        public System.Collections.ObjectModel.ReadOnlyCollection<double[]> GetShapeMDataD(int recordIndex, byte[] dataBuffer)
+        {
+            List<double[]> data = sfRecordCol.GetShapeMDataD(recordIndex, this.shapeFileStream, dataBuffer);
+            if (data == null) return null;
+            return new System.Collections.ObjectModel.ReadOnlyCollection<double[]>(data);
+        }
+
+        /// <summary>
+        /// Gets the raw shape M(Measures) data in double precision format at given record index, using a supplied dataBuffer to read the data.         
+        /// </summary>
+        /// <param name="recordIndex"> The zero based index of the shape data to return</param>
+        /// <returns></returns>
+        public System.Collections.ObjectModel.ReadOnlyCollection<double[]> GetShapeMDataD(int recordIndex)
+        {
+            List<double[]> data = sfRecordCol.GetShapeMDataD(recordIndex, this.shapeFileStream);
             if (data == null) return null;
             return new System.Collections.ObjectModel.ReadOnlyCollection<double[]>(data);
         }
@@ -1279,6 +1307,8 @@ namespace EGIS.ShapeFileLib
             return sfRecordCol.GetRecordBoundsD(recordIndex, shapeFileStream);
 #endif
         }
+
+        #region "GetShapeIndexContainingPoint"
 
         /// <summary>
         /// returns the index of the shape containing Point pt
@@ -1825,7 +1855,10 @@ namespace EGIS.ShapeFileLib
             return -1;
         }
 
-       
+#endregion
+
+ #region "Find shapes by position methods"
+
         public void GetShapeIndiciesIntersectingRect(List<int> indicies, RectangleD rect)
         {
             if (indicies == null) return;
@@ -1947,6 +1980,70 @@ namespace EGIS.ShapeFileLib
                     }
                 }
             }
+        }
+
+
+        public int GetClosestShape(PointD centre, double radius)
+        {
+            return GetClosestShape(centre, radius, sfRecordCol);            
+        }
+
+        private int GetClosestShape(PointD centre, double radius, SFRecordCol col)
+        {
+            if (shapeQuadTree == null)
+            {
+                CreateQuadTree(col);
+            }
+
+            List<int> shapeIndicies = shapeQuadTree.GetIndices(centre, radius);
+            int closestIndex = -1;
+            double closestDistance = radius + double.Epsilon;
+            if (shapeIndicies != null)
+            {
+                for (int n = shapeIndicies.Count - 1; n >= 0; --n)
+                {
+                    double d = col.GetDistanceToShape(shapeIndicies[n], centre, closestDistance, shapeFileStream);
+                    if (d < closestDistance)
+                    {
+                        closestIndex = shapeIndicies[n];
+                        closestDistance = d;                       
+                    }
+                }
+            }
+            return closestIndex;
+        }
+
+        public int GetClosestShape(PointD centre, double radius, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            return GetClosestShape(centre, radius, sfRecordCol, out polylineDistanceInfo);
+        }
+
+        private int GetClosestShape(PointD centre, double radius, SFRecordCol col, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            if (shapeQuadTree == null)
+            {
+                CreateQuadTree(col);
+            }
+
+            List<int> shapeIndicies = shapeQuadTree.GetIndices(centre, radius);
+            int closestIndex = -1;
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            double closestDistance = radius + double.Epsilon;
+            if (shapeIndicies != null)
+            {
+                for (int n = shapeIndicies.Count - 1; n >= 0; --n)
+                {
+                    PolylineDistanceInfo pdi;
+                    double d = col.GetDistanceToShape(shapeIndicies[n], centre, closestDistance, shapeFileStream, out pdi);
+                    if (d < closestDistance)
+                    {
+                        closestIndex = shapeIndicies[n];
+                        polylineDistanceInfo = pdi;
+                        closestDistance = d;
+                    }
+                }
+            }
+            return closestIndex;
         }
 
 
@@ -3781,6 +3878,12 @@ namespace EGIS.ShapeFileLib
         }
         public abstract List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer);
 
+        public List<double[]> GetShapeMDataD(int recordIndex, Stream shapeFileStream)
+        {
+            return GetShapeMDataD(recordIndex, shapeFileStream, SharedBuffer);
+        }
+        public abstract List<double[]> GetShapeMDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer);
+
 
         public abstract RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream);
 
@@ -3791,17 +3894,12 @@ namespace EGIS.ShapeFileLib
         }
 
         public abstract bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream);
-        //{
-        //    throw new NotImplementedException();
-            
-        //}
+        
+        public abstract unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream);
 
-        public abstract unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
-        ;
-            //{
-        //    RectangleD r = GetRecordBoundsD(shapeIndex, shapeFileStream);
-        //    return GeometryAlgorithms.RectangleCircleIntersects(ref r, ref centre, radius);
-        //}
+        public abstract double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream);
+
+        public abstract double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo);
 
 
         #region static utility methods
@@ -4755,6 +4853,7 @@ namespace EGIS.ShapeFileLib
         }
         
 #endregion 
+
     }
 
     internal struct IndexAnglePair
@@ -4871,6 +4970,11 @@ namespace EGIS.ShapeFileLib
         }
 
         public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            return null;
+        }
+
+        public override List<double[]> GetShapeMDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
         {
             return null;
         }
@@ -5533,6 +5637,49 @@ namespace EGIS.ShapeFileLib
                 }
             }
             return false;
+        }
+
+        public unsafe override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            //first check if the record's bounds intersects with the circle
+            //RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            //if (!GeometryAlgorithms.RectangleCircleIntersects(ref recBounds, ref centre, radius)) return false;
+
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            double minDistance = double.PositiveInfinity;
+            fixed (byte* dataPtr = data)
+            {
+                PolygonRecordP* nextRec = (PolygonRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->DataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+                    double partDistance = GeometryAlgorithms.DistanceToPolygon(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, numParts == 1);
+                    if(partDistance < minDistance)
+                    {
+                        minDistance = partDistance;
+                    }
+                }
+            }
+            return minDistance;
+        }
+
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            return GetDistanceToShape(shapeIndex, centre, radius, shapeFileStream);
         }
 
         #region QTNodeHelper Members
@@ -6287,6 +6434,28 @@ namespace EGIS.ShapeFileLib
        
 
         #endregion
+
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            PointD pt = GetPointD(shapeIndex, shapeFileStream);
+            double dx = (pt.X - centre.X);
+            double dy = (pt.Y - centre.Y);
+            return Math.Sqrt(dx * dx + dy * dy);                
+        }
+
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            PointD pt = GetPointD(shapeIndex, shapeFileStream);
+            double dx = (pt.X - centre.X);
+            double dy = (pt.Y - centre.Y);
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        public override List<double[]> GetShapeMDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            return null;
+        }
     }
 
     class SFPointZCol : SFRecordCol, QTNodeHelper
@@ -6396,6 +6565,11 @@ namespace EGIS.ShapeFileLib
             return dataList;
         }
 
+        public override List<double[]> GetShapeMDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            throw new NotImplementedException("GetShapeMDataD has not been implemented for PointZ shape type");
+        }
+
         public override bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
         {
             return rect.Contains(GetPointD(shapeIndex, shapeFileStream));
@@ -6407,6 +6581,24 @@ namespace EGIS.ShapeFileLib
             return (pt.X - centre.X) * (pt.X - centre.X) + (pt.Y - centre.Y) * (pt.Y - centre.Y) < (radius * radius);
         }
 
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            PointD pt = GetPointD(shapeIndex, shapeFileStream);
+            double dx = (pt.X - centre.X);
+            double dy = (pt.Y - centre.Y);
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            PointD pt = GetPointD(shapeIndex, shapeFileStream);
+            double dx = (pt.X - centre.X);
+            double dy = (pt.Y - centre.Y);
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        #region paint methods
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
             paint(g, clientArea, extent, shapeFileStream, null, projectionType);
@@ -6964,8 +7156,6 @@ namespace EGIS.ShapeFileLib
                 if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
             }
         }
-
-
         
         private struct RenderPtObj
         {
@@ -6983,7 +7173,8 @@ namespace EGIS.ShapeFileLib
             }
 
         }
-
+        
+        #endregion
 
         #region QTNodeHelper Members
 
@@ -7145,6 +7336,13 @@ namespace EGIS.ShapeFileLib
         {
             return null;
         }
+
+        public override List<double[]> GetShapeMDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            return null;
+        }
+
+        #region paint methods
 
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
@@ -7707,8 +7905,6 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-
-
         private struct RenderPtObj
         {
             public PointF Pt;
@@ -7725,6 +7921,8 @@ namespace EGIS.ShapeFileLib
             }
 
         }
+
+        #endregion
 
 
         #region QTNodeHelper Members
@@ -7792,7 +7990,39 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            double distance = double.PositiveInfinity;
+            List<PointD[]> pts = GetShapeDataD(shapeIndex, shapeFileStream);
+            if (pts != null && pts.Count > 0)
+            {
+                for (int n = pts[0].Length - 1; n >= 0; --n)
+                {
+                    double dx = (pts[0][n].X - centre.X);
+                    double dy = (pts[0][n].Y - centre.Y);
+                    distance = Math.Min(dx * dx + dy * dy, distance);                   
+                }
+            }
+            return Math.Sqrt(distance);
+        }
 
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            double distance = double.PositiveInfinity;
+            List<PointD[]> pts = GetShapeDataD(shapeIndex, shapeFileStream);
+            if (pts != null && pts.Count > 0)
+            {
+                for (int n = pts[0].Length - 1; n >= 0; --n)
+                {
+                    double dx = (pts[0][n].X - centre.X);
+                    double dy = (pts[0][n].Y - centre.Y);
+                    distance = Math.Min(dx * dx + dy * dy, distance);
+                }
+            }
+            return Math.Sqrt(distance);
+        }
+        
 
         #endregion
     }
@@ -7909,6 +8139,12 @@ namespace EGIS.ShapeFileLib
                 }
             }
             return dataList;
+        }
+
+
+        public override List<double[]> GetShapeMDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            throw new NotImplementedException("GetShapeMDataD has not been implemented for MultiPointZ shape type");
         }
 
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
@@ -8558,6 +8794,38 @@ namespace EGIS.ShapeFileLib
         }
 
 
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            double distance = double.PositiveInfinity;
+            List<PointD[]> pts = GetShapeDataD(shapeIndex, shapeFileStream);
+            if (pts != null && pts.Count > 0)
+            {
+                for (int n = pts[0].Length - 1; n >= 0; --n)
+                {
+                    double dx = (pts[0][n].X - centre.X);
+                    double dy = (pts[0][n].Y - centre.Y);
+                    distance = Math.Min(dx * dx + dy * dy, distance);
+                }
+            }
+            return Math.Sqrt(distance);
+        }
+
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            double distance = double.PositiveInfinity;
+            List<PointD[]> pts = GetShapeDataD(shapeIndex, shapeFileStream);
+            if (pts != null && pts.Count > 0)
+            {
+                for (int n = pts[0].Length - 1; n >= 0; --n)
+                {
+                    double dx = (pts[0][n].X - centre.X);
+                    double dy = (pts[0][n].Y - centre.Y);
+                    distance = Math.Min(dx * dx + dy * dy, distance);
+                }
+            }
+            return Math.Sqrt(distance);
+        }
 
         #endregion
     }
@@ -8646,6 +8914,10 @@ namespace EGIS.ShapeFileLib
             return null;
         }
 
+        public override List<double[]> GetShapeMDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            return null;
+        }
 
         #region Paint methods
 
@@ -9558,6 +9830,79 @@ namespace EGIS.ShapeFileLib
         }
 
 
+        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            //first check if the record's bounds intersects with the circle
+            // RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            //if (!GeometryAlgorithms.RectangleCircleIntersects(ref recBounds, ref centre, radius)) return false;
+            double foundDistance = double.PositiveInfinity;
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolyLineRecordP* nextRec = (PolyLineRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->DataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+
+                    double polylineDistance = GeometryAlgorithms.ClosestPointOnPolyline(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre);
+                    if (polylineDistance < foundDistance) foundDistance = polylineDistance;
+                }
+            }
+            return foundDistance;
+        }
+
+        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            //first check if the record's bounds intersects with the circle
+            //RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            //if (!GeometryAlgorithms.RectangleCircleIntersects(ref recBounds, ref centre, radius)) return double.PositiveInfinity;
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolyLineRecordP* nextRec = (PolyLineRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->DataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+                    PolylineDistanceInfo pdi;
+                    double polylineDistance = GeometryAlgorithms.ClosestPointOnPolyline(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, out pdi);
+                    if (polylineDistance < polylineDistanceInfo.Distance)
+                    {
+                        pdi.PointIndex += nextRec->PartOffsets[partNum];
+                        polylineDistanceInfo = pdi;
+                    }
+                }
+            }
+            return polylineDistanceInfo.Distance;
+        }
+        
+
         #region QTNodeHelper Members
 
         public bool IsPointData()
@@ -9679,6 +10024,35 @@ namespace EGIS.ShapeFileLib
         public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
         {
             return null;
+        }
+
+        public override List<double[]> GetShapeMDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            List<double[]> dataList = new List<double[]>();            
+            unsafe
+            {
+                byte[] data = dataBuffer;
+                shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
+                fixed (byte* dataPtr = data)
+                {
+                    PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + 8);
+                    int dataOffset = nextRec->MeasureDataOffset + 16 + 8; //skip min max measure
+                    int numParts = nextRec->NumParts;
+                    double[] measures;
+                    for (int partNum = 0; partNum < numParts; partNum++)
+                    {
+                        int numPoints;
+                        if ((numParts - partNum) > 1) numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                        else numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                        measures = GetDoubleData(dataPtr, dataOffset, numPoints);
+                        dataOffset += numPoints << 3;
+                        dataList.Add(measures);
+                    }
+                }
+            }
+            return dataList;
+
         }
 
 
@@ -10572,6 +10946,77 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
+        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            //first check if the record's bounds intersects with the circle
+            // RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            //if (!GeometryAlgorithms.RectangleCircleIntersects(ref recBounds, ref centre, radius)) return false;
+            double foundDistance = double.PositiveInfinity;
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->PointDataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+
+                    double polylineDistance = GeometryAlgorithms.ClosestPointOnPolyline(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre);
+                    if (polylineDistance < foundDistance) foundDistance = polylineDistance;
+                }
+            }
+            return foundDistance;
+        }
+
+        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            //first check if the record's bounds intersects with the circle
+            //RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            //if (!GeometryAlgorithms.RectangleCircleIntersects(ref recBounds, ref centre, radius)) return double.PositiveInfinity;
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->PointDataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+                    PolylineDistanceInfo pdi;
+                    double polylineDistance = GeometryAlgorithms.ClosestPointOnPolyline(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, out pdi);
+                    if (polylineDistance < polylineDistanceInfo.Distance)
+                    {
+                        pdi.PointIndex += nextRec->PartOffsets[partNum];
+                        polylineDistanceInfo = pdi;
+                    } 
+                }
+            }
+            return polylineDistanceInfo.Distance;
+        }
         
         #region QTNodeHelper Members
 
@@ -10741,6 +11186,11 @@ namespace EGIS.ShapeFileLib
                 }
             }
             return dataList;
+        }
+
+        public override List<double[]> GetShapeMDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            throw new NotImplementedException("GetShapeMDataD has not been implemented for PolygonZ shape type");
         }
 
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
@@ -11379,7 +11829,15 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            throw new NotImplementedException();
+        }
 
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            throw new NotImplementedException();
+        }
 
         #region QTNodeHelper Members
 
@@ -11560,6 +12018,10 @@ namespace EGIS.ShapeFileLib
             return dataList;
         }
 
+        public override List<double[]> GetShapeMDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
+        {
+            throw new NotImplementedException("GetShapeMDataD has not been implemented for PolylineZ shape type");
+        }
 
         #region Paint methods
 
@@ -12469,7 +12931,80 @@ namespace EGIS.ShapeFileLib
             }
             return false;
         }
-                
+
+        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        {
+            //first check if the record's bounds intersects with the circle
+            // RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            //if (!GeometryAlgorithms.RectangleCircleIntersects(ref recBounds, ref centre, radius)) return false;
+            double foundDistance = double.PositiveInfinity;
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->PointDataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+
+                    double polylineDistance = GeometryAlgorithms.ClosestPointOnPolyline(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre);
+                    if (polylineDistance < foundDistance) foundDistance = polylineDistance;
+                }
+            }
+            return foundDistance;
+        }
+
+        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            //first check if the record's bounds intersects with the circle
+            //RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            //if (!GeometryAlgorithms.RectangleCircleIntersects(ref recBounds, ref centre, radius)) return double.PositiveInfinity;
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            fixed (byte* dataPtr = data)
+            {
+                PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->PointDataOffset;
+                int numParts = nextRec->NumParts;
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+                    PolylineDistanceInfo pdi;
+                    double polylineDistance = GeometryAlgorithms.ClosestPointOnPolyline(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, out pdi);
+                    if (polylineDistance < polylineDistanceInfo.Distance)
+                    {
+                        pdi.PointIndex += nextRec->PartOffsets[partNum];
+                        polylineDistanceInfo = pdi;
+                    }
+                }
+            }
+            return polylineDistanceInfo.Distance;
+        }
+        
+
         #region QTNodeHelper Members
 
         public bool IsPointData()

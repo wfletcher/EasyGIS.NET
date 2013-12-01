@@ -313,8 +313,8 @@ namespace EGIS.Controls
                 //set centre point to centre of shapefile and adjust zoom level to fit entire shapefile
                 RectangleF r = ShapeFile.LLExtentToProjectedExtent(this.Extent, this.projectionType);
                 
-                this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
-                this._zoomLevel = this.ClientSize.Width / r.Width;
+                this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);                
+                if(this.ClientSize.Width > 0) this._zoomLevel = this.ClientSize.Width / r.Width;
                 dirtyScreenBuf = true;
                 Refresh();
                 OnShapeFilesChanged();
@@ -540,15 +540,19 @@ namespace EGIS.Controls
         {
             RectangleF r = ShapeFile.LLExtentToProjectedExtent(this.Extent,this.projectionType);
             this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
-            double r1 = ClientSize.Width*r.Height;
-            double r2 = ClientSize.Height * r.Width;
+            Size cs = ClientSize;
+            //eliminate possible div by zero
+            if (cs.Width <= 0 || cs.Height <= 0) cs = new System.Drawing.Size(100, 100);
+            double r1 = cs.Width*r.Height;
+            double r2 = cs.Height * r.Width;
+            
             if (r1 < r2)
             {
-                this._zoomLevel = this.ClientSize.Width / r.Width;                
+                this._zoomLevel = cs.Width / r.Width;                
             }
             else
             {
-                this._zoomLevel = this.ClientSize.Height / r.Height;
+                this._zoomLevel = cs.Height / r.Height;
             }
                 
             dirtyScreenBuf = true;
@@ -707,8 +711,10 @@ namespace EGIS.Controls
         {
             get
             {
-                PointD bl = MousePosToGisPoint(0, this.ClientSize.Height - 1);
-                PointD tr = MousePosToGisPoint(this.ClientSize.Width - 1, 0);
+                //PointD bl = MousePosToGisPoint(0, this.ClientSize.Height - 1);
+                //PointD tr = MousePosToGisPoint(this.ClientSize.Width - 1, 0);
+                PointD bl = PixelCoordToGisPoint(0, this.ClientSize.Height - 1);
+                PointD tr = PixelCoordToGisPoint(this.ClientSize.Width - 1, 0);
                 return RectangleF.FromLTRB((float)bl.X, (float)bl.Y, (float)tr.X, (float)tr.Y);
             }
         }
@@ -762,24 +768,28 @@ namespace EGIS.Controls
         public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName)
         {            
             EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(path, name, labelFieldName);
-
-            
+            mouseOffPt = Point.Empty;
             //set centre point to centre of shapefile and adjust zoom level to fit entire shapefile            
             RectangleF r = ShapeFile.LLExtentToProjectedExtent(sf.Extent, this.projectionType);
             if (!r.IsEmpty)
             {                
                 this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
-                double r1 = ClientSize.Width * r.Height;
-                double r2 = ClientSize.Height * r.Width;
-                if (r1 < r2)
+                //eliminate possible div by zero
+                if (ClientSize.Width > 0 && ClientSize.Height > 0)
                 {
-                    this.ZoomLevel = this.ClientSize.Width / r.Width;
-                }
-                else
-                {
-                    this.ZoomLevel = this.ClientSize.Height / r.Height;
+                    double r1 = ClientSize.Width * r.Height;
+                    double r2 = ClientSize.Height * r.Width;
+                    if (r1 < r2)
+                    {
+                        this.ZoomLevel = this.ClientSize.Width / r.Width;
+                    }
+                    else
+                    {
+                        this.ZoomLevel = this.ClientSize.Height / r.Height;
+                    }
                 }
                 dirtyScreenBuf = true;
+                //Refresh(true);
             }
             OnShapeFilesChanged();            
             return sf;
@@ -932,8 +942,8 @@ namespace EGIS.Controls
             RectangleF r = sf.Extent;
             if (r.Top > 90 || r.Bottom < -90)
             {
-                //assume UTM
-                sf.RenderSettings.PenWidthScale = 15;
+                //assume projected coordinates
+                sf.RenderSettings.PenWidthScale = 5;
             }
             else
             {
@@ -943,12 +953,13 @@ namespace EGIS.Controls
                 utm2.Northing += 15;
                 EGIS.ShapeFileLib.LatLongCoordinate ll = EGIS.ShapeFileLib.ConversionFunctions.UtmToLL(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, utm2);
                 sf.RenderSettings.PenWidthScale = (float)Math.Abs(ll.Latitude - pt.Y);
-
             }
         }
 
         private void RenderShapefiles()
         {
+            if (this.ClientSize.Width <= 0 || this.ClientSize.Height <= 0) return;
+
             if (screenBuf == null || screenBuf.Size != this.ClientSize)
             {
                 if (screenBuf != null)
@@ -1257,7 +1268,7 @@ namespace EGIS.Controls
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-            if (PanSelectMode == EGIS.Controls.PanSelectMode.None) return;
+            if (PanSelectMode == EGIS.Controls.PanSelectMode.None || mouseDownButton == MouseButtons.None) return;
             Cursor oldCursor = Cursor;
             try
             {
@@ -1360,9 +1371,7 @@ namespace EGIS.Controls
                         double s = 1d / ZoomLevel;
                         _centrePoint.X -= (s * mouseOffPt.X);
                         _centrePoint.Y += (s * mouseOffPt.Y);
-
                         mouseOffPt = new Point(0, 0);
-
                         Refresh(true);
                     }
                 }
@@ -1384,7 +1393,7 @@ namespace EGIS.Controls
         {
             base.OnMouseMove(e);
             if (PanSelectMode == EGIS.Controls.PanSelectMode.None) return;
-            if (e.Button != MouseButtons.None)
+            if (e.Button != MouseButtons.None && mouseDownButton != System.Windows.Forms.MouseButtons.None)
             {
                 mouseOffPt = new Point(e.X - mouseDownPt.X, e.Y - mouseDownPt.Y);
                 Invalidate();
