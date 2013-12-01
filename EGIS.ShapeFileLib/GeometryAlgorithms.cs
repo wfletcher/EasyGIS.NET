@@ -186,6 +186,92 @@ namespace EGIS.ShapeFileLib
         }
 
 
+        public static unsafe double DistanceToPolygon(byte[] data, int offset, int numPoints, PointD point, bool ignoreHoles)
+        {
+            //test 1A : check if the point is inside the polygon
+            if (ignoreHoles)
+            {
+                if (PointInPolygon(data, offset, numPoints, point.X, point.Y))
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                //test 1B: check if if point is in polygon checking for holes
+                bool isHole = false;
+                if (PointInPolygon(data, offset, numPoints, point.X, point.Y, false, ref isHole))
+                {
+                    if (!isHole) return 0;
+                }
+            }
+
+            //test 2 : check distance each polygon edge to point
+            double minDistance = double.PositiveInfinity;
+            int j = numPoints - 1;
+            fixed (byte* bPtr = data)
+            {
+                PointD* points = (PointD*)(bPtr + offset);
+                for (int i = 0; i < numPoints; ++i)
+                {
+                    //could optimize further by working with Distance Squared, but for the moment use the 
+                    //distance
+                    double segmentDistance = LineSegPointDist(ref points[i], ref points[j], ref point);
+                    if(segmentDistance < minDistance)
+                    {
+                        minDistance = segmentDistance;
+                    }
+                    j = i;
+                }
+            }
+            return minDistance;
+        }
+
+        public static unsafe double DistanceToPolygon(byte[] data, int offset, int numPoints, PointD point)
+        {
+            return DistanceToPolygon(data, offset, numPoints, point, true);            
+        }
+
+        public static unsafe double DistanceToPolygon(PointD[] points, PointD point, bool ignoreHoles)
+        {
+            //test 1A : check if the point is inside the polygon
+            if (ignoreHoles)
+            {               
+                if (PointInPolygon(points, point.X, point.Y))
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                //test 1B: check if if point is in polygon checking for holes
+                bool isHole = false;
+                if (PointInPolygon(points, point.X, point.Y, false, ref isHole))
+                {
+                    if (!isHole) return 0;
+                }
+            }
+
+            //test 2 : check distance each polygon edge to point
+            double minDistance = double.PositiveInfinity;
+            int numPoints = points.Length;
+            int j = numPoints-1;
+            for (int i = 0; i < numPoints; ++i)
+            {
+                //could optimize further by working with Distance Squared, but for the moment use the 
+                //distance
+                double segmentDistance = LineSegPointDist(ref points[i], ref points[j], ref point);
+                if (segmentDistance < minDistance)
+                {
+                    minDistance = segmentDistance;
+                }
+                j = i;
+            }            
+            return minDistance;
+        }
+
+
+
         #endregion
 
 
@@ -210,6 +296,129 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
+        public static unsafe bool PointOnPolyline(PointD[] points, int offset, int numPoints, PointD pt, double minDist)
+        {            
+            for (int i = offset; i < numPoints - 1; i++)
+            {
+                if (LineSegPointDist(ref points[i], ref points[i + 1], ref pt) <= minDist)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static double ClosestPointOnPolyline(PointD[] points, int offset, int numPoints, PointD pt)
+        {
+            double closestDistance = double.PositiveInfinity;
+            for (int i = offset; i < numPoints - 1; i++)
+            {
+                double segmentDistance = LineSegPointDist(ref points[i], ref points[i + 1], ref pt);
+                if (segmentDistance < closestDistance) closestDistance = segmentDistance;
+            }
+            return closestDistance;
+        }
+
+        public static unsafe double ClosestPointOnPolyline(byte[] data, int offset, int numPoints, PointD pt)
+        {
+            double closestDistance = double.PositiveInfinity;            
+            fixed (byte* bPtr = data)
+            {
+                PointD* points = (PointD*)(bPtr + offset);
+
+                for (int i = 0; i < numPoints - 1; i++)
+                {
+                    double segmentDistance = LineSegPointDist(ref points[i], ref points[i + 1], ref pt);
+                    if (segmentDistance < closestDistance) closestDistance = segmentDistance;
+                }
+            }
+            return closestDistance;
+        }
+
+        public static unsafe void ClosestPointOnPolyline(PointD[] points, int offset, int numPoints, PointD pt, out PointD closestPoint, out double distance, out int segmentIndex, out double tVal)
+        {
+            distance = double.PositiveInfinity;
+            tVal = double.PositiveInfinity;
+            closestPoint = PointD.Empty;
+            segmentIndex = offset;
+
+            for (int i = offset; i < numPoints - 1; i++)
+            {
+                double t;
+                PointD segmentPoint;
+                double segmentDistance = LineSegPointDist(ref points[i], ref points[i + 1], ref pt, out t, out segmentPoint);
+                if(segmentDistance < distance)
+                {
+                    distance = segmentDistance;
+                    tVal = t;
+                    closestPoint = segmentPoint;                    
+                    segmentIndex = i;                    
+                }
+            }            
+        }
+
+        public static unsafe double ClosestPointOnPolyline(PointD[] points, int offset, int numPoints, PointD pt, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            
+            for (int i = offset; i < numPoints - 1; i++)
+            {
+                double segmentDistance = LineSegPointDist(ref points[i], ref points[i + 1], ref pt, ref polylineDistanceInfo);
+                if (segmentDistance < polylineDistanceInfo.Distance)
+                {
+                    polylineDistanceInfo.Distance = segmentDistance;
+                    polylineDistanceInfo.PointIndex = i;
+                }
+            }
+            return polylineDistanceInfo.Distance;
+        }
+
+        public static unsafe void ClosestPointOnPolyline(byte[] data, int offset, int numPoints, PointD pt, out PointD closestPoint, out double distance, out int segmentIndex, out double tVal)
+        {
+            distance = double.PositiveInfinity;
+            tVal = double.PositiveInfinity;
+            closestPoint = PointD.Empty;
+            segmentIndex = offset;
+
+            fixed (byte* bPtr = data)
+            {
+                PointD* points = (PointD*)(bPtr + offset);
+                for (int i = 0; i < numPoints - 1; i++)
+                {
+                    double t;
+                    PointD segmentPoint;
+                    double segmentDistance = LineSegPointDist(ref points[i], ref points[i + 1], ref pt, out t, out segmentPoint);
+                    if (segmentDistance < distance)
+                    {
+                        distance = segmentDistance;
+                        tVal = t;
+                        closestPoint = segmentPoint;
+                        segmentIndex = i;
+                    }
+                }
+            }
+        }
+
+        public static unsafe double ClosestPointOnPolyline(byte[] data, int offset, int numPoints, PointD pt, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            fixed (byte* bPtr = data)
+            {
+                PointD* points = (PointD*)(bPtr + offset);
+                for (int i = 0; i < numPoints - 1; i++)
+                {
+                    double segmentDistance = LineSegPointDist(ref points[i], ref points[i + 1], ref pt, ref polylineDistanceInfo);
+                    if (segmentDistance < polylineDistanceInfo.Distance)
+                    {
+                        polylineDistanceInfo.Distance = segmentDistance;
+                        polylineDistanceInfo.PointIndex = i;                        
+                    }
+                }
+            }
+            return polylineDistanceInfo.Distance;
+        }
+
+        
         //compute the dot product AB*BC         
         public static double Dot(ref PointD a, ref PointD b, ref PointD c)
         {
@@ -233,6 +442,17 @@ namespace EGIS.ShapeFileLib
             return Math.Sqrt((d1 * d1) + (d2 * d2));
         }
 
+        public static PointD PerpindicularVectorCCW(ref PointD v)
+        {
+            return new PointD(-v.Y, v.X);  //counter cw
+            //return new PointD(v.Y, -v.X);  //cw
+        }
+        public static PointD PerpindicularVectorCW(ref PointD v)
+        {
+            //return new PointD(-v.Y, v.X);  //counter cw
+            return new PointD(v.Y, -v.X);  //cw
+        }
+
         //Compute the distance from segment AB to C
         public static double LineSegPointDist(ref PointD a, ref PointD b, ref PointD c)
         {
@@ -247,6 +467,122 @@ namespace EGIS.ShapeFileLib
                 return Distance(ref a, ref c);
             }
             return Math.Abs(Cross(ref a, ref b, ref c) / Distance(ref a, ref b));
+        }
+
+        public static double LineSegPointDist(ref PointD a, ref PointD b, ref PointD c, out double tVal, out PointD pointOnSegment)
+        {
+            //float dist = cross(a,b,c) / distance(a,b);
+
+            if (Dot(ref a, ref b, ref c) > 0)
+            {
+                tVal = 1; //actually >=1. need to derive
+                pointOnSegment = b;
+                return Distance(ref b, ref c);
+            }
+            if (Dot(ref b, ref a, ref c) > 0)
+            {
+                tVal = 0; //actually <=0. Need to derive
+                pointOnSegment = a;
+                return Distance(ref a, ref c);
+            }
+            tVal = 0.5;
+            //to calculate the tVal need to check Cross result. if >0 create perp vector ccw
+            //else create per vector cw
+            //normalize perp vector (i.e. unit vector) by dividing by Distance AB used below and multiply 
+            //by returned distance below. tVal = ((c.x + perp.x)-a.x)/(b.x-a.x)
+
+            double cross = Cross(ref a, ref b, ref c);
+            double distAB = Distance(ref a, ref b);
+            double pointSegmentDistance = Math.Abs(cross / distAB);
+            if (cross < 0)
+            {
+                PointD perpVector = new PointD(pointSegmentDistance * (a.Y - b.Y) / distAB, pointSegmentDistance*(b.X - a.X) / distAB);
+                pointOnSegment = new PointD((c.X + perpVector.X), (c.Y + perpVector.Y));
+                if (Math.Abs(a.X - b.X) < double.Epsilon)
+                {
+                    tVal = (c.Y + perpVector.Y - a.Y) / (b.Y - a.Y);
+                }
+                else
+                {
+                    tVal = (c.X + perpVector.X - a.X) / (b.X - a.X);
+                }                
+            }
+            else
+            {
+                PointD perpVector = new PointD(pointSegmentDistance * (b.Y - a.Y) / distAB, pointSegmentDistance*(a.X - b.X) / distAB);
+                pointOnSegment = new PointD((c.X + perpVector.X), (c.Y + perpVector.Y));
+                if (Math.Abs(a.X - b.X) < double.Epsilon)                
+                {
+                    tVal = (c.Y + perpVector.Y - a.Y) / (b.Y - a.Y);
+                }
+                else
+                {
+                    tVal = (c.X + perpVector.X - a.X) / (b.X - a.X);
+                }                
+            }
+            return pointSegmentDistance;
+        }
+
+        internal static double LineSegPointDist(ref PointD a, ref PointD b, ref PointD c, ref PolylineDistanceInfo polylineDistanceInfo)
+        {
+            double pointSegmentDistance;
+            if (Dot(ref a, ref b, ref c) > 0)
+            {
+                pointSegmentDistance = Distance(ref b, ref c);
+                if (pointSegmentDistance < polylineDistanceInfo.Distance)
+                {
+                    //polylineDistanceInfo.Distance = pointSegmentDistance;
+                    polylineDistanceInfo.PolylinePoint = b;
+                    polylineDistanceInfo.TVal = 1;
+                    polylineDistanceInfo.LineSegmentSide = LineSegmentSide.EndOfSegment;
+                }
+            }
+            else if (Dot(ref b, ref a, ref c) > 0)
+            {
+                pointSegmentDistance = Distance(ref a, ref c);
+                if (pointSegmentDistance < polylineDistanceInfo.Distance)
+                {
+                    //polylineDistanceInfo.Distance = pointSegmentDistance;
+                    polylineDistanceInfo.PolylinePoint = a;
+                    polylineDistanceInfo.TVal = 0; //actually <=0. Need to derive
+                    polylineDistanceInfo.LineSegmentSide = LineSegmentSide.StartOfSegment;
+                }
+            }
+            else
+            {
+                double cross = Cross(ref a, ref b, ref c);
+                double distAB = Distance(ref a, ref b);
+                pointSegmentDistance = Math.Abs(cross / distAB);
+                if (pointSegmentDistance < polylineDistanceInfo.Distance)
+                {
+                    //to calculate the tVal need to check Cross result. if <0 create perp vector ccw
+                    //else create per vector cw
+                    //normalize perp vector (i.e. unit vector) by dividing by Distance AB used below and multiply 
+                    //by pointSegmentDistance. tVal = ((c.x + perp.x)-a.x)/(b.x-a.x)  
+                    PointD perpVector;
+                    if (cross < 0)
+                    {
+                        polylineDistanceInfo.LineSegmentSide = LineSegmentSide.RightOfSegment;
+                        perpVector = new PointD(pointSegmentDistance * (a.Y - b.Y) / distAB, pointSegmentDistance * (b.X - a.X) / distAB);                        
+                    }
+                    else
+                    {
+                        polylineDistanceInfo.LineSegmentSide = cross < double.Epsilon ? LineSegmentSide.OnSegment : LineSegmentSide.LeftOfSegment;
+                        perpVector = new PointD(pointSegmentDistance * (b.Y - a.Y) / distAB, pointSegmentDistance * (a.X - b.X) / distAB);
+                    }
+                    //polylineDistanceInfo.Distance = pointSegmentDistance;
+                    polylineDistanceInfo.PolylinePoint = new PointD((c.X + perpVector.X), (c.Y + perpVector.Y));
+                    if (Math.Abs(a.X - b.X) < double.Epsilon)
+                    {
+                        polylineDistanceInfo.TVal = (polylineDistanceInfo.PolylinePoint.Y - a.Y ) / (b.Y - a.Y);
+                    }
+                    else
+                    {
+                        polylineDistanceInfo.TVal = (polylineDistanceInfo.PolylinePoint.X - a.X) / (b.X - a.X);
+                    }
+                }
+            }
+            return pointSegmentDistance;
         }
 
         /// <summary>
@@ -353,6 +689,87 @@ namespace EGIS.ShapeFileLib
         }
 
         
+    }
+
+    public enum LineSegmentSide { None, OnSegment, StartOfSegment, LeftOfSegment, RightOfSegment, EndOfSegment };
+
+    /// <summary>
+    /// Encapsulates point from polyline distance information 
+    /// </summary>
+    public struct PolylineDistanceInfo
+    {
+        PointD polylinePoint;
+        double distance;
+        double tVal;
+        int pointIndex;
+        LineSegmentSide lineSegmentSide;
+        
+        public PolylineDistanceInfo(PointD polylinePoint, double distance, double tVal, int pointIndex, LineSegmentSide lineSegmentSide)
+        {
+            this.polylinePoint = polylinePoint;
+            this.distance = distance;
+            this.tVal = tVal;
+            this.pointIndex = pointIndex;
+            this.lineSegmentSide = lineSegmentSide;
+        }
+
+        public static PolylineDistanceInfo Empty = new PolylineDistanceInfo(PointD.Empty, double.PositiveInfinity, double.NaN, -1, LineSegmentSide.None);
+        
+
+        /// <summary>
+        /// The point on the poyline closest to the given point
+        /// </summary>
+        public PointD PolylinePoint
+        {
+            get { return polylinePoint; }
+            set { polylinePoint = value; }
+        }
+
+        /// <summary>
+        /// The distance from the given point to the polyline
+        /// </summary>
+        public double Distance
+        {
+            get { return distance; }
+            set { distance = value; }
+        }
+
+        /// <summary>
+        /// The zero based point index at the start of the line segment in the poyline closest to the given point
+        /// </summary>
+        /// <remarks>
+        /// A polyline of N points has (N-1) line segments. PointIndex will be between 0 to (N-2) inclusive.
+        /// </remarks>
+        public int PointIndex
+        {
+            get { return pointIndex; }
+            set { pointIndex = value; }
+        }
+
+        /// <summary>
+        /// A value between 0..1 indicating the location within the closest line segment
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// A TVal of 0 indicates the position on the line segment closest the given point is at the start of the line segment <br/>
+        /// A TVal of 1 indicates the position on the line segment closest the given point is at the end of the line segment <br/>
+        /// </para>
+        /// <para>
+        /// The TVal property is useful when used with polylines containing measures. For example if Segmentindex is N then
+        /// the dervied measure at the point on the polyline closest to a given point would be measure[N] + tVal x (measure[N+1] - measure[N])
+        /// </para>
+        /// </remarks>
+        public double TVal
+        {
+            get { return tVal; }
+            set { tVal = value; }
+        }
+
+        public LineSegmentSide LineSegmentSide
+        {
+            get { return lineSegmentSide; }
+            set { lineSegmentSide = value; }
+        }
     }
 
 }
