@@ -931,6 +931,7 @@ namespace EGIS.Controls
             sf.LoadFromFile(path);
             sf.Name = name;
             //sf.MapProjectionType = this.projectionType;
+            if (sf.RenderSettings != null) sf.RenderSettings.Dispose();
             sf.RenderSettings = new EGIS.ShapeFileLib.RenderSettings(path, renderFieldName, new Font(this.Font.FontFamily, 6f));
             LoadOptimalRenderSettings(sf);
             myShapefiles.Add(sf);

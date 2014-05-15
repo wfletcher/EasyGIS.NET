@@ -102,7 +102,7 @@ namespace EGIS.ShapeFileLib
         
         private FileStream shapeStream, indexStream, dbfStream;
         
-        private RectangleF shapeBounds = RectangleF.Empty;
+        private RectangleD shapeBounds = RectangleD.Empty;
 
         static byte[] ShapeFileHeaderBytes =
         {0x00,0x00,0x27,0x0a, 0x00,0x00,0x00,0x00,
@@ -130,9 +130,8 @@ namespace EGIS.ShapeFileLib
         /// <remarks>Derived classes must call this constructor</remarks>
         /// <param name="baseDir">The base directory where the 3 shapefile files will be created</param>
         /// <param name="shapeFileName">The name of the shapefile. The shapefile will be generated at baseDir + shapeFileName + ".shx|.shp|.dbf|.cpg</param>
-        /// <param name="dataFields">DbfFieldDesc array describing the dbf fields of the shapefile</param>
-       
-        protected ShapeFileWriter(string baseDir, string shapeFileName, DbfFieldDesc[] dataFields)
+        /// <param name="dataFields">DbfFieldDesc array describing the dbf fields of the shapefile</param>       
+        protected ShapeFileWriter(string baseDir, string shapeFileName, DbfFieldDesc[] dataFields, bool append)
         {
             if(dataFields==null || dataFields.Length==0) throw new ArgumentException("dataFields can not be null or zero length");
             
@@ -140,7 +139,7 @@ namespace EGIS.ShapeFileLib
             this.FileName = shapeFileName;
             this.dataFields = dataFields;
             
-            SetupFiles();
+            SetupFiles(append);
         }
 
         /// <summary>
@@ -269,7 +268,7 @@ namespace EGIS.ShapeFileLib
         /// Derived classes must update the ShapeBounds as each record is written, as thie shapefile's main
         /// header will be updated with the ShapeBounds when the Close method is called.
         /// </remarks>
-        protected RectangleF ShapeBounds
+        protected RectangleD ShapeBounds
         {
             get
             {
@@ -319,17 +318,50 @@ namespace EGIS.ShapeFileLib
             return this.dataFields;
         }
 
-        private void SetupFiles()
-        {        
-            shapeStream = new FileStream(BaseDirectory + "\\" + FileName+".shp",FileMode.Create);        
-            indexStream = new FileStream(BaseDirectory + "\\" + FileName+".shx",FileMode.Create);                
-            dbfStream = new FileStream(BaseDirectory + "\\" + FileName+".dbf",FileMode.Create);
-
-            //write the code page file
-            string cpgFilePath = BaseDirectory + "\\" + FileName + ".cpg";
-            using (System.IO.StreamWriter sw = new System.IO.StreamWriter(cpgFilePath, false, System.Text.Encoding.ASCII))
+        private void SetupFiles(bool append)
+        {
+            if (append)
             {
-                sw.Write("utf-8");
+                shapeStream = new FileStream(BaseDirectory + "\\" + FileName + ".shp", FileMode.Open, FileAccess.ReadWrite);
+                indexStream = new FileStream(BaseDirectory + "\\" + FileName + ".shx", FileMode.Open, FileAccess.ReadWrite);
+                dbfStream = new FileStream(BaseDirectory + "\\" + FileName + ".dbf", FileMode.Open, FileAccess.ReadWrite);
+                
+                //read the bounding box                
+                indexStream.Seek(ShapeFileHeaderBoundingBoxOffset, SeekOrigin.Begin);
+                byte[] doubleBytes = new byte[8];
+                double left, top, right, bottom;
+                indexStream.Read(doubleBytes, 0, 8);
+                left = BitConverter.ToDouble(doubleBytes, 0);
+                indexStream.Read(doubleBytes, 0, 8);
+                top = BitConverter.ToDouble(doubleBytes, 0);
+                indexStream.Read(doubleBytes, 0, 8);
+                right = BitConverter.ToDouble(doubleBytes, 0);
+                indexStream.Read(doubleBytes, 0, 8);
+                bottom = BitConverter.ToDouble(doubleBytes, 0);
+
+                this.shapeBounds = RectangleD.FromLTRB(left, top, right, bottom);
+
+                //adjust the file positions
+                shapeStream.Seek(0, SeekOrigin.End);
+                indexStream.Seek(0, SeekOrigin.End);
+                dbfStream.Seek(-1, SeekOrigin.End); //seek to end -1 (end of file byte)
+
+                //calculate the number of records
+                //each record in the index file is 8 bytes
+                this.recordCount = (int)((indexStream.Position - ShapeFileHeaderBytes.Length) >> 3);
+            }
+            else
+            {
+                shapeStream = new FileStream(BaseDirectory + "\\" + FileName + ".shp", FileMode.Create);
+                indexStream = new FileStream(BaseDirectory + "\\" + FileName + ".shx", FileMode.Create);
+                dbfStream = new FileStream(BaseDirectory + "\\" + FileName + ".dbf", FileMode.Create);
+
+                //write the code page file
+                string cpgFilePath = BaseDirectory + "\\" + FileName + ".cpg";
+                using (System.IO.StreamWriter sw = new System.IO.StreamWriter(cpgFilePath, false, System.Text.Encoding.ASCII))
+                {
+                    sw.Write("utf-8");
+                }
             }
             
         }
@@ -439,10 +471,10 @@ namespace EGIS.ShapeFileLib
                 //System.Diagnostics.Debug.WriteLine("len = " + len);
                 shapeStream.Write(EndianUtils.GetBytesBE(fileLength), 0, 4);//be
                 shapeStream.Seek(ShapeFileHeaderBoundingBoxOffset, SeekOrigin.Begin);
-                shapeStream.Write(BitConverter.GetBytes((double)ShapeBounds.Left), 0, 8);
-                shapeStream.Write(BitConverter.GetBytes((double)ShapeBounds.Top), 0, 8);
-                shapeStream.Write(BitConverter.GetBytes((double)ShapeBounds.Right), 0, 8);
-                shapeStream.Write(BitConverter.GetBytes((double)ShapeBounds.Bottom), 0, 8);
+                shapeStream.Write(BitConverter.GetBytes(ShapeBounds.Left), 0, 8);
+                shapeStream.Write(BitConverter.GetBytes(ShapeBounds.Top), 0, 8);
+                shapeStream.Write(BitConverter.GetBytes(ShapeBounds.Right), 0, 8);
+                shapeStream.Write(BitConverter.GetBytes(ShapeBounds.Bottom), 0, 8);
             }
             finally
             {
@@ -464,10 +496,10 @@ namespace EGIS.ShapeFileLib
 
                 indexStream.Write(EndianUtils.GetBytesBE(fileLength), 0, 4);//be
                 indexStream.Seek(ShapeFileHeaderBoundingBoxOffset, SeekOrigin.Begin);
-                indexStream.Write(BitConverter.GetBytes((double)ShapeBounds.Left), 0, 8);
-                indexStream.Write(BitConverter.GetBytes((double)ShapeBounds.Top), 0, 8);
-                indexStream.Write(BitConverter.GetBytes((double)ShapeBounds.Right), 0, 8);
-                indexStream.Write(BitConverter.GetBytes((double)ShapeBounds.Bottom), 0, 8);
+                indexStream.Write(BitConverter.GetBytes(ShapeBounds.Left), 0, 8);
+                indexStream.Write(BitConverter.GetBytes(ShapeBounds.Top), 0, 8);
+                indexStream.Write(BitConverter.GetBytes(ShapeBounds.Right), 0, 8);
+                indexStream.Write(BitConverter.GetBytes(ShapeBounds.Bottom), 0, 8);
             }
             finally
             {
@@ -643,8 +675,53 @@ namespace EGIS.ShapeFileLib
                 case ShapeType.PolyLine:
                     return new PolyLineShapeFileWriter(baseDir, shapeFileName, dataFields);                  
                 default:
-                    throw new ArgumentException("Unknown ShapeType");
+                    throw new ArgumentException("Unsupported ShapeType");
             }        
+        }
+
+        /// <summary>
+        /// Creates a ShapeFileWriter class by opening an existing shapefile
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This method can be used to open an existing shapefile in order to append records
+        /// </para>
+        /// <para>
+        /// Query the returned ShapeFileWriter to obtain the ShapeType and Dbf Field Descriptions
+        /// </para>
+        /// </remarks>
+        /// <see cref="GetFieldDescriptions()"/>
+        /// <see cref="ShapeType"/>
+        
+        /// <param name="baseDir">The path to the base directory where the shape file should be created</param>
+        /// <param name="shapeFileName">The name of the shapefile to create</param>
+        /// <returns></returns>
+        public static ShapeFileWriter OpenWriter(string baseDir, string shapeFileName)
+        {
+            ShapeType shapeType = ShapeType.NullShape;
+            DbfFieldDesc[] fieldDescriptions = null;
+            //step 1 create and open a ShapeFile to read the shape type and field descriptions
+            string fullPath = System.IO.Path.ChangeExtension(System.IO.Path.Combine(baseDir, shapeFileName), ".shp");
+            using (ShapeFile sf = new ShapeFile(fullPath))
+            using(DbfReader dbfReader = new DbfReader(System.IO.Path.ChangeExtension(fullPath, ".dbf")))
+            {
+                shapeType = sf.ShapeType;
+                fieldDescriptions = dbfReader.DbfRecordHeader.GetFieldDescriptions();
+            }
+
+            switch (shapeType)
+            {
+                case ShapeType.Polygon:
+                    return new PolygonShapeFileWriter(baseDir, shapeFileName, fieldDescriptions, true);
+                case ShapeType.NullShape:
+                    throw new ArgumentException("Can not create shapefile using NullShape ShapeType");
+                case ShapeType.Point:
+                    return new PointShapeFileWriter(baseDir, shapeFileName, fieldDescriptions, true);
+                case ShapeType.PolyLine:
+                    return new PolyLineShapeFileWriter(baseDir, shapeFileName, fieldDescriptions, true);
+                default:
+                    throw new NotSupportedException("Unsupported ShapeType");
+            }
         }
 
 
@@ -740,11 +817,17 @@ namespace EGIS.ShapeFileLib
     class PolygonShapeFileWriter : ShapeFileWriter
 {
 
-    internal PolygonShapeFileWriter(String baseDir, String shapeFileName, DbfFieldDesc[] datafields):base(baseDir, shapeFileName, datafields)
+    internal PolygonShapeFileWriter(String baseDir, String shapeFileName, DbfFieldDesc[] datafields, bool append)
+        :base (baseDir, shapeFileName, datafields, append)
     {
         this.ShapeType = ShapeType.Polygon;       
-        WriteFileHeaders();
+        if(!append) WriteFileHeaders();
         
+    }
+
+    internal PolygonShapeFileWriter(String baseDir, String shapeFileName, DbfFieldDesc[] datafields)
+        : this(baseDir,shapeFileName, datafields, false) 
+    {        
     }
     
     public override void AddRecord(double[] points, int pointCount, String[] fieldData)
@@ -837,11 +920,11 @@ namespace EGIS.ShapeFileLib
             //update the entire shapefile bounds
             if (RecordCount == 1)
             {
-                ShapeBounds = new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY));
+                ShapeBounds = new RectangleD(minX, minY, (maxX - minX), (maxY - minY));
             }
             else
             {
-                ShapeBounds = RectangleF.Union(ShapeBounds, new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY)));
+                ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
             }
             //write number of parts
             ShapeStream.Write(BitConverter.GetBytes((int)parts.Count), 0, 4);
@@ -905,11 +988,11 @@ namespace EGIS.ShapeFileLib
         //update the entire shapefile bounds
         if(RecordCount == 1)
         {
-            ShapeBounds = new RectangleF((float)minX, (float)minY, (float)(maxX-minX), (float)(maxY-minY));
+            ShapeBounds = new RectangleD(minX, minY, (maxX-minX), (maxY-minY));
         }
         else
         {
-            ShapeBounds = RectangleF.Union(ShapeBounds,new RectangleF((float)minX, (float)minY, (float)(maxX-minX), (float)(maxY-minY)));
+            ShapeBounds = RectangleD.Union(ShapeBounds,new RectangleD(minX, minY, (maxX-minX), (maxY-minY)));
         }
         //write number of parts
         ShapeStream.Write(BitConverter.GetBytes((int)1), 0, 4);
@@ -976,11 +1059,11 @@ namespace EGIS.ShapeFileLib
         //update the entire shapefile bounds
         if (RecordCount == 1)
         {
-            ShapeBounds = new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY));
+            ShapeBounds = new RectangleD(minX, minY, (maxX - minX), (maxY - minY));
         }
         else
         {
-            ShapeBounds = RectangleF.Union(ShapeBounds, new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY)));
+            ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
         }
         //write number of parts
         ShapeStream.Write(BitConverter.GetBytes((int)parts.Count), 0, 4);
@@ -1044,11 +1127,11 @@ namespace EGIS.ShapeFileLib
             //update the entire shapefile bounds
             if (RecordCount == 1)
             {
-                ShapeBounds = new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY));
+                ShapeBounds = new RectangleD(minX, minY, (maxX - minX), (maxY - minY));
             }
             else
             {
-                ShapeBounds = RectangleF.Union(ShapeBounds, new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY)));
+                ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
             }
             //write number of parts
             ShapeStream.Write(BitConverter.GetBytes((int)1), 0, 4);
@@ -1105,11 +1188,11 @@ namespace EGIS.ShapeFileLib
             //update the entire shapefile bounds
             if (RecordCount == 1)
             {
-                ShapeBounds = new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY));
+                ShapeBounds = new RectangleD(minX, minY, (maxX - minX), (maxY - minY));
             }
             else
             {
-                ShapeBounds = RectangleF.Union(ShapeBounds, new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY)));
+                ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
             }
             //write number of parts
             ShapeStream.Write(BitConverter.GetBytes((int)1), 0, 4);
@@ -1139,12 +1222,17 @@ namespace EGIS.ShapeFileLib
     class PolyLineShapeFileWriter : ShapeFileWriter
     {
 
-        internal PolyLineShapeFileWriter(String baseDir, String shapeFileName, DbfFieldDesc[] datafields):base(baseDir, shapeFileName, datafields)
-    {        
-        this.ShapeType = ShapeType.PolyLine;       
-        WriteFileHeaders();
-        
-    }
+        internal PolyLineShapeFileWriter(String baseDir, String shapeFileName, DbfFieldDesc[] datafields, bool append)
+            :base(baseDir, shapeFileName, datafields, append)
+        {        
+            this.ShapeType = ShapeType.PolyLine;       
+            if(!append) WriteFileHeaders();        
+        }
+
+        internal PolyLineShapeFileWriter(String baseDir, String shapeFileName, DbfFieldDesc[] datafields)
+            : this(baseDir, shapeFileName, datafields, false)
+        {            
+        }
     
         public override void AddRecord(double[] pts, int numPoints, String[] fieldData)
     {
@@ -1222,11 +1310,11 @@ namespace EGIS.ShapeFileLib
             //update the entire shapefile bounds
             if (RecordCount == 1)
             {
-                ShapeBounds = new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY));
+                ShapeBounds = new RectangleD(minX, minY, (maxX - minX), (maxY - minY));
             }
             else
             {
-                ShapeBounds = RectangleF.Union(ShapeBounds, new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY)));
+                ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
             }
             //write number of parts
             ShapeStream.Write(BitConverter.GetBytes((int)1), 0, 4);
@@ -1283,11 +1371,11 @@ namespace EGIS.ShapeFileLib
             //update the entire shapefile bounds
             if (RecordCount == 1)
             {
-                ShapeBounds = new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY));
+                ShapeBounds = new RectangleD(minX, minY, (maxX - minX), (maxY - minY));
             }
             else
             {
-                ShapeBounds = RectangleF.Union(ShapeBounds, new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY)));
+                ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
             }
             //write number of parts
             ShapeStream.Write(BitConverter.GetBytes((int)1), 0, 4);
@@ -1344,11 +1432,11 @@ namespace EGIS.ShapeFileLib
         //update the entire shapefile bounds
         if (RecordCount == 1)
         {
-            ShapeBounds = new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY));
+            ShapeBounds = new RectangleD(minX, minY, (maxX - minX), (maxY - minY));
         }
         else
         {
-            ShapeBounds = RectangleF.Union(ShapeBounds, new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY)));
+            ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
         }
         //write number of parts
         ShapeStream.Write(BitConverter.GetBytes((int)1), 0, 4);
@@ -1418,11 +1506,11 @@ namespace EGIS.ShapeFileLib
             //update the entire shapefile bounds
             if (RecordCount == 1)
             {
-                ShapeBounds = new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY));
+                ShapeBounds = new RectangleD(minX, minY, (maxX - minX), (maxY - minY));
             }
             else
             {
-                ShapeBounds = RectangleF.Union(ShapeBounds, new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY)));
+                ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
             }
             //write number of parts
             ShapeStream.Write(BitConverter.GetBytes((int)parts.Count), 0, 4);
@@ -1500,11 +1588,11 @@ namespace EGIS.ShapeFileLib
             //update the entire shapefile bounds
             if (RecordCount == 1)
             {
-                ShapeBounds = new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY));
+                ShapeBounds = new RectangleD(minX, minY, (maxX - minX), (maxY - minY));
             }
             else
             {
-                ShapeBounds = RectangleF.Union(ShapeBounds, new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY)));
+                ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
             }
             //write number of parts
             ShapeStream.Write(BitConverter.GetBytes((int)parts.Count), 0, 4);
@@ -1541,12 +1629,16 @@ namespace EGIS.ShapeFileLib
     class PointShapeFileWriter : ShapeFileWriter
 {
 
-    internal PointShapeFileWriter(String baseDir, String shapeFileName, DbfFieldDesc[] datafields)
-        : base(baseDir, shapeFileName, datafields)
+    internal PointShapeFileWriter(String baseDir, String shapeFileName, DbfFieldDesc[] datafields, bool append)
+        : base(baseDir, shapeFileName, datafields, append)
     {
         this.ShapeType = ShapeType.Point;
-        WriteFileHeaders();
+        if(!append) WriteFileHeaders();
+    }
 
+    internal PointShapeFileWriter(String baseDir, String shapeFileName, DbfFieldDesc[] datafields)
+        : this(baseDir, shapeFileName, datafields, false)
+    {        
     }
 
     public override void AddRecord(double[] pts, int numPoints, String[] fieldData)
@@ -1606,16 +1698,16 @@ namespace EGIS.ShapeFileLib
         //update the entire shapefile bounds
         if (RecordCount == 1)
         {
-            ShapeBounds = new RectangleF((float)pts[0], (float)pts[1], float.Epsilon, float.Epsilon);
+            ShapeBounds = new RectangleD(pts[0], pts[1], double.Epsilon, double.Epsilon);
         }
         else
         {
-            float minX = (float)Math.Min(ShapeBounds.Left, pts[0]);
-            float maxX = (float)Math.Max(ShapeBounds.Right, pts[0]);
-            float minY = (float)Math.Min(ShapeBounds.Top, pts[1]);
-            float maxY = (float)Math.Max(ShapeBounds.Bottom, pts[1]);
+            double minX = Math.Min(ShapeBounds.Left, pts[0]);
+            double maxX = Math.Max(ShapeBounds.Right, pts[0]);
+            double minY = Math.Min(ShapeBounds.Top, pts[1]);
+            double maxY = Math.Max(ShapeBounds.Bottom, pts[1]);
 
-            ShapeBounds = RectangleF.FromLTRB(minX, minY, maxX, maxY);
+            ShapeBounds = RectangleD.FromLTRB(minX, minY, maxX, maxY);
         }
         
         
@@ -1647,16 +1739,15 @@ namespace EGIS.ShapeFileLib
             //update the entire shapefile bounds
             if (RecordCount == 1)
             {
-                ShapeBounds = new RectangleF(pts[0].X, (float)pts[0].Y, float.Epsilon, float.Epsilon);
+                ShapeBounds = new RectangleD(pts[0].X, pts[0].Y, double.Epsilon, double.Epsilon);
             }
             else
             {
-                float minX = (float)Math.Min(ShapeBounds.Left, pts[0].X);
-                float maxX = (float)Math.Max(ShapeBounds.Right, pts[0].X);
-                float minY = (float)Math.Min(ShapeBounds.Top, pts[0].Y);
-                float maxY = (float)Math.Max(ShapeBounds.Bottom, pts[0].Y);
-
-                ShapeBounds = RectangleF.FromLTRB(minX, minY, maxX, maxY);
+                double minX = Math.Min(ShapeBounds.Left, pts[0].X);
+                double maxX = Math.Max(ShapeBounds.Right, pts[0].X);
+                double minY = Math.Min(ShapeBounds.Top, pts[0].Y);
+                double maxY = Math.Max(ShapeBounds.Bottom, pts[0].Y);
+                ShapeBounds = RectangleD.FromLTRB(minX, minY, maxX, maxY);
             }
 
 
@@ -1688,16 +1779,16 @@ namespace EGIS.ShapeFileLib
             //update the entire shapefile bounds
             if (RecordCount == 1)
             {
-                ShapeBounds = new RectangleF((float)pts[0].X, (float)pts[0].Y, float.Epsilon, float.Epsilon);
+                ShapeBounds = new RectangleD(pts[0].X, pts[0].Y, double.Epsilon, double.Epsilon);
             }
             else
             {
-                float minX = (float)Math.Min(ShapeBounds.Left, pts[0].X);
-                float maxX = (float)Math.Max(ShapeBounds.Right, pts[0].X);
-                float minY = (float)Math.Min(ShapeBounds.Top, pts[0].Y);
-                float maxY = (float)Math.Max(ShapeBounds.Bottom, pts[0].Y);
+                double minX = Math.Min(ShapeBounds.Left, pts[0].X);
+                double maxX = Math.Max(ShapeBounds.Right, pts[0].X);
+                double minY = Math.Min(ShapeBounds.Top, pts[0].Y);
+                double maxY = Math.Max(ShapeBounds.Bottom, pts[0].Y);
 
-                ShapeBounds = RectangleF.FromLTRB(minX, minY, maxX, maxY);
+                ShapeBounds = RectangleD.FromLTRB(minX, minY, maxX, maxY);
             }
 
 

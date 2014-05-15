@@ -2047,6 +2047,72 @@ namespace EGIS.ShapeFileLib
         }
 
 
+        /// <summary>
+        /// returns the index of the closest shape in the given collection of records
+        /// </summary>
+        /// <param name="centre"></param>
+        /// <param name="radius"></param>
+        /// <param name="recordIndicies">list of zero-based record indices</param>
+        /// <param name="polylineDistanceInfo"></param>
+        /// <returns></returns>
+        public int GetClosestShape(PointD centre, double radius, List<int> recordIndices, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            return GetClosestShape(centre, radius, sfRecordCol, recordIndices, out polylineDistanceInfo);
+        }
+
+        public int GetClosestShape(PointD centre, double radius, System.Collections.ObjectModel.ReadOnlyCollection<int> recordIndices, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            
+            return GetClosestShape(centre, radius, sfRecordCol, recordIndices, out polylineDistanceInfo);
+        }
+
+        private int GetClosestShape(PointD centre, double radius, SFRecordCol col, System.Collections.ObjectModel.ReadOnlyCollection<int> recordIndices, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            int closestIndex = -1;
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            double closestDistance = radius + double.Epsilon;
+            if (recordIndices != null)
+            {
+                foreach(int recordIndex in recordIndices)
+                {
+                    PolylineDistanceInfo pdi;
+                    double d = col.GetDistanceToShape(recordIndex, centre, closestDistance, shapeFileStream, out pdi);
+                    if (d < closestDistance)
+                    {
+                        closestIndex = recordIndex;
+                        polylineDistanceInfo = pdi;
+                        closestDistance = d;
+                    }
+                }
+            }
+            return closestIndex;
+        }
+
+        private int GetClosestShape(PointD centre, double radius, SFRecordCol col, List<int> recordIndices, out PolylineDistanceInfo polylineDistanceInfo)
+        {
+            List<int> shapeIndices = recordIndices;
+            int closestIndex = -1;
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            double closestDistance = radius + double.Epsilon;
+            if (shapeIndices != null)
+            {
+                for (int n = shapeIndices.Count - 1; n >= 0; --n)
+                {
+                    PolylineDistanceInfo pdi;
+                    double d = col.GetDistanceToShape(shapeIndices[n], centre, closestDistance, shapeFileStream, out pdi);
+                    if (d < closestDistance)
+                    {
+                        closestIndex = shapeIndices[n];
+                        polylineDistanceInfo = pdi;
+                        closestDistance = d;
+                    }
+                }
+            }
+            return closestIndex;
+        }
+
+
+
         #endregion
 
         #region "private methods"

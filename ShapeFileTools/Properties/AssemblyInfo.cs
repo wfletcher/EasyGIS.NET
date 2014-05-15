@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Easy GIS .NET")]
 [assembly: AssemblyProduct("Easy GIS .NET Desktop Edition")]
-[assembly: AssemblyCopyright("Copyright 2008-2013 Winston Fletcher")]
+[assembly: AssemblyCopyright("Copyright 2008-2014 Winston Fletcher")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("4.4.0.0")]
-[assembly: AssemblyFileVersion("4.4.0.0")]
+[assembly: AssemblyVersion("4.5.0.0")]
+[assembly: AssemblyFileVersion("4.5.0.0")]
