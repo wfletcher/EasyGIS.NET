@@ -240,10 +240,12 @@ namespace EGIS.ShapeFileLib
         /// <remarks>
         /// The Close method must be called after all records have been added. This method will update the number
         /// of records in the file's main header and outputs the end of file marker to the end of the file.
-        /// <para>Failure to call this method will result in an invalid DBF file being generated</para></remarks>
+        /// <para>Failure to call this method will result in an invalid DBF file being generated</para>
+        /// <para>This method is called when the DbfWriter is disposed</para>
+        /// </remarks>
         public void Close()
         {
-            CloseDbfFile();
+            if(dbfStream != null) CloseDbfFile();
         }
 
 
@@ -263,7 +265,8 @@ namespace EGIS.ShapeFileLib
         {
             if (disposing) //dispose managed resources
             {
-                if(dbfStream != null) dbfStream.Close();                
+                //if(dbfStream != null) dbfStream.Close();  
+                Close();
             }
         }
 

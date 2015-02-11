@@ -20,6 +20,22 @@ namespace WebTest.demos
             }
         }
 
+        protected override Color MapBackgroundColor
+        {
+            get
+            {
+                return Color.FromArgb(20,0,0,0);
+            }
+        }
+
+        protected override bool SupportTransparency
+        {
+            get
+            {
+                return true;
+            }
+        }
+
         private static ICustomRenderSettings CreatePopulationRenderSettings(ShapeFile sf)
         {
             

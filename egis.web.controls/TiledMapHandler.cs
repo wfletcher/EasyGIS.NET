@@ -118,6 +118,11 @@ namespace EGIS.Web.Controls
 
         }
 
+        protected virtual bool SupportTransparency
+        {
+            get { return true; }
+        }
+
         #endregion
 
 
@@ -203,8 +208,8 @@ namespace EGIS.Web.Controls
             if (containsPointLayer)
             {
                 //draw to an image w x h so that labels overlapping tiles are rendered
-                Bitmap bm = new Bitmap(256, 256, PixelFormat.Format24bppRgb);
-                Bitmap bm2 = new Bitmap(w, h, PixelFormat.Format24bppRgb);
+                Bitmap bm = new Bitmap(256, 256, SupportTransparency ? PixelFormat.Format32bppArgb : PixelFormat.Format24bppRgb);
+                Bitmap bm2 = new Bitmap(w, h, SupportTransparency ? PixelFormat.Format32bppArgb : PixelFormat.Format24bppRgb);
                 try
                 {
                     Graphics g = Graphics.FromImage(bm);
@@ -248,7 +253,7 @@ namespace EGIS.Web.Controls
             }
             else
             {
-                Bitmap bm = new Bitmap(256, 256, PixelFormat.Format24bppRgb);
+                Bitmap bm = new Bitmap(256, 256, SupportTransparency ? PixelFormat.Format32bppArgb : PixelFormat.Format24bppRgb);
                 try
                 {
                     Graphics g = Graphics.FromImage(bm);

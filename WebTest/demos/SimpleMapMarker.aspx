@@ -10,8 +10,8 @@
 <body>
     <form id="form1" runat="server">      
 
-    <div style="height: 600px; width: 700px">
-        <cc1:TiledSFMap ID="TiledSFMap1" runat="server" Height="500px" Width="650px"
+    <div style="height: 500px; width: 700px">
+        <cc1:TiledSFMap ID="TiledSFMap1" runat="server" Height="450px" Width="650px"
           CacheOnServer="false" ProjectName="~/demos/world.egp" CacheOnClient="true" ZoomLevel = "5"
           style = "border:2px solid #dddddd" />          
     </div>
@@ -96,8 +96,27 @@
                 alert("woops - map not found");
             }
         }
-          </script>
 
+
+        
+       </script>
+
+       <script>
+       function RemoveMarker(markerId) {
+        var map = egis.GetMap(0);
+        if (map != null) {
+            for (var n = 0; n < map.Markers.length; n++) {
+                if (map.Markers[n].id == markerId) {
+                    //remove the mapPin
+                    var marker = map.Markers[n];
+                    marker.parentNode.removeChild(marker);
+                    map.Markers.splice(n, 1);
+                }
+            }
+        }               
+       }
+       </script>
+    <button onclick="RemoveMarker('Australia');">Remove marker</button>
     </form>
 </body>
 </html>
