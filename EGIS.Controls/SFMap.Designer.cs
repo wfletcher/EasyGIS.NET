@@ -17,6 +17,14 @@ namespace EGIS.Controls
             {
                 if(components != null) components.Dispose();
                 if(screenBuf != null) screenBuf.Dispose();
+                if (this.myShapefiles != null)
+                {
+                    for (int n = 0; n < myShapefiles.Count; ++n)
+                    {
+                        myShapefiles[n].Dispose();
+                    }
+                    myShapefiles = null;
+                }
                 
             }
             base.Dispose(disposing);

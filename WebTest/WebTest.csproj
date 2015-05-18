@@ -54,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="demos\Demo1.aspx" />
+    <Content Include="demos\GoogleGeoJSON.htm" />
     <Content Include="demos\mappin.png" />
     <Content Include="demos\SimpleMapMarker.aspx" />
     <Content Include="demos\TileDemo3.aspx" />
@@ -91,6 +92,9 @@
     </Compile>
     <Compile Include="demos\ExampleMapHandler.ashx.cs">
       <DependentUpon>ExampleMapHandler.ashx</DependentUpon>
+    </Compile>
+    <Compile Include="demos\GeoJsonHandler.ashx.cs">
+      <DependentUpon>GeoJsonHandler.ashx</DependentUpon>
     </Compile>
     <Compile Include="demos\SimpleMapMarker.aspx.cs">
       <DependentUpon>SimpleMapMarker.aspx</DependentUpon>
@@ -347,6 +351,7 @@
     <Content Include="demos\TileDemo2.aspx" />
     <Content Include="demos\EGPMapTileHandler.ashx" />
     <Content Include="demos\TileDemo3Handler.ashx" />
+    <Content Include="demos\GeoJsonHandler.ashx" />
     <None Include="demos\us_demo.egp" />
     <None Include="demos\world.egp" />
     <None Include="demos\world_files\world_adm0.dbf" />

@@ -1,0 +1,75 @@
+﻿<!DOCTYPE html PUBL
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Data Layer: Simple</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+      html, body, #map-canvas {
+        height: 100%;
+        margin: 0px;
+        padding: 0px
+      }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js"></script>
+    <script>
+        var map;
+        function initialize() {
+            // Create a simple map.
+            map = new google.maps.Map(document.getElementById('map-canvas'), {
+                zoom: 4,
+                //center: { lat: -28, lng: 137.883 }
+                center: { lat: 0.5, lng: 102.0}
+            });
+
+            // Load a GeoJSON from the same server as our demo.
+            //map.data.loadGeoJson('https://storage.googleapis.com/maps-devrel/google.json');
+            map.data.loadGeoJson('GeoJsonHandler.ashx');
+
+//            var featureStyle = {
+//                fillColor: 'black',
+//                strokeWeight: 2.8,
+//                strokeOpacity: 0.45
+//            }
+//            map.data.setStyle(featureStyle);
+
+            map.data.setStyle(function (feature) {
+                var style;
+                if (feature.getProperty('styleOptions')) {
+                    style = feature.getProperty('styleOptions');
+                }
+                else {
+                    style = {
+                    fillColor: 'black',
+                    strokeWeight: 2.8,
+                    strokeOpacity: 0.45
+                    }
+                }
+                return style;
+            });
+
+
+            map.data.addListener('mouseover', function (event) {
+                map.data.revertStyle();
+                map.data.overrideStyle(event.feature, { strokeWeight: 8 });
+            });
+
+            map.data.addListener('mouseout', function (event) {
+                map.data.revertStyle();
+            });
+
+
+
+        }
+
+        google.maps.event.addDomListener(window, 'load', initialize);
+
+    </script>
+  </head>
+  <body>
+    <div id="map-canvas"></div>
+  </body>
+</html>
+

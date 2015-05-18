@@ -727,7 +727,7 @@ namespace EGIS.ShapeFileLib
 
 
     /// <summary>
-    /// struct used to store a UTM Coordinat. Used in ConversionFunctions
+    /// struct used to store a UTM Coordinate. Used in ConversionFunctions
     /// </summary>
     /// <seealso cref="ConversionFunctions"/>
 	[Serializable]

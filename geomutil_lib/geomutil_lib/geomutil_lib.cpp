@@ -24,7 +24,7 @@ EXTERN_C GEOMUTIL_LIB_API int SimplifyDouglasPeuckerInt(int* input, int inputCou
 
 EXTERN_C GEOMUTIL_LIB_API int /*bool*/ PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY)
 {
-	typedef boost::geometry::model::d2::point_xy<double> Point2D;
+	typedef boost::geometry::model::point<double,2,boost::geometry::cs::cartesian> Point2D;
 	typedef boost::geometry::model::ring<Point2D> Ring2D;
 	typedef boost::geometry::model::box<Point2D> Box2D;
 	typedef boost::geometry::model::polygon<Point2D> Polygon2D;
@@ -36,6 +36,34 @@ EXTERN_C GEOMUTIL_LIB_API int /*bool*/ PolygonRectIntersect(void* points, int po
 	boost::geometry::correct(boxPolygon); //closing point
 
 	if( boost::geometry::intersects(boxPolygon, ring)) return 1;
+	return 0;
+}
+
+EXTERN_C GEOMUTIL_LIB_API int/*bool*/ PolygonPolygonIntersect(double* points1, int points1Count, double* points2, int points2Count)
+{
+	typedef boost::geometry::model::point<double,2,boost::geometry::cs::cartesian> Point2D;
+	typedef boost::geometry::model::ring<Point2D> Ring2D;
+	typedef boost::geometry::model::polygon<Point2D> Polygon2D;
+
+	Ring2D ring1((Point2D*)points1, (Point2D*)points1+points1Count);
+	
+	Ring2D ring2((Point2D*)points2, (Point2D*)points2+points2Count);
+	
+	if( boost::geometry::intersects(ring1, ring2)) return 1;
+	return 0;
+}
+
+EXTERN_C GEOMUTIL_LIB_API int PolyLinePolygonIntersect(double* polyLinePoints, int polyLinePointsCount, double* polygonPoints, int polygonPointsCount)
+{
+	typedef boost::geometry::model::point<double,2,boost::geometry::cs::cartesian> Point2D;
+	typedef boost::geometry::model::ring<Point2D> Ring2D;
+	
+	typedef boost::geometry::model::linestring<Point2D> Polyline2D;
+	
+	Ring2D ring((Point2D*)polygonPoints, (Point2D*)polygonPoints+polygonPointsCount);
+	Polyline2D polyline((Point2D*)polyLinePoints, (Point2D*)polyLinePoints + polyLinePointsCount);
+	
+	if( boost::geometry::intersects(polyline, ring)) return 1;
 	return 0;
 }
 

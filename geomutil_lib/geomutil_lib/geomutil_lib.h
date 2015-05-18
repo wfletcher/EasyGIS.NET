@@ -24,6 +24,10 @@ EXTERN_C GEOMUTIL_LIB_API int SimplifyDouglasPeuckerDbl(double* input, int input
 EXTERN_C GEOMUTIL_LIB_API int SimplifyDouglasPeuckerInt(int* input, int inputCount, int tolerance, int* output, int &outputCount);
 
 
-EXTERN_C GEOMUTIL_LIB_API int/*bool*/ PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
+EXTERN_C GEOMUTIL_LIB_API int PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
 
 EXTERN_C GEOMUTIL_LIB_API int PolyLineRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
+
+EXTERN_C GEOMUTIL_LIB_API int PolygonPolygonIntersect(double* points1, int points1Count, double* points2, int points2Count);
+
+EXTERN_C GEOMUTIL_LIB_API int PolyLinePolygonIntersect(double* polyLinePoints, int polyLinePointsCount, double* polygonPoints, int polygonPointsCount);

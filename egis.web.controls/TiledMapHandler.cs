@@ -24,8 +24,7 @@ namespace EGIS.Web.Controls
         }
 
         public void ProcessRequest(HttpContext context)
-        {
-            
+        {            
             OnBeginRequest(context);
             try
             {
@@ -107,6 +106,27 @@ namespace EGIS.Web.Controls
         /// <remarks>Derived classes must implement the CreateMapLayers method</remarks>
         protected abstract List<ShapeFile> CreateMapLayers(HttpContext context);
 
+        /// <summary>
+        /// virtual method to create the Map layers and custom render settings for the request
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// <para>The default method just calls CreateMapLayers(context) and sets renderSettings to null</para>
+        /// <para>If you are using custom render settings layers.Count must equal renderSettings.Count. If renderSettings is null
+        /// then Custom Render settings will not be used. If any items in renbderSettings are null then the corresponding layer will not
+        /// use CustomRenderSettings</para>
+        /// <para>
+        /// Not used yet!
+        /// </para>
+        /// </remarks>
+        //protected /*virtual*/ void CreateMapLayers(HttpContext context, out List<ShapeFile> layers, out List<ICustomRenderSettings> renderSettings)
+        //{
+        //    layers = CreateMapLayers(context);
+        //    renderSettings = null;
+
+        //}
+
         protected virtual void OnBeginRequest(HttpContext context)
         {
             //System.Diagnostics.Debug.WriteLine("begin request");
@@ -142,21 +162,31 @@ namespace EGIS.Web.Controls
         }
 
         private void ProcessRequestCore(HttpContext context)
-        {            
-            DateTime dts = DateTime.Now;
-            if (context.Request.Params["getshape"] != null)
+        {
+            if (context.Request.Params["getshape"] != null || context.Request.Params["gettooltip"] != null)
             {
-                ProcessGetShapeRequest(context);
-                return;
+                ProcessGetShapeRequest(context);                
             }
+            else if (context.Request.Params["getattributes"] != null)
+            {
+                ProcessGetShapeAttributesRequest(context);
+            }
+            else
+            {
+                ProcessGetTileRequest(context);
+            }            
+        }
+
+
+        protected virtual void ProcessGetTileRequest(HttpContext context)
+        {
+            DateTime dts = DateTime.Now;
+            
             int w = 256 * 3;
             int h = 256 * 3;
             int tileX = 0, tileY = 0, zoomLevel = 0;
             PointD centerPoint = PointD.Empty;
             double zoom = -1;
-
-            int renderSettingsType = 0;
-            int.TryParse(context.Request["rendertype"], out renderSettingsType);
 
             bool foundCompulsoryParameters = false;
             if (int.TryParse(context.Request["tx"], out tileX))
@@ -174,7 +204,7 @@ namespace EGIS.Web.Controls
 
             if (!foundCompulsoryParameters) throw new InvalidOperationException("compulsory parameters 'tx','ty' or 'zoom' missing");
 
-            
+
             string cachePath = "";
             bool useCache = CacheOnServer;
 
@@ -261,13 +291,13 @@ namespace EGIS.Web.Controls
                     {
 
                         g.Clear(MapBackgroundColor);
-                        RenderMap(g, mapLayers, 256,256, centerPoint, zoom);
-                        
+                        RenderMap(g, mapLayers, 256, 256, centerPoint, zoom);
+
                         //perform custom painting
                     }
                     finally
                     {
-                        g.Dispose();                        
+                        g.Dispose();
                     }
                     using (MemoryStream ms = new MemoryStream())
                     {
@@ -288,7 +318,7 @@ namespace EGIS.Web.Controls
                 }
                 finally
                 {
-                    bm.Dispose();                   
+                    bm.Dispose();
                 }
             }
             context.Response.Flush();
@@ -318,7 +348,6 @@ namespace EGIS.Web.Controls
             {
                 throw new ArgumentException("zoom");
             }
-
             
             dcrsSessionKey = context.Request["dcrs"];
 
@@ -395,7 +424,9 @@ namespace EGIS.Web.Controls
                 {
                     bool useToolTip = (layers[l].RenderSettings != null && layers[l].RenderSettings.UseToolTip);
                     bool useCustomToolTip = (useToolTip && layers[l].RenderSettings.CustomRenderSettings != null && layers[l].RenderSettings.CustomRenderSettings.UseCustomTooltips);
-                    if (layers[l].Extent.Contains(ptf) && layers[l].IsVisibleAtZoomLevel((float)zoom) && useToolTip)
+                    if ((layers[l].Extent.Contains(ptf) || layers[l].ShapeType == ShapeType.Point
+                        || layers[l].ShapeType == ShapeType.PointM || layers[l].ShapeType == ShapeType.PointZ)
+                        && layers[l].IsVisibleAtZoomLevel((float)zoom) && useToolTip)
                     {
                         int selectedIndex = layers[l].GetShapeIndexContainingPoint(ptf, delta);
                         if (selectedIndex >= 0)
@@ -436,6 +467,129 @@ namespace EGIS.Web.Controls
                 }
             }
             return null;
+        }
+
+
+        #endregion
+
+
+        #region Get shape Attributes
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="context"></param>
+        protected virtual void ProcessGetShapeAttributesRequest(HttpContext context)
+        {
+            double x, y;
+            PointD centerPoint = PointD.Empty;
+            int zoomLevel = -1;
+
+            if (!double.TryParse(context.Request["x"], out x))
+            {
+                throw new ArgumentException("invalid x point");
+            }
+            if (!double.TryParse(context.Request["y"], out y))
+            {
+                throw new ArgumentException("invalid y point");
+            }
+            centerPoint = new PointD(x, y);
+
+            if (!int.TryParse(context.Request["zoom"], out zoomLevel))
+            {
+                throw new ArgumentException("zoom");
+            }
+
+            int layerIndex = -1;
+            int recordIndex = -1;
+            //List<ShapeFile> layers;
+            //List<ICustomRenderSettings> renderSettings;
+            //CreateMapLayers(context, out layers, out renderSettings);
+            List<ShapeFile> layers = CreateMapLayers(context);
+            bool shapeLocated = false;
+            if (layers != null && layers.Count > 0)
+            {
+                lock (EGIS.ShapeFileLib.ShapeFile.Sync)
+                {
+                    shapeLocated = FindShape(centerPoint, layers, zoomLevel, ref layerIndex, ref recordIndex);
+                }
+            }
+
+            context.Response.ContentType = "text/json";
+            context.Response.Cache.SetCacheability(HttpCacheability.Public);
+            context.Response.Cache.SetExpires(DateTime.Now.AddDays(7));
+
+
+            if (shapeLocated && layerIndex >= 0 && recordIndex >= 0)
+            {
+                string json = "";
+                lock (EGIS.ShapeFileLib.ShapeFile.Sync)
+                {
+                    List<KeyValuePair<string,string>> attributes= GetRecordAttributes(context, layers[layerIndex], recordIndex);
+                    json = (new System.Web.Script.Serialization.JavaScriptSerializer()).Serialize(attributes);                    
+                }
+                context.Response.Write(json);
+            }
+            else
+            {
+                context.Response.Write("[]");
+            }
+            context.Response.Flush();
+            //context.Response.End();
+        }
+
+        private static bool FindShape(PointD pt, List<EGIS.ShapeFileLib.ShapeFile> layers, int zoomLevel, ref int layerIndex, ref int recordIndex)
+        {
+            double zoom = TileUtil.ZoomLevelToScale(zoomLevel);
+            double delta = 8.0 / zoom;
+            PointD ptf = new PointD(pt.X, pt.Y);
+
+            for (int l = layers.Count - 1; l >= 0; l--)
+            {
+                bool useToolTip = true;// (layers[l].RenderSettings != null && layers[l].RenderSettings.UseToolTip);
+                if ((layers[l].Extent.Contains(ptf) || layers[l].ShapeType == ShapeType.Point
+                        || layers[l].ShapeType == ShapeType.PointM || layers[l].ShapeType == ShapeType.PointZ)
+                        && layers[l].IsVisibleAtZoomLevel((float)zoom) && useToolTip)
+                {
+                    int selectedIndex = layers[l].GetShapeIndexContainingPoint(ptf, delta);
+                    if (selectedIndex >= 0)
+                    {
+                        layerIndex = l;
+                        recordIndex = selectedIndex;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// returns a list of key/values for each attributes of a record
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="layer"></param>
+        /// <param name="recordIndex"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// The default implementation will return a key/value for every attributes.
+        /// If you wish to add additional attributes, perhaps by joining on another table, or exclude
+        /// some attributes override this method
+        /// </remarks>
+        protected virtual List<KeyValuePair<string, string>> GetRecordAttributes(HttpContext context, ShapeFile layer, int recordIndex)
+        {
+            List<KeyValuePair<string, string>> keyValues = new List<KeyValuePair<string, string>>();
+            if (recordIndex >= 0)
+            {
+                string[] fieldNames = layer.RenderSettings.DbfReader.GetFieldNames();
+                string[] values = layer.RenderSettings.DbfReader.GetFields(recordIndex);
+
+                for (int n = 0; n < fieldNames.Length; ++n)
+                {
+                    keyValues.Add(new KeyValuePair<string, string>(fieldNames[n].Trim(), values[n].Trim()));
+                }
+            }
+            return keyValues;
         }
 
 

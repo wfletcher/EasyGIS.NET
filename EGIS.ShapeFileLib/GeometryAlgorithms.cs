@@ -232,7 +232,7 @@ namespace EGIS.ShapeFileLib
             return DistanceToPolygon(data, offset, numPoints, point, true);            
         }
 
-        public static unsafe double DistanceToPolygon(PointD[] points, PointD point, bool ignoreHoles)
+        public static double DistanceToPolygon(PointD[] points, PointD point, bool ignoreHoles)
         {
             //test 1A : check if the point is inside the polygon
             if (ignoreHoles)
@@ -271,11 +271,21 @@ namespace EGIS.ShapeFileLib
         }
 
 
+        public static bool PolygonPolygonIntersect(PointD[] points1, int points1Count, PointD[] points2, int points2Count)
+        {
+            return NativeMethods.PolygonPolygonIntersect(points1, points1Count, points2, points2Count);
+        }
+
+        public static bool PolyLinePolygonIntersect(PointD[] polyLinePoints, int polyLinePointsCount, PointD[] polygonPoints, int polygonPointsCount)
+        {
+            return NativeMethods.PolyLinePolygonIntersect(polyLinePoints, polyLinePointsCount, polygonPoints, polygonPointsCount);
+        }
+        
 
         #endregion
 
 
-        #region Line Segment Algorithms
+        #region Line Algorithms
 
 
 
@@ -612,7 +622,18 @@ namespace EGIS.ShapeFileLib
             return false;
 
         }
-        
+
+
+        public static void SimplifyDouglasPeucker(System.Drawing.Point[] input, int inputCount, int tolerance, System.Drawing.Point[] output, ref int outputCount)
+        {
+            NativeMethods.SimplifyDouglasPeucker(input, inputCount, tolerance, output, ref outputCount);
+        }
+
+        public static void SimplifyDouglasPeucker(PointD[] input, int inputCount, int tolerance, PointD[] output, ref int outputCount)
+        {
+            NativeMethods.SimplifyDouglasPeucker(input, inputCount, tolerance, output, ref outputCount);
+        }
+
 
         #endregion
 
@@ -649,10 +670,7 @@ namespace EGIS.ShapeFileLib
             double distanceY = centre.Y - closestY;
 
             // If the distance is less than the circle's radius, an intersection occurs
-            return ((distanceX * distanceX) + (distanceY * distanceY)) <= (radius*radius);
-            
-
-
+            return ((distanceX * distanceX) + (distanceY * distanceY)) <= (radius*radius);            
         }
 
 
@@ -683,9 +701,6 @@ namespace EGIS.ShapeFileLib
 
             // If the distance is less than the circle's radius, an intersection occurs
             return ((distanceX * distanceX) + (distanceY * distanceY)) <= (radius * radius);
-
-
-
         }
 
         
