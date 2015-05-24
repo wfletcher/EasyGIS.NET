@@ -65,8 +65,13 @@ namespace EGIS.ShapeFileLib
 		
 			return TargetLocation;
 		}
-
-		//Returns the distance between two points...
+		
+        /// <summary>
+        /// Returns the distance between two points...
+        /// </summary>
+        /// <param name="currentPosition"></param>
+        /// <param name="currentDestination"></param>
+        /// <returns></returns>
 		public static double GetDistance(UtmCoordinate currentPosition, UtmCoordinate currentDestination)
 		{
 			double dEast, dNorth;

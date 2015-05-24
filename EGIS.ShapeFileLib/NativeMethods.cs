@@ -113,7 +113,7 @@ namespace EGIS.ShapeFileLib
             internal static unsafe extern int SimplifyDouglasPeuckerInt(int* input, int inputCount, int tolerance, int* output, ref int outputCount);
 
             [DllImport("geomutil_lib.dll", CallingConvention = CallingConvention.Cdecl)]
-            internal static unsafe extern int SimplifyDouglasPeuckerDbl(double* input, int inputCount, int tolerance, double* output, ref int outputCount);            
+            internal static unsafe extern int SimplifyDouglasPeuckerDbl(double* input, int inputCount, double tolerance, double* output, ref int outputCount);            
             
             [DllImport("geomutil_lib.dll", CallingConvention = CallingConvention.Cdecl)]
             internal static unsafe extern int PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
@@ -134,7 +134,7 @@ namespace EGIS.ShapeFileLib
             internal static unsafe extern int SimplifyDouglasPeuckerInt(int* input, int inputCount, int tolerance, int* output, ref int outputCount);
 
             [DllImport("geomutil_libx64.dll", CallingConvention = CallingConvention.Cdecl)]
-            internal static unsafe extern int SimplifyDouglasPeuckerDbl(double* input, int inputCount, int tolerance, double* output, ref int outputCount);            
+            internal static unsafe extern int SimplifyDouglasPeuckerDbl(double* input, int inputCount, double tolerance, double* output, ref int outputCount);            
 
             [DllImport("geomutil_libx64.dll", CallingConvention = CallingConvention.Cdecl)]
             internal static unsafe extern int PolygonRectIntersect(void* points, int pointCount, double rMinX, double rMinY, double rMaxX, double rMaxY);
@@ -165,7 +165,7 @@ namespace EGIS.ShapeFileLib
 
         }
 
-        internal static unsafe int SimplifyDouglasPeuckerDbl(double* input, int inputCount, int tolerance, double* output, ref int outputCount)
+        internal static unsafe int SimplifyDouglasPeuckerDbl(double* input, int inputCount, double tolerance, double* output, ref int outputCount)
         {
             if (IsWin32Process())
             {
@@ -244,7 +244,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        internal static unsafe int SimplifyDouglasPeucker(PointD[] input, int inputCount, int tolerance, PointD[] output, ref int outputCount)
+        internal static unsafe int SimplifyDouglasPeucker(PointD[] input, int inputCount, double tolerance, PointD[] output, ref int outputCount)
         {
             fixed (PointD* inputPtr = input)
             {

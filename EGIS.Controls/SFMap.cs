@@ -41,7 +41,26 @@ namespace EGIS.Controls
 {
     public delegate void ProgressLoadStatusHandler(int totalLayers, int numberLayersLoaded);
 
-    public enum PanSelectMode { None, Pan, SelectRectangle, SelectCircle };
+    /// <summary>
+    /// Pan/Select model enumeration
+    /// </summary>
+    public enum PanSelectMode { 
+        /// <summary>
+        /// None defined
+        /// </summary>
+        None,
+        /// <summary>
+        /// Pan mode
+        /// </summary>
+        Pan, 
+        /// <summary>
+        /// Rectangular select mode
+        /// </summary>
+        SelectRectangle, 
+        /// <summary>
+        /// Circular select mode
+        /// </summary>
+        SelectCircle };
 
     
     /// <summary>
@@ -272,13 +291,21 @@ namespace EGIS.Controls
 
         }
 
+        /// <summary>
+        /// reads and loads XML representatino of a .EGP project
+        /// </summary>
+        /// <param name="projectElement"></param>
         public void ReadXml(XmlElement projectElement)
         {
             ReadXml(projectElement, null);
         }
-        
 
 
+        /// <summary>
+        /// reads and loads XML representation of a .EGP project
+        /// </summary>
+        /// <param name="projectElement"></param>
+        /// <param name="loadingDelegate"</param>
         public void ReadXml(XmlElement projectElement, ProgressLoadStatusHandler loadingDelegate)
         {
             XmlNodeList colorList = projectElement.GetElementsByTagName("MapBackColor");
@@ -938,6 +965,10 @@ namespace EGIS.Controls
             return sf;
         }
 
+        /// <summary>
+        /// Load optimal render settings
+        /// </summary>
+        /// <param name="sf"></param>
         protected static void LoadOptimalRenderSettings(EGIS.ShapeFileLib.ShapeFile sf)
         {
             RectangleF r = sf.Extent;
@@ -1094,6 +1125,10 @@ namespace EGIS.Controls
             }
         }
 
+        /// <summary>
+        /// override
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
@@ -1181,6 +1216,11 @@ namespace EGIS.Controls
             shiftDown = false;
         }
 
+        /// <summary>
+        /// override 
+        /// </summary>
+        /// <param name="keyData"></param>
+        /// <returns></returns>
         protected override bool IsInputKey(Keys keyData)
         {
             switch (keyData)
@@ -1201,6 +1241,9 @@ namespace EGIS.Controls
                 
         private PanSelectMode controlPanSelectMode = PanSelectMode.Pan;
 
+        /// <summary>
+        /// get/set current PanSelectMode
+        /// </summary>
         public PanSelectMode PanSelectMode
         {
             get

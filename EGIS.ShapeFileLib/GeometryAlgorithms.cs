@@ -429,7 +429,14 @@ namespace EGIS.ShapeFileLib
         }
 
         
-        //compute the dot product AB*BC         
+          
+        /// <summary>
+        /// Computes the dot product AB*BC
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="c"></param>
+        /// <returns></returns>
         public static double Dot(ref PointD a, ref PointD b, ref PointD c)
         {
             PointD ab = new PointD(b.X - a.X, b.Y - a.Y);
@@ -437,7 +444,14 @@ namespace EGIS.ShapeFileLib
             return (ab.X * bc.X) + (ab.Y * bc.Y);
         }
 
-        //Compute the cross product AB x AC
+        
+        /// <summary>
+        /// Computes the cross product AB x AC 
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="c"></param>
+        /// <returns></returns>
         public static double Cross(ref PointD a, ref PointD b, ref PointD c)
         {
             PointD ab = new PointD(b.X - a.X, b.Y - a.Y);
@@ -445,6 +459,12 @@ namespace EGIS.ShapeFileLib
             return (ab.X * ac.Y) - (ab.Y * ac.X);
         }
 
+        /// <summary>
+        /// returns the Euclidean distance between two points
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public static double Distance(ref PointD a, ref PointD b)
         {
             double d1 = a.X - b.X;
@@ -452,18 +472,35 @@ namespace EGIS.ShapeFileLib
             return Math.Sqrt((d1 * d1) + (d2 * d2));
         }
 
+        /// <summary>
+        /// return counter-clockwise vector perpindicular to v
+        /// </summary>
+        /// <param name="v"></param>
+        /// <returns></returns>
         public static PointD PerpindicularVectorCCW(ref PointD v)
         {
             return new PointD(-v.Y, v.X);  //counter cw
             //return new PointD(v.Y, -v.X);  //cw
         }
+        
+        /// <summary>
+        /// return clockwise vector perpindicular to v
+        /// </summary>
+        /// <param name="v"></param>
+        /// <returns></returns>
         public static PointD PerpindicularVectorCW(ref PointD v)
         {
             //return new PointD(-v.Y, v.X);  //counter cw
             return new PointD(v.Y, -v.X);  //cw
         }
-
-        //Compute the distance from segment AB to C
+        
+        /// <summary>
+        /// Compute the distance from segment AB to C
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <param name="c"></param>
+        /// <returns></returns>
         public static double LineSegPointDist(ref PointD a, ref PointD b, ref PointD c)
         {
             //float dist = cross(a,b,c) / distance(a,b);
@@ -623,13 +660,28 @@ namespace EGIS.ShapeFileLib
 
         }
 
-
+        /// <summary>
+        /// Douglas Peucker line simplification
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="inputCount"></param>
+        /// <param name="tolerance"></param>
+        /// <param name="output"></param>
+        /// <param name="outputCount"></param>
         public static void SimplifyDouglasPeucker(System.Drawing.Point[] input, int inputCount, int tolerance, System.Drawing.Point[] output, ref int outputCount)
         {
             NativeMethods.SimplifyDouglasPeucker(input, inputCount, tolerance, output, ref outputCount);
         }
 
-        public static void SimplifyDouglasPeucker(PointD[] input, int inputCount, int tolerance, PointD[] output, ref int outputCount)
+        /// <summary>
+        /// Douglas Peucker line simplification
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="inputCount"></param>
+        /// <param name="tolerance"></param>
+        /// <param name="output"></param>
+        /// <param name="outputCount"></param>
+        public static void SimplifyDouglasPeucker(PointD[] input, int inputCount, double tolerance, PointD[] output, ref int outputCount)
         {
             NativeMethods.SimplifyDouglasPeucker(input, inputCount, tolerance, output, ref outputCount);
         }
@@ -637,7 +689,8 @@ namespace EGIS.ShapeFileLib
 
         #endregion
 
-        /// <summary>        
+        /// <summary> 
+        /// Rectangle Circle intersection test
         /// </summary>
         /// <param name="r"></param>
         /// <param name="centre"></param>
@@ -673,7 +726,14 @@ namespace EGIS.ShapeFileLib
             return ((distanceX * distanceX) + (distanceY * distanceY)) <= (radius*radius);            
         }
 
-
+        /// <summary> 
+        /// Rectangle Circle intersection test
+        /// </summary>
+        /// <param name="r"></param>
+        /// <param name="centre"></param>
+        /// <param name="radius"></param>
+        /// <returns></returns>
+        /// <remarks>This method is untested</remarks>        
         public static bool RectangleCircleIntersects(ref System.Drawing.RectangleF r, ref PointD centre, double radius)
         {
             //following code obtained from http://stackoverflow.com/questions/401847/circle-rectangle-collision-detection-intersection
