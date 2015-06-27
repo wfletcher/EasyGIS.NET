@@ -51,6 +51,7 @@ namespace EGIS.Controls
             toolTip.SetToolTip(this.btnMoveDown, "Move selected layer down in drawing order");
             toolTip.SetToolTip(this.btnRemove, "Remove selected layer from map");
             toolTip.SetToolTip(this.button1, "Add new layer to map");
+            toolTip.SetToolTip(this.lstShapefiles, "Right-click for more options");
 
         }
 
@@ -110,19 +111,23 @@ namespace EGIS.Controls
 
         }
 
-        private void btnRemove_Click(object sender, EventArgs e)
+        private void HandleRemoveSelectedShapeFile()
         {
             if (_map != null && lstShapefiles.SelectedItem != null)
             {
                 if (MessageBox.Show(this, "Remove Layer " + lstShapefiles.SelectedItem.ToString() + "?", "Confirm Layer Removal", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
                     EGIS.ShapeFileLib.ShapeFile sf = lstShapefiles.SelectedItem as EGIS.ShapeFileLib.ShapeFile;
-                    
+
                     _map.RemoveShapeFile(sf);
                     sf.Close();
                 }
             }
+        }
 
+        private void btnRemove_Click(object sender, EventArgs e)
+        {
+            HandleRemoveSelectedShapeFile();
         }
 
         private SFMap _map;
@@ -192,6 +197,67 @@ namespace EGIS.Controls
         private void button1_Click(object sender, EventArgs e)
         {
             OnAddLayerClicked();
+        }
+
+        private void lstShapefiles_MouseClick(object sender, MouseEventArgs e)
+        {
+            
+        }
+
+        private void lstShapefiles_MouseUp(object sender, MouseEventArgs e)
+        {
+            layerContextMenu.Tag = null;
+            if (e.Button == System.Windows.Forms.MouseButtons.Right)
+            {
+                if (lstShapefiles.Items.Count > 0)
+                {
+                    int itemIndex = lstShapefiles.IndexFromPoint(e.Location);
+                    if (itemIndex >= 0)
+                    {
+                        layerContextMenu.Tag = lstShapefiles.Items[itemIndex];
+                        lstShapefiles.SelectedIndex = itemIndex;
+                    }
+                }
+                layerContextMenu.Show(lstShapefiles, e.X, e.Y);
+            }
+        }
+
+        private void addLayerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OnAddLayerClicked();
+        }
+
+        private void layerContextMenu_Opening(object sender, CancelEventArgs e)
+        {
+            miRemoveLayer.Enabled = (layerContextMenu.Tag as EGIS.ShapeFileLib.ShapeFile) != null;
+            zoomToLayerToolStripMenuItem.Enabled = (layerContextMenu.Tag as EGIS.ShapeFileLib.ShapeFile) != null;
+            zoomToLayerToolStripMenuItem.Enabled = (layerContextMenu.Tag as EGIS.ShapeFileLib.ShapeFile) != null;    
+        }
+
+        private void miRemoveLayer_Click(object sender, EventArgs e)
+        {
+            HandleRemoveSelectedShapeFile();
+        }
+
+        private void zoomToLayerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            EGIS.ShapeFileLib.ShapeFile selectedLayer = layerContextMenu.Tag as EGIS.ShapeFileLib.ShapeFile;
+            if (selectedLayer != null)
+            {
+                _map.FitToExtent(selectedLayer.Extent);
+                //selectedLayer.Extent
+            }
+        }
+
+        private void zoomToSelectionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            EGIS.ShapeFileLib.ShapeFile selectedLayer = layerContextMenu.Tag as EGIS.ShapeFileLib.ShapeFile;
+            if (selectedLayer != null)
+            {
+                _map.ZoomToSelection(selectedLayer);
+                //selectedLayer.Extent
+            }
+
         }
     }
 }

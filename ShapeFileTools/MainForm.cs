@@ -47,6 +47,7 @@ namespace egis
         private string currentProjectPath = null;
 
         private RecordAttributesForm recordAttributesForm;
+        private ViewAttributesForm viewAttributesForm;
 
         public MainForm()
         {
@@ -60,33 +61,13 @@ namespace egis
             this.miMercatorProjection.Checked = false;
             this.useNativeFileMappingToolStripMenuItem.Checked = EGIS.ShapeFileLib.ShapeFile.MapFilesInMemory;
             LoadRecentProjects();
-
-            //EGIS.ShapeFileLib.UtmCoordinate utm =  EGIS.ShapeFileLib.ConversionFunctions.LLToUtm(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, -37.45678, 145.123456);
-            //Console.Out.WriteLine("{0},{1}", utm.Northing, utm.Easting);
-            //Console.Out.WriteLine("{0},{1}", (float)utm.Northing, (float)utm.Easting);
-
-            //EGIS.ShapeFileLib.LatLongCoordinate ll = EGIS.ShapeFileLib.ConversionFunctions.UtmToLL(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, utm);
-            //Console.Out.WriteLine("{0},{1}", ll.Latitude, ll.Longitude);
-            //Console.Out.WriteLine("{0},{1}", (float)ll.Latitude, (float)ll.Longitude);
-            //EGIS.ShapeFileLib.LatLongCoordinate ll2 = new LatLongCoordinate();
-            //ll2.Latitude = (float)ll.Latitude;
-            //ll2.Longitude = (float)ll.Longitude;
-            //double dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, ll, ll2);
-            //Console.Out.WriteLine("dist = " + dist);
-
-            double lat1 = -37, lon1 = 116.25;
-            double lat2 = -30, lon2 = 117.25;
-            double dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, lat1, lon1, lat2, lon2);
-            Console.Out.WriteLine("dist bw points:" + dist);
-            dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(23, lat1, lon1, lat2, lon2);
-            Console.Out.WriteLine("dist bw points:" + dist);    
             
-            
-            recordAttributesForm = new RecordAttributesForm();
-            //recordAttributesForm.Show(this);
-            recordAttributesForm.Owner = this;
-            recordAttributesForm.VisibleChanged += new EventHandler(recordAttributesForm_VisibleChanged);
-
+            //double lat1 = -37, lon1 = 116.25;
+            //double lat2 = -30, lon2 = 117.25;
+            //double dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, lat1, lon1, lat2, lon2);
+            //Console.Out.WriteLine("dist bw points:" + dist);
+            //dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(23, lat1, lon1, lat2, lon2);
+            //Console.Out.WriteLine("dist bw points:" + dist);                            
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -950,9 +931,11 @@ namespace egis
         private void sfMap1_ShapeFilesChanged(object sender, EventArgs args)
         {
             ProjectChanged();
+            this.viewAttributesToolStripMenuItem.Enabled = (sfMap1.ShapeFileCount > 0);
+            this.displayShapeAttributesWindowToolStripMenuItem.Enabled = (sfMap1.ShapeFileCount > 0);
         }
 
-        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        protected override void OnFormClosing(FormClosingEventArgs e)
         {
             if (projectStatus == ProjectState.UnsavedNewProject || projectStatus == ProjectState.UnsavedOpenProject)
             {
@@ -963,29 +946,20 @@ namespace egis
                     this.SaveProject(this.currentProjectPath);
                 }
             }
-            this.recordAttributesForm.AllowClose = !e.Cancel;
+            
+            base.OnFormClosing(e);
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            
         }
 
         private void exportProjectToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            ExportProject();
+            ExportProject();            
         }
-
-        //private void testToolStripMenuItem_Click(object sender, EventArgs e)
-        //{
-        //    //tests renaming the current exe and then replacing it with a new version
-        //    //this can be used to auto update an application
-        //    try
-        //    {
-        //        System.IO.File.Delete("egis.exe2");
-        //        System.IO.File.Move("egis.exe", "egis.exe2"); 
-        //        System.IO.File.Move("./../Debug/egis.exe", "./egis.exe");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        MessageBox.Show(ex.Message);
-        //    }
-        //}
+        
 
         private void MainForm_DragEnter(object sender, DragEventArgs e)
         {
@@ -1070,17 +1044,12 @@ namespace egis
 
         private void sfMap1_TooltipDisplayed(object sender, EGIS.Controls.SFMap.TooltipEventArgs e)
         {
+            if (recordAttributesForm == null || recordAttributesForm.IsDisposed) return;
             if (e.ShapeFileIndex >= 0 && e.RecordIndex >= 0)
-            {
-                if (recordAttributesForm.Visible)
-                {
-                    string[] names = sfMap1[e.ShapeFileIndex].GetAttributeFieldNames();
-                    string[] values = sfMap1[e.ShapeFileIndex].GetAttributeFieldValues(e.RecordIndex);
-                    recordAttributesForm.SetRecordData(e.ShapeFileIndex, sfMap1[e.ShapeFileIndex].Name, e.RecordIndex, names, values);
-                }
-                //PointD ptd = sfMap1.PixelCoordToGisPoint(e.MousePosition);
-                //int recIndex = sfMap1[e.ShapeFileIndex].GetShapeIndexContainingPoint(new PointF((float)ptd.X, (float)ptd.Y), 0.00001F);
-                //Console.Out.WriteLine("rec: " + recIndex);
+            {                
+                string[] names = sfMap1[e.ShapeFileIndex].GetAttributeFieldNames();
+                string[] values = sfMap1[e.ShapeFileIndex].GetAttributeFieldValues(e.RecordIndex);
+                recordAttributesForm.SetRecordData(e.ShapeFileIndex, sfMap1[e.ShapeFileIndex].Name, e.RecordIndex, names, values);                
             }
             else
             {
@@ -1088,16 +1057,7 @@ namespace egis
             }
         }
 
-        private void displayShapeAttributesWindowToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            this.displayShapeAttributesWindowToolStripMenuItem.Checked = !displayShapeAttributesWindowToolStripMenuItem.Checked;
-            this.recordAttributesForm.Visible = displayShapeAttributesWindowToolStripMenuItem.Checked;
-        }
-
-        void recordAttributesForm_VisibleChanged(object sender, EventArgs e)
-        {
-            this.displayShapeAttributesWindowToolStripMenuItem.Checked = recordAttributesForm.Visible;
-        }
+        
 
         private void useNativeFileMappingToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -1269,6 +1229,73 @@ namespace egis
 
                 }                
             }            
+        }
+
+
+        private void displayShapeAttributesWindowToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.displayShapeAttributesWindowToolStripMenuItem.Checked = !displayShapeAttributesWindowToolStripMenuItem.Checked;
+
+            if (this.displayShapeAttributesWindowToolStripMenuItem.Checked)
+            {
+                if (recordAttributesForm != null && !recordAttributesForm.IsDisposed) return; //already viewing                                
+                if (recordAttributesForm == null || recordAttributesForm.IsDisposed)
+                {
+                    recordAttributesForm = new RecordAttributesForm();
+                    recordAttributesForm.Owner = this;
+                    recordAttributesForm.FormClosing += recordAttributesForm_FormClosing;
+                }
+                recordAttributesForm.Show(this);
+            }
+            else
+            {
+                if (recordAttributesForm != null && !recordAttributesForm.IsDisposed)
+                {
+                    recordAttributesForm.Close();
+                }
+            }
+            
+        }
+
+        void recordAttributesForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            this.displayShapeAttributesWindowToolStripMenuItem.Checked = false;
+            recordAttributesForm.FormClosing -= recordAttributesForm_FormClosing;
+            recordAttributesForm = null;
+        }        
+
+        private void viewAttributesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            viewAttributesToolStripMenuItem.Checked = !viewAttributesToolStripMenuItem.Checked;
+            if (viewAttributesToolStripMenuItem.Checked)
+            {
+                if (sfMap1.ShapeFileCount > 0)
+                {
+                    if (viewAttributesForm != null && !viewAttributesForm.IsDisposed) return; //already viewing
+                    if (viewAttributesForm == null || viewAttributesForm.IsDisposed)
+                    {
+                        viewAttributesForm = new ViewAttributesForm(this.sfMap1);
+                        viewAttributesForm.Owner = this;
+                        viewAttributesForm.FormClosing += viewAttributesForm_FormClosing;
+                    }
+                    viewAttributesForm.LoadAttributes(sfMap1[0]);
+                    viewAttributesForm.Show(this);
+                }
+            }
+            else
+            {
+                if (viewAttributesForm != null && !viewAttributesForm.IsDisposed)
+                {
+                    viewAttributesForm.Close();
+                }
+            }
+        }
+
+        void viewAttributesForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            viewAttributesForm.FormClosing -= viewAttributesForm_FormClosing;
+            viewAttributesForm = null;
+            viewAttributesToolStripMenuItem.Checked = false;
         }
 
     }

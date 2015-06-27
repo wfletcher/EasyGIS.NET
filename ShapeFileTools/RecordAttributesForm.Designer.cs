@@ -53,7 +53,6 @@ namespace egis
             this.dataGridView1.RowHeadersVisible = false;
             this.dataGridView1.Size = new System.Drawing.Size(286, 230);
             this.dataGridView1.TabIndex = 0;
-            this.dataGridView1.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             // 
             // lblLayerName
             // 
@@ -85,7 +84,6 @@ namespace egis
             this.Name = "RecordAttributesForm";
             this.ShowInTaskbar = false;
             this.Text = "Record Attributes";
-            this.TopMost = true;
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.ResumeLayout(false);
 

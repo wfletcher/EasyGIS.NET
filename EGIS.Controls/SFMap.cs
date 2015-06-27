@@ -39,6 +39,11 @@ using EGIS.ShapeFileLib;
 [assembly: CLSCompliant(true)]
 namespace EGIS.Controls
 {
+    /// <summary>
+    /// delegate to called to handle progress project loading
+    /// </summary>
+    /// <param name="totalLayers"></param>
+    /// <param name="numberLayersLoaded"></param>
     public delegate void ProgressLoadStatusHandler(int totalLayers, int numberLayersLoaded);
 
     /// <summary>
@@ -247,7 +252,19 @@ namespace EGIS.Controls
             }
         }
 
-       
+        /// <summary>
+        /// event fired when the map bacground is rendered. Handle this event to perform and painting before
+        /// the map layers are rendered
+        /// </summary>
+        public event EventHandler<PaintEventArgs> PaintMapBackground;
+
+        protected void OnPaintMapBackground(PaintEventArgs args)
+        {
+            if (PaintMapBackground != null)
+            {
+                PaintMapBackground(this, args);               
+            }
+        }
 
 #endregion
 
@@ -588,6 +605,65 @@ namespace EGIS.Controls
         }
 
         /// <summary>
+        /// Zooms and cetres the map to fit given extent
+        /// </summary>
+        /// <param name="extent"></param>
+        public void FitToExtent(RectangleD extent)
+        {
+            if (extent.IsEmpty) return;
+            mouseOffPt = Point.Empty;            
+            RectangleF r = ShapeFile.LLExtentToProjectedExtent(extent, this.projectionType);
+            this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
+            Size cs = ClientSize;
+            //eliminate possible div by zero
+            if (cs.Width <= 0 || cs.Height <= 0) cs = new System.Drawing.Size(100, 100);
+            double r1 = cs.Width * r.Height;
+            double r2 = cs.Height * r.Width;
+
+            if (r1 < r2)
+            {
+                this._zoomLevel = cs.Width / r.Width;
+            }
+            else
+            {
+                this._zoomLevel = cs.Height / r.Height;
+            }
+
+            dirtyScreenBuf = true;
+            Refresh();
+            OnZoomLevelChanged();           
+        }
+
+        /// <summary>
+        /// zooms to selected record bounds in zero based layer on the map 
+        /// </summary>
+        /// <param name="shapefileIndex"></param>
+        public void ZoomToSelection(int shapefileIndex)
+        {
+            if (shapefileIndex < 0 || shapefileIndex >= this.ShapeFileCount) return;
+            ZoomToSelection(this[shapefileIndex]);
+        }
+
+        /// <summary>
+        /// zooms the given layer's selected records bounds
+        /// </summary>
+        /// <param name="layer"></param>
+        public void ZoomToSelection(ShapeFile layer)
+        {
+            System.Collections.ObjectModel.ReadOnlyCollection<int> selectedIndicies = layer.SelectedRecordIndices;
+            if (selectedIndicies.Count > 0)
+            {
+                RectangleD extent = layer.GetShapeBoundsD(selectedIndicies[0]);
+                for (int n = 1; n < selectedIndicies.Count; ++n)
+                {
+                    extent = RectangleD.Union(extent, layer.GetShapeBoundsD(selectedIndicies[n]));                    
+                }
+                FitToExtent(extent);
+            }
+        }
+
+
+        /// <summary>
         /// Converts a MousePoint (in pixel coords) to a map coordinate point
         /// </summary>
         /// <remarks>
@@ -795,29 +871,7 @@ namespace EGIS.Controls
         public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName)
         {            
             EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(path, name, labelFieldName);
-            mouseOffPt = Point.Empty;
-            //set centre point to centre of shapefile and adjust zoom level to fit entire shapefile            
-            RectangleF r = ShapeFile.LLExtentToProjectedExtent(sf.Extent, this.projectionType);
-            if (!r.IsEmpty)
-            {                
-                this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
-                //eliminate possible div by zero
-                if (ClientSize.Width > 0 && ClientSize.Height > 0)
-                {
-                    double r1 = ClientSize.Width * r.Height;
-                    double r2 = ClientSize.Height * r.Width;
-                    if (r1 < r2)
-                    {
-                        this.ZoomLevel = this.ClientSize.Width / r.Width;
-                    }
-                    else
-                    {
-                        this.ZoomLevel = this.ClientSize.Height / r.Height;
-                    }
-                }
-                dirtyScreenBuf = true;
-                //Refresh(true);
-            }
+            FitToExtent(sf.Extent);
             OnShapeFilesChanged();            
             return sf;
         }
@@ -1005,6 +1059,7 @@ namespace EGIS.Controls
             try
             {
                 g.Clear(MapBackColor);
+                this.OnPaintMapBackground(new PaintEventArgs(g, new Rectangle(0,0,this.ClientSize.Width, this.ClientSize.Height)));
                 foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
                 {
                     sf.Render(g, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType);
@@ -1046,7 +1101,7 @@ namespace EGIS.Controls
         #endregion
         
         protected override void OnPaint(PaintEventArgs e)
-        {            
+        {               
             if (dirtyScreenBuf)
             {
                 RenderShapefiles();
@@ -1089,8 +1144,6 @@ namespace EGIS.Controls
                                 radius*2,
                                 radius*2);
 
-                            //e.Graphics.FillRectangle(b, selectRect);
-                            //e.Graphics.DrawRectangle(p, selectRect);
                             e.Graphics.FillEllipse(b, selectRect);
                             e.Graphics.DrawEllipse(p, selectRect);
                         }
@@ -1149,6 +1202,20 @@ namespace EGIS.Controls
         {
             if (fullRefresh) dirtyScreenBuf = true;
             Refresh();
+        }
+
+        /// <summary>
+        /// Clears the map and calls Invalidate. 
+        /// </summary>
+        /// <remarks>
+        /// This method performs the same functionality
+        /// as Refresh(true) but can be called from background threads as it calls Invalidate rather
+        /// than Refresh
+        /// </remarks>
+        public void InvalidateAndClearBackground()
+        {            
+            this.dirtyScreenBuf = true;
+            Invalidate();
         }
 
         #region "Mouse and key Handling Methods"

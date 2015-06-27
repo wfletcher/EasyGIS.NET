@@ -515,7 +515,7 @@ namespace EGIS.Web.Controls
                 }
             }
 
-            context.Response.ContentType = "text/json";
+            context.Response.ContentType = "application/json";
             context.Response.Cache.SetCacheability(HttpCacheability.Public);
             context.Response.Cache.SetExpires(DateTime.Now.AddDays(7));
 

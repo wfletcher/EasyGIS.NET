@@ -16,7 +16,7 @@ namespace egis
             if (disposing && (components != null))
             {
                 components.Dispose();
-            }
+            }            
             base.Dispose(disposing);
         }
 
@@ -56,6 +56,7 @@ namespace egis
             this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
             this.displayShapeAttributesWindowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.disablePanSelectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewAttributesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ofdShapeFile = new System.Windows.Forms.OpenFileDialog();
@@ -225,7 +226,8 @@ namespace egis
             this.useNativeFileMappingToolStripMenuItem,
             this.toolStripSeparator9,
             this.displayShapeAttributesWindowToolStripMenuItem,
-            this.disablePanSelectToolStripMenuItem});
+            this.disablePanSelectToolStripMenuItem,
+            this.viewAttributesToolStripMenuItem});
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
             this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.optionsToolStripMenuItem.Text = "Options";
@@ -296,6 +298,7 @@ namespace egis
             // 
             // displayShapeAttributesWindowToolStripMenuItem
             // 
+            this.displayShapeAttributesWindowToolStripMenuItem.Enabled = false;
             this.displayShapeAttributesWindowToolStripMenuItem.Name = "displayShapeAttributesWindowToolStripMenuItem";
             this.displayShapeAttributesWindowToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
             this.displayShapeAttributesWindowToolStripMenuItem.Text = "Display shape Attributes Window";
@@ -311,6 +314,14 @@ namespace egis
             this.disablePanSelectToolStripMenuItem.Text = "DisablePanSelect";
             this.disablePanSelectToolStripMenuItem.Visible = false;
             this.disablePanSelectToolStripMenuItem.Click += new System.EventHandler(this.disablePanSelectToolStripMenuItem_Click);
+            // 
+            // viewAttributesToolStripMenuItem
+            // 
+            this.viewAttributesToolStripMenuItem.Enabled = false;
+            this.viewAttributesToolStripMenuItem.Name = "viewAttributesToolStripMenuItem";
+            this.viewAttributesToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
+            this.viewAttributesToolStripMenuItem.Text = "View Attribute List";
+            this.viewAttributesToolStripMenuItem.Click += new System.EventHandler(this.viewAttributesToolStripMenuItem_Click);
             // 
             // helpToolStripMenuItem
             // 
@@ -800,6 +811,7 @@ namespace egis
         private System.Windows.Forms.ToolStripMenuItem printToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator11;
         private System.Windows.Forms.ToolStripMenuItem disablePanSelectToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem viewAttributesToolStripMenuItem;
     }
 }
 

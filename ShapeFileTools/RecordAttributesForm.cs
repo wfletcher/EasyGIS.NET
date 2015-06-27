@@ -38,24 +38,7 @@ namespace egis
 {
     public partial class RecordAttributesForm : Form
     {
-
-        private string layerName = null;
-
-        private int recordIndex = -1;
-        private int shapeIndex = -1;
-
-       // private string[] attributeNames = null;
-
-       // private string[] attributeValues = null;
-
-        private bool allowClose = false;
-
-        public bool AllowClose
-        {
-            get { return allowClose; }
-            set { allowClose = value; }
-        }
-
+        
         public RecordAttributesForm()
         {
             InitializeComponent();
@@ -65,11 +48,6 @@ namespace egis
         
         protected override void OnClosing(CancelEventArgs e)
         {
-            if (!AllowClose)
-            {
-                e.Cancel = true;
-                Visible = false;
-            }            
             base.OnClosing(e);
         }
 
@@ -77,7 +55,6 @@ namespace egis
         public void SetRecordData(int shapeIndex, string layerName, int recordIndex, string[] attributeNames, string[] attributeValues)
         {
             this.lblLayerName.Text = "Layer:" +( string.IsNullOrEmpty(layerName) ? "" : layerName);
-            this.layerName = layerName;
             this.lblRecordNumber.Text = string.Format("Record:{0}", recordIndex);
             if (shapeIndex < 0 || recordIndex < 0 || attributeNames == null || attributeValues == null)
             {
@@ -102,7 +79,6 @@ namespace egis
 
         private class NameValue
         {
-
             public NameValue(string name, string value)
             {
                 this.Name = name;
@@ -122,26 +98,8 @@ namespace egis
                 get { return this.value; }
                 set { this.value = value; }
             }            
-        }
-
-        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
-            //if (e.ColumnIndex == 1)
-            //{
-            //    string url = dataGridView1[e.ColumnIndex, e.RowIndex].Value as string;
-            //    if(!string.IsNullOrEmpty(url)) LaunchURL(url);
-            //}
-        }
-
-
-        //private void LaunchURL(string url)
-        //{
-        //    try
-        //    {
-        //        System.Diagnostics.Process.Start(url);
-        //    }
-        //    catch { }
-        //}
+        }        
+        
     }
 
 

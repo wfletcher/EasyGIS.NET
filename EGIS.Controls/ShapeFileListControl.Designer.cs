@@ -28,12 +28,19 @@ namespace EGIS.Controls
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ShapeFileListControl));
             this.lstShapefiles = new System.Windows.Forms.ListBox();
             this.btnMoveUp = new System.Windows.Forms.Button();
             this.btnMoveDown = new System.Windows.Forms.Button();
             this.btnRemove = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
+            this.layerContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.miRemoveLayer = new System.Windows.Forms.ToolStripMenuItem();
+            this.addLayerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.zoomToLayerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.zoomToSelectionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.layerContextMenu.SuspendLayout();
             this.SuspendLayout();
             // 
             // lstShapefiles
@@ -47,7 +54,9 @@ namespace EGIS.Controls
             this.lstShapefiles.Name = "lstShapefiles";
             this.lstShapefiles.Size = new System.Drawing.Size(232, 108);
             this.lstShapefiles.TabIndex = 0;
+            this.lstShapefiles.MouseClick += new System.Windows.Forms.MouseEventHandler(this.lstShapefiles_MouseClick);
             this.lstShapefiles.SelectedIndexChanged += new System.EventHandler(this.lstShapefiles_SelectedIndexChanged);
+            this.lstShapefiles.MouseUp += new System.Windows.Forms.MouseEventHandler(this.lstShapefiles_MouseUp);
             // 
             // btnMoveUp
             // 
@@ -93,6 +102,45 @@ namespace EGIS.Controls
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
+            // layerContextMenu
+            // 
+            this.layerContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.addLayerToolStripMenuItem,
+            this.miRemoveLayer,
+            this.zoomToLayerToolStripMenuItem,
+            this.zoomToSelectionToolStripMenuItem});
+            this.layerContextMenu.Name = "layerContextMenu";
+            this.layerContextMenu.Size = new System.Drawing.Size(172, 114);
+            this.layerContextMenu.Opening += new System.ComponentModel.CancelEventHandler(this.layerContextMenu_Opening);
+            // 
+            // miRemoveLayer
+            // 
+            this.miRemoveLayer.Name = "miRemoveLayer";
+            this.miRemoveLayer.Size = new System.Drawing.Size(151, 22);
+            this.miRemoveLayer.Text = "Remove Layer";
+            this.miRemoveLayer.Click += new System.EventHandler(this.miRemoveLayer_Click);
+            // 
+            // addLayerToolStripMenuItem
+            // 
+            this.addLayerToolStripMenuItem.Name = "addLayerToolStripMenuItem";
+            this.addLayerToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.addLayerToolStripMenuItem.Text = "Add Layer";
+            this.addLayerToolStripMenuItem.Click += new System.EventHandler(this.addLayerToolStripMenuItem_Click);
+            // 
+            // zoomToLayerToolStripMenuItem
+            // 
+            this.zoomToLayerToolStripMenuItem.Name = "zoomToLayerToolStripMenuItem";
+            this.zoomToLayerToolStripMenuItem.Size = new System.Drawing.Size(151, 22);
+            this.zoomToLayerToolStripMenuItem.Text = "Zoom to Layer";
+            this.zoomToLayerToolStripMenuItem.Click += new System.EventHandler(this.zoomToLayerToolStripMenuItem_Click);
+            // 
+            // zoomToSelectionToolStripMenuItem
+            // 
+            this.zoomToSelectionToolStripMenuItem.Name = "zoomToSelectionToolStripMenuItem";
+            this.zoomToSelectionToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
+            this.zoomToSelectionToolStripMenuItem.Text = "Zoom to Selection";
+            this.zoomToSelectionToolStripMenuItem.Click += new System.EventHandler(this.zoomToSelectionToolStripMenuItem_Click);
+            // 
             // ShapeFileListControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -104,6 +152,7 @@ namespace EGIS.Controls
             this.Controls.Add(this.lstShapefiles);
             this.Name = "ShapeFileListControl";
             this.Size = new System.Drawing.Size(238, 150);
+            this.layerContextMenu.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -115,6 +164,11 @@ namespace EGIS.Controls
         private System.Windows.Forms.Button btnMoveDown;
         private System.Windows.Forms.Button btnRemove;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.ContextMenuStrip layerContextMenu;
+        private System.Windows.Forms.ToolStripMenuItem miRemoveLayer;
+        private System.Windows.Forms.ToolStripMenuItem addLayerToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem zoomToLayerToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem zoomToSelectionToolStripMenuItem;
 
     }
 }
