@@ -3881,16 +3881,20 @@ namespace EGIS.ShapeFileLib
     abstract class SFRecordCol
     {
         #region shared buffers
-        private static byte[] sharedBuffer = new byte[ShapeFileExConstants.MAX_REC_LENGTH];
-
-        private static Point[] sharedPointBuffer = new Point[ShapeFileExConstants.MAX_REC_LENGTH/8];
+        private static byte[] sharedBuffer;// = new byte[ShapeFileExConstants.MAX_REC_LENGTH];
+        private static Point[] sharedPointBuffer;// = new Point[ShapeFileExConstants.MAX_REC_LENGTH/8];
+        private static int sharedBufferLength = ShapeFileExConstants.MAX_REC_LENGTH;
 
         internal static byte[] SharedBuffer
         {
             get
             {
-                if (SingleThreaded) return sharedBuffer;
-                else return new byte[ShapeFileExConstants.MAX_REC_LENGTH];
+                if (SingleThreaded)
+                {
+                    if (sharedBuffer == null) sharedBuffer = new byte[sharedBufferLength];
+                    return sharedBuffer;
+                }
+                else return new byte[sharedBufferLength];
             }
         }
 
@@ -3898,24 +3902,56 @@ namespace EGIS.ShapeFileLib
         {
             get
             {
-                if (SingleThreaded) return sharedPointBuffer;
-                else return new Point[ShapeFileExConstants.MAX_REC_LENGTH/8];                
+                if (SingleThreaded)
+                {
+                    if (sharedPointBuffer == null) sharedPointBuffer = new Point[sharedBufferLength / 8];
+                    return sharedPointBuffer;
+                }
+                else return new Point[sharedBufferLength / 8];                
             }
         }
 
         internal static void EnsureBufferSize(int requiredSize)
         {
-            if (sharedBuffer.Length < requiredSize)
+            if (sharedBufferLength < requiredSize)
             {
-                sharedBuffer = new byte[requiredSize + 256];
-                sharedPointBuffer = new Point[sharedBuffer.Length / 8];
-                //System.Diagnostics.Debug.WriteLine("shared buffer resized to : " + requiredSize);
-                System.GC.Collect();
+                sharedBufferLength = requiredSize + 256;
+                if (SingleThreaded)
+                {
+                    sharedBuffer = new byte[sharedBufferLength];
+                    sharedPointBuffer = new Point[sharedBuffer.Length / 8];
+                    System.GC.Collect();
+                }
+            }            
+        }
+
+        private int maxRecordLength = ShapeFileExConstants.MAX_REC_LENGTH;
+
+        protected void SetMaxRecordLength(int length)
+        {
+            maxRecordLength = length + 256;
+        }
+
+        protected byte[] DataBuffer
+        {
+            get
+            {
+                if (SingleThreaded) return sharedBuffer;
+                else return new byte[maxRecordLength];
+            }
+        }
+
+        protected Point[] PointBuffer
+        {
+            get
+            {
+                if (SingleThreaded) return sharedPointBuffer;
+                else return new Point[maxRecordLength/8];
             }
         }
         #endregion
         
-        internal static bool SingleThreaded = true;
+        internal const bool SingleThreaded = true;
 
         internal static bool MapFilesInMemory = true;
 		
@@ -4920,8 +4956,14 @@ namespace EGIS.ShapeFileLib
         internal static int AutoHighThreshold = 1024 * 1024 * 1;
         internal static int AutoHighThresholdPoint = 1024 * 70;//150;
         
-        protected bool UseGDI(RectangleF visibleExtent)
+        protected bool UseGDI(RectangleF visibleExtent, RenderSettings renderSettings )
         {
+            // Thanks to M Gerginski for suggestion
+            if (renderSettings != null)
+            {
+                if (renderSettings.RenderQuality == RenderQuality.Low) return true;
+                if (renderSettings.RenderQuality == RenderQuality.High) return false;
+            }
             if (ShapeFile.RenderQuality == RenderQuality.Low) return true;
             else if (ShapeFile.RenderQuality == RenderQuality.High) return false;
             else
@@ -5006,7 +5048,10 @@ namespace EGIS.ShapeFileLib
             : base(ref head, recs)
         {
             //this.RecordHeaders = recs;
-            SFRecordCol.EnsureBufferSize(SFRecordCol.GetMaxRecordLength(recs) + 100);
+            //SFRecordCol.EnsureBufferSize(SFRecordCol.GetMaxRecordLength(recs) + 100);
+            int length = SFRecordCol.GetMaxRecordLength(recs) + 100;
+            SFRecordCol.EnsureBufferSize(length);
+            base.SetMaxRecordLength(length);
         }
 
         public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
@@ -5096,7 +5141,7 @@ namespace EGIS.ShapeFileLib
 
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
-            if (this.UseGDI(extent))
+            if (this.UseGDI(extent, renderSettings))
             {
                 paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
@@ -5926,7 +5971,7 @@ namespace EGIS.ShapeFileLib
 
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
-            bool useGDI = (this.UseGDI(extent) && renderSettings.GetImageSymbol()==null);
+            bool useGDI = (this.UseGDI(extent, renderSettings) && renderSettings.GetImageSymbol()==null);
 
             if (useGDI)
             {
@@ -6716,7 +6761,7 @@ namespace EGIS.ShapeFileLib
 
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
-            bool useGDI = (this.UseGDI(extent) && renderSettings.GetImageSymbol() == null);
+            bool useGDI = (this.UseGDI(extent, renderSettings) && renderSettings.GetImageSymbol() == null);
 
             if (useGDI)
             {
@@ -7466,7 +7511,7 @@ namespace EGIS.ShapeFileLib
 
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
-            bool useGDI = (this.UseGDI(extent) && renderSettings.GetImageSymbol() == null);
+            bool useGDI = (this.UseGDI(extent, renderSettings) && renderSettings.GetImageSymbol() == null);
 
             if (useGDI)
             {
@@ -8274,7 +8319,7 @@ namespace EGIS.ShapeFileLib
 
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
-            bool useGDI = (this.UseGDI(extent) && renderSettings.GetImageSymbol() == null);
+            bool useGDI = (this.UseGDI(extent, renderSettings) && renderSettings.GetImageSymbol() == null);
 
             if (useGDI)
             {
@@ -8962,7 +9007,10 @@ namespace EGIS.ShapeFileLib
         public SFPolyLineCol(RecordHeader[] recs, ref ShapeFileMainHeader head)
             : base(ref head, recs)
         {
-            SFRecordCol.EnsureBufferSize(SFRecordCol.GetMaxRecordLength(recs) + 100);
+            //SFRecordCol.EnsureBufferSize(SFRecordCol.GetMaxRecordLength(recs) + 100);
+            int length = SFRecordCol.GetMaxRecordLength(recs) + 100;
+            SFRecordCol.EnsureBufferSize(length);
+            base.SetMaxRecordLength(length);
         }
 
         public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
@@ -9051,15 +9099,15 @@ namespace EGIS.ShapeFileLib
             paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer, ProjectionType projectionType)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
-            if (this.UseGDI(extent))
+            if (this.UseGDI(extent, renderSettings))
             {
-                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderer, projectionType);
+                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
             else
             {
-                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderer, projectionType);
+                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
         }
 
@@ -10051,10 +10099,10 @@ namespace EGIS.ShapeFileLib
         {
             if (recordIndex < 0 || recordIndex >= this.RecordHeaders.Length) return RectangleF.Empty;
             shapeFileStream.Seek(RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
-            byte[] data = SFRecordCol.SharedBuffer;
+            //byte[] data = SFRecordCol.SharedBuffer;
+            byte[] data = SingleThreaded ? SFRecordCol.SharedBuffer :  new byte[32 + 12];
             shapeFileStream.Read(data, 0, 32 + 12);
             Box bounds = new Box(data, 12);
-
             return bounds.ToRectangleF();
         }
 
@@ -10080,7 +10128,9 @@ namespace EGIS.ShapeFileLib
             : base(ref head, recs)
         {
             //this.RecordHeaders = recs;
-            SFRecordCol.EnsureBufferSize(SFRecordCol.GetMaxRecordLength(recs) + 100);
+            int length = SFRecordCol.GetMaxRecordLength(recs) + 100;
+            SFRecordCol.EnsureBufferSize(length);
+            base.SetMaxRecordLength(length);
         }
 
         public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
@@ -10194,15 +10244,15 @@ namespace EGIS.ShapeFileLib
             paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer, ProjectionType projectionType)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
-            if (this.UseGDI(extent))
+            if (this.UseGDI(extent, renderSettings))
             {
-                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderer, projectionType);
+                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
             else
             {
-                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderer, projectionType);
+                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
 
         }
@@ -11203,7 +11253,10 @@ namespace EGIS.ShapeFileLib
         public SFPolygonZCol(RecordHeader[] recs, ref ShapeFileMainHeader head)
             : base(ref head, recs)
         {
-            SFRecordCol.EnsureBufferSize(SFRecordCol.GetMaxRecordLength(recs) + 100);
+            int length = SFRecordCol.GetMaxRecordLength(recs) + 100;
+            SFRecordCol.EnsureBufferSize(length);
+            base.SetMaxRecordLength(length);
+            //SFRecordCol.EnsureBufferSize(SFRecordCol.GetMaxRecordLength(recs) + 100);
         }
 
         public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
@@ -11339,7 +11392,7 @@ namespace EGIS.ShapeFileLib
 
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
-            if (this.UseGDI(extent))
+            if (this.UseGDI(extent, renderSettings))
             {
                 paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
@@ -12041,7 +12094,10 @@ namespace EGIS.ShapeFileLib
             : base(ref head, recs)
         {
             //this.RecordHeaders = recs;
-            SFRecordCol.EnsureBufferSize(SFRecordCol.GetMaxRecordLength(recs) + 100);
+            //SFRecordCol.EnsureBufferSize(SFRecordCol.GetMaxRecordLength(recs) + 100);
+            int length = SFRecordCol.GetMaxRecordLength(recs) + 100;
+            SFRecordCol.EnsureBufferSize(length);
+            base.SetMaxRecordLength(length);
         }
 
         public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
@@ -12176,15 +12232,15 @@ namespace EGIS.ShapeFileLib
             paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderer, ProjectionType projectionType)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
         {
-            if (this.UseGDI(extent))
+            if (this.UseGDI(extent, renderSettings))
             {
-                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderer, projectionType);
+                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
             else
             {
-                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderer, projectionType);
+                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
             }
 
         }

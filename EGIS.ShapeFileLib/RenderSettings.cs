@@ -666,7 +666,29 @@ namespace EGIS.ShapeFileLib
                 _pointSize = value;
             }
         }
-        
+
+        private RenderQuality renderQuality = RenderQuality.Auto;
+
+        /// <summary>
+        /// Gets / Sets the RenderQuality of the layer.
+        /// </summary>
+        /// <remarks>
+        /// If the RenderQuality is the default value of RenderQuality.Auto the quality of the rendering is determined by 
+        /// the ShapeFile.RenderQuality static member        
+        /// </remarks>
+        // Thanks to M Gerginski for suggestion
+        [Category("Layer Render Settings"), Description("The RenderQuality of the layer."), DefaultValue(RenderQuality.Auto)]
+        public RenderQuality RenderQuality
+        {
+            get
+            {
+                return renderQuality;
+            }
+            set
+            {
+                renderQuality = value;
+            }
+        }
 
         private ICustomRenderSettings _customRenderSettings;
 
@@ -818,6 +840,10 @@ namespace EGIS.ShapeFileLib
 
             writer.WriteStartElement("StringEncoding");
             writer.WriteString(this.StringEncoding.CodePage.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            writer.WriteEndElement();
+
+            writer.WriteStartElement("RenderQuality");
+            writer.WriteString(this.RenderQuality.ToString());
             writer.WriteEndElement();
 
             writer.WriteEndElement();
@@ -1023,6 +1049,16 @@ namespace EGIS.ShapeFileLib
                         SelectOutlineColor = Color.FromArgb(alpha, SelectOutlineColor);
                     }
                 }
+            }
+
+            nl = element.GetElementsByTagName("RenderQuality");
+            if (nl != null && nl.Count > 0)
+            {
+                this.RenderQuality = (RenderQuality)Enum.Parse(typeof(RenderQuality), nl[0].InnerText, true);                                       
+            }
+            else
+            {
+                this.RenderQuality = RenderQuality.Auto;
             }
                         
         }

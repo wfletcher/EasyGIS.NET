@@ -51,6 +51,16 @@ namespace EGIS.ShapeFileLib
             else
             {
                 RectangleF recBounds = helper.GetRecordBounds(recordIndex, shapeFileStream);
+                //check for zero width or height to avoid issue when checking rectangle intersection
+                //if width/height is zero
+                if (recBounds.Width < 0.0000001f)
+                {
+                    recBounds.Width = 0.0000001f;
+                }
+                if (recBounds.Height < 0.0000001f)
+                {
+                    recBounds.Height = 0.0000001f;
+                }
                 rootNode.Insert(recordIndex, helper, ref recBounds, shapeFileStream);
             }
         }
