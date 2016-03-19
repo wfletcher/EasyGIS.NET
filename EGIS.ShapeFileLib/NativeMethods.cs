@@ -126,6 +126,12 @@ namespace EGIS.ShapeFileLib
 
             [DllImport("geomutil_lib.dll", CallingConvention = CallingConvention.Cdecl)]
             internal static unsafe extern int PolyLinePolygonIntersect(double* polyLinePoints, int polyLinePointsCount, double* polygonPoints, int polygonPointsCount);
+
+            [DllImport("geomutil_lib.dll", CallingConvention = CallingConvention.Cdecl)]
+            internal static unsafe extern int RectWithinPolygon(double rMinX, double rMinY, double rMaxX, double rMaxY, void* points, int pointCount);
+
+            [DllImport("geomutil_lib.dll", CallingConvention = CallingConvention.Cdecl)]
+            internal static unsafe extern int PolygonTouchesPolygon(double* points1, int points1Count, double* points2, int points2Count);
         }
 
         class NativeGeomUtilX64
@@ -147,6 +153,12 @@ namespace EGIS.ShapeFileLib
 
             [DllImport("geomutil_libx64.dll", CallingConvention = CallingConvention.Cdecl)]
             internal static unsafe extern int PolyLinePolygonIntersect(double* polyLinePoints, int polyLinePointsCount, double* polygonPoints, int polygonPointsCount);
+
+            [DllImport("geomutil_libx64.dll", CallingConvention = CallingConvention.Cdecl)]
+            internal static unsafe extern int RectWithinPolygon(double rMinX, double rMinY, double rMaxX, double rMaxY, void* points, int pointCount);
+
+            [DllImport("geomutil_libx64.dll", CallingConvention = CallingConvention.Cdecl)]
+            internal static unsafe extern int PolygonTouchesPolygon(double* points1, int points1Count, double* points2, int points2Count);
         }
 
 
@@ -273,10 +285,32 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        internal static unsafe bool RectWithinPolygon(double[] data, int dataLength, double rMinX, double rMinY, double rMaxX, double rMaxY)
+        {
+            fixed (double* ptr = data)
+            {
+                return RectWithinPolygon(rMinX, rMinY, rMaxX, rMaxY, ptr, dataLength >> 1);
+            }
+        }
 
+        internal static unsafe bool RectWithinPolygon(double rMinX, double rMinY, double rMaxX, double rMaxY, void* points, int pointCount)
+        {
+            if (IsWin32Process())
+            {
+                return (NativeGeomUtilWin32.RectWithinPolygon(rMinX, rMinY, rMaxX, rMaxY, points, pointCount) != 0);
+            }
+            return (NativeGeomUtilX64.RectWithinPolygon(rMinX, rMinY, rMaxX, rMaxY, points, pointCount) != 0);
+        }
+
+        internal static unsafe bool PolygonTouchesPolygon(double* points1, int points1Count, double* points2, int points2Count)
+        {
+            if (IsWin32Process())
+            {
+                return (NativeGeomUtilWin32.PolygonTouchesPolygon(points1, points1Count, points2, points2Count) != 0);
+            }
+            return (NativeGeomUtilX64.PolygonTouchesPolygon(points1, points1Count, points2, points2Count) != 0);
+        }
         
-
-
     }
 
 }

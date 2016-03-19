@@ -2,7 +2,7 @@
 
 /****************************************************************************
 **
-** Copyright (C) 2008 - 2011 Winston Fletcher.
+** Copyright (C) 2008 - 2016 Winston Fletcher.
 ** All rights reserved.
 **
 ** This file is part of the EGIS.Controls class library of Easy GIS .NET.
@@ -46,6 +46,7 @@ namespace EGIS.Controls
     /// <param name="numberLayersLoaded"></param>
     public delegate void ProgressLoadStatusHandler(int totalLayers, int numberLayersLoaded);
 
+    
     /// <summary>
     /// Pan/Select model enumeration
     /// </summary>
@@ -163,6 +164,7 @@ namespace EGIS.Controls
 
         }
 
+        
 
 
         #region "Instance Variables"
@@ -266,6 +268,37 @@ namespace EGIS.Controls
             }
         }
 
+        public class MapDoubleClickedEventArgs : EventArgs
+        {
+            public MapDoubleClickedEventArgs()
+            {
+                Cancel = false;
+            }
+
+            /// <summary>
+            /// get set whether to cancel the event. Set true to disable core zooming functinonality that occurs when
+            /// the map is double clicked
+            /// </summary>
+            public bool Cancel
+            {
+                get;
+                set;
+            }
+        }
+
+        //event fired when the map is double clicked. Handle this event rather than the standard DoubleClick
+        //event if you wish to cancel the default zooming on the map
+        public event EventHandler<MapDoubleClickedEventArgs> MapDoubleClick;
+
+        protected void OnMapDoubleClick(MapDoubleClickedEventArgs args)
+        {
+            if (MapDoubleClick != null)
+            {
+                MapDoubleClick(this, args);
+            }
+        }
+        
+
 #endregion
 
         /// <summary>
@@ -312,9 +345,9 @@ namespace EGIS.Controls
         /// reads and loads XML representatino of a .EGP project
         /// </summary>
         /// <param name="projectElement"></param>
-        public void ReadXml(XmlElement projectElement)
+        public void ReadXml(XmlElement projectElement, string baseDirectory)
         {
-            ReadXml(projectElement, null);
+            ReadXml(projectElement, baseDirectory, null);
         }
 
 
@@ -323,7 +356,7 @@ namespace EGIS.Controls
         /// </summary>
         /// <param name="projectElement"></param>
         /// <param name="loadingDelegate"</param>
-        public void ReadXml(XmlElement projectElement, ProgressLoadStatusHandler loadingDelegate)
+        public void ReadXml(XmlElement projectElement, string baseDirectory, ProgressLoadStatusHandler loadingDelegate)
         {
             XmlNodeList colorList = projectElement.GetElementsByTagName("MapBackColor");
             if (colorList != null && colorList.Count > 0)
@@ -343,7 +376,7 @@ namespace EGIS.Controls
                 {
                     EGIS.ShapeFileLib.ShapeFile sf = new EGIS.ShapeFileLib.ShapeFile();
 
-                    sf.ReadXml((XmlElement)sfList[n]);
+                    sf.ReadXml((XmlElement)sfList[n], baseDirectory);
                     //sf.MapProjectionType = this.projectionType;
 
                     myShapefiles.Add(sf);
@@ -611,7 +644,7 @@ namespace EGIS.Controls
         public void FitToExtent(RectangleD extent)
         {
             if (extent.IsEmpty) return;
-            mouseOffPt = Point.Empty;            
+            MouseOffsetPoint = Point.Empty;            
             RectangleF r = ShapeFile.LLExtentToProjectedExtent(extent, this.projectionType);
             this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
             Size cs = ClientSize;
@@ -662,6 +695,34 @@ namespace EGIS.Controls
             }
         }
 
+        /// <summary>
+        /// Zooms to the selected records bounds of all layers loaded in the control
+        /// </summary>
+        public void ZoomToSelection()
+        {
+            RectangleD extent = RectangleD.Empty;
+            bool extentSet = false;
+            foreach (ShapeFile layer in myShapefiles)
+            {
+                System.Collections.ObjectModel.ReadOnlyCollection<int> selectedIndicies = layer.SelectedRecordIndices;
+                if (selectedIndicies.Count > 0)
+                {
+                    for (int n = 0; n < selectedIndicies.Count; ++n)
+                    {
+                        if (extentSet)
+                        {
+                            extent = RectangleD.Union(extent, layer.GetShapeBoundsD(selectedIndicies[n]));
+                        }
+                        else
+                        {
+                            extent = layer.GetShapeBoundsD(selectedIndicies[n]);
+                            extentSet = true;
+                        }                        
+                    }
+                }
+            }
+            if(extentSet) FitToExtent(extent);
+        }
 
         /// <summary>
         /// Converts a MousePoint (in pixel coords) to a map coordinate point
@@ -1119,10 +1180,10 @@ namespace EGIS.Controls
                         {
                             p.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
                             
-                            Rectangle selectRect = new Rectangle(mouseOffPt.X>=0?mouseDownPt.X:mouseDownPt.X+mouseOffPt.X,
-                                mouseOffPt.Y>=0?mouseDownPt.Y:mouseDownPt.Y+mouseOffPt.Y,
-                                mouseOffPt.X>=0?mouseOffPt.X:-mouseOffPt.X,
-                                mouseOffPt.Y>=0?mouseOffPt.Y:-mouseOffPt.Y);
+                            Rectangle selectRect = new Rectangle(MouseOffsetPoint.X>=0?MouseDownPoint.X:MouseDownPoint.X+MouseOffsetPoint.X,
+                                MouseOffsetPoint.Y>=0?MouseDownPoint.Y:MouseDownPoint.Y+MouseOffsetPoint.Y,
+                                MouseOffsetPoint.X>=0?MouseOffsetPoint.X:-MouseOffsetPoint.X,
+                                MouseOffsetPoint.Y>=0?MouseOffsetPoint.Y:-MouseOffsetPoint.Y);
                             
                             e.Graphics.FillRectangle(b, selectRect);
                             e.Graphics.DrawRectangle(p, selectRect);
@@ -1138,9 +1199,9 @@ namespace EGIS.Controls
                         {
                             p.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
 
-                            int radius = (int)Math.Round(Math.Sqrt(mouseOffPt.X * mouseOffPt.X + mouseOffPt.Y * mouseOffPt.Y));
-                            Rectangle selectRect = new Rectangle(mouseDownPt.X -radius,
-                                mouseDownPt.Y -radius,
+                            int radius = (int)Math.Round(Math.Sqrt(MouseOffsetPoint.X * MouseOffsetPoint.X + MouseOffsetPoint.Y * MouseOffsetPoint.Y));
+                            Rectangle selectRect = new Rectangle(MouseDownPoint.X -radius,
+                                MouseDownPoint.Y -radius,
                                 radius*2,
                                 radius*2);
 
@@ -1153,13 +1214,13 @@ namespace EGIS.Controls
                 else// if (_panSelectMode == PanSelectMode.Pan)
                 {
                     //change this to only draw invalid area
-                    if ((mouseOffPt.X == 0) && (mouseOffPt.Y == 0))
+                    if ((MouseOffsetPoint.X == 0) && (MouseOffsetPoint.Y == 0))
                     {
                         e.Graphics.DrawImage(screenBuf, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
                     }
                     else
                     {
-                        e.Graphics.DrawImage(screenBuf, mouseOffPt.X, mouseOffPt.Y);
+                        e.Graphics.DrawImage(screenBuf, MouseOffsetPoint.X, MouseOffsetPoint.Y);
                     }
                 }
             }
@@ -1168,7 +1229,7 @@ namespace EGIS.Controls
             try
             {
                 System.Drawing.Drawing2D.Matrix m2 = new System.Drawing.Drawing2D.Matrix();
-                m2.Translate(mouseOffPt.X, mouseOffPt.Y);
+                m2.Translate(MouseOffsetPoint.X, MouseOffsetPoint.Y);
                 e.Graphics.Transform = m2;
                 base.OnPaint(e);
             }
@@ -1256,9 +1317,9 @@ namespace EGIS.Controls
         protected override void OnKeyDown(KeyEventArgs e)
         {
             base.OnKeyDown(e);
-            
-            ctrlDown = (e.KeyCode == Keys.ControlKey || e.KeyCode == Keys.LControlKey || e.KeyCode == Keys.RControlKey);
-            shiftDown = (e.KeyCode == Keys.ShiftKey);
+
+            CtrlKeyDown = (e.KeyCode == Keys.ControlKey || e.KeyCode == Keys.LControlKey || e.KeyCode == Keys.RControlKey);
+            ShiftKeyDown = (e.KeyCode == Keys.ShiftKey);
             switch (e.KeyCode)
             {
                 case Keys.Left:
@@ -1279,8 +1340,8 @@ namespace EGIS.Controls
         protected override void OnKeyUp(KeyEventArgs e)
         {
             base.OnKeyUp(e);
-            ctrlDown = false;
-            shiftDown = false;
+            CtrlKeyDown = false;
+            ShiftKeyDown = false;
         }
 
         /// <summary>
@@ -1326,15 +1387,93 @@ namespace EGIS.Controls
         /// <summary>
         /// _panSelectMode is set by keys or controlPanSelectMode
         /// </summary>
-        private PanSelectMode _panSelectMode = PanSelectMode.Pan;
+        protected PanSelectMode _panSelectMode = PanSelectMode.Pan;
 
-        private bool ctrlDown = false;
-        private bool shiftDown = false;
-        private bool toggleSelect = false;
+        private bool _ctrlDown = false;
+        private bool _shiftDown = false;
+        private bool _toggleSelect = false;
 
-        private MouseButtons mouseDownButton = MouseButtons.None;
-        private Point mouseDownPt = Point.Empty;
-        private Point mouseOffPt = new Point(0, 0);
+        private MouseButtons _mouseDownButton = MouseButtons.None;
+        private Point _mouseDownPt = Point.Empty;
+        private Point _mouseOffPt = new Point(0, 0);
+
+        #region protected mouse handling properties
+
+        protected bool CtrlKeyDown
+        {
+            get
+            {
+                return _ctrlDown;
+            }
+            set
+            {
+                _ctrlDown = value;
+            }
+        }
+
+        protected bool ShiftKeyDown
+        {
+            get
+            {
+                return _shiftDown;
+            }
+            set
+            {
+                _shiftDown = value;
+            }
+        }
+
+        protected bool ToggleSelect
+        {
+            get
+            {
+                return _toggleSelect;
+            }
+            set
+            {
+                _toggleSelect = value;
+            }
+        }
+
+        protected MouseButtons MouseDownButton
+        {
+            get
+            {
+                return _mouseDownButton;
+            }
+            set
+            {
+                _mouseDownButton = value;
+            }
+        }
+
+        protected Point MouseDownPoint
+        {
+            get
+            {
+                return _mouseDownPt;
+            }
+            set
+            {
+                _mouseDownPt = value;
+            }
+        }
+
+
+        protected Point MouseOffsetPoint
+        {
+            get
+            {
+                return _mouseOffPt;
+            }
+            set
+            {
+                _mouseOffPt = value;
+            }
+        }
+
+        #endregion
+
 
         /// <summary>
         /// Handles the MouseDown event. Derived classes overriding this method should call base.OnMouseDown
@@ -1347,25 +1486,25 @@ namespace EGIS.Controls
                
             if (PanSelectMode == EGIS.Controls.PanSelectMode.None) return;
 
-            mouseDownButton = e.Button;
-            mouseDownPt = new Point(e.X, e.Y);
+            MouseDownButton = e.Button;
+            MouseDownPoint = new Point(e.X, e.Y);
 
             if (PanSelectMode != PanSelectMode.Pan)
             {
                 _panSelectMode = PanSelectMode;
-                toggleSelect = !shiftDown && ctrlDown;
+                ToggleSelect = !ShiftKeyDown && CtrlKeyDown;
             }            
             else
             {
-                if (shiftDown)
+                if (ShiftKeyDown)
                 {
                     _panSelectMode = (e.Button == MouseButtons.Left) ? PanSelectMode.SelectRectangle : PanSelectMode.SelectCircle;
-                    toggleSelect = false;
+                    ToggleSelect = false;
                 }
-                else if (ctrlDown)
+                else if (CtrlKeyDown)
                 {
                     _panSelectMode = (e.Button == MouseButtons.Left) ? PanSelectMode.SelectRectangle : PanSelectMode.SelectCircle;
-                    toggleSelect = true;
+                    ToggleSelect = true;
                 }
                 else _panSelectMode = PanSelectMode.Pan;
             }
@@ -1379,21 +1518,21 @@ namespace EGIS.Controls
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-            if (PanSelectMode == EGIS.Controls.PanSelectMode.None || mouseDownButton == MouseButtons.None) return;
+            if (PanSelectMode == EGIS.Controls.PanSelectMode.None || MouseDownButton == MouseButtons.None) return;
             Cursor oldCursor = Cursor;
             try
             {
                 Cursor = Cursors.WaitCursor;
                 if (_panSelectMode == PanSelectMode.SelectRectangle)
                 {
-                    PointD pt1 = PixelCoordToGisPoint(mouseDownPt);
+                    PointD pt1 = PixelCoordToGisPoint(MouseDownPoint);
                     PointD pt2 = PixelCoordToGisPoint(e.X, e.Y);
                     RectangleD selRect = RectangleD.FromLTRB(Math.Min(pt1.X, pt2.X),
                         Math.Min(pt1.Y, pt2.Y),
                         Math.Max(pt1.X, pt2.X),
                         Math.Max(pt1.Y, pt2.Y));
                     //if we've just clicked then expand the rectangle
-                    if (Math.Abs(e.X - mouseDownPt.X) < 2 && Math.Abs(e.Y - mouseDownPt.Y) < 2)
+                    if (Math.Abs(e.X - MouseDownPoint.X) < 2 && Math.Abs(e.Y - MouseDownPoint.Y) < 2)
                     {
                         selRect.Inflate(4f / ZoomLevel, 4f / ZoomLevel);
                     }
@@ -1405,7 +1544,7 @@ namespace EGIS.Controls
                         List<int> ind = new List<int>();
                         myShapefiles[n].GetShapeIndiciesIntersectingRect(ind, selRect);
 
-                        if (toggleSelect)
+                        if (ToggleSelect)
                         {
                             foreach (int index in ind)
                             {
@@ -1422,7 +1561,7 @@ namespace EGIS.Controls
                         }
                     }
 
-                    mouseOffPt = new Point(0, 0);
+                    MouseOffsetPoint = new Point(0, 0);
 
                     Refresh(true);
 
@@ -1431,12 +1570,12 @@ namespace EGIS.Controls
                 else if (_panSelectMode == PanSelectMode.SelectCircle)
                 {
 
-                    PointD pt1 = PixelCoordToGisPoint(mouseDownPt);
+                    PointD pt1 = PixelCoordToGisPoint(MouseDownPoint);
                     PointD pt2 = PixelCoordToGisPoint(e.X, e.Y);
                     double radius = Math.Sqrt((pt1.X - pt2.X) * (pt1.X - pt2.X) + (pt1.Y - pt2.Y) * (pt1.Y - pt2.Y));
 
                     //if we've just clicked then expand the radius
-                    if (Math.Abs(e.X - mouseDownPt.X) < 2 && Math.Abs(e.Y - mouseDownPt.Y) < 2)
+                    if (Math.Abs(e.X - MouseDownPoint.X) < 2 && Math.Abs(e.Y - MouseDownPoint.Y) < 2)
                     {
                         radius += (4f / ZoomLevel);
                     }
@@ -1449,7 +1588,7 @@ namespace EGIS.Controls
                         List<int> ind = new List<int>();
                         myShapefiles[n].GetShapeIndiciesIntersectingCircle(ind, pt1, radius);
 
-                        if (toggleSelect)
+                        if (ToggleSelect)
                         {
                             foreach (int index in ind)
                             {
@@ -1467,7 +1606,7 @@ namespace EGIS.Controls
                     }
 
 
-                    mouseOffPt = new Point(0, 0);
+                    MouseOffsetPoint = new Point(0, 0);
 
                     Refresh(true);
 
@@ -1476,20 +1615,20 @@ namespace EGIS.Controls
                 }
                 else
                 {
-                    mouseOffPt = new Point(e.X - mouseDownPt.X, e.Y - mouseDownPt.Y);
-                    if (!mouseOffPt.IsEmpty)
+                    MouseOffsetPoint = new Point(e.X - MouseDownPoint.X, e.Y - MouseDownPoint.Y);
+                    if (!MouseOffsetPoint.IsEmpty)
                     {
                         double s = 1d / ZoomLevel;
-                        _centrePoint.X -= (s * mouseOffPt.X);
-                        _centrePoint.Y += (s * mouseOffPt.Y);
-                        mouseOffPt = new Point(0, 0);
+                        _centrePoint.X -= (s * MouseOffsetPoint.X);
+                        _centrePoint.Y += (s * MouseOffsetPoint.Y);
+                        MouseOffsetPoint = new Point(0, 0);
                         Refresh(true);
                     }
                 }
             }
             finally
             {
-                mouseDownButton = MouseButtons.None;
+                MouseDownButton = MouseButtons.None;
                 Cursor = oldCursor;
             }
             
@@ -1504,9 +1643,9 @@ namespace EGIS.Controls
         {
             base.OnMouseMove(e);
             if (PanSelectMode == EGIS.Controls.PanSelectMode.None) return;
-            if (e.Button != MouseButtons.None && mouseDownButton != System.Windows.Forms.MouseButtons.None)
+            if (e.Button != MouseButtons.None && MouseDownButton != System.Windows.Forms.MouseButtons.None)
             {
-                mouseOffPt = new Point(e.X - mouseDownPt.X, e.Y - mouseDownPt.Y);
+                MouseOffsetPoint = new Point(e.X - MouseDownPoint.X, e.Y - MouseDownPoint.Y);
                 Invalidate();
             }
             else
@@ -1593,7 +1732,7 @@ namespace EGIS.Controls
                             if (useCustomToolTip)
                             {
                                 string s = this[l].RenderSettings.CustomRenderSettings.GetRecordToolTip(selectedIndex);
-                                if (s != null)
+                                if (!string.IsNullOrEmpty(s))
                                 {
                                     layerTooltip.Show(s, this, mousePos.X + toolTipOffset.X, mousePos.Y + toolTipOffset.Y);
                                     layerTooltipVisible = true;
@@ -1641,20 +1780,25 @@ namespace EGIS.Controls
         protected override void OnDoubleClick(EventArgs e)
         {            
             base.OnDoubleClick(e);
-            if (mouseDownButton == MouseButtons.Left)
+
+            MapDoubleClickedEventArgs mapDoubleClickEventArgs = new MapDoubleClickedEventArgs();
+            this.OnMapDoubleClick(mapDoubleClickEventArgs);
+            if(mapDoubleClickEventArgs.Cancel) return;
+
+            if (MouseDownButton == MouseButtons.Left)
             {
                 //zoom in
                 double z = ZoomLevel;
-                double x = ((ClientSize.Width*0.5) + mouseDownPt.X)*0.5;
-                double y = ((ClientSize.Height*0.5) + mouseDownPt.Y)*0.5;
+                double x = ((ClientSize.Width*0.5) + MouseDownPoint.X)*0.5;
+                double y = ((ClientSize.Height*0.5) + MouseDownPoint.Y)*0.5;
                 SetZoomAndCentre(z*2d, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));               
             }
-            else if (mouseDownButton == MouseButtons.Right)
+            else if (MouseDownButton == MouseButtons.Right)
             {
                 //zoom out
                 double z = ZoomLevel;
-                double x = ClientSize.Width - mouseDownPt.X;
-                double y = ClientSize.Height - mouseDownPt.Y;
+                double x = ClientSize.Width - MouseDownPoint.X;
+                double y = ClientSize.Height - MouseDownPoint.Y;
                 SetZoomAndCentre(z * 0.5, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));
             }
         }

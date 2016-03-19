@@ -31,3 +31,9 @@ EXTERN_C GEOMUTIL_LIB_API int PolyLineRectIntersect(void* points, int pointCount
 EXTERN_C GEOMUTIL_LIB_API int PolygonPolygonIntersect(double* points1, int points1Count, double* points2, int points2Count);
 
 EXTERN_C GEOMUTIL_LIB_API int PolyLinePolygonIntersect(double* polyLinePoints, int polyLinePointsCount, double* polygonPoints, int polygonPointsCount);
+
+//checks whether rect is within a polygon
+EXTERN_C GEOMUTIL_LIB_API int RectWithinPolygon(double rMinX, double rMinY, double rMaxX, double rMaxY, void* points, int pointCount);
+
+//tests if two polygons "touch"
+EXTERN_C GEOMUTIL_LIB_API int PolygonTouchesPolygon(double* points1, int points1Count, double* points2, int points2Count);

@@ -2,7 +2,7 @@
 
 /****************************************************************************
 **
-** Copyright (C) 2008 - 2011 Winston Fletcher.
+** Copyright (C) 2008 - 2016 Winston Fletcher.
 ** All rights reserved.
 **
 ** This file is part of Easy GIS .NET Desktop Edition.

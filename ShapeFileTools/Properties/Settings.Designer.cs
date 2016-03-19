@@ -26,7 +26,7 @@ namespace egis.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute(@"Easy GIS .NET Desktop Edition
-Copyright (C) 2008 - 2015 Winston Fletcher.
+Copyright (C) 2008 - 2016 Winston Fletcher.
 All rights reserved.
 
 Easy GIS .NET is free software: you can redistribute it and/or modify it under the terms of thes GNU Lesser General Public License version 3 as published by the Free Software Foundation.

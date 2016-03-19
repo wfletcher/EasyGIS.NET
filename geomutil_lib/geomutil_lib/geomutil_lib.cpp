@@ -151,3 +151,39 @@ EXTERN_C GEOMUTIL_LIB_API int PolyLineRectIntersect(void* points, int pointCount
 	return 0;
 
 }
+
+
+//checks whether rect is within a polygon
+
+EXTERN_C GEOMUTIL_LIB_API int RectWithinPolygon(double rMinX, double rMinY, double rMaxX, double rMaxY, void* points, int pointCount)
+{
+	typedef boost::geometry::model::point<double,2,boost::geometry::cs::cartesian> Point2D;
+	typedef boost::geometry::model::ring<Point2D> Ring2D;
+	typedef boost::geometry::model::box<Point2D> Box2D;
+	typedef boost::geometry::model::polygon<Point2D> Polygon2D;
+
+	Box2D box(Point2D(rMinX,rMinY), Point2D(rMaxX,rMaxY));
+	Ring2D ring((Point2D*)points, (Point2D*)points+pointCount);
+	Polygon2D boxPolygon;
+	boost::geometry::assign(boxPolygon, box);
+	boost::geometry::correct(boxPolygon); //closing point
+
+	if( boost::geometry::within(boxPolygon, ring)) return 1;
+	return 0;
+}
+
+//tests if two polygons "touch"
+EXTERN_C GEOMUTIL_LIB_API int PolygonTouchesPolygon(double* points1, int points1Count, double* points2, int points2Count)
+	{
+	typedef boost::geometry::model::point<double,2,boost::geometry::cs::cartesian> Point2D;
+	typedef boost::geometry::model::ring<Point2D> Ring2D;
+	typedef boost::geometry::model::polygon<Point2D> Polygon2D;
+
+	Ring2D ring1((Point2D*)points1, (Point2D*)points1+points1Count);
+	
+	Ring2D ring2((Point2D*)points2, (Point2D*)points2+points2Count);
+	
+	if( boost::geometry::touches(ring1, ring2)) return 1;
+	return 0;
+}
+

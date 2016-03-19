@@ -415,7 +415,7 @@ namespace EGIS.Web.Controls
                     EGIS.ShapeFileLib.ShapeFile sf = new EGIS.ShapeFileLib.ShapeFile();
                     XmlElement elem = sfList[n] as XmlElement;
                     elem.GetElementsByTagName("path")[0].InnerText = rootPath + elem.GetElementsByTagName("path")[0].InnerText;
-                    sf.ReadXml(elem);
+                    sf.ReadXml(elem, rootPath);
                     myShapefiles.Add(sf);
                 }                
             }

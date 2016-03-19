@@ -154,8 +154,9 @@ namespace EGIS.ShapeFileLib
         /// <param name="ignoreHoles"></param>
         /// <returns></returns>
         /// <remarks>Not tested</remarks>
-        public static unsafe bool PolygonCircleIntersects(byte[] data, int offset, int numPoints, PointD centre, double radius, bool ignoreHoles)
+        public static unsafe bool PolygonCircleIntersects(byte[] data, int offset, int numPoints, PointD centre, double radius, bool ignoreHoles, out bool withinHole)
         {
+            withinHole = false;
             //test 1 : check if polygon intersects or is inside the circle
             //test the dist from each polygon edge to circle centre. If < radius then intersects
             int j = numPoints - 1;
@@ -175,14 +176,19 @@ namespace EGIS.ShapeFileLib
             if(ignoreHoles) return PointInPolygon(data, offset, numPoints, centre.X, centre.Y);   
             //if a polygon is a hole then it doesn't intersect
             bool isHole = false;
-            if (PointInPolygon(data, offset, numPoints, centre.X, centre.Y, false, ref isHole)) return !isHole;
+            if (PointInPolygon(data, offset, numPoints, centre.X, centre.Y, false, ref isHole))
+            {
+                withinHole = isHole;
+                return !isHole;
+            }
             return false;
         }
 
 
         public static unsafe bool PolygonCircleIntersects(byte[] data, int offset, int numPoints, PointD centre, double radius)
         {
-            return PolygonCircleIntersects(data, offset, numPoints, centre, radius, true);    
+            bool withinHole;
+            return PolygonCircleIntersects(data, offset, numPoints, centre, radius, true, out withinHole);    
         }
 
 

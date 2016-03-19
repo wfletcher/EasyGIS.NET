@@ -67,7 +67,14 @@ namespace egis
             //double dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, lat1, lon1, lat2, lon2);
             //Console.Out.WriteLine("dist bw points:" + dist);
             //dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(23, lat1, lon1, lat2, lon2);
-            //Console.Out.WriteLine("dist bw points:" + dist);                            
+            //Console.Out.WriteLine("dist bw points:" + dist);       
+
+            sfMap1.MapDoubleClick += new EventHandler<EGIS.Controls.SFMap.MapDoubleClickedEventArgs>(sfMap1_MapDoubleClick);
+        }
+
+        void sfMap1_MapDoubleClick(object sender, EGIS.Controls.SFMap.MapDoubleClickedEventArgs e)
+        {
+           // e.Cancel = true;
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -326,8 +333,8 @@ namespace egis
                 XmlElement prjElement = (XmlElement)doc.GetElementsByTagName("sfproject").Item(0);
                 string version = prjElement.GetAttribute("version");
                 mainProgressBar.Visible = true;
-
-                this.sfMap1.ReadXml(prjElement, new EGIS.Controls.ProgressLoadStatusHandler(this.ProjectLoadStatus));
+                string baseDirectory = System.IO.Path.GetDirectoryName(path);
+                this.sfMap1.ReadXml(prjElement, baseDirectory, new EGIS.Controls.ProgressLoadStatusHandler(this.ProjectLoadStatus));
             }
             finally
             {

@@ -1124,20 +1124,22 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         /// <param name="element"></param>
         /// <seealso cref="WriteXml"/>
-        public void ReadXml(XmlElement element)
+        public void ReadXml(XmlElement element, string baseDirectory)
         {            
             string path = element.GetElementsByTagName("path")[0].InnerText;
             //check if path is relative to project
             if (!Path.IsPathRooted(path))
             {
-                string rootDir = "";
-                Uri uri = new Uri(element.OwnerDocument.BaseURI);
-                if (uri.IsFile)
-                {
-                    rootDir = System.IO.Path.GetDirectoryName(uri.AbsolutePath);
-                }
-                path = rootDir + "\\" + path;
+                //string rootDir = "";
+                //Uri uri = new Uri(element.OwnerDocument.BaseURI);
+                //if (uri.IsFile)
+                //{
+                //    rootDir = System.IO.Path.GetDirectoryName(uri.AbsolutePath);
+                //}
+                //path = rootDir + "\\" + path;
+                path = System.IO.Path.Combine(baseDirectory, path);
             }
+
             this.LoadFromFile(path);
 
             this.Name = element.GetElementsByTagName("name")[0].InnerText;
@@ -5714,6 +5716,7 @@ namespace EGIS.ShapeFileLib
             shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
             fixed (byte* dataPtr = data)
             {
+                bool intersectsNonHolePolygon = false;
                 PolygonRecordP* nextRec = (PolygonRecordP*)(dataPtr + 8);
                 int dataOffset = nextRec->DataOffset;
                 int numParts = nextRec->NumParts;
@@ -5728,24 +5731,34 @@ namespace EGIS.ShapeFileLib
                     {
                         numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
                     }
-                    if (IntersectsRect(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref rect))
+                    bool withinHole, isHole;
+                    if (IntersectsRect(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref rect, out withinHole, out isHole ))
                     {
-                        return true;
-                    }                    
+                        intersectsNonHolePolygon = true;
+                        if (isHole) return true; //if the polygon is a hole and the rect is not within the hole then it intersects
+                    }
+                    if (withinHole) return false; //if the rect is within a hole then return false
                 }
+                return intersectsNonHolePolygon;
             }
-            return false;
+            //return false;
         }
 
         
-        private static unsafe bool IntersectsRect(byte[] data, int offset, int numPoints, ref RectangleD rect)
+        private static unsafe bool IntersectsRect(byte[] data, int offset, int numPoints, ref RectangleD rect, out bool withinHole, out bool isHole)
         {
+            withinHole = isHole = false;
             if (GeometryAlgorithms.IsPolygonHole(data, offset, numPoints))
             {
-                //We need to check if the hole contains the rect
-                //but for the moment we will return false.
-                return false;
+                isHole = true;
+                //check if the 
+                fixed (byte* ptr = data)
+                {
+                    withinHole =  NativeMethods.RectWithinPolygon(rect.Left, rect.Top, rect.Right, rect.Bottom, ptr + offset, numPoints);
+                }                
             }
+            //the rect is inside the hole - return false
+            if (withinHole) return false;
 
             fixed (byte* ptr = data)
             {
@@ -5766,6 +5779,7 @@ namespace EGIS.ShapeFileLib
             shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
             fixed (byte* dataPtr = data)
             {
+                bool intersectsNonHolePolygon = false;                
                 PolygonRecordP* nextRec = (PolygonRecordP*)(dataPtr + 8);
                 int dataOffset = nextRec->DataOffset;
                 int numParts = nextRec->NumParts;
@@ -5780,13 +5794,22 @@ namespace EGIS.ShapeFileLib
                     {
                         numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
                     }
-                    if (GeometryAlgorithms.PolygonCircleIntersects(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, radius, numParts==1))
+
+                    bool withinHole;
+                    
+                    if (GeometryAlgorithms.PolygonCircleIntersects(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, radius, numParts==1, out withinHole))
                     {
-                        return true;
+                        intersectsNonHolePolygon = true;
+                        if (GeometryAlgorithms.IsPolygonHole(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints))
+                        {
+                            return true; //if the polygon is a hole and the circle intersects the hole then the record intersects
+                        }                                    
                     }
+                    if (withinHole) return false; //if the circle is within a hole then return false                    
                 }
+                return intersectsNonHolePolygon;
             }
-            return false;
+            //return false;
         }
 
         public unsafe override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
@@ -11955,6 +11978,7 @@ namespace EGIS.ShapeFileLib
             shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
             fixed (byte* dataPtr = data)
             {
+                bool intersectsNonHolePolygon = false;
                 PolygonRecordP* nextRec = (PolygonRecordP*)(dataPtr + 8);
                 int dataOffset = nextRec->DataOffset;
                 int numParts = nextRec->NumParts;
@@ -11968,24 +11992,34 @@ namespace EGIS.ShapeFileLib
                     else
                     {
                         numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
-                    }                    
-                    if (IntersectsRect(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref rect))
-                    {
-                        return true;
                     }
+                    bool withinHole, isHole;
+                    if (IntersectsRect(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref rect, out withinHole, out isHole))
+                    {
+                        intersectsNonHolePolygon = true;
+                        if (isHole) return true; //if the polygon is a hole and the rect is not within the hole then it intersects
+                    }
+                    if (withinHole) return false; //if the rect is within a hole then return false
                 }
+                return intersectsNonHolePolygon;
             }
-            return false;
+            
         }       
-        
-        private static unsafe bool IntersectsRect(byte[] data, int offset, int numPoints, ref RectangleD rect)
+                
+        private static unsafe bool IntersectsRect(byte[] data, int offset, int numPoints, ref RectangleD rect, out bool withinHole, out bool isHole)
         {
+            withinHole = isHole = false;
             if (GeometryAlgorithms.IsPolygonHole(data, offset, numPoints))
             {
-                //We need to check if the hole contains the rect
-                //but for the moment we will return false.
-                return false;
+                isHole = true;
+                //check if the rect is within the hole
+                fixed (byte* ptr = data)
+                {
+                    withinHole = NativeMethods.RectWithinPolygon(rect.Left, rect.Top, rect.Right, rect.Bottom, ptr + offset, numPoints);
+                }
             }
+            //the rect is inside the hole - return false
+            if (withinHole) return false;
 
             fixed (byte* ptr = data)
             {
@@ -12005,6 +12039,7 @@ namespace EGIS.ShapeFileLib
             shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
             fixed (byte* dataPtr = data)
             {
+                bool intersectsNonHolePolygon = false;
                 PolygonZRecordP* nextRec = (PolygonZRecordP*)(dataPtr + 8);
                 int dataOffset = nextRec->PointDataOffset;
                 int numParts = nextRec->NumParts;
@@ -12019,13 +12054,21 @@ namespace EGIS.ShapeFileLib
                     {
                         numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
                     }
-                    if (GeometryAlgorithms.PolygonCircleIntersects(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, radius, numParts == 1))
+                    
+                    bool withinHole;
+                    if (GeometryAlgorithms.PolygonCircleIntersects(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, radius, numParts == 1, out withinHole))
                     {
-                        return true;
+                        intersectsNonHolePolygon = true;
+                        if (GeometryAlgorithms.IsPolygonHole(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints))
+                        {
+                            return true; //if the polygon is a hole and the circle intersects the hole then the record intersects
+                        }
                     }
+                    if (withinHole) return false; //if the circle is within a hole then return false                    
                 }
+                return intersectsNonHolePolygon;
             }
-            return false;
+            //return false;
         }
 
         public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
