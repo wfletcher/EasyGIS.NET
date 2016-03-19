@@ -66,8 +66,16 @@ namespace EGIS.Controls
         /// <summary>
         /// Circular select mode
         /// </summary>
-        SelectCircle };
-
+        SelectCircle,
+        /// <summary>
+        /// Zoom map to selected rectangle
+        /// </summary>
+        ZoomRectangle,
+        /// <summary>
+        /// Zoom map to fit selected circle
+        /// </summary>
+        ZoomCircle
+    };
     
     /// <summary>
     /// SFMap (ShapeFile Map) is a .NET ShapeFile Control which displays shapefiles in a .NET Windows Form application
@@ -1169,9 +1177,10 @@ namespace EGIS.Controls
             }
             if (screenBuf != null)
             {
-               // bool selecting = (_panSelectMode != PanSelectMode.Pan);
+               // bool selecting = (InternalPanSelectMode != PanSelectMode.Pan);
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                if (_panSelectMode == PanSelectMode.SelectRectangle)
+                //if (InternalPanSelectMode == PanSelectMode.SelectRectangle)
+                if ((InternalPanSelectMode == PanSelectMode.SelectRectangle) || (InternalPanSelectMode == PanSelectMode.ZoomRectangle))
                 {
                     e.Graphics.DrawImage(screenBuf, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
                     using (Pen p = new Pen(Color.Red, 1))
@@ -1190,7 +1199,8 @@ namespace EGIS.Controls
                         }
                     }
                 }
-                else if (_panSelectMode == PanSelectMode.SelectCircle)
+                //else if (InternalPanSelectMode == PanSelectMode.SelectCircle)
+                else if ((InternalPanSelectMode == PanSelectMode.SelectCircle) || (InternalPanSelectMode == PanSelectMode.ZoomCircle))
                 {
                     e.Graphics.DrawImage(screenBuf, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
                     using (Pen p = new Pen(Color.Red, 1))
@@ -1211,7 +1221,7 @@ namespace EGIS.Controls
                     }
 
                 }
-                else// if (_panSelectMode == PanSelectMode.Pan)
+                else// if (InternalPanSelectMode == PanSelectMode.Pan)
                 {
                     //change this to only draw invalid area
                     if ((MouseOffsetPoint.X == 0) && (MouseOffsetPoint.Y == 0))
@@ -1384,10 +1394,16 @@ namespace EGIS.Controls
             }
         }
 
-        /// <summary>
-        /// _panSelectMode is set by keys or controlPanSelectMode
-        /// </summary>
-        protected PanSelectMode _panSelectMode = PanSelectMode.Pan;
+        private bool _ctrlDragToZoom = false;
+
+        //get/set whether to zoom to selection if control key is down. If false default behaviour is to select records
+        public bool ZoomToSelectedExtentWhenCtrlKeydown
+        {
+            get { return _ctrlDragToZoom; }
+            set { _ctrlDragToZoom = value; }
+        }
+
+        private PanSelectMode _panSelectMode = PanSelectMode.Pan;
 
         private bool _ctrlDown = false;
         private bool _shiftDown = false;
@@ -1472,6 +1488,22 @@ namespace EGIS.Controls
             }
         }
 
+        /// <summary>
+        /// InternalPanSelectMode is set by keys or controlPanSelectMode
+        /// </summary>
+        protected PanSelectMode InternalPanSelectMode
+        {
+            get
+            {
+                return _panSelectMode;
+            }
+            set
+            {
+                _panSelectMode = value;
+            }
+        }
+
+
         #endregion
 
 
@@ -1491,22 +1523,30 @@ namespace EGIS.Controls
 
             if (PanSelectMode != PanSelectMode.Pan)
             {
-                _panSelectMode = PanSelectMode;
+                InternalPanSelectMode = PanSelectMode;
                 ToggleSelect = !ShiftKeyDown && CtrlKeyDown;
             }            
             else
             {
                 if (ShiftKeyDown)
                 {
-                    _panSelectMode = (e.Button == MouseButtons.Left) ? PanSelectMode.SelectRectangle : PanSelectMode.SelectCircle;
+                    InternalPanSelectMode = (e.Button == MouseButtons.Left) ? PanSelectMode.SelectRectangle : PanSelectMode.SelectCircle;
                     ToggleSelect = false;
                 }
                 else if (CtrlKeyDown)
                 {
-                    _panSelectMode = (e.Button == MouseButtons.Left) ? PanSelectMode.SelectRectangle : PanSelectMode.SelectCircle;
-                    ToggleSelect = true;
+                    if (ZoomToSelectedExtentWhenCtrlKeydown)
+                    {
+                        InternalPanSelectMode = (e.Button == MouseButtons.Left) ? PanSelectMode.ZoomRectangle : PanSelectMode.ZoomCircle;
+                        ToggleSelect = false;
+                    }
+                    else
+                    {
+                        InternalPanSelectMode = (e.Button == MouseButtons.Left) ? PanSelectMode.SelectRectangle : PanSelectMode.SelectCircle;
+                        ToggleSelect = true;
+                    }
                 }
-                else _panSelectMode = PanSelectMode.Pan;
+                else InternalPanSelectMode = PanSelectMode.Pan;
             }
         }
 
@@ -1523,7 +1563,42 @@ namespace EGIS.Controls
             try
             {
                 Cursor = Cursors.WaitCursor;
-                if (_panSelectMode == PanSelectMode.SelectRectangle)
+                if (InternalPanSelectMode == PanSelectMode.ZoomRectangle)
+                 {
+                     PointD pt1 = PixelCoordToGisPoint(MouseDownPoint);
+                     PointD pt2 = PixelCoordToGisPoint(e.X, e.Y);
+                    RectangleD extent = RectangleD.FromLTRB(Math.Min(pt1.X, pt2.X),
+                        Math.Min(pt1.Y, pt2.Y),
+                        Math.Max(pt1.X, pt2.X),
+                        Math.Max(pt1.Y, pt2.Y));
+                    //if we've just clicked then expand the rectangle
+                    if (Math.Abs(e.X - MouseDownPoint.X) < 2 && Math.Abs(e.Y - MouseDownPoint.Y) < 2)
+                    {
+                        extent.Inflate(4f / ZoomLevel, 4f / ZoomLevel);
+                    }
+                    FitToExtent(extent);
+                }
+                else if (InternalPanSelectMode == PanSelectMode.ZoomCircle)
+                {
+
+                    PointD pt1 = PixelCoordToGisPoint(MouseDownPoint);
+                    PointD pt2 = PixelCoordToGisPoint(e.X, e.Y);
+                    double radius = Math.Sqrt((pt1.X - pt2.X) * (pt1.X - pt2.X) + (pt1.Y - pt2.Y) * (pt1.Y - pt2.Y));
+
+                    //if we've just clicked then expand the radius
+                    if (Math.Abs(e.X - MouseDownPoint.X) < 2 && Math.Abs(e.Y - MouseDownPoint.Y) < 2)
+                    {
+                        radius += (4f / ZoomLevel);
+                    }
+
+                    RectangleD extent = RectangleD.FromLTRB(
+                        pt1.X - radius,
+                        pt1.Y - radius,
+                        pt1.X + radius,
+                        pt1.Y + radius);
+                    FitToExtent(extent);
+                }
+                else if (InternalPanSelectMode == PanSelectMode.SelectRectangle)
                 {
                     PointD pt1 = PixelCoordToGisPoint(MouseDownPoint);
                     PointD pt2 = PixelCoordToGisPoint(e.X, e.Y);
@@ -1567,7 +1642,7 @@ namespace EGIS.Controls
 
                     if(fireEvent) OnSelectedRecordChanged(new EventArgs());
                 }
-                else if (_panSelectMode == PanSelectMode.SelectCircle)
+                else if (InternalPanSelectMode == PanSelectMode.SelectCircle)
                 {
 
                     PointD pt1 = PixelCoordToGisPoint(MouseDownPoint);

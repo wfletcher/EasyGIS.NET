@@ -94,9 +94,10 @@ namespace egis
             this.tsLblMapMousePos = new System.Windows.Forms.ToolStripStatusLabel();
             this.mainProgressBar = new System.Windows.Forms.ToolStripProgressBar();
             this.tsLblSelectMessage = new System.Windows.Forms.ToolStripStatusLabel();
+            this.sfdMapImage = new System.Windows.Forms.SaveFileDialog();
             this.shapeFileListControl1 = new EGIS.Controls.ShapeFileListControl();
             this.sfMap1 = new EGIS.Controls.SFMap();
-            this.sfdMapImage = new System.Windows.Forms.SaveFileDialog();
+            this.miZoomToExtentWhenCtrlkeyDown = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.mainToolStrip.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -227,7 +228,8 @@ namespace egis
             this.toolStripSeparator9,
             this.displayShapeAttributesWindowToolStripMenuItem,
             this.disablePanSelectToolStripMenuItem,
-            this.viewAttributesToolStripMenuItem});
+            this.viewAttributesToolStripMenuItem,
+            this.miZoomToExtentWhenCtrlkeyDown});
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
             this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
             this.optionsToolStripMenuItem.Text = "Options";
@@ -235,21 +237,21 @@ namespace egis
             // miMapBackgroundColor
             // 
             this.miMapBackgroundColor.Name = "miMapBackgroundColor";
-            this.miMapBackgroundColor.Size = new System.Drawing.Size(248, 22);
+            this.miMapBackgroundColor.Size = new System.Drawing.Size(315, 22);
             this.miMapBackgroundColor.Text = "Map Background Color";
             this.miMapBackgroundColor.Click += new System.EventHandler(this.miMapBackgroundColor_Click);
             // 
             // miMercatorProjection
             // 
             this.miMercatorProjection.Name = "miMercatorProjection";
-            this.miMercatorProjection.Size = new System.Drawing.Size(248, 22);
+            this.miMercatorProjection.Size = new System.Drawing.Size(315, 22);
             this.miMercatorProjection.Text = "Mercator Projection";
             this.miMercatorProjection.Click += new System.EventHandler(this.miMercatorProjection_Click);
             // 
             // toolStripSeparator8
             // 
             this.toolStripSeparator8.Name = "toolStripSeparator8";
-            this.toolStripSeparator8.Size = new System.Drawing.Size(245, 6);
+            this.toolStripSeparator8.Size = new System.Drawing.Size(312, 6);
             // 
             // renderQualityToolStripMenuItem
             // 
@@ -258,7 +260,7 @@ namespace egis
             this.lowToolStripMenuItem,
             this.autoToolStripMenuItem});
             this.renderQualityToolStripMenuItem.Name = "renderQualityToolStripMenuItem";
-            this.renderQualityToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
+            this.renderQualityToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
             this.renderQualityToolStripMenuItem.Text = "Render Quality";
             // 
             // highToolStripMenuItem
@@ -287,20 +289,20 @@ namespace egis
             // useNativeFileMappingToolStripMenuItem
             // 
             this.useNativeFileMappingToolStripMenuItem.Name = "useNativeFileMappingToolStripMenuItem";
-            this.useNativeFileMappingToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
+            this.useNativeFileMappingToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
             this.useNativeFileMappingToolStripMenuItem.Text = "Use Native File Mapping";
             this.useNativeFileMappingToolStripMenuItem.Click += new System.EventHandler(this.useNativeFileMappingToolStripMenuItem_Click);
             // 
             // toolStripSeparator9
             // 
             this.toolStripSeparator9.Name = "toolStripSeparator9";
-            this.toolStripSeparator9.Size = new System.Drawing.Size(245, 6);
+            this.toolStripSeparator9.Size = new System.Drawing.Size(312, 6);
             // 
             // displayShapeAttributesWindowToolStripMenuItem
             // 
             this.displayShapeAttributesWindowToolStripMenuItem.Enabled = false;
             this.displayShapeAttributesWindowToolStripMenuItem.Name = "displayShapeAttributesWindowToolStripMenuItem";
-            this.displayShapeAttributesWindowToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
+            this.displayShapeAttributesWindowToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
             this.displayShapeAttributesWindowToolStripMenuItem.Text = "Display shape Attributes Window";
             this.displayShapeAttributesWindowToolStripMenuItem.Click += new System.EventHandler(this.displayShapeAttributesWindowToolStripMenuItem_Click);
             // 
@@ -310,7 +312,7 @@ namespace egis
             this.disablePanSelectToolStripMenuItem.CheckOnClick = true;
             this.disablePanSelectToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.disablePanSelectToolStripMenuItem.Name = "disablePanSelectToolStripMenuItem";
-            this.disablePanSelectToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
+            this.disablePanSelectToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
             this.disablePanSelectToolStripMenuItem.Text = "DisablePanSelect";
             this.disablePanSelectToolStripMenuItem.Visible = false;
             this.disablePanSelectToolStripMenuItem.Click += new System.EventHandler(this.disablePanSelectToolStripMenuItem_Click);
@@ -319,7 +321,7 @@ namespace egis
             // 
             this.viewAttributesToolStripMenuItem.Enabled = false;
             this.viewAttributesToolStripMenuItem.Name = "viewAttributesToolStripMenuItem";
-            this.viewAttributesToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
+            this.viewAttributesToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
             this.viewAttributesToolStripMenuItem.Text = "View Attribute List";
             this.viewAttributesToolStripMenuItem.Click += new System.EventHandler(this.viewAttributesToolStripMenuItem_Click);
             // 
@@ -668,6 +670,10 @@ namespace egis
             this.tsLblSelectMessage.Text = "Hold Shift to select. Hold Ctrl to toggle select";
             this.tsLblSelectMessage.Visible = false;
             // 
+            // sfdMapImage
+            // 
+            this.sfdMapImage.Filter = "PNG|*.PNG";
+            // 
             // shapeFileListControl1
             // 
             this.shapeFileListControl1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
@@ -686,6 +692,7 @@ namespace egis
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.sfMap1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.sfMap1.CentrePoint2D = ((EGIS.ShapeFileLib.PointD)(resources.GetObject("sfMap1.CentrePoint2D")));
+            this.sfMap1.ZoomToSelectedExtentWhenCtrlKeydown = false;
             this.sfMap1.Location = new System.Drawing.Point(267, 68);
             this.sfMap1.MapBackColor = System.Drawing.SystemColors.Control;
             this.sfMap1.Name = "sfMap1";
@@ -706,9 +713,12 @@ namespace egis
             this.sfMap1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseMove);
             this.sfMap1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseUp);
             // 
-            // sfdMapImage
+            // miZoomToExtentWhenCtrlkeyDown
             // 
-            this.sfdMapImage.Filter = "PNG|*.PNG";
+            this.miZoomToExtentWhenCtrlkeyDown.Name = "miZoomToExtentWhenCtrlkeyDown";
+            this.miZoomToExtentWhenCtrlkeyDown.Size = new System.Drawing.Size(315, 22);
+            this.miZoomToExtentWhenCtrlkeyDown.Text = "Zoom to Selected Extent When Ctrl-key Down";
+            this.miZoomToExtentWhenCtrlkeyDown.Click += new System.EventHandler(this.miZoomToExtentWhenCtrlkeyDown_Click);
             // 
             // MainForm
             // 
@@ -812,6 +822,7 @@ namespace egis
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator11;
         private System.Windows.Forms.ToolStripMenuItem disablePanSelectToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem viewAttributesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem miZoomToExtentWhenCtrlkeyDown;
     }
 }
 

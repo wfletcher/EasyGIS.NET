@@ -1305,6 +1305,12 @@ namespace egis
             viewAttributesToolStripMenuItem.Checked = false;
         }
 
+        private void miZoomToExtentWhenCtrlkeyDown_Click(object sender, EventArgs e)
+        {
+            miZoomToExtentWhenCtrlkeyDown.Checked = !miZoomToExtentWhenCtrlkeyDown.Checked;
+            sfMap1.ZoomToSelectedExtentWhenCtrlKeydown = miZoomToExtentWhenCtrlkeyDown.Checked;
+        }
+
     }
   
 }
