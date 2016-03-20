@@ -57,6 +57,7 @@ namespace egis
             this.displayShapeAttributesWindowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.disablePanSelectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.viewAttributesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.miZoomToExtentWhenCtrlkeyDown = new System.Windows.Forms.ToolStripMenuItem();
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ofdShapeFile = new System.Windows.Forms.OpenFileDialog();
@@ -97,7 +98,6 @@ namespace egis
             this.sfdMapImage = new System.Windows.Forms.SaveFileDialog();
             this.shapeFileListControl1 = new EGIS.Controls.ShapeFileListControl();
             this.sfMap1 = new EGIS.Controls.SFMap();
-            this.miZoomToExtentWhenCtrlkeyDown = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.mainToolStrip.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -324,6 +324,13 @@ namespace egis
             this.viewAttributesToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
             this.viewAttributesToolStripMenuItem.Text = "View Attribute List";
             this.viewAttributesToolStripMenuItem.Click += new System.EventHandler(this.viewAttributesToolStripMenuItem_Click);
+            // 
+            // miZoomToExtentWhenCtrlkeyDown
+            // 
+            this.miZoomToExtentWhenCtrlkeyDown.Name = "miZoomToExtentWhenCtrlkeyDown";
+            this.miZoomToExtentWhenCtrlkeyDown.Size = new System.Drawing.Size(315, 22);
+            this.miZoomToExtentWhenCtrlkeyDown.Text = "Zoom to Selected Extent When Ctrl-key Down";
+            this.miZoomToExtentWhenCtrlkeyDown.Click += new System.EventHandler(this.miZoomToExtentWhenCtrlkeyDown_Click);
             // 
             // helpToolStripMenuItem
             // 
@@ -692,7 +699,6 @@ namespace egis
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.sfMap1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.sfMap1.CentrePoint2D = ((EGIS.ShapeFileLib.PointD)(resources.GetObject("sfMap1.CentrePoint2D")));
-            this.sfMap1.ZoomToSelectedExtentWhenCtrlKeydown = false;
             this.sfMap1.Location = new System.Drawing.Point(267, 68);
             this.sfMap1.MapBackColor = System.Drawing.SystemColors.Control;
             this.sfMap1.Name = "sfMap1";
@@ -702,6 +708,7 @@ namespace egis
             this.sfMap1.TabIndex = 7;
             this.sfMap1.UseMercatorProjection = true;
             this.sfMap1.ZoomLevel = 1D;
+            this.sfMap1.ZoomToSelectedExtentWhenCtrlKeydown = false;
             this.sfMap1.ShapeFilesChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_ShapeFilesChanged);
             this.sfMap1.ZoomLevelChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_ZoomLevelChanged);
             this.sfMap1.TooltipDisplayed += new System.EventHandler<EGIS.Controls.SFMap.TooltipEventArgs>(this.sfMap1_TooltipDisplayed);
@@ -712,13 +719,6 @@ namespace egis
             this.sfMap1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseDown);
             this.sfMap1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseMove);
             this.sfMap1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseUp);
-            // 
-            // miZoomToExtentWhenCtrlkeyDown
-            // 
-            this.miZoomToExtentWhenCtrlkeyDown.Name = "miZoomToExtentWhenCtrlkeyDown";
-            this.miZoomToExtentWhenCtrlkeyDown.Size = new System.Drawing.Size(315, 22);
-            this.miZoomToExtentWhenCtrlkeyDown.Text = "Zoom to Selected Extent When Ctrl-key Down";
-            this.miZoomToExtentWhenCtrlkeyDown.Click += new System.EventHandler(this.miZoomToExtentWhenCtrlkeyDown_Click);
             // 
             // MainForm
             // 

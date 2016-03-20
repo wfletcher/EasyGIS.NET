@@ -302,6 +302,15 @@ namespace EGIS.ShapeFileLib
             return (NativeGeomUtilX64.RectWithinPolygon(rMinX, rMinY, rMaxX, rMaxY, points, pointCount) != 0);
         }
 
+        internal static unsafe bool PolygonTouchesPolygon(PointD[] points1, int points1Count, PointD[] points2, int points2Count)
+        {
+            fixed (PointD* points1Ptr = points1)
+            fixed (PointD* points2Ptr = points2)
+            {
+                return PolygonTouchesPolygon((double*)points1Ptr, points1Count, (double*)points2Ptr, points2Count);
+            }
+        }
+        
         internal static unsafe bool PolygonTouchesPolygon(double* points1, int points1Count, double* points2, int points2Count)
         {
             if (IsWin32Process())

@@ -286,6 +286,21 @@ namespace EGIS.ShapeFileLib
         {
             return NativeMethods.PolyLinePolygonIntersect(polyLinePoints, polyLinePointsCount, polygonPoints, polygonPointsCount);
         }
+
+        /// <summary>
+        /// returns true if polygon1 "touches" polygon 2
+        /// </summary>
+        /// <param name="polygonPoints1"></param>
+        /// <param name="polygonPoints1Count"></param>
+        /// <param name="polygonPoints2"></param>
+        /// <param name="polygonPoints2Count"></param>
+        /// <returns>
+        /// This method can be used to find neighbouring polygons
+        /// </returns>
+        public static bool PolygonTouchesPolygon(PointD[] polygonPoints1, int polygonPoints1Count, PointD[] polygonPoints2, int polygonPoints2Count)
+        {
+            return NativeMethods.PolygonTouchesPolygon(polygonPoints1, polygonPoints1Count, polygonPoints2, polygonPoints2Count);
+        }
         
 
         #endregion
