@@ -11,7 +11,7 @@ using System.Resources;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Easy GIS .NET")]
 [assembly: AssemblyProduct("EGIS.Controls")]
-[assembly: AssemblyCopyright("Copyright © 2008-2016 Winston Fletcher")]
+[assembly: AssemblyCopyright("Copyright © 2008-2017 Winston Fletcher")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -32,7 +32,7 @@ using System.Resources;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("4.5.6.0")]
-[assembly: AssemblyFileVersion("4.5.6.0")]
+[assembly: AssemblyVersion("4.5.7.0")]
+[assembly: AssemblyFileVersion("4.5.7.0")]
 
 [assembly: NeutralResourcesLanguageAttribute("en-US")]

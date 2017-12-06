@@ -50,23 +50,23 @@ namespace EGIS.ShapeFileLib
             }
             else
             {
-                RectangleF recBounds = helper.GetRecordBounds(recordIndex, shapeFileStream);
+                RectangleD recBounds = helper.GetRecordBoundsD(recordIndex, shapeFileStream);
                 //check for zero width or height to avoid issue when checking rectangle intersection
                 //if width/height is zero
-                if (recBounds.Width < 0.0000001f)
+                if (recBounds.Width < 0.0000001)
                 {
-                    recBounds.Width = 0.0000001f;
+                    recBounds.Width = 0.0000001;
                 }
-                if (recBounds.Height < 0.0000001f)
+                if (recBounds.Height < 0.0000001)
                 {
-                    recBounds.Height = 0.0000001f;
+                    recBounds.Height = 0.0000001;
                 }
                 rootNode.Insert(recordIndex, helper, ref recBounds, shapeFileStream);
             }
         }
 
 
-        public List<int> GetIndices(PointF pt)
+        public List<int> GetIndices(PointD pt)
         {
             if (rootNode.Bounds.Contains(pt)) return rootNode.GetIndices(pt);
             return null;
@@ -113,12 +113,12 @@ namespace EGIS.ShapeFileLib
         //public static int MaxIndicesPerNode = 16;
 
 
-        private RectangleF _bounds;
+        private RectangleD _bounds;
         private QTNode[] children;
         private int _level = 0;
         private List<int> indexList;
 
-        public QTNode(RectangleF bounds, int level)
+        public QTNode(RectangleD bounds, int level)
         {
             this._bounds = bounds;
             this._level = level;
@@ -132,7 +132,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        public RectangleF Bounds
+        public RectangleD Bounds
         {
             get
             {
@@ -156,10 +156,10 @@ namespace EGIS.ShapeFileLib
         private void CreateChildren()
         {
             children = new QTNode[4];
-            children[TL] = new QTNode(RectangleF.FromLTRB(_bounds.Left, _bounds.Top, 0.5f * (_bounds.Left + _bounds.Right), 0.5f * (_bounds.Top + _bounds.Bottom)), Level + 1);
-            children[TR] = new QTNode(RectangleF.FromLTRB(0.5f * (_bounds.Left + _bounds.Right),_bounds.Top,_bounds.Right, 0.5f * (_bounds.Top + _bounds.Bottom)), Level + 1);
-            children[BL] = new QTNode(RectangleF.FromLTRB(_bounds.Left, 0.5f * (_bounds.Top + _bounds.Bottom), 0.5f * (_bounds.Left + _bounds.Right), _bounds.Bottom), Level + 1);
-            children[BR] = new QTNode(RectangleF.FromLTRB(0.5f * (_bounds.Left + _bounds.Right), 0.5f * (_bounds.Top + _bounds.Bottom), _bounds.Right, _bounds.Bottom), Level + 1);
+            children[TL] = new QTNode(RectangleD.FromLTRB(_bounds.Left, _bounds.Top, 0.5 * (_bounds.Left + _bounds.Right), 0.5 * (_bounds.Top + _bounds.Bottom)), Level + 1);
+            children[TR] = new QTNode(RectangleD.FromLTRB(0.5 * (_bounds.Left + _bounds.Right),_bounds.Top,_bounds.Right, 0.5 * (_bounds.Top + _bounds.Bottom)), Level + 1);
+            children[BL] = new QTNode(RectangleD.FromLTRB(_bounds.Left, 0.5 * (_bounds.Top + _bounds.Bottom), 0.5 * (_bounds.Left + _bounds.Right), _bounds.Bottom), Level + 1);
+            children[BR] = new QTNode(RectangleD.FromLTRB(0.5 * (_bounds.Left + _bounds.Right), 0.5 * (_bounds.Top + _bounds.Bottom), _bounds.Right, _bounds.Bottom), Level + 1);
         }
 
         public void Insert(int recordIndex, QTNodeHelper helper, System.IO.Stream shapeFileStream)
@@ -172,7 +172,7 @@ namespace EGIS.ShapeFileLib
             {                
                 if(helper.IsPointData())
                 {
-                    PointF pt = helper.GetRecordPoint(recordIndex, shapeFileStream);
+                    PointD pt = helper.GetRecordPoint(recordIndex, shapeFileStream);
                     
                     if(children == null)
                     {
@@ -183,26 +183,26 @@ namespace EGIS.ShapeFileLib
                     {
                         children[TL].Insert(recordIndex, helper, shapeFileStream);
                     }
-                    else if (children[TR].Bounds.Contains(pt))
+                     if (children[TR].Bounds.Contains(pt))
                     {
                         children[TR].Insert(recordIndex, helper, shapeFileStream);
                     }
-                    else if (children[BL].Bounds.Contains(pt))
+                     if (children[BL].Bounds.Contains(pt))
                     {
                         children[BL].Insert(recordIndex, helper, shapeFileStream);
                     }
-                    else if (children[BR].Bounds.Contains(pt))
+                     if (children[BR].Bounds.Contains(pt))
                     {
                         children[BR].Insert(recordIndex, helper, shapeFileStream);
                     }
-                    else
-                    {
-                        throw new InvalidOperationException("point " + pt + " is not contained in children bounds");
-                    }                    
+                    //else
+                    //{
+                    //    throw new InvalidOperationException("point " + pt + " is not contained in children bounds");
+                    //}                    
                 }
                 else
                 {
-                    RectangleF recBounds = helper.GetRecordBounds(recordIndex, shapeFileStream);
+                    RectangleD recBounds = helper.GetRecordBoundsD(recordIndex, shapeFileStream);
 
                     if (children == null)
                     {
@@ -235,7 +235,7 @@ namespace EGIS.ShapeFileLib
 
         }
 
-        internal void Insert(int recordIndex, QTNodeHelper helper, ref RectangleF recBounds, System.IO.Stream shapeFileStream)
+        internal void Insert(int recordIndex, QTNodeHelper helper, ref RectangleD recBounds, System.IO.Stream shapeFileStream)
         {
             if (Level == MaxLevels)
             {
@@ -281,7 +281,7 @@ namespace EGIS.ShapeFileLib
 
         }
 
-        public List<int> GetIndices(PointF pt)
+        public List<int> GetIndices(PointD pt)
         {
             if (children != null)
             {
@@ -405,7 +405,7 @@ namespace EGIS.ShapeFileLib
     interface QTNodeHelper
     {
         bool IsPointData();
-        PointF GetRecordPoint(int recordIndex, System.IO.Stream shapeFileStream);
-        RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream);
+        PointD GetRecordPoint(int recordIndex, System.IO.Stream shapeFileStream);
+        RectangleD GetRecordBoundsD(int recordIndex, System.IO.Stream shapeFileStream);
     }
 }

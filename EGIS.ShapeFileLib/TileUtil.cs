@@ -139,6 +139,16 @@ namespace EGIS.ShapeFileLib
             double d = 1.0 / ZoomLevelToScale(zoomLevel);
             return new PointD((d * pixX) - 180, 180 - (d * pixY));
         }
+
+        public static void NormaliseTileCoordinates(ref int tileX, ref int tileY, int zoomLevel)
+        {
+            if (zoomLevel < 0) return;
+            int maxTilesAtZoomLevel = 1 << zoomLevel;
+            tileX = tileX % maxTilesAtZoomLevel;
+            if (tileX < 0) tileX += maxTilesAtZoomLevel;
+            tileY = tileY % maxTilesAtZoomLevel;
+            if (tileY < 0) tileY += maxTilesAtZoomLevel;
+        }
         
     }
 

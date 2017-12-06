@@ -100,29 +100,55 @@ namespace EGIS.ShapeFileLib
 		}
 
 
-		internal static double DistanceBetweenLatLongPointsHaversine(int referenceEllipsoid, LatLongCoordinate origin, LatLongCoordinate destination)
+		public static double DistanceBetweenLatLongPointsHaversine(int referenceEllipsoid, LatLongCoordinate origin, LatLongCoordinate destination)
 		{
-			//Convert the latitude long decimal degrees to radians and apply the formula
-			//use the proper ellipsoid to get raidus of the earth
-			double EquatorialRadius = EllipseCollection[referenceEllipsoid].EquatorialRadius;
+            return DistanceBetweenLatLongPointsHaversine(referenceEllipsoid, origin.Latitude, origin.Longitude, destination.Latitude, destination.Longitude);
+            ////Convert the latitude long decimal degrees to radians and apply the formula
+            ////use the proper ellipsoid to get raidus of the earth
+            //double EquatorialRadius = EllipseCollection[referenceEllipsoid].EquatorialRadius;
 
-			double OriginLatAsRadians = origin.Latitude * (Math.PI / 180.0);
-			double OriginLongAsRadians = origin.Longitude * (Math.PI / 180.0);
+            //double OriginLatAsRadians = origin.Latitude * (Math.PI / 180.0);
+            //double OriginLongAsRadians = origin.Longitude * (Math.PI / 180.0);
 
-			double DestinationLatAsRadians = destination.Latitude * (Math.PI / 180.0);
-			double DestinationLongAsRadians = destination.Longitude * (Math.PI / 180.0);
+            //double DestinationLatAsRadians = destination.Latitude * (Math.PI / 180.0);
+            //double DestinationLongAsRadians = destination.Longitude * (Math.PI / 180.0);
 
-			double ChangeLat = DestinationLatAsRadians - OriginLatAsRadians;
-			double ChangeLong = DestinationLongAsRadians - OriginLongAsRadians;
-			double a = Math.Pow(Math.Sin(ChangeLat / 2.0), 2.0) + 
-				Math.Cos(OriginLatAsRadians) * Math.Cos(DestinationLatAsRadians) * 
-				Math.Pow(Math.Sin(ChangeLong  / 2.0), 2.0);
-			double c = 2.0 * Math.Atan2(Math.Sqrt(a), Math.Sqrt((1 - a)));
+            //double ChangeLat = DestinationLatAsRadians - OriginLatAsRadians;
+            //double ChangeLong = DestinationLongAsRadians - OriginLongAsRadians;
+            //double a = Math.Pow(Math.Sin(ChangeLat / 2.0), 2.0) + 
+            //    Math.Cos(OriginLatAsRadians) * Math.Cos(DestinationLatAsRadians) * 
+            //    Math.Pow(Math.Sin(ChangeLong  / 2.0), 2.0);
+            //double c = 2.0 * Math.Atan2(Math.Sqrt(a), Math.Sqrt((1 - a)));
 			
-			double Distance = EquatorialRadius * c;
+            //double Distance = EquatorialRadius * c;
 
-			return Distance;
+            //return Distance;
 		}
+
+        public static double DistanceBetweenLatLongPointsHaversine(int referenceEllipsoid, double originLatitude, double originLongitude, double destinationLatitude, double destinationLongitude)
+        {
+            //Convert the latitude long decimal degrees to radians and apply the formula
+            //use the proper ellipsoid to get raidus of the earth
+            double EquatorialRadius = EllipseCollection[referenceEllipsoid].EquatorialRadius;
+
+            double OriginLatAsRadians = originLatitude * (Math.PI / 180.0);
+            double OriginLongAsRadians = originLongitude * (Math.PI / 180.0);
+
+            double DestinationLatAsRadians = destinationLatitude * (Math.PI / 180.0);
+            double DestinationLongAsRadians = destinationLongitude * (Math.PI / 180.0);
+
+            double ChangeLat = DestinationLatAsRadians - OriginLatAsRadians;
+            double ChangeLong = DestinationLongAsRadians - OriginLongAsRadians;
+            double a = Math.Pow(Math.Sin(ChangeLat / 2.0), 2.0) +
+                Math.Cos(OriginLatAsRadians) * Math.Cos(DestinationLatAsRadians) *
+                Math.Pow(Math.Sin(ChangeLong / 2.0), 2.0);
+            double c = 2.0 * Math.Atan2(Math.Sqrt(a), Math.Sqrt((1 - a)));
+
+            double Distance = EquatorialRadius * c;
+
+            return Distance;
+        }
+
 
         /// <summary>
         /// returns the distance in meters between 2 lat/long double-precision points

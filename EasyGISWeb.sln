@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Web Developer Express 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EGIS.Web.Controls", "egis.web.controls\EGIS.Web.Controls.csproj", "{BB6D9D99-D2EA-44C0-8B34-4DB5B2E9BCD5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebTest", "WebTest\WebTest.csproj", "{88DFE103-AA90-419F-8752-0DDB30C397AA}"

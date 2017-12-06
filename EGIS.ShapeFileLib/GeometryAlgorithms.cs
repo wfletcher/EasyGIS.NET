@@ -681,32 +681,7 @@ namespace EGIS.ShapeFileLib
 
         }
 
-        /// <summary>
-        /// Douglas Peucker line simplification
-        /// </summary>
-        /// <param name="input"></param>
-        /// <param name="inputCount"></param>
-        /// <param name="tolerance"></param>
-        /// <param name="output"></param>
-        /// <param name="outputCount"></param>
-        public static void SimplifyDouglasPeucker(System.Drawing.Point[] input, int inputCount, int tolerance, System.Drawing.Point[] output, ref int outputCount)
-        {
-            NativeMethods.SimplifyDouglasPeucker(input, inputCount, tolerance, output, ref outputCount);
-        }
-
-        /// <summary>
-        /// Douglas Peucker line simplification
-        /// </summary>
-        /// <param name="input"></param>
-        /// <param name="inputCount"></param>
-        /// <param name="tolerance"></param>
-        /// <param name="output"></param>
-        /// <param name="outputCount"></param>
-        public static void SimplifyDouglasPeucker(PointD[] input, int inputCount, double tolerance, PointD[] output, ref int outputCount)
-        {
-            NativeMethods.SimplifyDouglasPeucker(input, inputCount, tolerance, output, ref outputCount);
-        }
-
+        
 
         #endregion
 
@@ -784,7 +759,117 @@ namespace EGIS.ShapeFileLib
             return ((distanceX * distanceX) + (distanceY * distanceY)) <= (radius * radius);
         }
 
-        
+
+        #region polyline simplification
+
+
+        /// <summary>
+        /// Douglas Peucker line simplification
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="inputCount"></param>
+        /// <param name="tolerance"></param>
+        /// <param name="output"></param>
+        /// <param name="outputCount"></param>
+        public static void SimplifyDouglasPeucker(System.Drawing.Point[] input, int inputCount, int tolerance, System.Drawing.Point[] output, ref int outputCount)
+        {
+            NativeMethods.SimplifyDouglasPeucker(input, inputCount, tolerance, output, ref outputCount);
+        }
+
+        /// <summary>
+        /// Douglas Peucker line simplification
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="inputCount"></param>
+        /// <param name="tolerance"></param>
+        /// <param name="output"></param>
+        /// <param name="outputCount"></param>
+        public static void SimplifyDouglasPeucker(PointD[] input, int inputCount, double tolerance, PointD[] output, ref int outputCount)
+        {
+            NativeMethods.SimplifyDouglasPeucker(input, inputCount, tolerance, output, ref outputCount);
+        }
+
+              
+        /// <summary>
+        /// Uses the Douglas Peucker algorithm to reduce the number of points.
+        /// </summary>
+        /// <param name="inputPoints">The input points to be reduced</param>
+        /// <param name="reducedPointIndicies">List to populate the indices of the points in the simplified polyline</param>
+        /// <param name="inputPointCount">The number of points in inputPoints</param>
+        /// <param name="tolerance">the tolerance before discarding points - see DP algorithm for explanation</param>
+        /// <returns>number of reduced points</returns>
+        public static int SimplifyDouglasPeucker(EGIS.ShapeFileLib.PointD[] inputPoints, List<int> reducedPointIndicies, int inputPointCount, double tolerance)
+        {
+            reducedPointIndicies.Clear();
+            if (inputPointCount < 3)
+            {
+                for (int i = 0; i < inputPointCount; ++i)
+                {
+                    reducedPointIndicies.Add(i);
+                }
+                return inputPointCount;
+            }
+
+
+            Int32 firstPoint = 0;
+            Int32 lastPoint = inputPointCount - 1;
+
+            //Add the first and last index to the keepers
+            reducedPointIndicies.Add(firstPoint);
+            reducedPointIndicies.Add(lastPoint);
+
+            //ensure first and last point not the same
+            while (lastPoint >= 0 && inputPoints[firstPoint].Equals(inputPoints[lastPoint]))
+            {
+                lastPoint--;
+            }
+
+            DouglasPeuckerReduction(inputPoints, firstPoint, lastPoint,
+            tolerance, reducedPointIndicies);
+
+            reducedPointIndicies.Sort();
+
+
+            //if only two points check if both points the same
+            if (reducedPointIndicies.Count == 2)
+            {
+                if (Math.Abs(inputPoints[reducedPointIndicies[0]].X - inputPoints[reducedPointIndicies[1]].X) < double.Epsilon && Math.Abs(inputPoints[reducedPointIndicies[0]].Y - inputPoints[reducedPointIndicies[1]].Y) < double.Epsilon) return 0;
+            }
+
+
+            return reducedPointIndicies.Count;
+        }
+
+
+        private static void DouglasPeuckerReduction(EGIS.ShapeFileLib.PointD[] points, Int32 firstPoint, Int32 lastPoint, Double tolerance,
+            List<Int32> pointIndexsToKeep)
+        {
+            double maxDistance = 0;
+            int indexMax = 0;
+
+            for (int index = firstPoint; index < lastPoint; ++index)
+            {
+                double distance =  LineSegPointDist(ref points[firstPoint], ref points[lastPoint], ref points[index]);
+                if (distance > maxDistance)
+                {
+                    maxDistance = distance;
+                    indexMax = index;
+                }
+            }
+
+            if (maxDistance > tolerance && indexMax != 0)
+            {
+                //Add the largest point that exceeds the tolerance
+                pointIndexsToKeep.Add(indexMax);
+
+                DouglasPeuckerReduction(points, firstPoint, indexMax, tolerance, pointIndexsToKeep);
+                DouglasPeuckerReduction(points, indexMax, lastPoint, tolerance, pointIndexsToKeep);
+            }
+        }
+
+       
+        #endregion
+
     }
 
     public enum LineSegmentSide { None, OnSegment, StartOfSegment, LeftOfSegment, RightOfSegment, EndOfSegment };

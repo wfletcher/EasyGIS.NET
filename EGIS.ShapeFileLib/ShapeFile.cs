@@ -1380,7 +1380,7 @@ namespace EGIS.ShapeFileLib
         public int GetShapeIndexContainingPoint(PointD pt, double minDistance)
         {
             //first check the entire shapefile's Extent
-            RectangleD extent = GetActualExtent();
+            RectangleD extent = Extent;// GetActualExtent();
             extent.Inflate(minDistance, minDistance);
             if (extent.Contains(pt))
             {
@@ -1656,8 +1656,8 @@ namespace EGIS.ShapeFileLib
                     CreateQuadTree(col);
                 }
                 double distSqr = minDistance * minDistance;
-                PointF ptf = new PointF((float)pt.X, (float)pt.Y);
-                List<int> indices = shapeQuadTree.GetIndices(ptf);
+                // PointF ptf = new PointF((float)pt.X, (float)pt.Y);
+                List<int> indices = shapeQuadTree.GetIndices(pt);
                 if (indices != null)
                 {
                     byte[] buffer = SFRecordCol.SharedBuffer;
@@ -5862,9 +5862,9 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+        public PointD GetRecordPoint(int recordIndex, Stream shapeFileStream)
         {
-            return PointF.Empty;
+            return PointD.Empty;
         }
 
         public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
@@ -6576,11 +6576,12 @@ namespace EGIS.ShapeFileLib
             return true;
         }
 
-        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+        public PointD GetRecordPoint(int recordIndex, Stream shapeFileStream)
         {
             //throw new Exception("The method or operation is not implemented.");
-            PointD pt = this.GetPointD(recordIndex, shapeFileStream);
-            return new PointF((float)pt.X, (float)pt.Y);
+            //PointD pt = this.GetPointD(recordIndex, shapeFileStream);
+            //return new PointF((float)pt.X, (float)pt.Y);
+            return this.GetPointD(recordIndex, shapeFileStream);
         }
 
         public override RectangleF GetRecordBounds(int recordIndex, Stream shapeFileStream)
@@ -7366,11 +7367,12 @@ namespace EGIS.ShapeFileLib
             return true;
         }
 
-        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+        public PointD GetRecordPoint(int recordIndex, Stream shapeFileStream)
         {
             //throw new Exception("The method or operation is not implemented.");
-            PointD pt = this.GetPointD(recordIndex, shapeFileStream);
-            return new PointF((float)pt.X, (float)pt.Y);
+            //PointD pt = this.GetPointD(recordIndex, shapeFileStream);
+            //return new PointF((float)pt.X, (float)pt.Y);
+            return this.GetPointD(recordIndex, shapeFileStream);
         }
 
         public override RectangleF GetRecordBounds(int recordIndex, Stream shapeFileStream)
@@ -8121,10 +8123,10 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+        public PointD GetRecordPoint(int recordIndex, Stream shapeFileStream)
         {
             //throw new Exception("The method or operation is not implemented.");
-            return PointF.Empty;
+            return PointD.Empty;
         }
 
         public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
@@ -8929,10 +8931,10 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+        public PointD GetRecordPoint(int recordIndex, Stream shapeFileStream)
         {
             //throw new Exception("The method or operation is not implemented.");
-            return PointF.Empty;
+            return PointD.Empty;
         }
 
         public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
@@ -10112,10 +10114,10 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+        public PointD GetRecordPoint(int recordIndex, Stream shapeFileStream)
         {
             //throw new Exception("The method or operation is not implemented.");
-            return PointF.Empty;
+            return PointD.Empty;
         }
 
         public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
@@ -11237,10 +11239,10 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+        public PointD GetRecordPoint(int recordIndex, Stream shapeFileStream)
         {
             //throw new Exception("The method or operation is not implemented.");
-            return PointF.Empty;
+            return PointD.Empty;
         }
 
         public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
@@ -12088,9 +12090,9 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+        public PointD GetRecordPoint(int recordIndex, Stream shapeFileStream)
         {
-            return PointF.Empty;
+            return PointD.Empty;
         }
 
         public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)
@@ -13264,10 +13266,10 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public PointF GetRecordPoint(int recordIndex, Stream shapeFileStream)
+        public PointD GetRecordPoint(int recordIndex, Stream shapeFileStream)
         {
             //throw new Exception("The method or operation is not implemented.");
-            return PointF.Empty;
+            return PointD.Empty;
         }
 
         public override RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream)

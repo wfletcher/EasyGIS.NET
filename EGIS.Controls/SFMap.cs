@@ -1789,14 +1789,14 @@ namespace EGIS.Controls
             }
             lastLocateMousePos = mousePos;
             double delta = 8.0 / ZoomLevel;
-            PointF ptf = new PointF((float)pt.X, (float)pt.Y);
+            //PointF ptf = new PointF((float)pt.X, (float)pt.Y);
             for (int l = ShapeFileCount - 1; l >= 0; l--)
             {
                 bool useToolTip = (_useHints && this[l].RenderSettings != null && this[l].RenderSettings.UseToolTip);
                 bool useCustomToolTip = (useToolTip && this[l].RenderSettings.CustomRenderSettings != null && this[l].RenderSettings.CustomRenderSettings.UseCustomTooltips);
-                RectangleF layerExtent = this[l].GetActualExtent();
-                layerExtent.Inflate((float)delta, (float)delta);
-                if ((this[l].IsSelectable || useToolTip) && layerExtent.Contains(ptf) && this[l].IsVisibleAtZoomLevel((float)ZoomLevel))
+                RectangleD layerExtent = this[l].Extent;//.GetActualExtent();
+                layerExtent.Inflate(delta, delta);
+                if ((this[l].IsSelectable || useToolTip) && layerExtent.Contains(pt) && this[l].IsVisibleAtZoomLevel((float)ZoomLevel))
                 {
                     int selectedIndex = this[l].GetShapeIndexContainingPoint(pt, delta);
                     if (selectedIndex >= 0)

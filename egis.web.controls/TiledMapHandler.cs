@@ -195,6 +195,7 @@ namespace EGIS.Web.Controls
                 {
                     if (int.TryParse(context.Request["zoom"], out zoomLevel))
                     {
+                        TileUtil.NormaliseTileCoordinates(ref tileX, ref tileY, zoomLevel);
                         centerPoint = TileUtil.GetMercatorCenterPointFromTile(tileX, tileY, zoomLevel);
                         zoom = TileUtil.ZoomLevelToScale(zoomLevel);
                         foundCompulsoryParameters = true;

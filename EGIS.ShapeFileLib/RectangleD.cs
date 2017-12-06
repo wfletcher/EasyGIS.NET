@@ -271,7 +271,7 @@ namespace EGIS.ShapeFileLib
         /// <filterpriority>1</filterpriority>
         public bool Contains(double x, double y)
         {
-            return ((((this.X <= x) && (x < (this.X + this.Width))) && (this.Y <= y)) && (y < (this.Y + this.Height)));
+            return ((((this.X <= x) && (x <= (this.X + this.Width))) && (this.Y <= y)) && (y <= (this.Y + this.Height)));
         }
 
         /// <summary>Determines if the specified point is contained within this <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>

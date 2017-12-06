@@ -459,7 +459,6 @@ namespace egis
 
         private void ExportProject()
         {
-
             if (projectStatus == ProjectState.UnsavedNewProject || projectStatus == ProjectState.UnsavedOpenProject)
             {
                 DialogResult dr = MessageBox.Show(this, "Do you wish to save your changes before exporting the project?", "Save Project?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
@@ -470,7 +469,7 @@ namespace egis
                 }
             }
             if (currentProjectPath == null) return;
-
+            sfdProject.FilterIndex = 1;
             if (this.sfdProject.ShowDialog(this) == DialogResult.OK)
             {
                 try
@@ -559,6 +558,138 @@ namespace egis
             }
         }
 
+        private void ExportAndZipProject()
+        {
+
+          
+            sfdProject.FilterIndex = 2;
+            if (this.sfdProject.ShowDialog(this) == DialogResult.OK)
+            {
+                string tempDirectory = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
+                try
+                {                                                            
+                    if (!System.IO.Directory.Exists(tempDirectory))
+                    {
+                        System.IO.Directory.CreateDirectory(tempDirectory);
+                    }
+                    string egpFileName = System.IO.Path.ChangeExtension(System.IO.Path.GetFileNameWithoutExtension(sfdProject.FileName), ".egp");
+                    egpFileName = System.IO.Path.Combine(tempDirectory, egpFileName);
+
+                    this.SaveProject(egpFileName);
+
+                    Cursor = Cursors.WaitCursor;
+                    string subDir = System.IO.Path.GetFileNameWithoutExtension(egpFileName) + "_files";
+                    string absSubDir = System.IO.Path.Combine(tempDirectory, subDir);
+                    if (!System.IO.Directory.Exists(absSubDir))
+                    {
+                        System.IO.Directory.CreateDirectory(absSubDir);
+                    }
+                    XmlDocument projDoc = new XmlDocument();
+                    projDoc.Load(egpFileName);
+                    XmlNodeList shapeNodes = projDoc.GetElementsByTagName("shapefile");
+                    if (shapeNodes != null && shapeNodes.Count > 0)
+                    {
+
+                        for (int n = 0; n < shapeNodes.Count; n++)
+                        {
+                            XmlElement shapeElement = shapeNodes[n] as XmlElement;
+                            string shapePath = shapeElement.GetElementsByTagName("path")[0].InnerText;
+                            string shapeFilename = System.IO.Path.GetFileName(shapePath);
+                            if (!System.IO.Path.IsPathRooted(shapePath))
+                            {
+                                shapePath = System.IO.Path.GetDirectoryName(egpFileName) + "/" + shapePath;
+                            }
+
+                            //copy the .shpx and dbf files, then update the path in the shapeElement
+                            if (!System.IO.File.Exists(absSubDir + "\\" + shapeFilename + ".shp"))
+                            {
+                                System.IO.File.Copy(shapePath + ".shp", absSubDir + "\\" + shapeFilename + ".shp");
+                            }
+                            if (!System.IO.File.Exists(absSubDir + "\\" + shapeFilename + ".shx"))
+                            {
+                                System.IO.File.Copy(shapePath + ".shx", absSubDir + "\\" + shapeFilename + ".shx");
+                            }
+                            if (!System.IO.File.Exists(absSubDir + "\\" + shapeFilename + ".dbf"))
+                            {
+                                System.IO.File.Copy(shapePath + ".dbf", absSubDir + "\\" + shapeFilename + ".dbf", false);
+                            }
+                            shapeElement.GetElementsByTagName("path")[0].InnerText = subDir + "/" + shapeFilename;
+                        }
+                    }
+
+                    XmlNodeList imageNodes = projDoc.GetElementsByTagName("PointImageSymbol");
+                    if (imageNodes != null && imageNodes.Count > 0)
+                    {
+
+                        for (int n = 0; n < imageNodes.Count; n++)
+                        {
+                            XmlElement imgElement = imageNodes[n] as XmlElement;
+                            string imagePath = imgElement.InnerText;
+                            string imageFilename = System.IO.Path.GetFileName(imagePath);
+                            if (!System.IO.Path.IsPathRooted(imagePath))
+                            {
+                                imagePath = System.IO.Path.GetDirectoryName(egpFileName) + "/" + imagePath;
+                            }
+
+                            //copy the .image file and then update the path in the image Element
+                            if (!System.IO.File.Exists(absSubDir + "\\" + imageFilename))
+                            {
+                                System.IO.File.Copy(imagePath, absSubDir + "\\" + imageFilename);
+                            }
+
+                            imgElement.InnerText = subDir + "/" + imageFilename;
+                        }
+                    }
+
+                    projDoc.Save(egpFileName);
+
+                    //now zip the files
+                    string zipFileName = System.IO.Path.ChangeExtension(sfdProject.FileName, ".zip");
+
+                    ZipProjectFiles(egpFileName, zipFileName);
+
+
+                    MessageBox.Show(this, "Project Exported Successfully", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine("Error exporting project :" + ex.ToString());
+                    MessageBox.Show(this, "Error exporting project\n" + ex.Message, "Error exporting project", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    Cursor = Cursors.Default;
+
+                    //delete the temporary directory
+                    try
+                    {
+                        if (System.IO.Directory.Exists(tempDirectory))
+                        {
+                            System.IO.Directory.Delete(tempDirectory, true);
+                        }
+                    }
+                    catch
+                    {
+                        //should not happen but ignore if it does
+                    }
+
+                }
+            }
+        }
+
+        private void ZipProjectFiles(string egpPath, string zipPath)
+        {
+            //check if the xipPath exists and delete first
+            if (System.IO.File.Exists(zipPath))
+            {
+                System.IO.File.Delete(zipPath);
+            }
+            System.IO.Compression.ZipFile.CreateFromDirectory(System.IO.Path.GetDirectoryName(egpPath),
+                zipPath,System.IO.Compression.CompressionLevel.Optimal,false);
+
+
+        }
 
         private void ProjectLoadStatus(int totalLayers, int layersLoaded)
         {
@@ -674,9 +805,9 @@ namespace egis
             if (IsMapFitForMercator())
             {
                 //assume using latitude longitude
-                w = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse,
+                w = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse,
                     r.Bottom, r.Left, r.Bottom, r.Right);
-                h = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse,
+                h = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse,
                     r.Bottom, r.Left, r.Top, r.Left);
             }
             else
@@ -685,7 +816,7 @@ namespace egis
                 w = r.Width;
                 h = r.Height;
             }
-            tsLabelVisibleArea.Text = w.ToString("0000000.0m") + " x " + h.ToString("0000000.0m");
+            tsLabelVisibleArea.Text = w.ToString("0000000.000m") + " x " + h.ToString("0000000.000m");
         }
 
         private void sfMap1_ZoomLevelChanged(object sender, EventArgs args)
@@ -870,7 +1001,7 @@ namespace egis
         private void sfMap1_MouseMove(object sender, MouseEventArgs e)
         {
             PointD pt = sfMap1.PixelCoordToGisPoint(new Point(e.X, e.Y));
-            string msg = string.Format("[{0:0.0000},{1:0.0000}]", new object[] { pt.X, pt.Y });
+            string msg = string.Format("[{0:0.00000000},{1:0.00000000}]", new object[] { pt.X, pt.Y });
             tsLblMapMousePos.Text = msg;
         }
 
@@ -965,6 +1096,11 @@ namespace egis
         private void exportProjectToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ExportProject();            
+        }
+
+        private void exportProjectforUseInWebEditionAsSingleZIPFileToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ExportAndZipProject();
         }
         
 
@@ -1310,6 +1446,8 @@ namespace egis
             miZoomToExtentWhenCtrlkeyDown.Checked = !miZoomToExtentWhenCtrlkeyDown.Checked;
             sfMap1.ZoomToSelectedExtentWhenCtrlKeydown = miZoomToExtentWhenCtrlkeyDown.Checked;
         }
+
+        
 
     }
   
