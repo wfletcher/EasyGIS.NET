@@ -2,7 +2,7 @@
 
 /****************************************************************************
 **
-** Copyright (C) 2008 - 2011 Winston Fletcher.
+** Copyright (C) 2008 - 2018 Winston Fletcher.
 ** All rights reserved.
 **
 ** This file is part of the EGIS.ShapeFileLib class library of Easy GIS .NET.
@@ -1704,8 +1704,8 @@ namespace EGIS.ShapeFileLib
                     CreateQuadTree(col);
                 }
                 double distSqr = minDistance * minDistance;
-                PointF ptf = new PointF((float)pt.X, (float)pt.Y);
-                List<int> indices = shapeQuadTree.GetIndices(ptf);
+                //PointF ptf = new PointF((float)pt.X, (float)pt.Y);
+                List<int> indices = shapeQuadTree.GetIndices(pt);
                 if (indices != null)
                 {
                     byte[] buffer = SFRecordCol.SharedBuffer;
@@ -1791,7 +1791,7 @@ namespace EGIS.ShapeFileLib
                 CreateQuadTree(col);
             }
 
-            List<int> indices = shapeQuadTree.GetIndices(new PointF((float)pt.X,(float)pt.Y));
+            List<int> indices = shapeQuadTree.GetIndices(pt);
             if (indices != null)
             {
                 for (int n = 0; n < indices.Count; n++)
@@ -1815,7 +1815,7 @@ namespace EGIS.ShapeFileLib
                 CreateQuadTree(col);
             }
 
-            List<int> indices = shapeQuadTree.GetIndices(new PointF((float)pt.X,(float)pt.Y));
+            List<int> indices = shapeQuadTree.GetIndices(pt);
             if (indices != null)
             {
                 for (int n = 0; n < indices.Count; n++)
@@ -1839,11 +1839,11 @@ namespace EGIS.ShapeFileLib
                 CreateQuadTree(col);
             }
 
-            List<int> indices = shapeQuadTree.GetIndices(new PointF((float)pt.X,(float)pt.Y));
+            List<int> indices = shapeQuadTree.GetIndices(pt);
             if (indices != null)
             {
                 byte[] buffer = SFRecordCol.SharedBuffer;
-                RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2f, minDistance * 2f);
+                RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
                 for (int n = 0; n < indices.Count; n++)
                 {
                     if (col.GetRecordBounds(indices[n], this.shapeFileStream).IntersectsWith(r))                    
@@ -1866,7 +1866,7 @@ namespace EGIS.ShapeFileLib
                 CreateQuadTree(col);
             }
 
-            List<int> indices = shapeQuadTree.GetIndices(new PointF((float)pt.X,(float)pt.Y));
+            List<int> indices = shapeQuadTree.GetIndices(pt);
             if (indices != null)
             {
                 byte[] buffer = SFRecordCol.SharedBuffer;
@@ -1893,11 +1893,11 @@ namespace EGIS.ShapeFileLib
                 CreateQuadTree(col);
             }
 
-            List<int> indices = shapeQuadTree.GetIndices(new PointF((float)pt.X, (float)pt.Y));
+            List<int> indices = shapeQuadTree.GetIndices(pt);
             if (indices != null)
             {
                 byte[] buffer = SFRecordCol.SharedBuffer;
-                RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2f, minDistance * 2f);
+                RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
                 for (int n = 0; n < indices.Count; n++)
                 {
                     if (col.GetRecordBounds(indices[n], this.shapeFileStream).IntersectsWith(r))
@@ -3469,7 +3469,17 @@ namespace EGIS.ShapeFileLib
             get
             {
                 //16 =>bounding z range
-                return PointDataOffset + 16 + (NumPoints << 4);
+                return PointDataOffset + (NumPoints << 4);
+            }
+        }
+
+        
+        public int ZMeasuresDataOffset
+        {
+            get
+            {
+                //16 => bounding m range (min/max measure)
+                return ZDataOffset + 16 +  (NumPoints << 3);
             }
         }
     }
@@ -10237,13 +10247,14 @@ namespace EGIS.ShapeFileLib
             List<double[]> dataList = new List<double[]>();            
             unsafe
             {
+                const int RecordHeaderLength = 8;
                 byte[] data = dataBuffer;
                 shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
-                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + RecordHeaderLength);
                 fixed (byte* dataPtr = data)
                 {
-                    PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + 8);
-                    int dataOffset = nextRec->MeasureDataOffset + 16 + 8; //skip min max measure
+                    PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + RecordHeaderLength);
+                    int dataOffset = nextRec->MeasureDataOffset + 16 + RecordHeaderLength; //skip min max measure
                     int numParts = nextRec->NumParts;
                     double[] measures;
                     for (int partNum = 0; partNum < numParts; partNum++)
@@ -12214,13 +12225,14 @@ namespace EGIS.ShapeFileLib
             List<float[]> dataList = new List<float[]>();
             unsafe
             {
+                const int RecordHeaderLength = 8;
                 byte[] data = dataBuffer;
                 shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
-                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + RecordHeaderLength);
                 fixed (byte* dataPtr = data)
                 {
-                    PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
-                    int dataOffset = nextRec->ZDataOffset + 8;
+                    PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + RecordHeaderLength);
+                    int dataOffset = nextRec->ZDataOffset + RecordHeaderLength + 16; //skip min/max range (16 bytes)
                     int numParts = nextRec->NumParts;
                     float[] heights;
                     for (int partNum = 0; partNum < numParts; partNum++)
@@ -12242,13 +12254,14 @@ namespace EGIS.ShapeFileLib
             List<double[]> dataList = new List<double[]>();
             unsafe
             {
-                byte[] data = dataBuffer;
+                const int RecordHeaderLength = 8;
+                byte[] data = dataBuffer;                
                 shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
-                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + 8);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + RecordHeaderLength);
                 fixed (byte* dataPtr = data)
                 {
-                    PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + 8);
-                    int dataOffset = nextRec->ZDataOffset + 8;
+                    PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + RecordHeaderLength);
+                    int dataOffset = nextRec->ZDataOffset + RecordHeaderLength + 16; //skip min/max range (16 bytes)
                     int numParts = nextRec->NumParts;
                     double[] heights;
                     for (int partNum = 0; partNum < numParts; partNum++)
@@ -12267,7 +12280,32 @@ namespace EGIS.ShapeFileLib
 
         public override List<double[]> GetShapeMDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
         {
-            throw new NotImplementedException("GetShapeMDataD has not been implemented for PolylineZ shape type");
+            //Thanks to D Svolos for supplying code for this function
+            List<double[]> dataList = new List<double[]>();
+            unsafe
+            {
+                const int RecordHeaderLength = 8;                
+                byte[] data = dataBuffer;
+                shapeFileStream.Seek(this.RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
+                shapeFileStream.Read(data, 0, this.RecordHeaders[recordIndex].ContentLength + RecordHeaderLength);
+                fixed (byte* dataPtr = data)
+                {
+                    PolyLineZRecordP* nextRec = (PolyLineZRecordP*)(dataPtr + RecordHeaderLength);
+                    int dataOffset = nextRec->ZMeasuresDataOffset + 16 + RecordHeaderLength; //skip min max measure (16 bytes)
+                    int numParts = nextRec->NumParts;
+                    double[] measures;
+                    for (int partNum = 0; partNum < numParts; partNum++)
+                    {
+                        int numPoints;
+                        if ((numParts - partNum) > 1) numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                        else numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                        measures = GetDoubleData(dataPtr, dataOffset, numPoints);
+                        dataOffset += numPoints << 3;
+                        dataList.Add(measures);
+                    }
+                }
+            }
+            return dataList;
         }
 
         #region Paint methods

@@ -97,6 +97,12 @@
     <Compile Include="AboutForm.Designer.cs">
       <DependentUpon>AboutForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="CsvToShapeFileForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="CsvToShapeFileForm.Designer.cs">
+      <DependentUpon>CsvToShapeFileForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="LicenceAgreementForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -120,6 +126,9 @@
     <EmbeddedResource Include="AboutForm.resx">
       <SubType>Designer</SubType>
       <DependentUpon>AboutForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CsvToShapeFileForm.resx">
+      <DependentUpon>CsvToShapeFileForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="LicenceAgreementForm.resx">
       <SubType>Designer</SubType>

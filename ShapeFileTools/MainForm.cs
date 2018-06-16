@@ -2,7 +2,7 @@
 
 /****************************************************************************
 **
-** Copyright (C) 2008 - 2011 Winston Fletcher.
+** Copyright (C) 2008 - 2018 Winston Fletcher.
 ** All rights reserved.
 **
 ** This file is part of Easy GIS .NET Desktop Edition.
@@ -1445,6 +1445,14 @@ namespace egis
         {
             miZoomToExtentWhenCtrlkeyDown.Checked = !miZoomToExtentWhenCtrlkeyDown.Checked;
             sfMap1.ZoomToSelectedExtentWhenCtrlKeydown = miZoomToExtentWhenCtrlkeyDown.Checked;
+        }
+
+        private void addXYDatacsvToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (CsvToShapeFileForm form = new CsvToShapeFileForm())
+            {
+                form.ShowDialog();
+            }
         }
 
         

@@ -402,7 +402,7 @@ namespace EGIS.Web.Controls
             //System.Diagnostics.Debug.WriteLine(pt);
             double zoom = TileUtil.ZoomLevelToScale(zoomLevel);            
             double delta = 8.0 / zoom;
-            PointD ptf = new PointD(pt.X, pt.Y);
+            //PointD ptf = new PointD(pt.X, pt.Y);
             //save the existing ICustomRenderSettings and set the dynamicCustomRenderSettings
             List<SessionCustomRenderSettingsEntry> defaultcustomRenderSettingsList = new List<SessionCustomRenderSettingsEntry>();
             if (customRenderSettingsList != null)
@@ -423,13 +423,15 @@ namespace EGIS.Web.Controls
 
                 for (int l = layers.Count - 1; l >= 0; l--)
                 {
+                    RectangleD extent = layers[l].Extent;
+                    extent.Inflate(delta, delta);
                     bool useToolTip = (layers[l].RenderSettings != null && layers[l].RenderSettings.UseToolTip);
                     bool useCustomToolTip = (useToolTip && layers[l].RenderSettings.CustomRenderSettings != null && layers[l].RenderSettings.CustomRenderSettings.UseCustomTooltips);
-                    if ((layers[l].Extent.Contains(ptf) || layers[l].ShapeType == ShapeType.Point
+                    if ((extent.Contains(pt) || layers[l].ShapeType == ShapeType.Point
                         || layers[l].ShapeType == ShapeType.PointM || layers[l].ShapeType == ShapeType.PointZ)
                         && layers[l].IsVisibleAtZoomLevel((float)zoom) && useToolTip)
                     {
-                        int selectedIndex = layers[l].GetShapeIndexContainingPoint(ptf, delta);
+                        int selectedIndex = layers[l].GetShapeIndexContainingPoint(pt, delta);
                         if (selectedIndex >= 0)
                         {
                             layerIndex = l;
@@ -543,16 +545,17 @@ namespace EGIS.Web.Controls
         {
             double zoom = TileUtil.ZoomLevelToScale(zoomLevel);
             double delta = 8.0 / zoom;
-            PointD ptf = new PointD(pt.X, pt.Y);
+            //PointD ptf = new PointD(pt.X, pt.Y);
 
             for (int l = layers.Count - 1; l >= 0; l--)
             {
-                bool useToolTip = true;// (layers[l].RenderSettings != null && layers[l].RenderSettings.UseToolTip);
-                if ((layers[l].Extent.Contains(ptf) || layers[l].ShapeType == ShapeType.Point
+                RectangleD extent = layers[l].Extent;
+                extent.Inflate(delta, delta);
+                if ((extent.Contains(pt) || layers[l].ShapeType == ShapeType.Point
                         || layers[l].ShapeType == ShapeType.PointM || layers[l].ShapeType == ShapeType.PointZ)
-                        && layers[l].IsVisibleAtZoomLevel((float)zoom) && useToolTip)
+                        && layers[l].IsVisibleAtZoomLevel((float)zoom))
                 {
-                    int selectedIndex = layers[l].GetShapeIndexContainingPoint(ptf, delta);
+                    int selectedIndex = layers[l].GetShapeIndexContainingPoint(pt, delta);
                     if (selectedIndex >= 0)
                     {
                         layerIndex = l;

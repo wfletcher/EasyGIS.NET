@@ -36,6 +36,7 @@ namespace egis
             this.recentProjectsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.miOpenShapeFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.addXYDatacsvToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.miSaveProject = new System.Windows.Forms.ToolStripMenuItem();
             this.saveProjectAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -124,6 +125,7 @@ namespace egis
             this.recentProjectsMenuItem,
             this.toolStripSeparator5,
             this.miOpenShapeFile,
+            this.addXYDatacsvToolStripMenuItem,
             this.toolStripSeparator4,
             this.miSaveProject,
             this.saveProjectAsToolStripMenuItem,
@@ -168,6 +170,13 @@ namespace egis
             this.miOpenShapeFile.Size = new System.Drawing.Size(359, 22);
             this.miOpenShapeFile.Text = "Add Shape File";
             this.miOpenShapeFile.Click += new System.EventHandler(this.miOpenShapeFile_Click);
+            // 
+            // addXYDatacsvToolStripMenuItem
+            // 
+            this.addXYDatacsvToolStripMenuItem.Name = "addXYDatacsvToolStripMenuItem";
+            this.addXYDatacsvToolStripMenuItem.Size = new System.Drawing.Size(359, 22);
+            this.addXYDatacsvToolStripMenuItem.Text = "Add X,Y Data (.csv)";
+            this.addXYDatacsvToolStripMenuItem.Click += new System.EventHandler(this.addXYDatacsvToolStripMenuItem_Click);
             // 
             // toolStripSeparator4
             // 
@@ -833,6 +842,7 @@ namespace egis
         private System.Windows.Forms.ToolStripMenuItem viewAttributesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem miZoomToExtentWhenCtrlkeyDown;
         private System.Windows.Forms.ToolStripMenuItem exportProjectforUseInWebEditionAsSingleZIPFileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem addXYDatacsvToolStripMenuItem;
     }
 }
 
