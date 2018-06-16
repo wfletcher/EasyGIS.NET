@@ -46,6 +46,15 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        public static void TrimValues(string[] values, char[] trimChars)
+        {
+            if (values == null) return;
+            for (int n = values.Length - 1; n >= 0; --n)
+            {
+                values[n] = values[n].Trim(trimChars);
+            }
+        }
+
         public static int IndexOfField(string[] fields, string fieldName, bool ignoreCase)
         {
             if (fields == null || string.IsNullOrEmpty(fieldName)) return -1;
@@ -64,21 +73,41 @@ namespace EGIS.ShapeFileLib
             return index;
         }
 
-        public static void ConvertCsvToShapeFile(string csvPath, string shapefilePath, string xCoordFieldName, string yCoordFieldName, ConvertShapeFileProgress progressHandler = null)
+        public static void ConvertCsvToShapeFile(string csvPath, string shapefilePath, string xCoordFieldName, string yCoordFieldName, bool matchFieldsExact = true,ConvertShapeFileProgress progressHandler = null)
         {
             string[] fieldNames = CsvUtil.ReadFieldHeaders(csvPath);
             CsvUtil.TrimValues(fieldNames);
             int yCoordIndex = -1, xCoordIndex = -1;
             for (int n = 0; n < fieldNames.Length; ++n)
             {
-                if (yCoordIndex < 0 && fieldNames[n].IndexOf(yCoordFieldName, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (matchFieldsExact)
                 {
-                    yCoordIndex = n;
+                    if (yCoordIndex < 0 && fieldNames[n].Equals(yCoordFieldName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        yCoordIndex = n;
+                    }
+                }
+                else
+                {
+                    if (yCoordIndex < 0 && fieldNames[n].IndexOf(yCoordFieldName, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        yCoordIndex = n;
+                    }
                 }
 
-                if (xCoordIndex < 0 && fieldNames[n].IndexOf(xCoordFieldName, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (matchFieldsExact)
                 {
-                    xCoordIndex = n;
+                    if (xCoordIndex < 0 && fieldNames[n].Equals(xCoordFieldName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        xCoordIndex = n;
+                    }
+                }
+                else
+                {
+                    if (xCoordIndex < 0 && fieldNames[n].IndexOf(xCoordFieldName, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        xCoordIndex = n;
+                    }
                 }
             }
 
@@ -126,11 +155,23 @@ namespace EGIS.ShapeFileLib
                     {
                         string[] values = nextLine.Split(',');
                         CsvUtil.TrimValues(values);
-                        if (!double.TryParse(values[yCoordIndex], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out pts[1]))
+                        string yString = values[yCoordIndex];
+                        if (yString.Length > 0)
+                        {
+                            //trim any quotes
+                            yString = yString.Trim('"', '\'');
+                        }
+                        string xString = values[xCoordIndex];
+                        if (xString.Length > 0)
+                        {
+                            //trim any quotes                            
+                            xString = xString.Trim('"', '\'');
+                        }
+                        if (!double.TryParse(yString, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out pts[1]))
                         {
                             continue;
                         }
-                        if (!double.TryParse(values[xCoordIndex], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out pts[0]))
+                        if (!double.TryParse(xString, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out pts[0]))
                         {
                             continue;
                         }

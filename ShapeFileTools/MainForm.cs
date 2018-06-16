@@ -1451,7 +1451,21 @@ namespace egis
         {
             using (CsvToShapeFileForm form = new CsvToShapeFileForm())
             {
-                form.ShowDialog();
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    if (!string.IsNullOrEmpty(form.ConvertedShapeFilePath))
+                    {
+                        try
+                        {
+                            OpenShapeFile(form.ConvertedShapeFilePath);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log(ex.ToString());
+                            MessageBox.Show(this, "Error opening shapefile\n" + ex.Message, "Error opening shapefile", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                }
             }
         }
 

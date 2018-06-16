@@ -115,9 +115,13 @@ namespace EGIS.Controls
             {
                 try
                 {
-                    btnConvert.Enabled = false;                   
+                    btnConvert.Enabled = false;
                     this.Cursor = Cursors.WaitCursor;
-                    CsvUtil.ConvertCsvToShapeFile(SourceDataFile, DestinationShapeFile, cbXCoordField.SelectedItem as string, cbYCoordField.SelectedItem as string, OnProgressChanged);
+                    CsvUtil.ConvertCsvToShapeFile(SourceDataFile, DestinationShapeFile, cbXCoordField.SelectedItem as string, cbYCoordField.SelectedItem as string, true, OnProgressChanged);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Error Converting Data", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 finally
                 {

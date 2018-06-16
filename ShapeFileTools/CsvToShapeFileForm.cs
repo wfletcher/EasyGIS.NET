@@ -20,6 +20,10 @@ namespace egis
         private void csvToShapeFileControl1_ConvertShapeFileProgressChanged(object sender, EGIS.ShapeFileLib.ConvertShapeFileEventArgs e)
         {
             this.convertProgressBar.Value = Math.Min(e.ProgressPercent, 100);
+            if (e.ProgressPercent == 100)
+            {
+                this.convertedShapeFilePath = this.csvToShapeFileControl1.DestinationShapeFile;
+            }
             Refresh();
         }
 
@@ -30,7 +34,23 @@ namespace egis
 
         private void button1_Click(object sender, EventArgs e)
         {
-            this.DialogResult = DialogResult.OK;
+            if (!string.IsNullOrEmpty(ConvertedShapeFilePath))
+            {
+                this.DialogResult = DialogResult.OK;
+            }
+            else
+            {
+                this.DialogResult = DialogResult.Cancel;
+            }
+        }
+
+        private string convertedShapeFilePath = null;
+        public string ConvertedShapeFilePath
+        {
+            get
+            {
+                return convertedShapeFilePath;
+            }
         }
     }
 }
