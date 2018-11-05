@@ -73,10 +73,11 @@ namespace EGIS.ShapeFileLib
             return index;
         }
 
-        public static void ConvertCsvToShapeFile(string csvPath, string shapefilePath, string xCoordFieldName, string yCoordFieldName, bool matchFieldsExact = true,ConvertShapeFileProgress progressHandler = null)
+        public static void ConvertCsvToShapeFile(string csvPath, string shapefilePath, string xCoordFieldName, string yCoordFieldName, bool matchFieldsExact = true,ConvertShapeFileProgress progressHandler = null, bool trimQuotesFromValues=true)
         {
             string[] fieldNames = CsvUtil.ReadFieldHeaders(csvPath);
             CsvUtil.TrimValues(fieldNames);
+            CsvUtil.TrimValues(fieldNames, new char[] { '"', '\'' });
             int yCoordIndex = -1, xCoordIndex = -1;
             for (int n = 0; n < fieldNames.Length; ++n)
             {
@@ -116,10 +117,13 @@ namespace EGIS.ShapeFileLib
                 throw new Exception(string.Format("Could not find '{0}' or '{1}' field", xCoordFieldName, yCoordFieldName) );                
             }
 
+            //ensure no duplicate field names after trimming to 10 characters
+            string[] dbfFieldNames = GetDbfFieldNames(fieldNames);
+
             DbfFieldDesc[] fields = new DbfFieldDesc[fieldNames.Length];
             for (int n = 0; n < fieldNames.Length; ++n)
             {
-                fields[n].FieldName = fieldNames[n].Length <= 10 ? fieldNames[n] : fieldNames[n].Substring(0, 10);
+                fields[n].FieldName = dbfFieldNames[n];
                 fields[n].FieldLength = 1;
                 fields[n].FieldType = DbfFieldType.Character;
             }
@@ -134,9 +138,10 @@ namespace EGIS.ShapeFileLib
                     string[] values = nextLine.Split(',');
                     if (values.Length != fieldNames.Length) continue;
                     CsvUtil.TrimValues(values);
+                    CsvUtil.TrimValues(values, new char[] { '"', '\'' });
                     for (int n = values.Length - 1; n >= 0; --n)
                     {
-                        fields[n].FieldLength = Math.Max(fields[n].FieldLength, values.Length);
+                        fields[n].FieldLength = Math.Max(fields[n].FieldLength, values[n].Length);
                     }
                     totalRecords++;
                 }
@@ -155,6 +160,7 @@ namespace EGIS.ShapeFileLib
                     {
                         string[] values = nextLine.Split(',');
                         CsvUtil.TrimValues(values);
+                        if(trimQuotesFromValues) CsvUtil.TrimValues(values, new char[] { '"', '\'' });                    
                         string yString = values[yCoordIndex];
                         if (yString.Length > 0)
                         {
@@ -195,7 +201,55 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        /// <summary>
+        /// creates dbf field names(limited to max 10 charactrs) from field names, ensuring no duplicates
+        /// </summary>
+        /// <param name="fieldNames"></param>
+        /// <returns></returns>
+        private static string[] GetDbfFieldNames(string[] fieldNames)
+        {
+            Dictionary<string, int> fieldNameCount = new Dictionary<string, int>();
+            string[] dbfFieldNames = new string[fieldNames.Length];
+            //check for any duplicates
+            bool duplicates = false;
+            for (int n = 0; n < fieldNames.Length; ++n)
+            {
+                string name = fieldNames[n].Length <= 10 ? fieldNames[n] : fieldNames[n].Substring(0, 10);
+                if (!fieldNameCount.ContainsKey(name))
+                {
+                    dbfFieldNames[n] = name;
+                    fieldNameCount.Add(name, 1);
+                }
+                else
+                {
+                    duplicates = true;
+                }
+            }
+
+            if (!duplicates) return dbfFieldNames;
+
+            fieldNameCount = new Dictionary<string, int>();
+            for (int n = 0; n < fieldNames.Length; ++n)
+            {
+                string name = fieldNames[n].Length <= 9 ? fieldNames[n] : fieldNames[n].Substring(0, 9);
+                if (!fieldNameCount.ContainsKey(name))
+                {
+                    dbfFieldNames[n] = name;
+                    fieldNameCount.Add(name, 1);
+                }
+                else
+                {
+                    int c = fieldNameCount[name]+1;
+                    fieldNameCount[name] = c;
+                    dbfFieldNames[n] = name + c.ToString(System.Globalization.CultureInfo.InvariantCulture);                    
+                }
+            }
+
+            return dbfFieldNames;
+        }
+
     }
+
 
     public delegate void ConvertShapeFileProgress(ConvertShapeFileEventArgs args);
 

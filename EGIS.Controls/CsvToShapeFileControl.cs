@@ -80,6 +80,8 @@ namespace EGIS.Controls
             string[] fieldNames = CsvUtil.ReadFieldHeaders(SourceDataFile);
             if (fieldNames == null || fieldNames.Length == 0) return;
 
+            CsvUtil.TrimValues(fieldNames, new char[] { '"', '\'' });            
+
             cbXCoordField.Items.AddRange(fieldNames);
             cbYCoordField.Items.AddRange(fieldNames);
 

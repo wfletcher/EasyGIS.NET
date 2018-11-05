@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CsvToShapeFileForm));
             this.button1 = new System.Windows.Forms.Button();
             this.csvToShapeFileControl1 = new EGIS.Controls.CsvToShapeFileControl();
             this.convertProgressBar = new System.Windows.Forms.ProgressBar();
@@ -73,7 +74,9 @@
             this.Controls.Add(this.button1);
             this.Controls.Add(this.csvToShapeFileControl1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "CsvToShapeFileForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Add X,Y Data";
             this.ResumeLayout(false);
 

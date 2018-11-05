@@ -14,6 +14,8 @@ namespace egis
     {
         private EGIS.Controls.SFMap mapReference;
 
+        private bool useVirtualMode = false;
+
         public ViewAttributesForm(EGIS.Controls.SFMap mapReference)
         {            
             InitializeComponent();
@@ -22,6 +24,8 @@ namespace egis
             mapReference.ShapeFilesChanged += mapReference_ShapeFilesChanged;
             mapReference.SelectedRecordsChanged += mapReference_SelectedRecordsChanged;
             mapReference_ShapeFilesChanged(this, EventArgs.Empty);
+
+            this.dataGridView1.VirtualMode = useVirtualMode;
         }
 
         void mapReference_SelectedRecordsChanged(object sender, EventArgs e)
@@ -60,24 +64,43 @@ namespace egis
                 selectingRecords = true;
                 if (this.dataTable != null)
                 {
+                    if (useVirtualMode)
+                    {
+                        this.dataGridView1.RowCount = 0;
+                    }
+                    this.dataGridView1.Columns.Clear();
+
                     this.dataGridView1.DataSource = null;
                     this.dataTable.Dispose();
                     this.dataView.Dispose();
                 }
                 dataTable = CreateDataTable(shapeFile.Name, shapeFile.RenderSettings.DbfReader);
                 this.dataView = new DataView(dataTable);
-                this.dataGridView1.DataSource = dataView;
+
+                if (useVirtualMode)
+                {
+                    for (int n = 0; n < dataTable.Columns.Count; ++n)
+                    {
+                        this.dataGridView1.Columns.Add(dataTable.Columns[n].ColumnName, dataTable.Columns[n].ColumnName);
+                    }
+                    this.dataGridView1.RowCount = this.dataView.Count;
+                }
+                else
+                {
+                    this.dataGridView1.DataSource = dataView;
+                }
                 this.dataGridView1.Columns[0].Visible = false;
+                
                 this.tslblRecords.Text = string.Format("{0} records loaded", dataTable.Rows.Count);
             }
             finally
             {
                 LoadSelectedRecords();
                 selectingRecords = false;
-            }
-
-                        
+            }            
         }
+
+        private const string ShapeFileRecordIndexColumnName = "SFRecordIndex";
 
         private DataTable CreateDataTable(string tableName, DbfReader reader)
         {
@@ -86,30 +109,103 @@ namespace egis
             DbfFieldDesc[] fieldDescriptions = reader.DbfRecordHeader.GetFieldDescriptions();
 
             //create the columns
-            dataTable.Columns.Add("RecordIndex", typeof(Int32));
-            foreach (DbfFieldDesc fieldDescription in fieldDescriptions)
-            {
-                dataTable.Columns.Add(fieldDescription.FieldName, typeof(string));            
-            }
+            dataTable.Columns.Add(ShapeFileRecordIndexColumnName, typeof(Int32));
+            dataTable.Columns.AddRange(DataColumnsFromDbfFields(fieldDescriptions));
            
-
             //add the data
             object[] rowValues = new object[fieldDescriptions.Length + 1];
             for (int n = 0; n < reader.DbfRecordHeader.RecordCount; ++n)
             {
                 string[] values = reader.GetFields(n);
+                TrimArrayValues(values);                
                 rowValues[0] = n;
-                Array.Copy(values, 0, rowValues, 1, values.Length);
-                TrimArrayValues(values);
+                GetDataValues(fieldDescriptions, values, rowValues, 1);
+
                 DataRow row = dataTable.NewRow();
-                row.ItemArray = rowValues;
-                
+                row.ItemArray = rowValues;                
                 dataTable.Rows.Add(row);                
             }
+           
             return dataTable;
-
         }
 
+        private static DataColumn[] DataColumnsFromDbfFields(DbfFieldDesc[] fieldDescriptions)
+        {
+            DataColumn[] dataColumns = new DataColumn[fieldDescriptions.Length];
+            for (int n = 0; n < fieldDescriptions.Length; ++n)
+            {
+                Type dataType;
+                switch(fieldDescriptions[n].FieldType)
+                {
+                    case DbfFieldType.Number:
+                        if(fieldDescriptions[n].DecimalCount == 0) dataType = typeof(Int32);
+                        else dataType = typeof(Double);
+                        break;
+                    case DbfFieldType.FloatingPoint:
+                        dataType = typeof(Double);
+                        break;
+                    default:
+                        dataType = typeof(string);
+                        break;
+                }
+                dataColumns[n] = new DataColumn(fieldDescriptions[n].FieldName, dataType);                
+            }
+            return dataColumns;
+        }
+
+        private static void GetDataValues(DbfFieldDesc[] fieldDescriptions, string[] dbfFields, object[] dataValues, int dataValuesOffset)
+        {
+            for (int n = 0; n < dbfFields.Length; ++n)
+            {
+                switch (fieldDescriptions[n].FieldType)
+                {
+                    case DbfFieldType.Number:
+                        if (fieldDescriptions[n].DecimalCount == 0)
+                        {
+                            int intValue;
+                            if (Int32.TryParse(dbfFields[n], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out intValue))
+                            {
+                                dataValues[dataValuesOffset + n] = intValue;
+                            }
+                            else
+                            {
+                                dataValues[dataValuesOffset + n] = DBNull.Value;
+                            }                            
+                        }
+                        else
+                        {
+                            double doubleValue;
+                            if (double.TryParse(dbfFields[n], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out doubleValue))
+                            {
+                                dataValues[dataValuesOffset + n] = doubleValue;
+                            }
+                            else
+                            {
+                                dataValues[dataValuesOffset + n] = DBNull.Value;
+                            }
+                        }
+                        break;
+                    case DbfFieldType.FloatingPoint:
+                        double doubleValue2;
+                        if (double.TryParse(dbfFields[n], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out doubleValue2))
+                        {
+                            dataValues[dataValuesOffset + n] = doubleValue2;
+                        }
+                        else
+                        {
+                            dataValues[dataValuesOffset + n] = DBNull.Value;
+                        }
+                        break;
+                    default:
+                        dataValues[dataValuesOffset + n] = dbfFields[n];
+                        break;
+                }
+                
+            }
+            
+        }
+
+      
         private static void TrimArrayValues(string[] values)
         {
             for (int n = values.Length - 1; n >= 0; --n)
@@ -155,14 +251,23 @@ namespace egis
             string filter = dataView.RowFilter;
             try
             {
-                dataView.RowFilter = txtSelect.Text;
+                if (useVirtualMode)
+                {
+                    this.dataGridView1.RowCount = 0;
+                }
+                    
+                dataView.RowFilter = txtSelect.Text;                
             }
             catch (Exception ex)
             {
                 dataView.RowFilter = filter;
                 tslblErrors.Text = ex.Message;
             }
-            this.tslblRecords.Text = string.Format("{0} records of {1} selected [total records:{2}]", dataGridView1.SelectedRows.Count, dataGridView1.Rows.Count, dataTable.Rows.Count);
+            if (useVirtualMode)
+            {
+                dataGridView1.RowCount = dataView.Count;
+            }
+            this.tslblRecords.Text = string.Format("{0} records of {1} selected [total records:{2}]", dataGridView1.SelectedRows.Count, dataView.Count, dataTable.Rows.Count);
         }
 
 
@@ -171,23 +276,34 @@ namespace egis
         {
             try
             {
+                dataGridView1.SelectionChanged -= dataGridView1_SelectionChanged;
+                   
                 selectingRecords = true;
                 dataView.RowFilter = "";
                 dataGridView1.ClearSelection();
+                if (useVirtualMode)
+                {
+                    this.dataGridView1.RowCount = 0;
+                    this.dataGridView1.RowCount = dataView.Count;
+                }
                 DataRow[] rows = dataTable.Select(txtSelect.Text);
                 if (rows != null)
                 {
                     Dictionary<int, bool> dictionary = new Dictionary<int, bool>();
+                    int colIndex = dataTable.Columns.IndexOf(ShapeFileRecordIndexColumnName);
+                   
                     foreach (DataRow row in rows)
-                    {
-                        dictionary[(int)row[0]] = true;                            
+                    {                        
+                        dictionary[(int)row[colIndex]] = true;                            
                     }
-                    for (int n = dataGridView1.Rows.Count - 1; n >= 0; --n)
+                    
+                    dataGridView1.SuspendLayout();
+                    for (int n = dataView.Count - 1; n >= 0; --n)
                     {
-                        if (dictionary.ContainsKey((int)dataGridView1[0,n].Value)) dataGridView1.Rows[n].Selected = true;
+                        int rowIndex = (int)dataView[n][colIndex];
+                        if (dictionary.ContainsKey(rowIndex)) dataGridView1.Rows[n].Selected = true;
                     }
-                }
-
+                }               
             }
             catch (Exception ex)
             {
@@ -195,6 +311,9 @@ namespace egis
             }
             finally
             {
+                dataGridView1.SelectionChanged += dataGridView1_SelectionChanged;
+                    
+                dataGridView1.ResumeLayout();
                 selectingRecords = false;
                 dataGridView1_SelectionChanged(this, EventArgs.Empty);
             }
@@ -221,6 +340,7 @@ namespace egis
             {
                 try
                 {
+                    dataGridView1.SelectionChanged -= dataGridView1_SelectionChanged;
                     selectingRecords = true;
                     dataGridView1.ClearSelection();
                     Dictionary<int, bool> dictionary = new Dictionary<int, bool>();                    
@@ -228,16 +348,21 @@ namespace egis
                     {
                         dictionary[index] = true;
                     }
-                    for (int n = dataGridView1.Rows.Count - 1; n >= 0; --n)
+                    int colIndex = dataTable.Columns.IndexOf(ShapeFileRecordIndexColumnName);
+                    dataGridView1.SuspendLayout();
+                    for (int n = dataView.Count - 1; n >= 0; --n)
                     {
-                        if (dictionary.ContainsKey((int)dataGridView1[0, n].Value)) dataGridView1.Rows[n].Selected = true;
-                    }
+                        int rowIndex = (int)dataView[n][colIndex];
+                        if (dictionary.ContainsKey(rowIndex)) dataGridView1.Rows[n].Selected = true;
+                    }                    
                 }
                 finally
                 {
+                    dataGridView1.ResumeLayout();
+                    dataGridView1.SelectionChanged += dataGridView1_SelectionChanged;
                     selectingRecords = false;
                 }
-            }
+            }            
         }
 
         private void dataGridView1_SelectionChanged(object sender, EventArgs e)
@@ -245,16 +370,17 @@ namespace egis
             if (!(this.isClosing || this.selectingRecords) && activated)
             {
                 shapeFileReference.ClearSelectedRecords();
+                int colIndex = dataTable.Columns.IndexOf(ShapeFileRecordIndexColumnName);
+                    
                 foreach (DataGridViewRow row in this.dataGridView1.SelectedRows)
                 {
-                    shapeFileReference.SelectRecord((int)row.Cells[0].Value, true);
+                    shapeFileReference.SelectRecord((int)row.Cells[colIndex].Value, true);
                 }
-                if (mapReference != null) mapReference.Refresh(true);
+                if (mapReference != null) mapReference.InvalidateAndClearBackground();
                 this.tslblRecords.Text = string.Format("{0} records of {1} selected", dataGridView1.SelectedRows.Count, dataGridView1.Rows.Count);
-            }
+            }          
         }
-
-               
+       
 
         private void btnFilter_Click(object sender, EventArgs e)
         {
@@ -269,6 +395,11 @@ namespace egis
                 LoadAttributes(mapReference[cbCurrentLayer.SelectedIndex]);
             }
 
+        }
+
+        private void dataGridView1_CellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
+        {
+            e.Value = this.dataView[e.RowIndex][e.ColumnIndex];
         }
     }
 

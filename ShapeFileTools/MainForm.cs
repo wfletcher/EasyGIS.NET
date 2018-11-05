@@ -1421,7 +1421,7 @@ namespace egis
                         viewAttributesForm.Owner = this;
                         viewAttributesForm.FormClosing += viewAttributesForm_FormClosing;
                     }
-                    viewAttributesForm.LoadAttributes(sfMap1[0]);
+                    //viewAttributesForm.LoadAttributes(sfMap1[0]);
                     viewAttributesForm.Show(this);
                 }
             }

@@ -47,6 +47,7 @@ namespace EGIS.ShapeFileLib
 
 		public static int RefEllipse = 2; //Australia
 
+        public const int Wgs84RefEllipse = 23;
         
 
 		public static UtmCoordinate LocationFromRangeBearing(UtmCoordinate currentLocation, double range, double bearing)

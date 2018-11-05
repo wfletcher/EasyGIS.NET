@@ -24,6 +24,8 @@
                 {                
                     dataGridView1.DataSource = null;
                     dataGridView1.Rows.Clear();
+                    dataGridView1.SelectionChanged -= dataGridView1_SelectionChanged;
+                    dataGridView1.CellValueNeeded -= dataGridView1_CellValueNeeded;
                     this.dataView.Dispose();
                     this.dataTable.Clear();
                     this.dataTable.Rows.Clear();
@@ -50,6 +52,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ViewAttributesForm));
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.formStatusStrip = new System.Windows.Forms.StatusStrip();
             this.tslblRecords = new System.Windows.Forms.ToolStripStatusLabel();
@@ -69,15 +72,16 @@
             // 
             this.dataGridView1.AllowUserToAddRows = false;
             this.dataGridView1.AllowUserToDeleteRows = false;
-            this.dataGridView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.dataGridView1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView1.Location = new System.Drawing.Point(13, 67);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.ReadOnly = true;
             this.dataGridView1.Size = new System.Drawing.Size(632, 242);
             this.dataGridView1.TabIndex = 0;
+            this.dataGridView1.CellValueNeeded += new System.Windows.Forms.DataGridViewCellValueEventHandler(this.dataGridView1_CellValueNeeded);
             this.dataGridView1.SelectionChanged += new System.EventHandler(this.dataGridView1_SelectionChanged);
             // 
             // formStatusStrip
@@ -111,8 +115,8 @@
             // 
             // txtSelect
             // 
-            this.txtSelect.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtSelect.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.txtSelect.Location = new System.Drawing.Point(93, 41);
             this.txtSelect.Name = "txtSelect";
             this.txtSelect.Size = new System.Drawing.Size(387, 20);
@@ -151,8 +155,8 @@
             // 
             // cbCurrentLayer
             // 
-            this.cbCurrentLayer.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.cbCurrentLayer.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.cbCurrentLayer.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbCurrentLayer.FormattingEnabled = true;
             this.cbCurrentLayer.Location = new System.Drawing.Point(93, 10);
@@ -183,6 +187,7 @@
             this.Controls.Add(this.txtSelect);
             this.Controls.Add(this.formStatusStrip);
             this.Controls.Add(this.dataGridView1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ViewAttributesForm";
             this.Text = "Attribute List";
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
