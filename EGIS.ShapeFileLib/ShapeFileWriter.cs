@@ -130,7 +130,8 @@ namespace EGIS.ShapeFileLib
         /// <remarks>Derived classes must call this constructor</remarks>
         /// <param name="baseDir">The base directory where the 3 shapefile files will be created</param>
         /// <param name="shapeFileName">The name of the shapefile. The shapefile will be generated at baseDir + shapeFileName + ".shx|.shp|.dbf|.cpg</param>
-        /// <param name="dataFields">DbfFieldDesc array describing the dbf fields of the shapefile</param>       
+        /// <param name="dataFields">DbfFieldDesc array describing the dbf fields of the shapefile</param>
+        /// <param name="append"></param>
         protected ShapeFileWriter(string baseDir, string shapeFileName, DbfFieldDesc[] dataFields, bool append)
         {
             if(dataFields==null || dataFields.Length==0) throw new ArgumentException("dataFields can not be null or zero length");

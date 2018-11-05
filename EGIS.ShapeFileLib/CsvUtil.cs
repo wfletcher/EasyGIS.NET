@@ -6,9 +6,17 @@ using System.Text;
 
 namespace EGIS.ShapeFileLib
 {
+    /// <summary>
+    /// Utility class with methods to assist with reading reading data from CSV files
+    /// </summary>
     public class CsvUtil
     {
-
+        /// <summary>
+        /// extracts and returns field headers from a CSV file
+        /// </summary>
+        /// <param name="csvFile"></param>
+        /// <param name="allowBlankFieldNames"></param>
+        /// <returns></returns>
         public static string[] ReadFieldHeaders(string csvFile, bool allowBlankFieldNames = false)
         {
             string[] fields = null;
@@ -37,6 +45,10 @@ namespace EGIS.ShapeFileLib
             return fields;
         }
 
+        /// <summary>
+        /// Trims whitespace from an array of field values
+        /// </summary>
+        /// <param name="values"></param>
         public static void TrimValues(string[] values)
         {
             if (values == null) return;
@@ -46,6 +58,11 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        /// <summary>
+        /// Trims whitespace from an array of field values using supplied trim characters
+        /// </summary>
+        /// <param name="values"></param>
+        /// <param name="trimChars"></param>
         public static void TrimValues(string[] values, char[] trimChars)
         {
             if (values == null) return;
@@ -55,6 +72,13 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        /// <summary>
+        /// Returns zero-based index of a given field name in an array of field names
+        /// </summary>
+        /// <param name="fields"></param>
+        /// <param name="fieldName"></param>
+        /// <param name="ignoreCase"></param>
+        /// <returns></returns>
         public static int IndexOfField(string[] fields, string fieldName, bool ignoreCase)
         {
             if (fields == null || string.IsNullOrEmpty(fieldName)) return -1;
@@ -73,6 +97,19 @@ namespace EGIS.ShapeFileLib
             return index;
         }
 
+        /// <summary>
+        /// Converts a CSV file into a point shapefile
+        /// </summary>
+        /// <param name="csvPath"></param>
+        /// <param name="shapefilePath"></param>
+        /// <param name="xCoordFieldName"></param>
+        /// <param name="yCoordFieldName"></param>
+        /// <param name="matchFieldsExact"></param>
+        /// <param name="progressHandler"></param>
+        /// <param name="trimQuotesFromValues"></param>
+        /// <remarks>
+        /// CSV data must contain fields with point coordinates
+        /// </remarks>
         public static void ConvertCsvToShapeFile(string csvPath, string shapefilePath, string xCoordFieldName, string yCoordFieldName, bool matchFieldsExact = true,ConvertShapeFileProgress progressHandler = null, bool trimQuotesFromValues=true)
         {
             string[] fieldNames = CsvUtil.ReadFieldHeaders(csvPath);
@@ -260,8 +297,6 @@ namespace EGIS.ShapeFileLib
             get;
             set;
         }
-
-
     }
 }
 

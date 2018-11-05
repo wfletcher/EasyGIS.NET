@@ -44,9 +44,14 @@ namespace EGIS.ShapeFileLib
 
         private ConversionFunctions() { }
 
-
+        /// <summary>
+        /// Reference ellipsoid (Australia)
+        /// </summary>
 		public static int RefEllipse = 2; //Australia
 
+        /// <summary>
+        /// WGS84 reference ellipsoid
+        /// </summary>
         public const int Wgs84RefEllipse = 23;
         
 
@@ -100,7 +105,13 @@ namespace EGIS.ShapeFileLib
 			}
 		}
 
-
+        /// <summary>
+        /// Returns distance in meters between two lat/long coordinates using Haversine formula. More accurate but slower.
+        /// </summary>
+        /// <param name="referenceEllipsoid"></param>
+        /// <param name="origin"></param>
+        /// <param name="destination"></param>
+        /// <returns></returns>
 		public static double DistanceBetweenLatLongPointsHaversine(int referenceEllipsoid, LatLongCoordinate origin, LatLongCoordinate destination)
 		{
             return DistanceBetweenLatLongPointsHaversine(referenceEllipsoid, origin.Latitude, origin.Longitude, destination.Latitude, destination.Longitude);
@@ -126,6 +137,15 @@ namespace EGIS.ShapeFileLib
             //return Distance;
 		}
 
+        /// <summary>
+        /// Returns distance in meters between two lat/long coordinates using Haversine formula. More accurate but slower.
+        /// </summary>
+        /// <param name="referenceEllipsoid"></param>
+        /// <param name="originLatitude"></param>
+        /// <param name="originLongitude"></param>
+        /// <param name="destinationLatitude"></param>
+        /// <param name="destinationLongitude"></param>
+        /// <returns></returns>
         public static double DistanceBetweenLatLongPointsHaversine(int referenceEllipsoid, double originLatitude, double originLongitude, double destinationLatitude, double destinationLongitude)
         {
             //Convert the latitude long decimal degrees to radians and apply the formula
