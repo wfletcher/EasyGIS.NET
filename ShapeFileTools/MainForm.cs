@@ -69,6 +69,8 @@ namespace egis
             //dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(23, lat1, lon1, lat2, lon2);
             //Console.Out.WriteLine("dist bw points:" + dist);       
 
+            TestDP();
+
             sfMap1.MapDoubleClick += new EventHandler<EGIS.Controls.SFMap.MapDoubleClickedEventArgs>(sfMap1_MapDoubleClick);
         }
 
@@ -1467,6 +1469,84 @@ namespace egis
                     }
                 }
             }
+        }
+
+        private void TestDP()
+        {
+            System.Drawing.Point[] input = new Point[10];
+            System.Drawing.Point[] output = new Point[10];
+            System.Drawing.Point[] output2 = new Point[10];
+
+
+            input[0] = new Point(0,0);
+            input[1] = new Point(20,5);
+            input[2] = new Point(30,-5);
+            input[3] = new Point(40,0);
+            input[4] = new Point(50,3);
+            input[5] = new Point(60,-3);
+            input[6] = new Point(70,0);
+            input[7] = new Point(80,-5);
+            input[8] = new Point(90,5);
+            input[9] = new Point(100,0);
+
+            List<Point> tempList = new List<Point>(input);
+            tempList.Reverse();
+            Point[] input2 = tempList.ToArray();
+
+            
+            int count=0;
+            int count2 = 0;
+
+            GeometryAlgorithms.SimplifyDouglasPeucker(input, 10, 3, output, ref count);
+            for (int n = 0; n < count; ++n)
+            {
+                Console.Out.Write(output[n] + ",");
+            }
+            Console.Out.WriteLine();
+            
+            
+            GeometryAlgorithms.SimplifyDouglasPeucker(input2, 10, 3, output2, ref count2);
+            for (int n = count2-1;n>=0;--n)
+            {
+                Console.Out.Write(output2[n] + ",");
+            }
+            Console.Out.WriteLine();
+
+
+            GeometryAlgorithms.SimplifyDouglasPeucker(input, 10, 2, output, ref count);
+            for (int n = 0; n < count; ++n)
+            {
+                Console.Out.Write(output[n] + ",");
+            }
+            Console.Out.WriteLine();
+
+
+            GeometryAlgorithms.SimplifyDouglasPeucker(input2, 10, 2, output2, ref count2);
+            for (int n = count2 - 1; n >= 0; --n)
+            {
+                Console.Out.Write(output2[n] + ",");
+            }
+            Console.Out.WriteLine();
+
+            GeometryAlgorithms.SimplifyDouglasPeucker(input, 10, 4, output, ref count);
+            for (int n = 0; n < count; ++n)
+            {
+                Console.Out.Write(output[n] + ",");
+            }
+            Console.Out.WriteLine();
+
+
+            GeometryAlgorithms.SimplifyDouglasPeucker(input2, 10, 4, output2, ref count2);
+            for (int n = count2 - 1; n >= 0; --n)
+            {
+                Console.Out.Write(output2[n] + ",");
+            }
+            Console.Out.WriteLine();
+
+
+            
+
+
         }
 
         
