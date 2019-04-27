@@ -140,6 +140,36 @@ namespace EGIS.ShapeFileLib
         }
 
         /// <summary>
+        /// Static property to get/set maximum levels used by internal quad tree data structure
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Internally a quad tree data structure is used as an in memory spatial index to speed up methods
+        /// to find the closest shape or intersecting records. Use this method to control the maximum number of levels used 
+        /// in the quad tree.
+        /// </para>
+        /// <para>
+        /// Setting a higher level will generally produde increased performance, but will use more memory and take longer
+        /// to create the quad tree.
+        /// </para>
+        /// <para>
+        /// The default number of levels is 8.
+        /// </para>
+        /// </remarks>
+        public static int QuadTreeMaxLevels
+        {
+            get
+            {
+                return QTNode.MaxLevels;
+            }
+            set
+            {
+                QTNode.MaxLevels = value;
+            }            
+        }
+
+        
+        /// <summary>
         /// Gets the ShapeType of the ShapeFile
         /// 
         /// </summary>

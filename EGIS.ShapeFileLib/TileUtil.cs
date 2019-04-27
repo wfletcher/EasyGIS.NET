@@ -43,8 +43,8 @@ namespace EGIS.ShapeFileLib
     /// <para>Note that in order to use Map tiles the <see cref="EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection"/> property
     /// must be set to true</para>
     /// <para>
-    /// Tiles are organised in a manner similar to the approach used by google maps and bing maps. Each tiles dimension is 256x256 pixels.
-    /// A tile request is made up of a zoom-level between 0 and 16(inclusive), tile x-ccord and a tile y-ccord. At zoom-level
+    /// Tiles are organised in a manner similar to the approach used by google maps and bing maps. Each tiles dimension is by default 256x256 pixels.
+    /// A tile request is made up of a zoom-level between 0 and 16(inclusive), tile x-ccord and a tile y-coord. At zoom-level
     /// 0 the entire world (-180 lon -> +180 lon) is scaled to fit in 1 tile. At level 1 the world will fit
     /// in 2 tiles x 2 tiles, at level 2 the world will fit into 4 tiles x 4 tiles, .. etc.     
     /// </para>
@@ -73,12 +73,12 @@ namespace EGIS.ShapeFileLib
         /// <param name="lat"></param>
         /// <param name="zoomLevel"></param>
         /// <returns>a Point containing the tiles x,y coordinates</returns>
-        public static System.Drawing.Point GetTileFromGisLocation(double lon, double lat, int zoomLevel)
+        public static System.Drawing.Point GetTileFromGisLocation(double lon, double lat, int zoomLevel, int tileSize=256)
         {
             if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", "zoomLevel");
             long x, y;
-            LLToPixel(new PointD(lon, lat), zoomLevel, out x, out y);
-            return new System.Drawing.Point((int)(x/256), (int)(y/256));
+            LLToPixel(new PointD(lon, lat), zoomLevel, out x, out y, tileSize);
+            return new System.Drawing.Point((int)(x/ tileSize), (int)(y/ tileSize));
         }
 
         /// <summary>
@@ -89,10 +89,18 @@ namespace EGIS.ShapeFileLib
         /// <param name="zoomLevel"></param>
         /// /// <exception cref="System.ArgumentException">If zoomLevel less than zero</exception>
         /// <returns></returns>
-        public static PointD GetMercatorCenterPointFromTile(int tileX, int tileY, int zoomLevel)
+        public static PointD GetMercatorCenterPointFromTile(int tileX, int tileY, int zoomLevel, int tileSize=256)
         {
             if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", "zoomLevel");
-            return PixelToMerc(128 + (tileX * 256), 128+(tileY * 256), zoomLevel);
+            return PixelToMerc((tileSize>>1) + (tileX * tileSize), (tileSize>>1)+(tileY * tileSize), zoomLevel, tileSize);
+        }
+
+        public static RectangleD GetTileLatLonBounds(int tileX, int tileY, int zoomLevel, int tileSize=256)
+        {
+            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", "zoomLevel");
+            PointD topLeft = PixelToLL((tileX * tileSize), (tileY * tileSize), zoomLevel, tileSize);
+            PointD bottomRight = PixelToLL(((tileX+1) * tileSize), ((tileY+1) * tileSize), zoomLevel, tileSize);
+            return RectangleD.FromLTRB(topLeft.X, bottomRight.Y, bottomRight.X, topLeft.Y);
         }
 
         private const long l = 1;
@@ -102,10 +110,10 @@ namespace EGIS.ShapeFileLib
         /// <exception cref="System.ArgumentException">If zoomLevel less than zero</exception>
         /// <param name="zoomLevel"></param>
         /// <returns></returns>
-        public static double ZoomLevelToScale(int zoomLevel)
+        public static double ZoomLevelToScale(int zoomLevel, int tileSize=256)
         {
             if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", "zoomLevel");
-            return (256.0/360.0)*(l<<zoomLevel);
+            return ((double)tileSize/360.0)*(l<<zoomLevel);
         }
 
         /// <summary>
@@ -113,30 +121,30 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         /// <param name="scale"></param>
         /// <returns></returns>
-        public static int ScaleToZoomLevel(double scale)
+        public static int ScaleToZoomLevel(double scale, int tileSize=256)
         {
-            return (int)Math.Round(Math.Log(scale*360/256.0, 2));
+            return (int)Math.Round(Math.Log(scale*360/(double)tileSize, 2));
         }
 
         private static readonly PointD MaxMerc = ShapeFile.LLToMercator(new PointD(180, 90));
 
-        public static void LLToPixel(PointD latLong, int zoomLevel, out long x, out long y)
+        public static void LLToPixel(PointD latLong, int zoomLevel, out long x, out long y, int tileSize=256)
         {
             //convert LL to Mercatator
             PointD merc = ShapeFile.LLToMercator(latLong);
-            double scale = ZoomLevelToScale(zoomLevel);
+            double scale = ZoomLevelToScale(zoomLevel, tileSize);
             x = (long)Math.Round((merc.X+MaxMerc.X) * scale);
             y = (long)Math.Round((MaxMerc.Y-merc.Y) * scale);
         }
 
-        public static PointD PixelToLL(int pixX, int pixY, int zoomLevel)
+        public static PointD PixelToLL(int pixX, int pixY, int zoomLevel, int tileSize=256)
         {
-            return ShapeFile.MercatorToLL(PixelToMerc(pixX, pixY, zoomLevel));
+            return ShapeFile.MercatorToLL(PixelToMerc(pixX, pixY, zoomLevel, tileSize));
         }
 
-        public static PointD PixelToMerc(int pixX, int pixY, int zoomLevel)
+        public static PointD PixelToMerc(int pixX, int pixY, int zoomLevel, int tileSize=256)
         {
-            double d = 1.0 / ZoomLevelToScale(zoomLevel);
+            double d = 1.0 / ZoomLevelToScale(zoomLevel, tileSize);
             return new PointD((d * pixX) - 180, 180 - (d * pixY));
         }
 

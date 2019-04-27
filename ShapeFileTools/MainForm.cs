@@ -61,7 +61,7 @@ namespace egis
             this.miMercatorProjection.Checked = false;
             this.useNativeFileMappingToolStripMenuItem.Checked = EGIS.ShapeFileLib.ShapeFile.MapFilesInMemory;
             LoadRecentProjects();
-            
+
             //double lat1 = -37, lon1 = 116.25;
             //double lat2 = -30, lon2 = 117.25;
             //double dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, lat1, lon1, lat2, lon2);
@@ -69,7 +69,7 @@ namespace egis
             //dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(23, lat1, lon1, lat2, lon2);
             //Console.Out.WriteLine("dist bw points:" + dist);       
 
-            TestDP();
+           // TestLineClipping();
 
             sfMap1.MapDoubleClick += new EventHandler<EGIS.Controls.SFMap.MapDoubleClickedEventArgs>(sfMap1_MapDoubleClick);
         }
@@ -1471,86 +1471,99 @@ namespace egis
             }
         }
 
-        private void TestDP()
+
+        private void TestLineClipping()
         {
-            System.Drawing.Point[] input = new Point[10];
-            System.Drawing.Point[] output = new Point[10];
-            System.Drawing.Point[] output2 = new Point[10];
+            EGIS.ShapeFileLib.GeometryAlgorithms.ClipBounds clipBounds = new GeometryAlgorithms.ClipBounds()
+            {
+                XMin = 100,
+                XMax = 200,
+                YMin = 100,
+                YMax = 200
+            };
+
+            PointD[] points = new PointD[10];
+            points[0] = new PointD(0, 0);
+            points[1] = new PointD(110, 110);
+            points[2] = new PointD(150, 110);
+            points[3] = new PointD(150, 150);
+            points[4] = new PointD(250, 150);
+            points[5] = new PointD(250, 190);
+            points[6] = new PointD(250, 250);
+            points[7] = new PointD(190, 190);
+            points[8] = new PointD(150, 190);
+            points[9] = new PointD(150, 210);
+
+            List<double> clippedPoints = new List<double>();
+            List<int> parts = new List<int>();
+
+            EGIS.ShapeFileLib.GeometryAlgorithms.PolyLineClip(points, 10, clipBounds, clippedPoints, parts);
+
+            points = new PointD[10];
+            points[0] = new PointD(20, 120);
+            points[1] = new PointD(220, 120);
+            points[2] = new PointD(220, 140);
+            points[3] = new PointD(20, 140);
+            points[4] = new PointD(20, 150);
+            points[5] = new PointD(250, 150);
+            points[6] = new PointD(250, 180);
+            points[7] = new PointD(120, 180);
+            points[8] = new PointD(120, 190);
+            points[9] = new PointD(190, 190);
+
+            List<double> clippedPoints2 = new List<double>();
+            List<int> parts2 = new List<int>();
+
+            EGIS.ShapeFileLib.GeometryAlgorithms.PolyLineClip(points, 10, clipBounds, clippedPoints2, parts2);
 
 
-            input[0] = new Point(0,0);
-            input[1] = new Point(20,5);
-            input[2] = new Point(30,-5);
-            input[3] = new Point(40,0);
-            input[4] = new Point(50,3);
-            input[5] = new Point(60,-3);
-            input[6] = new Point(70,0);
-            input[7] = new Point(80,-5);
-            input[8] = new Point(90,5);
-            input[9] = new Point(100,0);
+            using (Bitmap bm = new Bitmap(120, 120)) 
+            {
+                using (Graphics g = Graphics.FromImage(bm))
+                {
+                    g.Clear(Color.White);
+                    g.DrawRectangle(Pens.Red, 10, 10, 100, 100);
+                    for (int n = 0; n < parts.Count; ++n)
+                    {
+                        int index1 = parts[n];
+                        int index2 = n < parts.Count - 1 ? parts[n + 1] : clippedPoints.Count;
+                        Console.Out.WriteLine("part " + n);
+                        PointF[] pts = new PointF[(index2 - index1) >> 1];
+                        int index = 0;
+                        for (int i = index1; i < index2; i += 2)
+                        {
+                            Console.Out.WriteLine(string.Format("[{0:0.00000}, {1:0.00000}]", clippedPoints[i], clippedPoints[i + 1]));
+                            pts[index++] = new PointF(-90+(float)clippedPoints[i], -90+(float)clippedPoints[i + 1]);
+                        }
+                        using (Pen p = new Pen(Color.Red, 3))
+                        {
+                            g.DrawLines(p, pts);
+                        }
+                    }
 
-            List<Point> tempList = new List<Point>(input);
-            tempList.Reverse();
-            Point[] input2 = tempList.ToArray();
-
+                    for (int n = 0; n < parts2.Count; ++n)
+                    {
+                        int index1 = parts2[n];
+                        int index2 = n < parts2.Count - 1 ? parts2[n + 1] : clippedPoints2.Count;
+                        Console.Out.WriteLine("part " + n);
+                        PointF[] pts = new PointF[(index2 - index1) >> 1];
+                        int index = 0;
+                        for (int i = index1; i < index2; i += 2)
+                        {
+                            Console.Out.WriteLine(string.Format("[{0:0.00000}, {1:0.00000}]", clippedPoints2[i], clippedPoints2[i + 1]));
+                            pts[index++] = new PointF(-90 + (float)clippedPoints2[i], -90 + (float)clippedPoints2[i + 1]);
+                        }
+                        using (Pen p = new Pen(Color.Blue, 2))
+                        {
+                            g.DrawLines(p, pts);
+                        }
+                    }
+                }
+                bm.Save(@"c:\temp\clippedBitmap.bmp", System.Drawing.Imaging.ImageFormat.Bmp);
+            }
             
-            int count=0;
-            int count2 = 0;
-
-            GeometryAlgorithms.SimplifyDouglasPeucker(input, 10, 3, output, ref count);
-            for (int n = 0; n < count; ++n)
-            {
-                Console.Out.Write(output[n] + ",");
-            }
-            Console.Out.WriteLine();
-            
-            
-            GeometryAlgorithms.SimplifyDouglasPeucker(input2, 10, 3, output2, ref count2);
-            for (int n = count2-1;n>=0;--n)
-            {
-                Console.Out.Write(output2[n] + ",");
-            }
-            Console.Out.WriteLine();
-
-
-            GeometryAlgorithms.SimplifyDouglasPeucker(input, 10, 2, output, ref count);
-            for (int n = 0; n < count; ++n)
-            {
-                Console.Out.Write(output[n] + ",");
-            }
-            Console.Out.WriteLine();
-
-
-            GeometryAlgorithms.SimplifyDouglasPeucker(input2, 10, 2, output2, ref count2);
-            for (int n = count2 - 1; n >= 0; --n)
-            {
-                Console.Out.Write(output2[n] + ",");
-            }
-            Console.Out.WriteLine();
-
-            GeometryAlgorithms.SimplifyDouglasPeucker(input, 10, 4, output, ref count);
-            for (int n = 0; n < count; ++n)
-            {
-                Console.Out.Write(output[n] + ",");
-            }
-            Console.Out.WriteLine();
-
-
-            GeometryAlgorithms.SimplifyDouglasPeucker(input2, 10, 4, output2, ref count2);
-            for (int n = count2 - 1; n >= 0; --n)
-            {
-                Console.Out.Write(output2[n] + ",");
-            }
-            Console.Out.WriteLine();
-
-
-            
-
 
         }
-
-        
-
     }
   
 }

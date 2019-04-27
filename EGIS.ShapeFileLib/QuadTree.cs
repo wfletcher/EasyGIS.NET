@@ -108,7 +108,7 @@ namespace EGIS.ShapeFileLib
         private const int BL = 2;
         private const int BR = 3;
 
-        public static int MaxLevels = 7;
+        public static int MaxLevels = 8;
         //public static int MinLevels = 2;
         //public static int MaxIndicesPerNode = 16;
 
