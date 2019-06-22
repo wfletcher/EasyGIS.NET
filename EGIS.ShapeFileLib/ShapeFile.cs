@@ -2,7 +2,7 @@
 
 /****************************************************************************
 **
-** Copyright (C) 2008 - 2018 Winston Fletcher.
+** Copyright (C) 2008 - 2019 Winston Fletcher.
 ** All rights reserved.
 **
 ** This file is part of the EGIS.ShapeFileLib class library of Easy GIS .NET.
@@ -84,14 +84,7 @@ namespace EGIS.ShapeFileLib
 	{
         
 		const int MAIN_HEADER_LENGTH = 100;
-
-#if SinglePrecision 
-		private ShapeFileMainHeaderEx mainHeaderEx;
-		private RecordHeader[] recordHeaders;
-		private SFRecordCol sfRecordColEx;
-		private BinaryReader shapeFileExStream;		
-#endif		
-        
+      
         private string filePath;				
 		private RenderSettings myRenderer;
 
@@ -177,11 +170,7 @@ namespace EGIS.ShapeFileLib
         {
             get
             {
-#if SinglePrecision 
-                if (sfRecordColEx != null) return sfRecordColEx.MainHeaderEx.ShapeType;
-#else
                 if (sfRecordCol != null) return sfRecordCol.MainHeader.ShapeType;
-#endif                
                 return ShapeType.NullShape;
             }
         }
@@ -251,6 +240,12 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        public string ProjectionWKT
+        {
+            get;
+            private set;
+        }
+
         public static RectangleD LLExtentToProjectedExtent(RectangleD rectLL, ProjectionType projectionType)
         {
             switch(projectionType)
@@ -275,31 +270,11 @@ namespace EGIS.ShapeFileLib
 		{
 			get
 			{
-#if SinglePrecision 
-
-				if(sfRecordColEx != null)
-				{
-                    if (SFRecordCol.MercProj)
-                    {
-                        PointF tl = SFRecordCol.LLToProjection(new PointF(sfRecordColEx.MainHeaderEx.Xmin, sfRecordColEx.MainHeaderEx.Ymin));
-                        PointF br = SFRecordCol.LLToProjection(new PointF(sfRecordColEx.MainHeaderEx.Xmax, sfRecordColEx.MainHeaderEx.Ymax));
-                        RectangleF r = RectangleF.FromLTRB(tl.X, tl.Y, br.X, br.Y);
-                        return r;
-                        
-                    }
-                    else
-                    {
-                        RectangleF r = RectangleF.FromLTRB(sfRecordColEx.MainHeaderEx.Xmin, sfRecordColEx.MainHeaderEx.Ymin, sfRecordColEx.MainHeaderEx.Xmax, sfRecordColEx.MainHeaderEx.Ymax);
-                        return r;
-                    }
-				}
-#else
                 if (sfRecordCol != null)
                 {                   
                     RectangleD r = RectangleD.FromLTRB(sfRecordCol.MainHeader.Xmin, sfRecordCol.MainHeader.Ymin, sfRecordCol.MainHeader.Xmax, sfRecordCol.MainHeader.Ymax);
                     return r;                    
                 }
-#endif
 				else
 				{
 					return RectangleD.Empty;
@@ -314,17 +289,10 @@ namespace EGIS.ShapeFileLib
         /// <returns></returns>
         public RectangleF GetActualExtent()
         {
-#if SinglePrecision             
-            if (sfRecordColEx != null)
-            {                
-                return RectangleF.FromLTRB(sfRecordColEx.MainHeaderEx.Xmin, sfRecordColEx.MainHeaderEx.Ymin, sfRecordColEx.MainHeaderEx.Xmax, sfRecordColEx.MainHeaderEx.Ymax);                
-            }
-#else
             if (sfRecordCol != null)
             {
                 return RectangleF.FromLTRB((float)sfRecordCol.MainHeader.Xmin, (float)sfRecordCol.MainHeader.Ymin, (float)sfRecordCol.MainHeader.Xmax, (float)sfRecordCol.MainHeader.Ymax);                
             }
-#endif
             else
             {
                 return RectangleF.Empty;
@@ -369,49 +337,6 @@ namespace EGIS.ShapeFileLib
         /// <returns>RectangleF[] representing the extent of each shape in the shapefile</returns>
         public RectangleF[] GetShapeExtents()
         {
-#if SinglePrecision             
-            if (sfRecordColEx != null)
-            {
-                if (sfRecordColEx is SFPolygonExCol)
-                {
-                    SFPolygonExCol polyCol = sfRecordColEx as SFPolygonExCol;
-                    RectangleF[] extents = new RectangleF[polyCol.Recs.Length];
-                    int index = extents.Length - 1;
-                    while (index >= 0)
-                    {
-                        extents[index] = polyCol.Recs[index].Bounds;
-                        index--;
-                    }
-                    return extents;
-                }
-                else if (sfRecordColEx is SFPolyLineExCol)
-                {
-                    SFPolyLineExCol polyCol = sfRecordColEx as SFPolyLineExCol;
-                    RectangleF[] extents = new RectangleF[polyCol.Recs.Length];
-                    extents = new RectangleF[polyCol.Recs.Length];
-                    int index = extents.Length - 1;
-                    while (index >= 0)
-                    {
-                        extents[index] = polyCol.Recs[index].Bounds;
-                        index--;
-                    }
-                    return extents;
-                }
-                else if (sfRecordColEx is SFPolygonZExCol)
-                {
-                    SFPolygonZExCol polyCol = sfRecordColEx as SFPolygonZExCol;
-                    RectangleF[] extents = new RectangleF[polyCol.Recs.Length];
-                    int index = extents.Length - 1;
-                    while (index >= 0)
-                    {
-                        extents[index] = polyCol.Recs[index].Bounds;
-                        index--;
-                    }
-                    return extents;
-                }
-                throw new NotImplementedException("Not yet implemented");
-            }
-#else
             if (sfRecordCol!= null)                
             {
                 RectangleF[] extents = new RectangleF[sfRecordCol.RecordHeaders.Length];
@@ -424,7 +349,6 @@ namespace EGIS.ShapeFileLib
                 }
                 return extents;
             }
-#endif
             return null;
         }
 
@@ -577,17 +501,13 @@ namespace EGIS.ShapeFileLib
 
 
         /// <summary>
-            /// Gets the number of records(shapes) in the ShapeFile
-            /// </summary>
-            public int RecordCount
+        /// Gets the number of records(shapes) in the ShapeFile
+        /// </summary>
+        public int RecordCount
         {
             get
             {
-#if SinglePrecision                
-                return sfRecordColEx.MainHeaderEx.NumRecords;
-#else                
                 return sfRecordCol.RecordHeaders.Length;
-#endif     
             }
         }
 
@@ -631,42 +551,13 @@ namespace EGIS.ShapeFileLib
             Render(g, clientArea, extent, RenderSettings, projectionType);
         }
 
-//        void Render(Graphics g, Size clientArea, RectangleF extent, RenderSettings renderSettings, ProjectionType projectionType)
-//        {
-//            //DateTime dts = DateTime.Now;
-//            if (!Extent.IntersectsWith(extent)) return;
-//#if SinglePrecision
-//            if (sfRecordColEx != null)
-//            {
-//                sfRecordColEx.paint(g, clientArea, extent, shapeFileExStream.BaseStream, RenderSettings);
-//            }
-//#else
-//            if (sfRecordCol != null)
-//            {
-//                sfRecordCol.paint(g, clientArea, extent, shapeFileStream, RenderSettings, projectionType);
-//            }
-//#endif
-//            //Console.Out.WriteLine("render time: " + ((TimeSpan)DateTime.Now.Subtract(dts)));
-//        }
-
         void Render(Graphics g, Size clientArea, RectangleD extent, RenderSettings renderSettings, ProjectionType projectionType)
         {
-            DateTime dts = DateTime.Now;
-            
             if (!extent.IntersectsWith(ShapeFile.LLExtentToProjectedExtent(Extent, projectionType))) return;
-#if SinglePrecision
-
-            if (sfRecordColEx != null)
-            {
-                sfRecordColEx.paint(g, clientArea, extent, shapeFileExStream.BaseStream, RenderSettings);
-            }
-#else
             if (sfRecordCol != null)
             {
                 sfRecordCol.paint(g, clientArea, extent, shapeFileStream, RenderSettings, projectionType);
             }
-#endif
-            //Console.Out.WriteLine("render time: " + ((TimeSpan)DateTime.Now.Subtract(dts)));
         }
 
 
@@ -694,32 +585,10 @@ namespace EGIS.ShapeFileLib
             float sx = clientArea.Width*zoom;
             float sy = clientArea.Height*zoom;
             RectangleF r = RectangleF.FromLTRB(centre.X - (sx *0.5f), centre.Y - (sy * 0.5f), centre.X + (sx *0.5f), centre.Y + (sy *0.5f));
-            Render(graphics, clientArea, r, renderSetings, projectionType);
-
-            //Font f = new Font("Arial", 8);
-            //StringFormat sf = new StringFormat();
-            //Brush brush = new SolidBrush(Color.FromArgb(100, Color.Black));
-            //try
-            //{                
-            //    sf.Alignment = StringAlignment.Far;
-            //    sf.LineAlignment = StringAlignment.Far;
-            //    graphics.DrawString("Map Generated by Easy GIS .NET", f, brush, new PointF(clientArea.Width - 10, clientArea.Height - 10), sf);                
-            //}
-            //finally
-            //{
-            //    f.Dispose();
-            //    sf.Dispose();
-            //    brush.Dispose();
-            //}
-
+            Render(graphics, clientArea, r, renderSetings, projectionType);            
         }
 
-        
-        //public void RenderInternal(Graphics graphics, Size clientArea, PointF centre, float zoom, ProjectionType projectionType)
-        //{
-        //    this.RenderInternal(graphics, clientArea, centre, zoom, this.RenderSettings, projectionType);
-        //}
-
+               
         /// <summary>
         /// Renders the shapefile centered at given point and zoom
         /// </summary>
@@ -808,9 +677,6 @@ namespace EGIS.ShapeFileLib
                     recordHeaders[numRecs++] = recHead;
                 }
                 data = null;
-#if SinglePrecision             
-                this.recordHeaders = recordHeaders;
-#endif
             }
             finally
             {
@@ -903,13 +769,8 @@ namespace EGIS.ShapeFileLib
                     
             }
             
-            
-
-            
+                        
             DateTime end = DateTime.Now;
-            //System.Diagnostics.Debug.WriteLine("Shape Type : " + this.mainHeaderEx.ShapeType);
-            //System.Diagnostics.Debug.WriteLine("total number of records = " + sfRecordCol.MainHeaderEx.NumRecords);
-            //System.Diagnostics.Debug.WriteLine("Total time to read shapefile is " + end.Subtract(start).ToString());
             System.Diagnostics.Debug.WriteLine("Shape Type : " + this.mainHeader.ShapeType);
             System.Diagnostics.Debug.WriteLine("total number of records = " + recordHeaders.Length);
             System.Diagnostics.Debug.WriteLine("Total time to read shapefile is " + end.Subtract(start).ToString());
@@ -923,156 +784,41 @@ namespace EGIS.ShapeFileLib
         /// <param name="shapeFilePath">The path to the ".shp" shape file</param>
         public unsafe void LoadFromFile(string shapeFilePath)
         {
-#if SinglePrecision            
-            //Console.Out.WriteLine("PolygonRecord size: " + sizeof(PolygonRecord));
-            if (shapeFilePath.EndsWith(".shp", StringComparison.OrdinalIgnoreCase))
-            {
-                shapeFilePath = shapeFilePath.Substring(0, shapeFilePath.Length - 4);
-            }
-
-            
-            DateTime start = DateTime.Now;
-
-            LoadIndexfile(System.IO.Path.ChangeExtension(shapeFilePath, ".shx"));
-            
-            Console.Out.WriteLine("Time to load index file: " + ((TimeSpan)DateTime.Now.Subtract(start)).TotalMilliseconds);
-
-            if (!File.Exists(shapeFilePath + ".shpx"))
-            {
-                try
-                {
-                    //read record headers from the index file
-                    System.IO.BinaryReader bReader = new BinaryReader(new FileStream(shapeFilePath + ".shx", FileMode.Open));
-                    try
-                    {
-                        ShapeFileMainHeader mainHeader = new ShapeFileMainHeader(bReader.ReadBytes(100));
-                        //this.mainHeader = mainHeader;
-                        //create the recordHeaders array - length is the fileLength - mainheader / 8 bytes per rec header
-                        int totalRecords = (mainHeader.FileLength - 100) / 8;
-                        recordHeaders = new RecordHeader[totalRecords];
-                        int numRecs = 0;
-                        //now read the record headers
-                        byte[] data = new byte[mainHeader.FileLength - 100];
-                        bReader.Read(data, 0, data.Length);
-                        int maxRecLength = 0;
-                        while (numRecs < totalRecords)
-                        {
-                            RecordHeader recHead = new RecordHeader(numRecs + 1);
-                            recHead.readFromIndexFile(data, numRecs << 3);
-                            if (numRecs > 0)
-                            {
-                                maxRecLength = Math.Max(maxRecLength, recHead.Offset - recordHeaders[numRecs - 1].Offset);
-
-                            }
-                            recordHeaders[numRecs++] = recHead;                                                        
-                        }
-                        
-                        FileStream fs = new FileStream(shapeFilePath + ".shp", FileMode.Open, FileAccess.Read, FileShare.Read);
-                        try
-                        {
-                            if (numRecs == 1)
-                            {
-                                maxRecLength = (int)fs.Length;
-                            }
-                            else
-                            {
-                                maxRecLength = Math.Max(maxRecLength, (int)fs.Length - recordHeaders[numRecs - 1].Offset);
-                            }
-                        }
-                        finally
-                        {
-                            fs.Close();
-                        }
-                        //ensure the shared buffer is large enough
-                        SFRecordCol.EnsureBufferSize(maxRecLength);
-
-
-                        if (mainHeader.ShapeType == ShapeType.PolyLineM)
-                        {
-                            //now read the shape record headers from the main shapefile
-                            PolyLineMRecord[] plmRecs = readPLMShapeHeaders(shapeFilePath, mainHeader, recordHeaders);
-
-                            if (plmRecs != null)
-                            {
-                                createShapeFileEx(shapeFilePath, mainHeader, plmRecs);
-                            }
-                        }
-                        else if (mainHeader.ShapeType == ShapeType.PolyLine)
-                        {
-                            //now read the shape record headers from the main shapefile
-                            PolyLineRecord[] plRecs = readPLShapeHeaders(shapeFilePath, mainHeader, recordHeaders);
-
-                            if (plRecs != null)
-                            {
-                                createShapeFileEx(shapeFilePath, mainHeader, plRecs);
-                            }
-                        }
-                        else if (mainHeader.ShapeType == ShapeType.Polygon)
-                        {
-                            //now read the shape record headers from the main shapefile
-                            PolygonRecord[] pgRecs = readPGShapeHeaders(shapeFilePath, mainHeader, recordHeaders);
-
-                            if (pgRecs != null)
-                            {
-                                createShapeFileEx(shapeFilePath, mainHeader, pgRecs);
-                            }
-                        }
-                        else if (mainHeader.ShapeType == ShapeType.PolygonZ)
-                        {
-                            //now read the shape record headers from the main shapefile
-                            PolygonZRecord[] pgRecs = readPGZShapeHeaders(shapeFilePath, mainHeader, recordHeaders);
-
-                            if (pgRecs != null)
-                            {
-                                createShapeFileEx(shapeFilePath, mainHeader, pgRecs);
-                            }
-                        }
-                        else if (mainHeader.ShapeType == ShapeType.Point)
-                        {
-                            createShapeFileEx(shapeFilePath, mainHeader);
-
-                        }
-                        else throw new NotSupportedException("Shape Type " + mainHeader.ShapeType + " not supported");
-
-                    }
-                    finally
-                    {
-                        bReader.Close();
-                        bReader = null;
-                    }                    
-                }
-                finally
-                {
-                    if (this.shapeFileExStream != null)
-                    {
-                        shapeFileExStream.Close();
-                    }
-                }
-                System.GC.Collect();
-            }
-
-            sfRecordColEx = readShapeHeadersEx(shapeFilePath);
-
-            this.mainHeaderEx = sfRecordColEx.MainHeaderEx;
-            this.filePath = shapeFilePath;
-
-            this.recordHeaders = null;
-
-            //MapFile(shapeFilePath + ".shpx");
-
-            DateTime end = DateTime.Now;
-            System.Diagnostics.Debug.WriteLine("Shape Type : " + this.sfRecordColEx.MainHeaderEx.ShapeType);
-            System.Diagnostics.Debug.WriteLine("total number of records = " + sfRecordColEx.MainHeaderEx.NumRecords);
-            System.Diagnostics.Debug.WriteLine("Total time to read shapefile is " + end.Subtract(start).ToString());
-            //data = null;
-#else
             LoadFromFile2(shapeFilePath);            
-#endif
             //create a default RenderSettings object
             this.RenderSettings = CreateRenderSettings(shapeFilePath);
+
+            ReadPrjFile(shapeFilePath);
         }
 
-       
+        #region Read Projection WKT
+
+        private void ReadPrjFile(string shapeFilePath)
+        {
+            string prjFilePath = System.IO.Path.ChangeExtension(shapeFilePath, ".prj");
+            if (System.IO.File.Exists(prjFilePath))
+            {
+                using (System.IO.FileStream fs = new FileStream(prjFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    ReadProjection(fs);
+                }
+            }
+            else
+            {
+                ProjectionWKT = "";
+            }
+        }
+
+        private void ReadProjection(System.IO.Stream prjStream)
+        {
+            using (System.IO.StreamReader reader = new StreamReader(prjStream))
+            {
+                this.ProjectionWKT = reader.ReadToEnd().Trim();
+            }
+        }
+
+        #endregion
+
         /// <summary>
         /// Disposes of the ShapeFile
         /// </summary>
@@ -1088,14 +834,6 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         public void Close()
         {
-#if SinglePrecision
-            if (shapeFileExStream != null)
-            {
-                shapeFileExStream.Close();
-            }
-            recordHeaders = null;
-            sfRecordColEx = null;            
-#endif
             if (this.RenderSettings != null)
             {
                 RenderSettings.Dispose();
@@ -1195,13 +933,9 @@ namespace EGIS.ShapeFileLib
         /// <seealso cref="GetShapeFileEnumerator()"/>
         public System.Collections.ObjectModel.ReadOnlyCollection<PointF[]> GetShapeData(int recordIndex)
         {
-#if SinglePrecision
-            return new System.Collections.ObjectModel.ReadOnlyCollection<PointF[]>(sfRecordColEx.GetShapeData(recordIndex, this.shapeFileExStream.BaseStream));
-#else
             List<PointF[]> data = sfRecordCol.GetShapeData(recordIndex, this.shapeFileStream);
             if (data == null) return null;
             return new System.Collections.ObjectModel.ReadOnlyCollection<PointF[]>(data);
-#endif
         }
 
         /// <summary>
@@ -1215,13 +949,9 @@ namespace EGIS.ShapeFileLib
         /// <seealso cref="GetShapeFileEnumerator()"/>
         public System.Collections.ObjectModel.ReadOnlyCollection<PointF[]> GetShapeData(int recordIndex, byte[] dataBuffer)
         {
-#if SinglePrecision
-            return new System.Collections.ObjectModel.ReadOnlyCollection<PointF[]>(sfRecordColEx.GetShapeData(recordIndex, this.shapeFileExStream.BaseStream, dataBuffer));
-#else
             List<PointF[]> data = sfRecordCol.GetShapeData(recordIndex, this.shapeFileStream, dataBuffer);
             if (data == null) return null;
             return new System.Collections.ObjectModel.ReadOnlyCollection<PointF[]>(data);
-#endif
         }
 
         /// <summary>
@@ -1266,13 +996,9 @@ namespace EGIS.ShapeFileLib
         /// <seealso cref="GetShapeFileEnumerator()"/>
         public System.Collections.ObjectModel.ReadOnlyCollection<float[]> GetShapeZData(int recordIndex)
         {
-#if SinglePrecision
-            return new System.Collections.ObjectModel.ReadOnlyCollection<float[]>(sfRecordColEx.GetShapeHeightData(recordIndex, this.shapeFileExStream.BaseStream));
-#else
             List<float[]> data = sfRecordCol.GetShapeHeightData(recordIndex, this.shapeFileStream);
             if (data == null) return null;
             return new System.Collections.ObjectModel.ReadOnlyCollection<float[]>(data);
-#endif
         }
 
         /// <summary>
@@ -1288,14 +1014,9 @@ namespace EGIS.ShapeFileLib
         /// <seealso cref="GetShapeFileEnumerator()"/>
         public System.Collections.ObjectModel.ReadOnlyCollection<float[]> GetShapeZData(int recordIndex, byte[] dataBuffer)
         {
-#if SinglePrecision
-            return new System.Collections.ObjectModel.ReadOnlyCollection<float[]>(sfRecordColEx.GetShapeHeightData(recordIndex, this.shapeFileExStream.BaseStream, dataBuffer));
-#else
-
             List<float[]> data = sfRecordCol.GetShapeHeightData(recordIndex, this.shapeFileStream, dataBuffer);
             if (data == null) return null;
             return new System.Collections.ObjectModel.ReadOnlyCollection<float[]>(data);
-#endif
         }
 
 
@@ -1353,32 +1074,7 @@ namespace EGIS.ShapeFileLib
         /// <returns></returns>
         public RectangleF GetShapeBounds(int recordIndex)
         {
-#if SinglePrecision
-            if (recordIndex < 0 || recordIndex >= mainHeaderEx.NumRecords) throw new ArgumentException("recordIndex must be >=0 and < " + mainHeaderEx.NumRecords);
-            if (sfRecordColEx is SFPolygonExCol)
-            {                
-                SFPolygonExCol polyCol = sfRecordColEx as SFPolygonExCol;
-                return polyCol.Recs[recordIndex].Bounds;                
-            }
-            else if (sfRecordColEx is SFPolyLineExCol)
-            {
-                SFPolyLineExCol polyCol = sfRecordColEx as SFPolyLineExCol;
-                return polyCol.Recs[recordIndex].Bounds;                
-            }
-            else if (sfRecordColEx is SFPolyLineMExCol)
-            {
-                SFPolyLineMExCol polyCol = sfRecordColEx as SFPolyLineMExCol;
-                return polyCol.Recs[recordIndex].Bounds;
-            }
-            else if (sfRecordColEx is SFPointExCol)
-            {
-                SFPointExCol pointCol = sfRecordColEx as SFPointExCol;
-                return new RectangleF(pointCol.Recs[recordIndex].pt, new SizeF(0, 0));
-            }
-            return RectangleF.Empty;
-#else
             return sfRecordCol.GetRecordBounds(recordIndex, shapeFileStream);
-#endif
         }
 
         /// <summary>
@@ -1388,11 +1084,7 @@ namespace EGIS.ShapeFileLib
         /// <returns></returns>
         public RectangleD GetShapeBoundsD(int recordIndex)
         {
-#if SinglePrecision
-            return sfRecordColEx.GetRecordBounds(recordIndex, shapeFileStream);
-#else
             return sfRecordCol.GetRecordBoundsD(recordIndex, shapeFileStream);
-#endif
         }
 
         #region "GetShapeIndexContainingPoint"
@@ -1414,23 +1106,6 @@ namespace EGIS.ShapeFileLib
             extent.Inflate(minDistance, minDistance);
             if (extent.Contains(pt))
             {
-#if SinglePrecision
-                switch (sfRecordColEx.MainHeaderEx.ShapeType)
-                {
-                    case ShapeType.Point:
-                        return GetShapeIndexContainingPoint(pt, minDistance, sfRecordColEx as SFPointExCol);                        
-                    case ShapeType.PointM:
-                        break;
-                    case ShapeType.Polygon:
-                        return GetShapeIndexContainingPoint(pt, sfRecordColEx as SFPolygonExCol);
-                    case ShapeType.PolygonZ:
-                        return GetShapeIndexContainingPoint(pt, sfRecordColEx as SFPolygonZExCol);                        
-                    case ShapeType.PolyLine:
-                        return GetShapeIndexContainingPoint(pt, minDistance, sfRecordColEx as SFPolyLineExCol);                        
-                    default:
-                        return -1;
-                }
-#else                
                 switch (sfRecordCol.MainHeader.ShapeType)
                 {
                     case ShapeType.Point:
@@ -1455,7 +1130,6 @@ namespace EGIS.ShapeFileLib
                     default:
                         return -1;
                 }                
-#endif                                
             }
             return -1;
         }
@@ -1463,188 +1137,8 @@ namespace EGIS.ShapeFileLib
 
         private QuadTree shapeQuadTree;
 
-#if SinglePrecision
-
-        private void CreateQuadTree(SFPolygonExCol col)
-        {
-            shapeQuadTree = new QuadTree(GetActualExtent());
-            for (int n = 0; n < col.Recs.Length; n++)
-            {
-                shapeQuadTree.Insert(n, col, this.shapeFileExStream.BaseStream);
-            }
-
-        }
-
-        private void CreateQuadTree(SFPolygonZExCol col)
-        {
-            shapeQuadTree = new QuadTree(GetActualExtent());
-            for (int n = 0; n < col.Recs.Length; n++)
-            {
-                shapeQuadTree.Insert(n, col, null);
-            }
-
-        }
-
-        private void CreateQuadTree(SFPolyLineExCol col)
-        {
-            shapeQuadTree = new QuadTree(GetActualExtent());
-            for (int n = 0; n < col.Recs.Length; n++)
-            {
-                shapeQuadTree.Insert(n, col, null);
-            }
-        }
-
-         private int GetShapeIndexContainingPoint(PointD pt, SFPolygonExCol col)
-        {
-            if (shapeQuadTree == null)
-            {
-                CreateQuadTree(col);
-            }
-            PointF ptf = new PointF((float)pt.X, (float)pt.Y);
-            List<int> indices = shapeQuadTree.GetIndices(ptf);
-            if (indices != null)
-            {
-                for (int n = 0; n < indices.Count; n++)
-                {
-                    if (col.Recs[indices[n]].Bounds.Contains(ptf))
-                    {
-                        if (col.ContainsPoint(indices[n], ptf, shapeFileExStream))
-                        {
-                            return indices[n];
-                        }
-                    }
-                }
-            }            
-            return -1;// foundIndex;           
-        }
-
-        private int GetShapeIndexContainingPoint(PointD pt, SFPolygonZExCol col)
-        {
-            if (shapeQuadTree == null)
-            {
-                CreateQuadTree(col);
-            }
-            PointF ptf = new PointF((float)pt.X, (float)pt.Y);
-            List<int> indices = shapeQuadTree.GetIndices(ptf);
-            if (indices != null)
-            {
-                for (int n = 0; n < indices.Count; n++)
-                {
-                    if (col.Recs[indices[n]].Bounds.Contains(ptf))
-                    {
-                        if (col.ContainsPoint(indices[n], ptf, shapeFileExStream))
-                        {
-                            return indices[n];
-                        }
-                    }
-                }
-            }
-            return -1;// foundIndex;           
-        }
-
-        private static int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFPointExCol col)
-        {
-            double distSqr = minDistance * minDistance;
-            int numRecs = col.MainHeaderEx.NumRecords;
-            for (int n = 0; n < numRecs; n++)
-            {
-                double x = (pt.X - col.Recs[n].pt.X);
-                double y = (pt.Y - col.Recs[n].pt.Y);
-                double d = x * x + y * y;
-                if (d <= distSqr)
-                {
-                    return n;
-                }
-            }
-            return -1;
-        }
-
-        private int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFPolyLineExCol col)
-        {
-            if (shapeQuadTree == null)
-            {
-                CreateQuadTree(col);
-            }
-            PointF ptf = new PointF((float)pt.X, (float)pt.Y);
-            List<int> indices = shapeQuadTree.GetIndices(ptf);
-            if (indices != null)
-            {
-                byte[] buffer = SFRecordCol.SharedBuffer;                                
-                RectangleF r = new RectangleF(ptf.X - (float)minDistance, ptf.Y - (float)minDistance, (float)minDistance * 2f, (float)minDistance * 2f);
-                for (int n = 0; n < indices.Count; n++)
-                {
-                    if (col.Recs[indices[n]].Bounds.IntersectsWith(r))
-                    {
-                        if (col.ContainsPoint(indices[n], ptf, shapeFileExStream, buffer, (float)minDistance))
-                        {
-                            return indices[n];
-                        }
-                    }
-                }
-            }
-            return -1;
-        }
 
 
-#endif
-
-        //private void CreateQuadTree(SFPolygonCol col)
-        //{
-        //    shapeQuadTree = new QuadTree(GetActualExtent());
-        //    for (int n = 0; n < col.RecordHeaders.Length; n++)
-        //    {
-        //        shapeQuadTree.Insert(n, col, this.shapeFileStream);
-        //    }
-        //}
-
-        //private void CreateQuadTree(SFPolygonZCol col)
-        //{
-        //    shapeQuadTree = new QuadTree(GetActualExtent());
-        //    for (int n = 0; n < col.RecordHeaders.Length; n++)
-        //    {
-        //        shapeQuadTree.Insert(n, col, this.shapeFileStream);
-        //    }
-        //}
-
-        //private void CreateQuadTree(SFPolyLineMCol col)
-        //{
-        //    shapeQuadTree = new QuadTree(GetActualExtent());
-        //    for (int n = 0; n < col.RecordHeaders.Length; n++)
-        //    {
-        //        shapeQuadTree.Insert(n, col, this.shapeFileStream);
-        //    }
-
-        //}
-
-        //private void CreateQuadTree(SFPolyLineCol col)
-        //{
-        //    shapeQuadTree = new QuadTree(GetActualExtent());
-        //    for (int n = 0; n < col.RecordHeaders.Length; n++)
-        //    {
-        //        shapeQuadTree.Insert(n, col, this.shapeFileStream);
-        //    }
-        //}
-
-
-        //private void CreateQuadTree(SFPolyLineZCol col)
-        //{
-        //    shapeQuadTree = new QuadTree(GetActualExtent());
-        //    for (int n = 0; n < col.RecordHeaders.Length; n++)
-        //    {
-        //        shapeQuadTree.Insert(n, col, this.shapeFileStream);
-        //    }
-        //}
-
-        //private void CreateQuadTree(SFPointCol col)
-        //{
-        //    RectangleF r = GetActualExtent();
-        //    r.Inflate(r.Width * 0.05f, r.Height * 0.05f);
-        //    shapeQuadTree = new QuadTree(r);
-        //    for (int n = 0; n < col.RecordHeaders.Length; n++)
-        //    {
-        //        shapeQuadTree.Insert(n, col, this.shapeFileStream);
-        //    }
-        //}
 
         private void CreateQuadTree(SFRecordCol col)
         {
@@ -2202,626 +1696,7 @@ namespace EGIS.ShapeFileLib
 
         #endregion
 
-        #region "private methods"
-        
-#if SinglePrecision
-		
-		private void createShapeFileEx(string shapeFile, ShapeFileMainHeader mainHeader, PolyLineMRecord[] plmRecs )
-		{			
-			BinaryWriter bWriter = new BinaryWriter(new FileStream(shapeFile+".shpx",FileMode.Create));
-			try
-			{
-				ShapeFileMainHeaderEx headEx = new ShapeFileMainHeaderEx(mainHeader);
-				headEx.ShapeType = ShapeType.PolyLineM;
-				headEx.NumRecords = plmRecs.Length;
-
-				headEx.write(bWriter);
-
-				//write the record headers
-				for(int n=0;n<plmRecs.Length;n++)
-				{
-					PolyLineMRecordEx recEx = new PolyLineMRecordEx(plmRecs[n]);					
-					recEx.write(bWriter);					
-				}
-				
-				//store the offset of the first byte of data in the file
-				headEx.DataOffset = (int)bWriter.BaseStream.Position;
-				
-				//now write the data..
-                byte[] data = SFRecordCol.SharedBuffer;// new byte[ShapeFileExConstants.MAX_REC_LENGTH];
-				this.shapeFileExStream.BaseStream.Seek(MAIN_HEADER_LENGTH,SeekOrigin.Begin);
-                int inFileOffset = MAIN_HEADER_LENGTH;
-				for(int n=0;n<plmRecs.Length;n++)
-				{
-                    if (n > 0 && recordHeaders[n].Offset != inFileOffset)
-                    {
-                        //System.Diagnostics.Debug.WriteLine("removing unused data");
-                        this.shapeFileExStream.Read(data, 0, recordHeaders[n].Offset - inFileOffset);
-                        inFileOffset = recordHeaders[n].Offset;
-                    }
-					int offset = 8 + 44 + (plmRecs[n].NumParts<<2);
-					int dataLength = plmRecs[n].NumPoints<<4;
-					//this.shapeFileStream.Read(data,0,dataLength+offset);
-					this.shapeFileExStream.Read(data,0,8 + plmRecs[n].recordHeader.ContentLength);
-					int indexD = 0;
-					while(indexD < dataLength)
-					{
-						double dd = EndianUtils.ReadDoubleLE(data,indexD+offset);
-						bWriter.Write((float)dd);						
-						indexD+=8;
-					}
-					indexD+=16; //skip the M range
-					dataLength = (dataLength>>1) + indexD;
-					while(indexD < dataLength)
-					{
-						double dd = EndianUtils.ReadDoubleLE(data,indexD+offset);
-						bWriter.Write((float)dd);
-						indexD+=8;
-					}
-                    inFileOffset += (8 + plmRecs[n].recordHeader.ContentLength);
-				}
-
-				//update the mainheader and re-write
-
-				headEx.FileLength = (int)bWriter.BaseStream.Position;								
-				bWriter.Seek(0,SeekOrigin.Begin);
-				headEx.write(bWriter);				
-			}
-			finally
-			{
-				bWriter.Close();
-			}
-		}
-		
-		private void createShapeFileEx(string shapeFile, ShapeFileMainHeader mainHeader, PolyLineRecord[] plRecs )
-		{			
-			BinaryWriter bWriter = new BinaryWriter(new FileStream(shapeFile+".shpx",FileMode.Create));
-			try
-			{
-				ShapeFileMainHeaderEx headEx = new ShapeFileMainHeaderEx(mainHeader);
-				headEx.ShapeType = ShapeType.PolyLine;
-				headEx.NumRecords = plRecs.Length;
-
-				headEx.write(bWriter);
-				
-				//write the record headers
-				for(int n=0;n<plRecs.Length;n++)
-				{
-					PolyLineRecordEx recEx;
-					recEx.Bounds = RectangleF.FromLTRB((float)plRecs[n].bounds.xmin,(float)plRecs[n].bounds.ymin,(float)plRecs[n].bounds.xmax,(float)plRecs[n].bounds.ymax);
-					recEx.RecordNumber = plRecs[n].recordHeader.RecordNumber;
-					recEx.NumParts = plRecs[n].NumParts;
-					recEx.NumPoints = plRecs[n].NumPoints;
-					recEx.PartOffsets = new int[recEx.NumParts];
-                    recEx.DataOffset = -1;
-					for(int p=0;p<recEx.NumParts;p++)
-					{
-						recEx.PartOffsets[p] = plRecs[n].PartOffsets[p];						
-					}
-					recEx.write(bWriter);
-				}
-				
-				//store the offset of the first byte of data in the file
-				headEx.DataOffset = (int)bWriter.BaseStream.Position;
-
-				//now write the data..
-                byte[] data = SFRecordCol.SharedBuffer;// new byte[ShapeFileExConstants.MAX_REC_LENGTH];
-				this.shapeFileExStream.BaseStream.Seek(MAIN_HEADER_LENGTH,SeekOrigin.Begin);
-                int inFileOffset = MAIN_HEADER_LENGTH;
-				for(int n=0;n<plRecs.Length;n++)
-				{
-                    if (n > 0 && recordHeaders[n].Offset != inFileOffset)
-                    {
-                        //System.Diagnostics.Debug.WriteLine("removing unused data");
-                        this.shapeFileExStream.Read(data, 0, recordHeaders[n].Offset - inFileOffset);
-                        inFileOffset = recordHeaders[n].Offset;
-                    }
-					int offset = 8 + 44 + (plRecs[n].NumParts<<2);
-					int dataLength = plRecs[n].NumPoints<<4;
-					this.shapeFileExStream.Read(data,0,8 + plRecs[n].recordHeader.ContentLength);
-					int indexD = 0;
-					while(indexD < dataLength)
-					{
-						double dd = EndianUtils.ReadDoubleLE(data,indexD+offset);
-						bWriter.Write((float)dd);						
-						indexD+=8;
-					}
-                    inFileOffset += (8 + plRecs[n].recordHeader.ContentLength);
-				}
-
-				//update the mainheader and re-write
-				headEx.FileLength = (int)bWriter.BaseStream.Position;								
-				bWriter.Seek(0,SeekOrigin.Begin);
-				headEx.write(bWriter);				
-
-			}
-			finally
-			{
-				bWriter.Close();
-			}
-		}
-		
-		private void createShapeFileEx(string shapeFile, ShapeFileMainHeader mainHeader, PolygonRecord[] pgRecs )
-		{			
-			BinaryWriter bWriter = new BinaryWriter(new FileStream(shapeFile+".shpx",FileMode.Create));
-			try
-			{
-				ShapeFileMainHeaderEx headEx = new ShapeFileMainHeaderEx(mainHeader);
-				headEx.ShapeType = ShapeType.Polygon;
-				headEx.NumRecords = pgRecs.Length;
-
-				headEx.write(bWriter);
-				
-                RectangleF sfExtent = RectangleF.FromLTRB(headEx.Xmin-float.Epsilon, headEx.Ymin-float.Epsilon, headEx.Xmax+float.Epsilon, headEx.Ymax+float.Epsilon);
-                
-                //write the record headers
-				for(int n=0;n<pgRecs.Length;n++)
-				{
-					PolygonRecordEx recEx;
-					recEx.Bounds = RectangleF.FromLTRB((float)pgRecs[n].bounds.xmin,(float)pgRecs[n].bounds.ymin,(float)pgRecs[n].bounds.xmax,(float)pgRecs[n].bounds.ymax);
-                    
-					recEx.RecordNumber = pgRecs[n].recordHeader.RecordNumber;
-					recEx.NumParts = pgRecs[n].NumParts;
-					recEx.NumPoints = pgRecs[n].NumPoints;
-					recEx.PartOffsets = new int[recEx.NumParts];
-                    recEx.DataOffset = -1;
-					for(int p=0;p<recEx.NumParts;p++)
-					{
-						recEx.PartOffsets[p] = pgRecs[n].PartOffsets[p];						
-					}
-					recEx.write(bWriter);                
-				}
-				
-				//store the offset of the first byte of data in the file
-				headEx.DataOffset = (int)bWriter.BaseStream.Position;
-
-				//now write the data..
-                byte[] data = SFRecordCol.SharedBuffer;// new byte[ShapeFileExConstants.MAX_REC_LENGTH];
-				this.shapeFileExStream.BaseStream.Seek(MAIN_HEADER_LENGTH,SeekOrigin.Begin);
-                int inFileOffset = MAIN_HEADER_LENGTH;
-				for(int n=0;n<pgRecs.Length;n++)
-				{
-                    if (n > 0 && recordHeaders[n].Offset != inFileOffset)
-                    {
-                        this.shapeFileExStream.Read(data, 0, recordHeaders[n].Offset-inFileOffset);
-                        inFileOffset = recordHeaders[n].Offset;
-                    }
-					int offset = 8 + 44 + (pgRecs[n].NumParts<<2);
-					int dataLength = pgRecs[n].NumPoints<<4;
-                    if (data.Length < (pgRecs[n].recordHeader.ContentLength+8)) data = new byte[pgRecs[n].recordHeader.ContentLength+8];
-					this.shapeFileExStream.Read(data,0,8 + pgRecs[n].recordHeader.ContentLength);
-					int indexD = 0;
-					while(indexD < dataLength)
-					{
-						double dd = EndianUtils.ReadDoubleLE(data,indexD+offset);
-						bWriter.Write((float)dd);						
-						indexD+=8;                                                
-					}
-                    inFileOffset += (8 + pgRecs[n].recordHeader.ContentLength);
-				}
-
-				//update the mainheader and re-write
-				headEx.FileLength = (int)bWriter.BaseStream.Position;								
-				bWriter.Seek(0,SeekOrigin.Begin);
-				headEx.write(bWriter);				
-
-			}
-			finally
-			{
-				bWriter.Close();
-			}
-		}
-
-        private void createShapeFileEx(string shapeFile, ShapeFileMainHeader mainHeader, PolygonZRecord[] pgRecs)
-        {
-            BinaryWriter bWriter = new BinaryWriter(new FileStream(shapeFile + ".shpx", FileMode.Create));
-            try
-            {
-                ShapeFileMainHeaderEx headEx = new ShapeFileMainHeaderEx(mainHeader);
-                headEx.ShapeType = ShapeType.PolygonZ;
-                headEx.NumRecords = pgRecs.Length;
-
-                headEx.write(bWriter);
-
-                RectangleF sfExtent = RectangleF.FromLTRB(headEx.Xmin - float.Epsilon, headEx.Ymin - float.Epsilon, headEx.Xmax + float.Epsilon, headEx.Ymax + float.Epsilon);
-
-                //write the record headers
-                for (int n = 0; n < pgRecs.Length; n++)
-                {
-                    PolygonZRecordEx recEx;
-                    recEx.Bounds = RectangleF.FromLTRB((float)pgRecs[n].bounds.xmin, (float)pgRecs[n].bounds.ymin, (float)pgRecs[n].bounds.xmax, (float)pgRecs[n].bounds.ymax);
-
-                    recEx.RecordNumber = pgRecs[n].recordHeader.RecordNumber;
-                    recEx.NumParts = pgRecs[n].NumParts;
-                    recEx.NumPoints = pgRecs[n].NumPoints;
-                    recEx.PartOffsets = new int[recEx.NumParts];                   
-                    recEx.DataOffset = -1;
-                    for (int p = 0; p < recEx.NumParts; p++)
-                    {
-                        recEx.PartOffsets[p] = pgRecs[n].PartOffsets[p];
-                    }
-                    recEx.MinZ = (float)pgRecs[n].MinZ;
-                    recEx.MaxZ = (float)pgRecs[n].MaxZ;
-                    recEx.MinMeasure = (float)pgRecs[n].MinM;
-                    recEx.MaxMeasure = (float)pgRecs[n].MaxM;
-
-                    recEx.write(bWriter);
-                }
-
-                //store the offset of the first byte of data in the file
-                headEx.DataOffset = (int)bWriter.BaseStream.Position;
-
-                //now write the data..
-                byte[] data = SFRecordCol.SharedBuffer;// new byte[ShapeFileExConstants.MAX_REC_LENGTH];
-                this.shapeFileExStream.BaseStream.Seek(MAIN_HEADER_LENGTH, SeekOrigin.Begin);
-                int inFileOffset = MAIN_HEADER_LENGTH;
-                for (int n = 0; n < pgRecs.Length; n++)
-                {
-                    if (n > 0 && recordHeaders[n].Offset != inFileOffset)
-                    {
-                        this.shapeFileExStream.Read(data, 0, recordHeaders[n].Offset - inFileOffset);
-                        inFileOffset = recordHeaders[n].Offset;
-                    }
-                    int offset = 8 + 44 + (pgRecs[n].NumParts << 2);
-                    int dataLength = pgRecs[n].NumPoints << 4;
-                    if (data.Length < (pgRecs[n].recordHeader.ContentLength + 8)) data = new byte[pgRecs[n].recordHeader.ContentLength + 8];
-                    this.shapeFileExStream.Read(data, 0, 8 + pgRecs[n].recordHeader.ContentLength);
-                    int indexD = 0;
-                    //write the point data
-                    //while (indexD < dataLength)
-                    int numPoints = pgRecs[n].NumPoints;
-                    for(int p=0;p<numPoints;p++)
-                    {
-                        double dd = EndianUtils.ReadDoubleLE(data, indexD + offset);
-                        bWriter.Write((float)dd);
-                        indexD += 8;
-                        dd = EndianUtils.ReadDoubleLE(data, indexD + offset);
-                        bWriter.Write((float)dd);
-                        indexD += 8;
-                    }
-                    //write the z data
-                    indexD += 16; //skip the minz maxz
-                    for (int p = 0; p < numPoints; p++)
-                    {
-                        double dd = EndianUtils.ReadDoubleLE(data, indexD + offset);
-                        bWriter.Write((float)dd);
-                        indexD += 8;
-                    }
-                    //write the M data
-                    indexD += 16; //skip the minM maxM
-                    for (int p = 0; p < numPoints; p++)
-                    {
-                        double dd = EndianUtils.ReadDoubleLE(data, indexD + offset);
-                        bWriter.Write((float)dd);
-                        indexD += 8;
-                    }
-
-                    inFileOffset += (8 + pgRecs[n].recordHeader.ContentLength);
-                }
-
-                //update the mainheader and re-write
-                headEx.FileLength = (int)bWriter.BaseStream.Position;
-                bWriter.Seek(0, SeekOrigin.Begin);
-                headEx.write(bWriter);
-
-            }
-            finally
-            {
-                bWriter.Close();
-            }
-        }
-						
-		private static void createShapeFileEx(string shapeFile, ShapeFileMainHeader mainHeader)
-		{			
-			if (mainHeader.ShapeType != ShapeType.Point) throw new InvalidOperationException("Unexpected ShapeType (must be Point)");
-
-			BinaryWriter bWriter = new BinaryWriter(new FileStream(shapeFile+".shpx",FileMode.Create));
-			BinaryReader shapeFileStream = new BinaryReader(new FileStream(shapeFile +".shp",FileMode.Open));
-			try
-			{
-                mainHeader.FileLength = (int)shapeFileStream.BaseStream.Length; //adjust because main header stores length of index file
-				//setup the mainheader
-				ShapeFileMainHeaderEx headEx = new ShapeFileMainHeaderEx(mainHeader);
-				headEx.ShapeType = ShapeType.Point;
-				
-				headEx.NumRecords = (mainHeader.FileLength - MAIN_HEADER_LENGTH) / 28; //each record fixed length of 28 bytes
-				headEx.FileLength = ShapeFileExConstants.SHAPE_FILE_EX_MAIN_HEADER_LENGTH + (headEx.NumRecords*12);
-				headEx.DataOffset = ShapeFileExConstants.SHAPE_FILE_EX_MAIN_HEADER_LENGTH;
-				headEx.write(bWriter);
-								
-				//now write the data..
-				
-				byte[] data = new byte[28]; //length of Point Record + record header
-				shapeFileStream.BaseStream.Seek(MAIN_HEADER_LENGTH,SeekOrigin.Begin);
-				
-				for(int n=0;n<headEx.NumRecords;n++)
-				{
-					shapeFileStream.Read(data,0,28);
-					PointRecordEx prEx;
-					prEx.RecordNumber = EndianUtils.ReadIntLE(data,0);
-					prEx.pt = new PointF((float)EndianUtils.ReadDoubleLE(data,12),(float)EndianUtils.ReadDoubleLE(data,20));
-					prEx.write(bWriter);					
-				}
-				
-			}
-			finally
-			{
-				bWriter.Close();
-				shapeFileStream.Close();
-			}
-		}
-		
-
-        /*
-         *          THIS METHOD NEEDS TO BE RE-WRITTEN
-         *          READING ENTIRE HEADER OF SHAPEFILE IS USING EXCESSIVE MEMEORY
-         * */
-        
-		private SFRecordCol readShapeHeadersEx(string shapeFile)
-		{
-			SFRecordCol recordCol = null;				
-			shapeFileExStream = new BinaryReader(new FileStream(shapeFile +".shpx",FileMode.Open, FileAccess.Read));
-			//read the main header
-
-			ShapeFileMainHeaderEx mainHeadEx = new ShapeFileMainHeaderEx(shapeFileExStream.ReadBytes(ShapeFileExConstants.SHAPE_FILE_EX_MAIN_HEADER_LENGTH));
-
-			if (mainHeadEx.ShapeType == ShapeType.PolyLine)				
-			{
-				PolyLineRecordEx[] plRecs = new PolyLineRecordEx[mainHeadEx.NumRecords];				
-				byte[] data = new byte[mainHeadEx.DataOffset - ShapeFileExConstants.SHAPE_FILE_EX_MAIN_HEADER_LENGTH];
-                shapeFileExStream.Read(data,0,data.Length);
-				int numRecs = plRecs.Length;					
-				int headerOff = 0;
-                int dataOffset = mainHeadEx.DataOffset;
-                int totalPoints = 0;
-                int maxRecordLength = 0;
-				for(int n=0;n<numRecs;)				
-				{
-					plRecs[n] = new PolyLineRecordEx();
-					headerOff += plRecs[n].read(data,headerOff);
-                    plRecs[n].DataOffset = dataOffset;
-                    totalPoints += plRecs[n].NumPoints;
-                    dataOffset += plRecs[n++].NumPoints << 3;
-
-                    maxRecordLength = Math.Max(maxRecordLength, dataOffset - plRecs[n - 1].DataOffset);
-                    
-				}
-                SFRecordCol.EnsureBufferSize(maxRecordLength);
-				data = null;	
-				System.GC.Collect();
-				recordCol = new SFPolyLineExCol(plRecs,mainHeadEx);
-                //System.Diagnostics.Debug.WriteLine("Total points in shapefile : " + totalPoints);
-			}
-			else if (mainHeadEx.ShapeType == ShapeType.PolyLineM)				
-			{
-				PolyLineMRecordEx[] plmRecs = new PolyLineMRecordEx[mainHeadEx.NumRecords];				
-							
-				byte[] data = new byte[mainHeadEx.DataOffset - ShapeFileExConstants.SHAPE_FILE_EX_MAIN_HEADER_LENGTH];
-				shapeFileExStream.Read(data,0,data.Length);
-				int numRecs = plmRecs.Length;					
-				int headerOff = 0;
-                int dataOffset = mainHeadEx.DataOffset;
-                int maxRecordLength = 0;
-				for(int n=0;n<numRecs;)				
-				{
-					plmRecs[n] = new PolyLineMRecordEx();
-					headerOff += plmRecs[n++].read(data,headerOff);
-                    maxRecordLength = Math.Max(maxRecordLength, plmRecs[n - 1].NumPoints << 3);
-				}
-                SFRecordCol.EnsureBufferSize(maxRecordLength);
-				data = null;	
-				System.GC.Collect();
-				recordCol = new SFPolyLineMExCol(plmRecs,mainHeadEx);
-			}
-			else if (mainHeadEx.ShapeType == ShapeType.Point)				
-			{
-				PointRecordEx[] pRecs = new PointRecordEx[mainHeadEx.NumRecords];				
-							
-				byte[] data = new byte[mainHeadEx.FileLength - ShapeFileExConstants.SHAPE_FILE_EX_MAIN_HEADER_LENGTH];
-				shapeFileExStream.Read(data,0,data.Length);
-				int numRecs = pRecs.Length;					
-				int recOff = 0;
-				for(int n=0;n<numRecs;)				
-				{
-					pRecs[n++] = new PointRecordEx(data,recOff);
-					recOff += 12;						
-				}		
-				data = null;	
-				System.GC.Collect();
-				recordCol = new SFPointExCol(pRecs,mainHeadEx);
-			}
-			else if (mainHeadEx.ShapeType == ShapeType.Polygon)				
-			{
-				PolygonRecordEx[] pgRecs = new PolygonRecordEx[mainHeadEx.NumRecords];				
-							
-				byte[] data = new byte[mainHeadEx.DataOffset - ShapeFileExConstants.SHAPE_FILE_EX_MAIN_HEADER_LENGTH];
-				shapeFileExStream.Read(data,0,data.Length);
-				int numRecs = pgRecs.Length;					
-				int headerOff = 0;
-                int dataOffset = mainHeadEx.DataOffset;
-                int maxRecordLength=0;
-				for(int n=0;n<numRecs;)				
-				{
-					pgRecs[n] = new PolygonRecordEx();
-					headerOff += pgRecs[n].read(data,headerOff);
-                    pgRecs[n].DataOffset = dataOffset;
-                    dataOffset += pgRecs[n++].NumPoints <<3;
-                    maxRecordLength = Math.Max(maxRecordLength, pgRecs[n - 1].NumPoints << 3);
-				}
-                SFRecordCol.EnsureBufferSize(maxRecordLength);
-				data = null;	
-				System.GC.Collect();
-				recordCol = new SFPolygonExCol(pgRecs,mainHeadEx);
-			}
-            else if (mainHeadEx.ShapeType == ShapeType.PolygonZ)
-            {
-                PolygonZRecordEx[] pgRecs = new PolygonZRecordEx[mainHeadEx.NumRecords];
-
-                byte[] data = new byte[mainHeadEx.DataOffset - ShapeFileExConstants.SHAPE_FILE_EX_MAIN_HEADER_LENGTH];
-                shapeFileExStream.Read(data, 0, data.Length);
-                int numRecs = pgRecs.Length;
-                int headerOff = 0;
-                int dataOffset = mainHeadEx.DataOffset;
-                int maxRecordLength = 0;
-                for (int n = 0; n < numRecs; )
-                {
-                    pgRecs[n] = new PolygonZRecordEx();
-                    headerOff += pgRecs[n].read(data, headerOff);
-                    pgRecs[n].DataOffset = dataOffset;
-                    dataOffset += pgRecs[n++].NumPoints << 4;
-                    maxRecordLength = Math.Max(maxRecordLength, pgRecs[n - 1].NumPoints << 4);
-                }
-                SFRecordCol.EnsureBufferSize(maxRecordLength);
-                data = null;
-                System.GC.Collect();
-                recordCol = new SFPolygonZExCol(pgRecs, mainHeadEx);
-            }
-
-			
-			return recordCol;
-
-		}
-		
-		private PolyLineMRecord[] readPLMShapeHeaders(string shapeFile, ShapeFileMainHeader mainHeader, RecordHeader[] recordHeaders)
-		{
-			PolyLineMRecord[] plmRecs = null;
-            if (mainHeader.ShapeType != ShapeType.PolyLineM) throw new InvalidOperationException("ShapeType must be PolyLineM");
-			
-			plmRecs = new PolyLineMRecord[recordHeaders.Length];
-			shapeFileExStream = new BinaryReader(new FileStream(shapeFile +".shp",FileMode.Open, FileAccess.Read));
-
-            byte[] data = SFRecordCol.SharedBuffer;// new byte[ShapeFileExConstants.MAX_REC_LENGTH];
-			int numRecs = plmRecs.Length;
-            int readOffset = MAIN_HEADER_LENGTH;
-
-			//skip the first 100 bytes (main header)
-			shapeFileExStream.Read(data,0,MAIN_HEADER_LENGTH);
-
-			int n=0;
-			while(n<numRecs)
-			{
-                //check if the current readOffset matchs the current record offset
-                //we need to do this because a record length may not equal rec[n].offset-rec[n-1].offset
-                if (n > 0 && readOffset != recordHeaders[n].Offset)
-                {
-                    shapeFileExStream.Read(data, 0, recordHeaders[n].Offset - readOffset);
-                    readOffset = recordHeaders[n].Offset;
-                }	
-				//read record header + content length(8 bytes)
-                int len = recordHeaders[n].ContentLength + 8;
-				shapeFileExStream.Read(data,0,len);
-				plmRecs[n] = new PolyLineMRecord(recordHeaders[n++], data, 8);
-                readOffset += len;                                
-			}
-
-			return plmRecs;
-
-		}
-
-		private PolyLineRecord[] readPLShapeHeaders(string shapeFile, ShapeFileMainHeader mainHeader, RecordHeader[] recordHeaders)
-		{
-            if (mainHeader.ShapeType != ShapeType.PolyLine) throw new InvalidOperationException("ShapeType must be PolyLine");				
-			PolyLineRecord[] plRecs = new PolyLineRecord[recordHeaders.Length];				
-			shapeFileExStream = new BinaryReader(new FileStream(shapeFile +".shp",FileMode.Open, FileAccess.Read));				
-			//skip the first 100 bytes (main header)
-			shapeFileExStream.ReadBytes(MAIN_HEADER_LENGTH);
-            byte[] data = SFRecordCol.SharedBuffer;// new byte[ShapeFileExConstants.MAX_REC_LENGTH];
-            int readOffset = MAIN_HEADER_LENGTH;
-			int numRecs = plRecs.Length;					
-			for(int n=0;n<numRecs;n++)
-			{
-                //check if the current readOffset matchs the current record offset
-                //we need to do this because a record length may not equal rec[n].offset-rec[n-1].offset
-                if (n > 0 && readOffset != recordHeaders[n].Offset)
-                {
-                    shapeFileExStream.Read(data, 0, recordHeaders[n].Offset - readOffset);
-                    readOffset = recordHeaders[n].Offset;
-                }
-
-                //skip the record header (avoid using seek as more efficient to just read bytes)
-                int len = recordHeaders[n].ContentLength + 8;
-                shapeFileExStream.Read(data, 0, len);                				
-				plRecs[n] = new PolyLineRecord(recordHeaders[n]);
-				plRecs[n].read(data,8);
-                readOffset += len;                                
-			}
-				
-			return plRecs;
-		}
-
-		private PolygonRecord[] readPGShapeHeaders(string shapeFile, ShapeFileMainHeader mainHeader, RecordHeader[] recordHeaders)
-		{
-            if (mainHeader.ShapeType != ShapeType.Polygon) throw new System.InvalidOperationException("ShapeType must be Polygon");
-				
-			PolygonRecord[] pgRecs = new PolygonRecord[recordHeaders.Length];				
-			shapeFileExStream = new BinaryReader(new FileStream(shapeFile +".shp",FileMode.Open, FileAccess.Read));
-				
-			//skip the first 100 bytes (main header)
-			shapeFileExStream.ReadBytes(MAIN_HEADER_LENGTH);
-
-            byte[] data = SFRecordCol.SharedBuffer;// new byte[ShapeFileExConstants.MAX_REC_LENGTH];
-            int readOffset = MAIN_HEADER_LENGTH;
-			int numRecs = pgRecs.Length;					
-			for(int n=0;n<numRecs;n++)
-			{                
-                //check if the current readOffset matchs the current record offset
-                //we need to do this because a record length may not equal rec[n].offset-rec[n-1].offset
-                if (n > 0 && readOffset != recordHeaders[n].Offset)
-                {
-                    shapeFileExStream.Read(data,0,recordHeaders[n].Offset-readOffset);
-                    readOffset = recordHeaders[n].Offset;
-                }
-
-				//skip the record header (avoid using seek as more efficient to just read bytes)
-                int len = recordHeaders[n].ContentLength+8;
-                if (len > data.Length) data = new byte[len];
-                shapeFileExStream.Read(data,0,len);                
-				pgRecs[n] = new PolygonRecord(recordHeaders[n]);                
-				pgRecs[n].read(data,8);
-                readOffset += len;                                
-			}
-				
-			return pgRecs;
-        }
-
-        private PolygonZRecord[] readPGZShapeHeaders(string shapeFile, ShapeFileMainHeader mainHeader, RecordHeader[] recordHeaders)
-        {
-            if (mainHeader.ShapeType != ShapeType.PolygonZ) throw new System.InvalidOperationException("ShapeType must be PolygonZ");
-
-            PolygonZRecord[] pgRecs = new PolygonZRecord[recordHeaders.Length];
-            shapeFileExStream = new BinaryReader(new FileStream(shapeFile + ".shp", FileMode.Open, FileAccess.Read));
-
-            //skip the first 100 bytes (main header)
-            shapeFileExStream.ReadBytes(MAIN_HEADER_LENGTH);
-
-            byte[] data = SFRecordCol.SharedBuffer;// new byte[ShapeFileExConstants.MAX_REC_LENGTH];
-            int readOffset = MAIN_HEADER_LENGTH;
-            int numRecs = pgRecs.Length;
-            for (int n = 0; n < numRecs; n++)
-            {
-                //check if the current readOffset matches the current record offset
-                //we need to do this because a record length may not equal rec[n].offset-rec[n-1].offset
-                if (n > 0 && readOffset != recordHeaders[n].Offset)
-                {
-                    shapeFileExStream.Read(data, 0, recordHeaders[n].Offset - readOffset);
-                    readOffset = recordHeaders[n].Offset;
-                }
-
-                //skip the record header (avoid using seek as more efficient to just read bytes)
-                int len = recordHeaders[n].ContentLength + 8;
-                if (len > data.Length) data = new byte[len];
-                shapeFileExStream.Read(data, 0, len);
-                pgRecs[n] = new PolygonZRecord(recordHeaders[n]);
-                pgRecs[n].read(data, 8);
-                readOffset += len;
-            }
-
-            return pgRecs;
-        }
-#endif
-
-        #endregion
-
+       
         #region "IEnumerator members"
 
         /// <summary>
@@ -3063,38 +1938,7 @@ namespace EGIS.ShapeFileLib
         }
 
 	}
-
-	[StructLayout(LayoutKind.Sequential, Pack=1)]
-	struct PointRecord
-	{
-		public RecordHeader recordHeader;
-        public double X;
-        public double Y;
     
-	
-		public PointRecord(ref RecordHeader recHeader)
-		{
-			recordHeader = recHeader;
-            X = 0;
-            Y = 0;
-		}
-
-        public void Read(byte[] data, int offset)
-        {
-            ShapeType st = (ShapeType)EndianUtils.ReadIntLE(data, offset);
-            if (st == ShapeType.Point)
-            {
-                X = EndianUtils.ReadDoubleLE(data, offset + 4);
-                Y = EndianUtils.ReadDoubleLE(data, offset + 12);
-            }
-            else
-            {
-                X = 0;
-                Y = 0;
-            }
-        }
-	}
-	
 	[StructLayout(LayoutKind.Sequential, Pack=1)]
 	unsafe struct MultiPointRecord
 	{
@@ -3117,57 +1961,7 @@ namespace EGIS.ShapeFileLib
 			NumPoints = EndianUtils.ReadIntLE(data,dataOffset+40);
 		}
 	}
-	
-	[StructLayout(LayoutKind.Sequential, Pack=1)]
-	unsafe struct PolyLineRecord
-	{
-		public RecordHeader recordHeader;
-		public Box bounds;
-		public int NumParts;
-		public int NumPoints;
-		public int[] PartOffsets;
-
-		public PolyLineRecord(RecordHeader recHeader)
-		{
-			recordHeader = recHeader;
-			NumParts = 0;
-			NumPoints=0;
-			PartOffsets = null;
-			
-			bounds = new Box(0,0,0,0);
-		}
-
-		public PolyLineRecord(RecordHeader recHeader, byte[] data, int dataOffset)
-		{
-			recordHeader = recHeader;
-			bounds = new Box(data, dataOffset+4);
-			NumParts = EndianUtils.ReadIntLE(data,dataOffset+36);
-			NumPoints = EndianUtils.ReadIntLE(data,dataOffset+40);
-
-			PartOffsets = new int[NumParts];
-			int partOff = 44;
-			for(int n=0;n<NumParts;n++)
-			{
-				PartOffsets[n] = EndianUtils.ReadIntLE(data,dataOffset+partOff);				
-				partOff+=4;
-			}
-		}
-
-		public void read(byte[] data, int dataOffset)
-		{			
-			bounds = new Box(data, dataOffset+4);
-			NumParts = EndianUtils.ReadIntLE(data,dataOffset+36);
-			NumPoints = EndianUtils.ReadIntLE(data,dataOffset+40);            
-            PartOffsets = new int[NumParts];
-            int partOff = 44;
-            for (int n = 0; n < NumParts; n++)
-            {
-                PartOffsets[n] = EndianUtils.ReadIntLE(data, dataOffset + partOff);
-                partOff += 4;
-            }            
-		}
-	}
-
+	    
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe struct PolyLineRecordP
     {
@@ -3186,51 +1980,7 @@ namespace EGIS.ShapeFileLib
             }
         }
     }
-	
-	[StructLayout(LayoutKind.Sequential, Pack=1)]
-	unsafe struct PolyLineMRecord
-	{
-		public RecordHeader recordHeader;
-		public Box bounds;
-		public int NumParts;
-		public int NumPoints;
-		public int[] PartOffsets;
-		
-		//measures
-		public double mMin;
-		public double mMax;
-
-       
-		public PolyLineMRecord(RecordHeader recHeader, byte[] data, int dataOffset)
-		{
-			recordHeader = recHeader;
-			bounds = new Box(data, dataOffset+4);
-			NumParts = EndianUtils.ReadIntLE(data,dataOffset+36);
-			NumPoints = EndianUtils.ReadIntLE(data,dataOffset+40);
-
-			PartOffsets = new int[NumParts];
-			int partOff = 44;
-			for(int n=0;n<NumParts;n++)
-			{
-				PartOffsets[n] = EndianUtils.ReadIntLE(data,dataOffset + partOff);				
-				partOff+=4;
-			}
-			partOff += (NumPoints<<4); //skip the Point data
-			
-			//read the measures min/max values
-			mMin = EndianUtils.ReadDoubleLE(data, dataOffset + partOff);
-			mMax = EndianUtils.ReadDoubleLE(data, dataOffset + partOff + 8);
-
-		}
-
-        
-		public override string ToString()
-		{
-			return "bounds = " + bounds.ToString();
-		}
-
-	}
-
+	    
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe struct PolyLineMRecordP
     {
@@ -3275,59 +2025,7 @@ namespace EGIS.ShapeFileLib
         //measures follow
         public fixed double ZData[1];
     }
-
-	[StructLayout(LayoutKind.Sequential, Pack=1)]
-	unsafe struct PolygonRecord
-	{
-        
-		public RecordHeader recordHeader;
-		public Box bounds;
-		public int NumParts;
-		public int NumPoints;
-		public int[] PartOffsets;
-
-        
-       // public fixed int test[1];
-        
-       // public int* fib = stackalloc int[100];
-        
-		public PolygonRecord(RecordHeader recHeader)
-		{
-            //int* fib = stackalloc int[100];
-
-			recordHeader = recHeader;
-			NumParts = 0;
-			NumPoints=0;
-			PartOffsets = null;
-			
-			bounds = new Box(0,0,0,0);
-        
-		}
-
-		public void read(byte[] data, int dataOffset)
-		{
-            ShapeType st = (ShapeType)EndianUtils.ReadIntLE(data, dataOffset);
-            if (st == ShapeType.Polygon)
-            {
-                bounds = new Box(data, dataOffset + 4);
-                NumParts = EndianUtils.ReadIntLE(data, dataOffset + 36);
-                NumPoints = EndianUtils.ReadIntLE(data, dataOffset + 40);
-
-                PartOffsets = new int[NumParts];
-                int partOff = 44+dataOffset;
-                for (int n = 0; n < NumParts; n++)
-                {
-                    PartOffsets[n] = EndianUtils.ReadIntLE(data, partOff);
-                    partOff += 4;
-                }
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("null or unknown shapetype");
-            }
-		}
-    }
-
+    
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe struct PolygonRecordP
     {
@@ -3364,7 +2062,6 @@ namespace EGIS.ShapeFileLib
         public double Measure;
     }
     
-
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe struct MultiPointRecordP
     {
@@ -3373,73 +2070,7 @@ namespace EGIS.ShapeFileLib
         public int NumPoints;
         public fixed double Points[2];        
     }
-	
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    unsafe struct PolygonZRecord
-    {
-        public RecordHeader recordHeader;
-        public Box bounds;
-        public int NumParts;
-        public int NumPoints;
-        public int[] PartOffsets;
-        public double MinZ;
-        public double MaxZ;
-        public double MinM;
-        public double MaxM;
-
-        public PolygonZRecord(RecordHeader recHeader)
-        {
-            recordHeader = recHeader;
-            NumParts = 0;
-            NumPoints = 0;
-            PartOffsets = null;
-            MinZ = 0;
-            MaxZ = 0;
-            MinM = 0;
-            MaxM = 0;
-            bounds = new Box(0, 0, 0, 0);
-        }
-
-        public void read(byte[] data, int dataOffset)
-        {
-            ShapeType st = (ShapeType)EndianUtils.ReadIntLE(data, dataOffset);
-            if (st == ShapeType.PolygonZ)
-            {
-                bounds = new Box(data, dataOffset + 4);
-                NumParts = EndianUtils.ReadIntLE(data, dataOffset + 36);
-                NumPoints = EndianUtils.ReadIntLE(data, dataOffset + 40);
-
-                PartOffsets = new int[NumParts];
-                int partOff = 44;
-                for (int n = 0; n < NumParts; n++)
-                {
-                    PartOffsets[n] = EndianUtils.ReadIntLE(data, dataOffset + partOff);
-                    partOff += 4;
-                }
-                partOff += (16 * NumPoints); //skip the point data
-                MinZ = EndianUtils.ReadDoubleLE(data, dataOffset + partOff);
-                partOff += 8;
-                MaxZ = EndianUtils.ReadDoubleLE(data, dataOffset + partOff);
-                partOff += 8;
-                if (partOff >= this.recordHeader.ContentLength)
-                {
-                    Console.Out.WriteLine("warning: shape does not appear to be using measures");
-                }
-                partOff += (8 * NumPoints); //skip the z values
-                MinM = EndianUtils.ReadDoubleLE(data, dataOffset + partOff);
-                partOff += 8;
-                MaxM = EndianUtils.ReadDoubleLE(data, dataOffset + partOff);
-                partOff += 8;
-                //Console.Out.WriteLine(string.Format("partOff : {0}, contentLength:{1}", partOff, recordHeader.ContentLength));
-                
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("null or unknown shapetype");
-            }
-        }
-    }
-
+	    
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe struct PolygonZRecordP
     {
@@ -3532,388 +2163,8 @@ namespace EGIS.ShapeFileLib
         private ShapeFileExConstants()
         {
         }
-	}
-
-	[StructLayout(LayoutKind.Sequential, Pack=1)]
-	unsafe struct ShapeFileMainHeaderEx
-	{
-		public int FileCode;	//99994 (standard shapefiles use 9994)
-		public int UnusedByte1;
-		public int UnusedByte2;
-		public int UnusedByte3;
-		public int UnusedByte4;
-		public int UnusedByte5;
-		public int FileLength;	//length of the entire file in bytes (standard shapefile uses 16 bit words as length)
-		public int DataOffset; //offset of first byte of data
-		public int Version;		//1000 (same as a standard shapefile)
-		public ShapeType ShapeType; 
-		//all the bounding box values have been changed from double (8 bytes) to float (4 bytes)
-		public int NumRecords;
-		public float Xmin;
-		public float Ymin;
-		public float Xmax;
-		public float Ymax;
-		public float Zmin;
-		public float Zmax;
-		public float Mmin;
-		public float Mmax;	
-
-		public ShapeFileMainHeaderEx(ShapeFileMainHeader head)
-		{
-			FileCode = 99994;
-			UnusedByte1 = head.UnusedByte1;
-			UnusedByte2 = head.UnusedByte2;
-			UnusedByte3 = head.UnusedByte3;
-			UnusedByte4 = head.UnusedByte4;
-			UnusedByte5 = head.UnusedByte5;
-			FileLength = head.FileLength;
-			DataOffset = 0;
-			Version = head.Version;
-			ShapeType = head.ShapeType;
-			NumRecords = 0;
-			Xmin = (float)head.Xmin;
-			Ymin = (float)head.Ymin;
-			Xmax = (float)head.Xmax;
-			Ymax = (float)head.Ymax;
-			Zmin = (float)head.Zmin;
-			Zmax = (float)head.Zmax;
-			Mmin = (float)head.Mmin;
-			Mmax = (float)head.Mmax;
-		}
-		public ShapeFileMainHeaderEx(byte[] data)
-		{							
-			fixed(byte* bPtr = data)
-			{
-				//now cast and dereference the pointer
-				this = *(ShapeFileMainHeaderEx*)bPtr;
-			}
-		}
-
-		public override string ToString()
-		{
-			string str = "Filecode = " + FileCode + ", FileLength = " + FileLength + ", DataOffset = " + DataOffset + ", Version = " + Version + ", ShapeType = " + ShapeType;
-			str += ", NumRecords = " + NumRecords + ", XMin = " + Xmin + ", Ymin = " + Ymin + ", Xmax = " + Xmax + ", Ymax = " + Ymax;
-			return str;
-		}
-
-		public void write(System.IO.BinaryWriter bWriter)
-		{
-			bWriter.Write(FileCode);
-			bWriter.Write(UnusedByte1);
-			bWriter.Write(UnusedByte2);
-			bWriter.Write(UnusedByte3);
-			bWriter.Write(UnusedByte4);
-			bWriter.Write(UnusedByte5);
-			bWriter.Write(FileLength);
-			bWriter.Write(DataOffset);			
-			bWriter.Write(Version);
-			bWriter.Write((int)ShapeType);
-			bWriter.Write(NumRecords);
-			bWriter.Write(Xmin);
-			bWriter.Write(Ymin);
-			bWriter.Write(Xmax);
-			bWriter.Write(Ymax);
-			bWriter.Write(Zmin);
-			bWriter.Write(Zmax);
-			bWriter.Write(Mmin);
-			bWriter.Write(Mmax);
-		}		
-	}
-	
-	[StructLayout(LayoutKind.Sequential, Pack=1)]
-	struct PointRecordEx
-	{
-		public int RecordNumber;
-		public PointF pt;
-
-		public unsafe PointRecordEx(byte[] data, int dataOffset)
-		{
-			fixed(byte* bPtr = data)
-			{
-				this = *(PointRecordEx*)(bPtr+dataOffset);
-			}		
-		}				
-
-		public void write(BinaryWriter bWriter)
-		{
-			bWriter.Write(RecordNumber);
-			bWriter.Write(pt.X);
-			bWriter.Write(pt.Y);			
-		}
-
-	}
-
-	[StructLayout(LayoutKind.Sequential, Pack=1)]
-	unsafe struct PolyLineRecordEx
-	{
-		public int RecordNumber;
-		public RectangleF Bounds;
-		public int NumParts;
-		public int NumPoints;
-		public int[] PartOffsets;
-        
-        public int DataOffset;
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="dataOffset"></param>
-		/// <returns>number of bytes read</returns>
-		public int read(byte[] data, int dataOffset)
-		{
-			RecordNumber = EndianUtils.ReadIntLE(data,dataOffset);
-			fixed(byte* bPtr = data)
-			{				
-				Bounds = *(RectangleF*)(bPtr+4 + dataOffset);								
-			}
-
-			NumParts = EndianUtils.ReadIntLE(data,dataOffset+20);
-			NumPoints = EndianUtils.ReadIntLE(data,dataOffset+24);
-
-			PartOffsets = new int[NumParts];
-			int partOff = 28;
-			for(int n=0;n<NumParts;n++)
-			{
-				PartOffsets[n] = EndianUtils.ReadIntLE(data,dataOffset+partOff);				
-				partOff+=4;
-			}
-            DataOffset = -1;
-			return partOff;
-		}
-
-		public void write(BinaryWriter bWriter)
-		{
-			bWriter.Write(RecordNumber);
-
-			bWriter.Write(Bounds.Left);
-			bWriter.Write(Bounds.Top);
-			bWriter.Write(Bounds.Width);
-			bWriter.Write(Bounds.Height);
-				
-			bWriter.Write(NumParts);
-			bWriter.Write(NumPoints);
-			for(int n=0;n<NumParts;n++)
-			{
-				bWriter.Write(PartOffsets[n]);
-			}
-		}
-	}
-
-	[StructLayout(LayoutKind.Sequential, Pack=1)]
-	unsafe struct PolyLineMRecordEx
-	{
-		public int RecordNumber;
-		public RectangleF Bounds;
-		public int NumParts;
-		public int NumPoints;
-		public int[] PartOffsets;
-		public float Mmin;
-		public float Mmax;
-		
-
-		public PolyLineMRecordEx(PolyLineMRecord plmRec)
-		{
-			Bounds = RectangleF.FromLTRB((float)plmRec.bounds.xmin,(float)plmRec.bounds.ymin,(float)plmRec.bounds.xmax,(float)plmRec.bounds.ymax);
-			RecordNumber = plmRec.recordHeader.RecordNumber;
-			NumParts = plmRec.NumParts;
-			NumPoints = plmRec.NumPoints;
-			PartOffsets = new int[NumParts];
-			for(int p=0;p<NumParts;p++)
-			{
-				PartOffsets[p] = plmRec.PartOffsets[p];
-			}
-			Mmin = (float)plmRec.mMin;
-			Mmax = (float)plmRec.mMax;
-				
-		}
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="dataOffset"></param>
-		/// <returns>number of bytes read</returns>
-		public int read(byte[] data, int dataOffset)
-		{
-			RecordNumber = EndianUtils.ReadIntLE(data,dataOffset);
-			fixed(byte* bPtr = data)
-			{				
-				Bounds = *(RectangleF*)(bPtr+4 + dataOffset);								
-			}
-
-			NumParts = EndianUtils.ReadIntLE(data,dataOffset+20);
-			NumPoints = EndianUtils.ReadIntLE(data,dataOffset+24);
-
-			PartOffsets = new int[NumParts];
-			int partOff = 28;
-			for(int n=0;n<NumParts;n++)
-			{
-				PartOffsets[n] = EndianUtils.ReadIntLE(data,dataOffset+partOff);				
-				partOff+=4;
-			}
-			Mmin = EndianUtils.ReadFloatLE(data,dataOffset+partOff);
-			partOff+=4;
-			Mmax = EndianUtils.ReadFloatLE(data,dataOffset+partOff);
-			partOff+=4;
-			return partOff;
-		}
-
-
-
-		public void write(BinaryWriter bWriter)
-		{
-			bWriter.Write(RecordNumber);
-
-			bWriter.Write(Bounds.Left);
-			bWriter.Write(Bounds.Top);
-			bWriter.Write(Bounds.Width);
-			bWriter.Write(Bounds.Height);
-				
-			bWriter.Write(NumParts);
-			bWriter.Write(NumPoints);
-			for(int n=0;n<NumParts;n++)
-			{
-				bWriter.Write(PartOffsets[n]);
-			}
-			bWriter.Write(Mmin);
-			bWriter.Write(Mmax);
-
-		}
-	}
-
-	[StructLayout(LayoutKind.Sequential, Pack=1)]
-	unsafe struct PolygonRecordEx
-	{
-		public int RecordNumber;
-		public RectangleF Bounds;
-		public int NumParts;
-		public int NumPoints;
-		public int[] PartOffsets;
-
-        public int DataOffset;
-		
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="dataOffset"></param>
-		/// <returns>number of bytes read</returns>
-		public int read(byte[] data, int dataOffset)
-		{
-			RecordNumber = EndianUtils.ReadIntLE(data,dataOffset);
-			fixed(byte* bPtr = data)
-			{				
-				Bounds = *(RectangleF*)(bPtr+4 + dataOffset);								
-			}
-
-			NumParts = EndianUtils.ReadIntLE(data,dataOffset+20);
-			NumPoints = EndianUtils.ReadIntLE(data,dataOffset+24);
-
-			PartOffsets = new int[NumParts];
-			int partOff = 28;
-			for(int n=0;n<NumParts;n++)
-			{
-				PartOffsets[n] = EndianUtils.ReadIntLE(data,dataOffset+partOff);				
-				partOff+=4;
-			}
-            DataOffset = -1;
-			return partOff;
-		}
-
-		public void write(BinaryWriter bWriter)
-		{
-			bWriter.Write(RecordNumber);
-
-			bWriter.Write(Bounds.Left);
-			bWriter.Write(Bounds.Top);
-			bWriter.Write(Bounds.Width);
-			bWriter.Write(Bounds.Height);
-				
-			bWriter.Write(NumParts);
-			bWriter.Write(NumPoints);
-			for(int n=0;n<NumParts;n++)
-			{
-				bWriter.Write(PartOffsets[n]);
-			}
-		}
-	}
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    unsafe struct PolygonZRecordEx
-    {
-        public int RecordNumber;
-        public RectangleF Bounds;
-        public int NumParts;
-        public int NumPoints;
-        public int[] PartOffsets;
-        public float MinZ;
-        public float MaxZ;
-        public float MinMeasure;
-        public float MaxMeasure;
-
-        public int DataOffset;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="dataOffset"></param>
-        /// <returns>number of bytes read</returns>
-        public int read(byte[] data, int dataOffset)
-        {
-            RecordNumber = EndianUtils.ReadIntLE(data, dataOffset);
-            fixed (byte* bPtr = data)
-            {
-                Bounds = *(RectangleF*)(bPtr + 4 + dataOffset);
-            }
-
-            NumParts = EndianUtils.ReadIntLE(data, dataOffset + 20);
-            NumPoints = EndianUtils.ReadIntLE(data, dataOffset + 24);
-
-            PartOffsets = new int[NumParts];
-            int partOff = 28;
-            for (int n = 0; n < NumParts; n++)
-            {
-                PartOffsets[n] = EndianUtils.ReadIntLE(data, dataOffset + partOff);
-                partOff += 4;
-            }
-
-            MinZ = EndianUtils.ReadFloatLE(data, dataOffset + partOff);
-            partOff+=4;
-            MaxZ = EndianUtils.ReadFloatLE(data, dataOffset + partOff);
-            partOff+=4;
-            MinMeasure = EndianUtils.ReadFloatLE(data, dataOffset + partOff);
-            partOff+=4;
-            MaxMeasure = EndianUtils.ReadFloatLE(data, dataOffset + partOff);
-            partOff+=4;        
-
-            DataOffset = -1;
-            return partOff;
-        }
-
-        public void write(BinaryWriter bWriter)
-        {
-            bWriter.Write(RecordNumber);
-
-            bWriter.Write(Bounds.Left);
-            bWriter.Write(Bounds.Top);
-            bWriter.Write(Bounds.Width);
-            bWriter.Write(Bounds.Height);
-
-            bWriter.Write(NumParts);
-            bWriter.Write(NumPoints);
-            for (int n = 0; n < NumParts; n++)
-            {
-                bWriter.Write(PartOffsets[n]);
-            }
-            bWriter.Write(MinZ);
-            bWriter.Write(MaxZ);
-            bWriter.Write(MinMeasure);
-            bWriter.Write(MaxMeasure);
-
-        }
-    }
-
+	}  
+   
 
 #endregion
 
@@ -4141,82 +2392,82 @@ namespace EGIS.ShapeFileLib
 		/// <param name="extent"></param>
         /// <param name="mercProjection"></param>
 		/// <returns></returns>
-		protected static unsafe float GetPointsFAngle(byte[] data, int offset, int numPoints, ref int pointIndex, RectangleF extent, bool mercProjection)
-		{
-			PointF[] pts = new PointF[numPoints];
-			int maxIndex = -1;
-			fixed(byte* bPtr = data)
-			{
-				int ptIndex = 0;
-				PointF* pPtr = (PointF*)(bPtr + offset);
-				float maxDistSquared=0f;
+        //protected static unsafe float GetPointsFAngle(byte[] data, int offset, int numPoints, ref int pointIndex, RectangleF extent, bool mercProjection)
+        //{
+        //    PointF[] pts = new PointF[numPoints];
+        //    int maxIndex = -1;
+        //    fixed(byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointF* pPtr = (PointF*)(bPtr + offset);
+        //        float maxDistSquared=0f;
 				
-				while(ptIndex < numPoints)
-				{
-                    pts[ptIndex] = mercProjection ? LLToProjection(*(pPtr++)) : *(pPtr++);					
-					if(ptIndex > 0  && (extent.Contains(pts[ptIndex]) || extent.Contains(pts[ptIndex-1]) ))
-					{
-						float xdif = pts[ptIndex].X - pts[ptIndex-1].X;
-						float ydif = pts[ptIndex].Y - pts[ptIndex-1].Y;
-						float temp = xdif*xdif + ydif*ydif;
-						if(temp > maxDistSquared )
-						{
-							maxIndex = ptIndex-1;
-							maxDistSquared = temp;
-						}
-					}
-					ptIndex++;
-				}
-			}			
-			pointIndex = maxIndex;
-			if(maxIndex >= 0)
-			{
-				return (float)(Math.Atan2( (double)(pts[maxIndex+1].Y-pts[maxIndex].Y),(double)(pts[maxIndex+1].X - pts[maxIndex].X)) *180f/Math.PI);
-			}
-			else
-			{
-				return float.NaN;
-			}			 
-		}
+        //        while(ptIndex < numPoints)
+        //        {
+        //            pts[ptIndex] = mercProjection ? LLToProjection(*(pPtr++)) : *(pPtr++);					
+        //            if(ptIndex > 0  && (extent.Contains(pts[ptIndex]) || extent.Contains(pts[ptIndex-1]) ))
+        //            {
+        //                float xdif = pts[ptIndex].X - pts[ptIndex-1].X;
+        //                float ydif = pts[ptIndex].Y - pts[ptIndex-1].Y;
+        //                float temp = xdif*xdif + ydif*ydif;
+        //                if(temp > maxDistSquared )
+        //                {
+        //                    maxIndex = ptIndex-1;
+        //                    maxDistSquared = temp;
+        //                }
+        //            }
+        //            ptIndex++;
+        //        }
+        //    }			
+        //    pointIndex = maxIndex;
+        //    if(maxIndex >= 0)
+        //    {
+        //        return (float)(Math.Atan2( (double)(pts[maxIndex+1].Y-pts[maxIndex].Y),(double)(pts[maxIndex+1].X - pts[maxIndex].X)) *180f/Math.PI);
+        //    }
+        //    else
+        //    {
+        //        return float.NaN;
+        //    }			 
+        //}
 
-        protected static unsafe float GetPointsDAngle(byte[] data, int offset, int numPoints, ref int pointIndex, RectangleD extent, bool mercProj)
-        {
-            PointD[] pts = new PointD[numPoints];
+        //protected static unsafe float GetPointsDAngle(byte[] data, int offset, int numPoints, ref int pointIndex, RectangleD extent, bool mercProj)
+        //{
+        //    PointD[] pts = new PointD[numPoints];
             
-            int maxIndex = -1;
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                PointD* pPtr = (PointD*)(bPtr + offset);
-                double maxDistSquared = 0f;
+        //    int maxIndex = -1;
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointD* pPtr = (PointD*)(bPtr + offset);
+        //        double maxDistSquared = 0f;
 
-                while (ptIndex < numPoints)
-                {
-                    pts[ptIndex] = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
-                    if (ptIndex > 0 && (extent.Contains(pts[ptIndex]) || extent.Contains(pts[ptIndex - 1])))
-                    {
-                        double xdif = pts[ptIndex].X - pts[ptIndex - 1].X;
-                        double ydif = pts[ptIndex].Y - pts[ptIndex - 1].Y;
-                        double temp = xdif * xdif + ydif * ydif;
-                        if (temp > maxDistSquared)
-                        {
-                            maxIndex = ptIndex - 1;
-                            maxDistSquared = temp;
-                        }
-                    }
-                    ptIndex++;
-                }
-            }
-            pointIndex = maxIndex;
-            if (maxIndex >= 0)
-            {
-                return (float)(Math.Atan2((pts[maxIndex + 1].Y - pts[maxIndex].Y), (pts[maxIndex + 1].X - pts[maxIndex].X)) * 180f / Math.PI);
-            }
-            else
-            {
-                return float.NaN;
-            }
-        }
+        //        while (ptIndex < numPoints)
+        //        {
+        //            pts[ptIndex] = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
+        //            if (ptIndex > 0 && (extent.Contains(pts[ptIndex]) || extent.Contains(pts[ptIndex - 1])))
+        //            {
+        //                double xdif = pts[ptIndex].X - pts[ptIndex - 1].X;
+        //                double ydif = pts[ptIndex].Y - pts[ptIndex - 1].Y;
+        //                double temp = xdif * xdif + ydif * ydif;
+        //                if (temp > maxDistSquared)
+        //                {
+        //                    maxIndex = ptIndex - 1;
+        //                    maxDistSquared = temp;
+        //                }
+        //            }
+        //            ptIndex++;
+        //        }
+        //    }
+        //    pointIndex = maxIndex;
+        //    if (maxIndex >= 0)
+        //    {
+        //        return (float)(Math.Atan2((pts[maxIndex + 1].Y - pts[maxIndex].Y), (pts[maxIndex + 1].X - pts[maxIndex].X)) * 180f / Math.PI);
+        //    }
+        //    else
+        //    {
+        //        return float.NaN;
+        //    }
+        //}
 
         protected static unsafe float GetPointsDAngle(byte* buf, int offset, int numPoints, ref int pointIndex, RectangleD extent, bool mercProj)
         {
@@ -4256,65 +2507,65 @@ namespace EGIS.ShapeFileLib
         }
         
 
-        protected static unsafe List<IndexAnglePair> GetPointsFAngle(byte[] data, int offset, int numPoints, float minDist, bool mercProj)
-        {
-            List<IndexAnglePair> indexAngleList = new List<IndexAnglePair>();
-            PointF[] pts = new PointF[numPoints];
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                PointF* pPtr = (PointF*)(bPtr + offset);
-                float minDistSquared = minDist*minDist;
+        //protected static unsafe List<IndexAnglePair> GetPointsFAngle(byte[] data, int offset, int numPoints, float minDist, bool mercProj)
+        //{
+        //    List<IndexAnglePair> indexAngleList = new List<IndexAnglePair>();
+        //    PointF[] pts = new PointF[numPoints];
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointF* pPtr = (PointF*)(bPtr + offset);
+        //        float minDistSquared = minDist*minDist;
 
-                while (ptIndex < numPoints)
-                {
-                    pts[ptIndex] = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
-                    if (ptIndex > 0)
-                    {
-                        float xdif = pts[ptIndex].X - pts[ptIndex - 1].X;
-                        float ydif = pts[ptIndex].Y - pts[ptIndex - 1].Y;
-                        float temp = xdif * xdif + ydif * ydif;
-                        if (temp >= minDistSquared)
-                        {
-                            float angle = (float)(Math.Atan2((double)(pts[ptIndex].Y - pts[ptIndex-1].Y), (double)(pts[ptIndex].X - pts[ptIndex-1].X)) * 180f / Math.PI);
-                            indexAngleList.Add(new IndexAnglePair(angle,ptIndex - 1));                            
-                        }
-                    }
-                    ptIndex++;
-                }
-            }
-            return indexAngleList;
-        }
+        //        while (ptIndex < numPoints)
+        //        {
+        //            pts[ptIndex] = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
+        //            if (ptIndex > 0)
+        //            {
+        //                float xdif = pts[ptIndex].X - pts[ptIndex - 1].X;
+        //                float ydif = pts[ptIndex].Y - pts[ptIndex - 1].Y;
+        //                float temp = xdif * xdif + ydif * ydif;
+        //                if (temp >= minDistSquared)
+        //                {
+        //                    float angle = (float)(Math.Atan2((double)(pts[ptIndex].Y - pts[ptIndex-1].Y), (double)(pts[ptIndex].X - pts[ptIndex-1].X)) * 180f / Math.PI);
+        //                    indexAngleList.Add(new IndexAnglePair(angle,ptIndex - 1));                            
+        //                }
+        //            }
+        //            ptIndex++;
+        //        }
+        //    }
+        //    return indexAngleList;
+        //}
 
-        protected static unsafe List<IndexAnglePair> GetPointsDAngle(byte[] data, int offset, int numPoints, float minDist, bool mercProj)
-        {
-            List<IndexAnglePair> indexAngleList = new List<IndexAnglePair>();
-            PointD[] pts = new PointD[numPoints];
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                PointD* pPtr = (PointD*)(bPtr + offset);
-                float minDistSquared = minDist * minDist;
+        //protected static unsafe List<IndexAnglePair> GetPointsDAngle(byte[] data, int offset, int numPoints, float minDist, bool mercProj)
+        //{
+        //    List<IndexAnglePair> indexAngleList = new List<IndexAnglePair>();
+        //    PointD[] pts = new PointD[numPoints];
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointD* pPtr = (PointD*)(bPtr + offset);
+        //        float minDistSquared = minDist * minDist;
 
-                while (ptIndex < numPoints)
-                {
-                    pts[ptIndex] = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
-                    if (ptIndex > 0)
-                    {
-                        double xdif = pts[ptIndex].X - pts[ptIndex - 1].X;
-                        double ydif = pts[ptIndex].Y - pts[ptIndex - 1].Y;
-                        double temp = xdif * xdif + ydif * ydif;
-                        if (temp >= minDistSquared)
-                        {
-                            float angle = (float)(Math.Atan2((pts[ptIndex].Y - pts[ptIndex - 1].Y), (pts[ptIndex].X - pts[ptIndex - 1].X)) * 180f / Math.PI);
-                            indexAngleList.Add(new IndexAnglePair(angle, ptIndex - 1));
-                        }
-                    }
-                    ptIndex++;
-                }
-            }
-            return indexAngleList;
-        }
+        //        while (ptIndex < numPoints)
+        //        {
+        //            pts[ptIndex] = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
+        //            if (ptIndex > 0)
+        //            {
+        //                double xdif = pts[ptIndex].X - pts[ptIndex - 1].X;
+        //                double ydif = pts[ptIndex].Y - pts[ptIndex - 1].Y;
+        //                double temp = xdif * xdif + ydif * ydif;
+        //                if (temp >= minDistSquared)
+        //                {
+        //                    float angle = (float)(Math.Atan2((pts[ptIndex].Y - pts[ptIndex - 1].Y), (pts[ptIndex].X - pts[ptIndex - 1].X)) * 180f / Math.PI);
+        //                    indexAngleList.Add(new IndexAnglePair(angle, ptIndex - 1));
+        //                }
+        //            }
+        //            ptIndex++;
+        //        }
+        //    }
+        //    return indexAngleList;
+        //}
 
         protected static unsafe List<IndexAnglePair> GetPointsDAngle(byte* buf, int offset, int numPoints, float minDist, bool mercProj)
         {
@@ -4427,60 +2678,60 @@ namespace EGIS.ShapeFileLib
             //return pt;
         }
 
-        protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, float offX, float offY, float scaleX, float scaleY, bool mercProj)
-        {
-            Point[] pts = new Point[numPoints];
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                PointF* pPtr = (PointF*)(bPtr + offset);
-                while (ptIndex < numPoints)
-                {
-                    PointF ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
-                    pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
-                    pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
-                    ++ptIndex;
-                }
-            }
-            return pts;
-        }
+        //protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, float offX, float offY, float scaleX, float scaleY, bool mercProj)
+        //{
+        //    Point[] pts = new Point[numPoints];
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointF* pPtr = (PointF*)(bPtr + offset);
+        //        while (ptIndex < numPoints)
+        //        {
+        //            PointF ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
+        //            pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
+        //            pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
+        //            ++ptIndex;
+        //        }
+        //    }
+        //    return pts;
+        //}
         
-        protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, bool mercProj)
-        {
-            //if (numPoints > 10) return GetPointsRemoveDuplicates(data, offset, numPoints, offX, offY, scaleX, scaleY);
-            Point[] pts = new Point[numPoints];
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                PointF* pPtr = (PointF*)(bPtr + offset);
-                while (ptIndex < numPoints)
-                {
-                    PointD ptd = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); ;// LLToProjection((PointD)(*(pPtr++)));
-                    pts[ptIndex].X = (int)Math.Round((ptd.X + offX) * scaleX);
-                    pts[ptIndex].Y = (int)Math.Round((ptd.Y + offY) * scaleY);
-                    ++ptIndex;
-                }
-            }
-            return pts;
-        }
+        //protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, bool mercProj)
+        //{
+        //    //if (numPoints > 10) return GetPointsRemoveDuplicates(data, offset, numPoints, offX, offY, scaleX, scaleY);
+        //    Point[] pts = new Point[numPoints];
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointF* pPtr = (PointF*)(bPtr + offset);
+        //        while (ptIndex < numPoints)
+        //        {
+        //            PointD ptd = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); ;// LLToProjection((PointD)(*(pPtr++)));
+        //            pts[ptIndex].X = (int)Math.Round((ptd.X + offX) * scaleX);
+        //            pts[ptIndex].Y = (int)Math.Round((ptd.Y + offY) * scaleY);
+        //            ++ptIndex;
+        //        }
+        //    }
+        //    return pts;
+        //}
 
-        protected static unsafe Point[] GetPointsD(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, bool mercProj)
-        {
-            Point[] pts = new Point[numPoints];
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                PointD* pPtr = (PointD*)(bPtr + offset);
-                while (ptIndex < numPoints)
-                {
-                    PointD ptd = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
-                    pts[ptIndex].X = (int)Math.Round((ptd.X + offX) * scaleX);
-                    pts[ptIndex].Y = (int)Math.Round((ptd.Y + offY) * scaleY);
-                    ++ptIndex;
-                }
-            }
-            return pts;
-        }
+        //protected static unsafe Point[] GetPointsD(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, bool mercProj)
+        //{
+        //    Point[] pts = new Point[numPoints];
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointD* pPtr = (PointD*)(bPtr + offset);
+        //        while (ptIndex < numPoints)
+        //        {
+        //            PointD ptd = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
+        //            pts[ptIndex].X = (int)Math.Round((ptd.X + offX) * scaleX);
+        //            pts[ptIndex].Y = (int)Math.Round((ptd.Y + offY) * scaleY);
+        //            ++ptIndex;
+        //        }
+        //    }
+        //    return pts;
+        //}
 
         protected static unsafe Point[] GetPointsD(byte* buf, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, bool mercProj)
         {
@@ -4499,89 +2750,89 @@ namespace EGIS.ShapeFileLib
         }
 
        
-        protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, float offX, float offY, float scaleX, float scaleY, ref Rectangle pixBounds, bool mercProj)
-        {
-            Point[] pts = new Point[numPoints];
-            int left = int.MaxValue;
-            int right = int.MinValue;
-            int top = int.MaxValue;
-            int bottom = int.MinValue;
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                PointF* pPtr = (PointF*)(bPtr + offset);
-                while (ptIndex < numPoints)
-                {
-                    PointF ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
-                    pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
-                    pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
-                    left = Math.Min(pts[ptIndex].X, left);
-                    right = Math.Max(pts[ptIndex].X, right);
-                    top = Math.Min(pts[ptIndex].Y, top);
-                    bottom = Math.Max(pts[ptIndex].Y, bottom);
+        //protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, float offX, float offY, float scaleX, float scaleY, ref Rectangle pixBounds, bool mercProj)
+        //{
+        //    Point[] pts = new Point[numPoints];
+        //    int left = int.MaxValue;
+        //    int right = int.MinValue;
+        //    int top = int.MaxValue;
+        //    int bottom = int.MinValue;
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointF* pPtr = (PointF*)(bPtr + offset);
+        //        while (ptIndex < numPoints)
+        //        {
+        //            PointF ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
+        //            pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
+        //            pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
+        //            left = Math.Min(pts[ptIndex].X, left);
+        //            right = Math.Max(pts[ptIndex].X, right);
+        //            top = Math.Min(pts[ptIndex].Y, top);
+        //            bottom = Math.Max(pts[ptIndex].Y, bottom);
 
-                    ++ptIndex;
-                }
-            }
-            pixBounds = Rectangle.FromLTRB(left, top, right, bottom);
-            return pts;
-        }
+        //            ++ptIndex;
+        //        }
+        //    }
+        //    pixBounds = Rectangle.FromLTRB(left, top, right, bottom);
+        //    return pts;
+        //}
 
-        protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, bool mercProj)
-        {
-            Point[] pts = new Point[numPoints];
-            int left = int.MaxValue;
-            int right = int.MinValue;
-            int top = int.MaxValue;
-            int bottom = int.MinValue;
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                PointF* pPtr = (PointF*)(bPtr + offset);
-                while (ptIndex < numPoints)
-                {
-                    PointD ptf = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); ;// LLToProjection((PointD)(*(pPtr++)));
-                    pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
-                    pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
-                    left = Math.Min(pts[ptIndex].X, left);
-                    right = Math.Max(pts[ptIndex].X, right);
-                    top = Math.Min(pts[ptIndex].Y, top);
-                    bottom = Math.Max(pts[ptIndex].Y, bottom);
+        //protected static unsafe Point[] GetPoints(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, bool mercProj)
+        //{
+        //    Point[] pts = new Point[numPoints];
+        //    int left = int.MaxValue;
+        //    int right = int.MinValue;
+        //    int top = int.MaxValue;
+        //    int bottom = int.MinValue;
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointF* pPtr = (PointF*)(bPtr + offset);
+        //        while (ptIndex < numPoints)
+        //        {
+        //            PointD ptf = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); ;// LLToProjection((PointD)(*(pPtr++)));
+        //            pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
+        //            pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
+        //            left = Math.Min(pts[ptIndex].X, left);
+        //            right = Math.Max(pts[ptIndex].X, right);
+        //            top = Math.Min(pts[ptIndex].Y, top);
+        //            bottom = Math.Max(pts[ptIndex].Y, bottom);
 
-                    ++ptIndex;
-                }
-            }
-            pixBounds = Rectangle.FromLTRB(left, top, right, bottom);
-            return pts;
-        }
+        //            ++ptIndex;
+        //        }
+        //    }
+        //    pixBounds = Rectangle.FromLTRB(left, top, right, bottom);
+        //    return pts;
+        //}
 
-        protected static unsafe Point[] GetPointsD(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, bool mercProj)
-        {
-            Point[] pts = new Point[numPoints];
-            int left = int.MaxValue;
-            int right = int.MinValue;
-            int top = int.MaxValue;
-            int bottom = int.MinValue;
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                PointD* pPtr = (PointD*)(bPtr + offset);
-                while (ptIndex < numPoints)
-                {
-                    PointD ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
-                    pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
-                    pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
-                    left = Math.Min(pts[ptIndex].X, left);
-                    right = Math.Max(pts[ptIndex].X, right);
-                    top = Math.Min(pts[ptIndex].Y, top);
-                    bottom = Math.Max(pts[ptIndex].Y, bottom);
+        //protected static unsafe Point[] GetPointsD(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, bool mercProj)
+        //{
+        //    Point[] pts = new Point[numPoints];
+        //    int left = int.MaxValue;
+        //    int right = int.MinValue;
+        //    int top = int.MaxValue;
+        //    int bottom = int.MinValue;
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointD* pPtr = (PointD*)(bPtr + offset);
+        //        while (ptIndex < numPoints)
+        //        {
+        //            PointD ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
+        //            pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
+        //            pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
+        //            left = Math.Min(pts[ptIndex].X, left);
+        //            right = Math.Max(pts[ptIndex].X, right);
+        //            top = Math.Min(pts[ptIndex].Y, top);
+        //            bottom = Math.Max(pts[ptIndex].Y, bottom);
 
-                    ++ptIndex;
-                }
-            }
-            pixBounds = Rectangle.FromLTRB(left, top, right, bottom);
-            return pts;
-        }
+        //            ++ptIndex;
+        //        }
+        //    }
+        //    pixBounds = Rectangle.FromLTRB(left, top, right, bottom);
+        //    return pts;
+        //}
 
         protected static unsafe Point[] GetPointsD(byte* buf, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, bool mercProj)
         {
@@ -4609,89 +2860,89 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        protected static unsafe void GetPointsRemoveDuplicates(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, Point[] pts, ref int usedPoints, bool mercProj)
-        {
-            //Point[] pts = new Point[numPoints];
-            int left = int.MaxValue;
-            int right = int.MinValue;
-            int top = int.MaxValue;
-            int bottom = int.MinValue;
-            usedPoints = 1;
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                PointF* pPtr = (PointF*)(bPtr + offset);
+        //protected static unsafe void GetPointsRemoveDuplicates(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, Point[] pts, ref int usedPoints, bool mercProj)
+        //{
+        //    //Point[] pts = new Point[numPoints];
+        //    int left = int.MaxValue;
+        //    int right = int.MinValue;
+        //    int top = int.MaxValue;
+        //    int bottom = int.MinValue;
+        //    usedPoints = 1;
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointF* pPtr = (PointF*)(bPtr + offset);
 
-                PointD ptda = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); ;// LLToProjection((PointD)(*(pPtr++)));
-                pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scaleX);
-                pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * scaleY);
-                ++ptIndex;
+        //        PointD ptda = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); ;// LLToProjection((PointD)(*(pPtr++)));
+        //        pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scaleX);
+        //        pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * scaleY);
+        //        ++ptIndex;
                 
-                while (ptIndex < numPoints)
-                {
-                    PointD ptf = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); ;// LLToProjection((PointD)(*(pPtr++)));
-                    pts[usedPoints].X = (int)Math.Round((ptf.X + offX) * scaleX);
-                    pts[usedPoints].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
-                    if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
-                    {                        
-                        left = Math.Min(pts[usedPoints].X, left);
-                        right = Math.Max(pts[usedPoints].X, right);
-                        top = Math.Min(pts[usedPoints].Y, top);
-                        bottom = Math.Max(pts[usedPoints].Y, bottom);
-                        ++usedPoints;
-                    }                    
-                    ++ptIndex;
-                }
-            }
-            pixBounds = Rectangle.FromLTRB(left, top, right, bottom);
-            if (usedPoints == 1)
-            {
-                pts[1] = pts[0];
-            }
-           // return pts;
-        }
+        //        while (ptIndex < numPoints)
+        //        {
+        //            PointD ptf = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); ;// LLToProjection((PointD)(*(pPtr++)));
+        //            pts[usedPoints].X = (int)Math.Round((ptf.X + offX) * scaleX);
+        //            pts[usedPoints].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
+        //            if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
+        //            {                        
+        //                left = Math.Min(pts[usedPoints].X, left);
+        //                right = Math.Max(pts[usedPoints].X, right);
+        //                top = Math.Min(pts[usedPoints].Y, top);
+        //                bottom = Math.Max(pts[usedPoints].Y, bottom);
+        //                ++usedPoints;
+        //            }                    
+        //            ++ptIndex;
+        //        }
+        //    }
+        //    pixBounds = Rectangle.FromLTRB(left, top, right, bottom);
+        //    if (usedPoints == 1)
+        //    {
+        //        pts[1] = pts[0];
+        //    }
+        //   // return pts;
+        //}
 
-        protected static unsafe void GetPointsRemoveDuplicatesD(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, Point[] pts, ref int usedPoints, bool mercProj)
-        {
-            //Point[] pts = new Point[numPoints];
-            int left = int.MaxValue;
-            int right = int.MinValue;
-            int top = int.MaxValue;
-            int bottom = int.MinValue;
-            usedPoints = 1;
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                PointD* pPtr = (PointD*)(bPtr + offset);
+        //protected static unsafe void GetPointsRemoveDuplicatesD(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, Point[] pts, ref int usedPoints, bool mercProj)
+        //{
+        //    //Point[] pts = new Point[numPoints];
+        //    int left = int.MaxValue;
+        //    int right = int.MinValue;
+        //    int top = int.MaxValue;
+        //    int bottom = int.MinValue;
+        //    usedPoints = 1;
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointD* pPtr = (PointD*)(bPtr + offset);
 
-                PointD ptda = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
-                pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scaleX);
-                pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * scaleY);
-                ++ptIndex;
+        //        PointD ptda = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
+        //        pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scaleX);
+        //        pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * scaleY);
+        //        ++ptIndex;
 
-                while (ptIndex < numPoints)
-                {
-                    PointD ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
-                    pts[usedPoints].X = (int)Math.Round((ptf.X + offX) * scaleX);
-                    pts[usedPoints].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
-                    if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
-                    {
-                        left = Math.Min(pts[usedPoints].X, left);
-                        right = Math.Max(pts[usedPoints].X, right);
-                        top = Math.Min(pts[usedPoints].Y, top);
-                        bottom = Math.Max(pts[usedPoints].Y, bottom);
-                        ++usedPoints;
-                    }
-                    ++ptIndex;
-                }
-            }
-            pixBounds = Rectangle.FromLTRB(left, top, right, bottom);
-            if (usedPoints == 1)
-            {
-                pts[1] = pts[0];
-            }
-            // return pts;
-        }
+        //        while (ptIndex < numPoints)
+        //        {
+        //            PointD ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
+        //            pts[usedPoints].X = (int)Math.Round((ptf.X + offX) * scaleX);
+        //            pts[usedPoints].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
+        //            if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
+        //            {
+        //                left = Math.Min(pts[usedPoints].X, left);
+        //                right = Math.Max(pts[usedPoints].X, right);
+        //                top = Math.Min(pts[usedPoints].Y, top);
+        //                bottom = Math.Max(pts[usedPoints].Y, bottom);
+        //                ++usedPoints;
+        //            }
+        //            ++ptIndex;
+        //        }
+        //    }
+        //    pixBounds = Rectangle.FromLTRB(left, top, right, bottom);
+        //    if (usedPoints == 1)
+        //    {
+        //        pts[1] = pts[0];
+        //    }
+        //    // return pts;
+        //}
 
 
         protected static unsafe void GetPointsRemoveDuplicatesD(byte* buf, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, ref Rectangle pixBounds, Point[] pts, ref int usedPoints, bool mercProj)
@@ -4735,77 +2986,77 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        protected static unsafe void GetPointsRemoveDuplicates(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, Point[] pts, ref int usedPoints, bool mercProj)
-        {
-            //if (numPoints == 2)
-            //{
-            //    GetPointsRemoveDuplicates2p(data, offset, numPoints, offX, offY, scaleX, scaleY, pts, ref usedPoints);
-            //    return;
-            //}
-            int ptIndex = 0;
-            usedPoints = 1;
-            fixed (byte* bPtr = data)
-            {                
-                PointF* pPtr = (PointF*)(bPtr + offset);
-                PointD ptda = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); //LLToProjection((PointD)(*(pPtr++)));
-                pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scaleX);
-                pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * scaleY);
-                ++ptIndex;
+        //protected static unsafe void GetPointsRemoveDuplicates(byte[] data, int offset, int numPoints, double offX, double offY, double scaleX, double scaleY, Point[] pts, ref int usedPoints, bool mercProj)
+        //{
+        //    //if (numPoints == 2)
+        //    //{
+        //    //    GetPointsRemoveDuplicates2p(data, offset, numPoints, offX, offY, scaleX, scaleY, pts, ref usedPoints);
+        //    //    return;
+        //    //}
+        //    int ptIndex = 0;
+        //    usedPoints = 1;
+        //    fixed (byte* bPtr = data)
+        //    {                
+        //        PointF* pPtr = (PointF*)(bPtr + offset);
+        //        PointD ptda = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); //LLToProjection((PointD)(*(pPtr++)));
+        //        pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scaleX);
+        //        pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * scaleY);
+        //        ++ptIndex;
 
-                while (ptIndex < numPoints)
-                {
-                    PointD ptd = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); //LLToProjection((PointD)(*(pPtr++)));
-                    pts[usedPoints].X = (int)Math.Round((ptd.X + offX) * scaleX);
-                    pts[usedPoints].Y = (int)Math.Round((ptd.Y + offY) * scaleY);
-                    if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
-                    {
-                        ++usedPoints;
-                    }
-                    ++ptIndex;
-                }
-            }
-            if (usedPoints == 1)
-            {
-              pts[1] = pts[0];
-            }
-            //return pts;
-        }
+        //        while (ptIndex < numPoints)
+        //        {
+        //            PointD ptd = mercProj ? LLToProjection((PointD)(*(pPtr++))) : (PointD)(*(pPtr++)); //LLToProjection((PointD)(*(pPtr++)));
+        //            pts[usedPoints].X = (int)Math.Round((ptd.X + offX) * scaleX);
+        //            pts[usedPoints].Y = (int)Math.Round((ptd.Y + offY) * scaleY);
+        //            if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
+        //            {
+        //                ++usedPoints;
+        //            }
+        //            ++ptIndex;
+        //        }
+        //    }
+        //    if (usedPoints == 1)
+        //    {
+        //      pts[1] = pts[0];
+        //    }
+        //    //return pts;
+        //}
 
-        protected static unsafe void GetPointsRemoveDuplicatesD(byte[] data, int offset, int numPoints, ref double offX, ref double offY, ref double scale, Point[] pts, ref int usedPoints, bool MercProj)
-        {
-            //if (numPoints == 2)
-            //{
-            //    GetPointsRemoveDuplicates2p(data, offset, numPoints, offX, offY, scaleX, scaleY, pts, ref usedPoints);
-            //    return;
-            //}
-            int ptIndex = 0;
-            usedPoints = 1;
-            fixed (byte* bPtr = data)
-            {
-                PointD* pPtr = (PointD*)(bPtr + offset);
-                PointD ptda = MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
-                pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scale);
-                pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * -scale);
-                ++ptIndex;
+        //protected static unsafe void GetPointsRemoveDuplicatesD(byte[] data, int offset, int numPoints, ref double offX, ref double offY, ref double scale, Point[] pts, ref int usedPoints, bool MercProj)
+        //{
+        //    //if (numPoints == 2)
+        //    //{
+        //    //    GetPointsRemoveDuplicates2p(data, offset, numPoints, offX, offY, scaleX, scaleY, pts, ref usedPoints);
+        //    //    return;
+        //    //}
+        //    int ptIndex = 0;
+        //    usedPoints = 1;
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        PointD* pPtr = (PointD*)(bPtr + offset);
+        //        PointD ptda = MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection(*(pPtr++));
+        //        pts[ptIndex].X = (int)Math.Round((ptda.X + offX) * scale);
+        //        pts[ptIndex].Y = (int)Math.Round((ptda.Y + offY) * -scale);
+        //        ++ptIndex;
 
-                while (ptIndex < numPoints)
-                {
-                    PointD ptd = MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
-                    pts[usedPoints].X = (int)Math.Round((ptd.X + offX) * scale);
-                    pts[usedPoints].Y = (int)Math.Round((ptd.Y + offY) * -scale);
-                    if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
-                    {
-                        ++usedPoints;
-                    }
-                    ++ptIndex;
-                }
-            }
-            if (usedPoints == 1)
-            {
-                pts[1] = pts[0];
-            }
-            //return pts;
-        }
+        //        while (ptIndex < numPoints)
+        //        {
+        //            PointD ptd = MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
+        //            pts[usedPoints].X = (int)Math.Round((ptd.X + offX) * scale);
+        //            pts[usedPoints].Y = (int)Math.Round((ptd.Y + offY) * -scale);
+        //            if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
+        //            {
+        //                ++usedPoints;
+        //            }
+        //            ++ptIndex;
+        //        }
+        //    }
+        //    if (usedPoints == 1)
+        //    {
+        //        pts[1] = pts[0];
+        //    }
+        //    //return pts;
+        //}
 
         protected static unsafe void GetPointsRemoveDuplicatesD(byte* dataPtr, int offset, int numPoints, ref double offX, ref double offY, ref double scale, Point[] pts, ref int usedPoints, bool MercProj)
         {
@@ -4883,35 +3134,35 @@ namespace EGIS.ShapeFileLib
         }
        
          
-        protected static unsafe PointF[] GetPointsF(byte[] data, int offset, int numPoints)
-        {
-            PointF[] pts = new PointF[numPoints];
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                PointF* pPtr = (PointF*)(bPtr + offset);
-                while (ptIndex < numPoints)
-                {
-                    pts[ptIndex++] = *(pPtr++);                    
-                }
-            }
-            return pts;
-        }
+        //protected static unsafe PointF[] GetPointsF(byte[] data, int offset, int numPoints)
+        //{
+        //    PointF[] pts = new PointF[numPoints];
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointF* pPtr = (PointF*)(bPtr + offset);
+        //        while (ptIndex < numPoints)
+        //        {
+        //            pts[ptIndex++] = *(pPtr++);                    
+        //        }
+        //    }
+        //    return pts;
+        //}
 
-        protected static unsafe PointD[] GetPointsD(byte[] data, int offset, int numPoints)
-        {
-            PointD[] pts = new PointD[numPoints];
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                PointD* pPtr = (PointD*)(bPtr + offset);
-                while (ptIndex < numPoints)
-                {
-                    pts[ptIndex++] = *(pPtr++);
-                }
-            }
-            return pts;
-        }
+        //protected static unsafe PointD[] GetPointsD(byte[] data, int offset, int numPoints)
+        //{
+        //    PointD[] pts = new PointD[numPoints];
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        PointD* pPtr = (PointD*)(bPtr + offset);
+        //        while (ptIndex < numPoints)
+        //        {
+        //            pts[ptIndex++] = *(pPtr++);
+        //        }
+        //    }
+        //    return pts;
+        //}
 
         protected static unsafe PointD[] GetPointsD(byte* buffer, int offset, int numPoints)
         {
@@ -4941,35 +3192,35 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        protected static unsafe float[] GetFloatData(byte[] data, int offset, int numFloats)
-        {
-            float[] floatData = new float[numFloats];
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                float* fPtr = (float*)(bPtr + offset);
-                while (ptIndex < numFloats)
-                {
-                    floatData[ptIndex++] = *(fPtr++);
-                }
-            }
-            return floatData;
-        }
+        //protected static unsafe float[] GetFloatData(byte[] data, int offset, int numFloats)
+        //{
+        //    float[] floatData = new float[numFloats];
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        float* fPtr = (float*)(bPtr + offset);
+        //        while (ptIndex < numFloats)
+        //        {
+        //            floatData[ptIndex++] = *(fPtr++);
+        //        }
+        //    }
+        //    return floatData;
+        //}
 
-        protected static unsafe double[] GetDoubleData(byte[] data, int offset, int numDoubles)
-        {
-            double[] doubleData = new double[numDoubles];
-            fixed (byte* bPtr = data)
-            {
-                int ptIndex = 0;
-                double* dPtr = (double*)(bPtr + offset);
-                while (ptIndex < numDoubles)
-                {
-                    doubleData[ptIndex++] = *(dPtr++);
-                }
-            }
-            return doubleData;
-        }
+        //protected static unsafe double[] GetDoubleData(byte[] data, int offset, int numDoubles)
+        //{
+        //    double[] doubleData = new double[numDoubles];
+        //    fixed (byte* bPtr = data)
+        //    {
+        //        int ptIndex = 0;
+        //        double* dPtr = (double*)(bPtr + offset);
+        //        while (ptIndex < numDoubles)
+        //        {
+        //            doubleData[ptIndex++] = *(dPtr++);
+        //        }
+        //    }
+        //    return doubleData;
+        //}
 
         protected static unsafe double[] GetDoubleData(byte* data, int offset, int numDoubles)
         {
@@ -5060,22 +3311,23 @@ namespace EGIS.ShapeFileLib
             this.PointIndex = pointIndex;
         }
     }
-    struct LabelRenderLineObj
-    {
-        public Point Point1, Point2, Point3;
-        public float Angle1, Angle2;
-        public int RecordIndex;
+    
+    //struct LabelRenderLineObj
+    //{
+    //    public Point Point1, Point2, Point3;
+    //    public float Angle1, Angle2;
+    //    public int RecordIndex;
 
-        public LabelRenderLineObj(Point pt1, Point pt2, Point pt3, int recordIndexParam)
-        {
-            Point1 = pt1;
-            Point2 = pt2;
-            Point3 = pt3;
-            Angle1 = Angle2 = 0f;
-            RecordIndex = recordIndexParam;
-        }
+    //    public LabelRenderLineObj(Point pt1, Point pt2, Point pt3, int recordIndexParam)
+    //    {
+    //        Point1 = pt1;
+    //        Point2 = pt2;
+    //        Point3 = pt3;
+    //        Angle1 = Angle2 = 0f;
+    //        RecordIndex = recordIndexParam;
+    //    }
 
-    }
+    //}
 
 
     #endregion
@@ -13476,8 +11728,6 @@ namespace EGIS.ShapeFileLib
     #endregion
 
 
-
-
     #region "DBF types"
 
     
@@ -14372,10 +12622,7 @@ namespace EGIS.ShapeFileLib
 
 
     #endregion
-
-
-    
-    
+        
 
     
     #region EndianUtils
@@ -14699,7 +12946,6 @@ namespace EGIS.ShapeFileLib
     }
 
     #endregion
-
 
 
 }

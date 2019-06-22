@@ -70,7 +70,8 @@ namespace egis
             //Console.Out.WriteLine("dist bw points:" + dist);       
 
            // TestLineClipping();
-
+            //TestPolygonClipping();
+          
             sfMap1.MapDoubleClick += new EventHandler<EGIS.Controls.SFMap.MapDoubleClickedEventArgs>(sfMap1_MapDoubleClick);
         }
 
@@ -1562,6 +1563,187 @@ namespace egis
                 bm.Save(@"c:\temp\clippedBitmap.bmp", System.Drawing.Imaging.ImageFormat.Bmp);
             }
             
+
+        }
+
+        private void TestPolygonClipping()
+        {
+            PointD[] polygon = new PointD[6];
+            polygon[0] = new PointD(5, 5);
+            polygon[1] = new PointD(4, 4);
+            polygon[2] = new PointD(-2, 3);
+            polygon[3] = new PointD(-4, 10);
+            polygon[4] = new PointD(6, 10);
+            polygon[5] = polygon[0];
+            GeometryAlgorithms.ClipBounds clipBounds = new GeometryAlgorithms.ClipBounds()
+            {
+                XMin = 0,
+                XMax = 20,
+                YMin = 0,
+                YMax = 8
+            };
+
+            List<PointD> clippedPolygon = new List<PointD>();
+
+            GeometryAlgorithms.PolygonClip(polygon, 6, clipBounds, clippedPolygon);
+
+            for (int n = 0; n < polygon.Length; ++n)
+            {
+                if (n > 0) Console.Write(", ");
+                Console.Write(polygon[n]);
+            }
+            Console.WriteLine();
+            for (int n = 0; n < clippedPolygon.Count; ++n)
+            {
+                if (n > 0) Console.Write(", ");
+                Console.Write(clippedPolygon[n]);
+            }
+            Console.WriteLine();
+
+            GeometryAlgorithms.PolygonClip(polygon, 5, clipBounds, clippedPolygon);
+
+            for (int n = 0; n < clippedPolygon.Count; ++n)
+            {
+                if (n > 0) Console.Write(", ");
+                Console.Write(clippedPolygon[n]);
+            }
+            Console.WriteLine();
+
+
+
+            polygon = new PointD[7];
+            polygon[0] = new PointD(10, 0);
+            polygon[1] = new PointD(0, 0);
+            polygon[2] = new PointD(0, 10);
+            polygon[3] = new PointD(9, 10);
+            polygon[4] = new PointD(4, 6);
+            polygon[5] = new PointD(10, 8);            
+            polygon[6] = polygon[0];
+
+            PointD[] hole = new PointD[5];
+            hole[0] = new PointD(6, 1);            
+            hole[1] = new PointD(8, 1);
+            hole[2] = new PointD(8, 4.5);            
+            hole[3] = new PointD(6, 4.5);
+            hole[4] = hole[0];
+
+            List<PointD> clippedHole = new List<PointD>();
+
+            clipBounds = new GeometryAlgorithms.ClipBounds()
+            {
+                XMin = 5,
+                XMax = 9,
+                YMin = 4,
+                YMax = 9
+            };
+
+            clippedPolygon = new List<PointD>();
+
+            GeometryAlgorithms.PolygonClip(polygon, 7, clipBounds, clippedPolygon);
+
+            GeometryAlgorithms.PolygonClip(hole, 5, clipBounds, clippedHole);
+            
+            //test reversing the hole
+            //clippedHole.Reverse();
+
+            for (int n = 0; n < polygon.Length; ++n)
+            {
+                if (n > 0) Console.Write(", ");
+                Console.Write(polygon[n]);
+            }
+            Console.WriteLine();
+            for (int n = 0; n < clippedPolygon.Count; ++n)
+            {
+                if (n > 0) Console.Write(", ");
+                Console.Write(clippedPolygon[n]);
+            }
+            Console.WriteLine();
+            for (int n = 0; n < clippedPolygon.Count - 1; ++n)
+            {
+                if (n > 0) Console.Write(", ");
+                Console.Write(clippedPolygon[n]);
+            }
+            Console.WriteLine();
+
+
+            const int Scale = 50;
+            using (Bitmap bm = new Bitmap(505, 505))
+            {
+                using (Graphics g = Graphics.FromImage(bm))
+                {
+                    g.Clear(Color.White);
+
+                    System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
+                    path.FillMode = System.Drawing.Drawing2D.FillMode.Winding;
+
+                    PointF[] pts = new PointF[polygon.Length];
+                    for (int n = 0; n < pts.Length; ++n)
+                    {
+                        pts[n] = new PointF((float)polygon[n].X * Scale, (float)polygon[n].Y * Scale);
+                    }                    
+                    PointF[] holePts = new PointF[hole.Length];
+                    for (int n = 0; n < holePts.Length; ++n)
+                    {
+                        holePts[n] = new PointF((float)hole[n].X * Scale, (float)hole[n].Y * Scale);
+                    }
+                    //because we're drawing upside down we need to reverse the points to correct the winding order
+                    Array.Reverse(pts);
+                    Array.Reverse(holePts);
+
+
+                    path.AddPolygon(pts);
+                    path.AddPolygon(holePts);
+
+                    g.FillPath(Brushes.Blue, path);
+
+                    
+                    
+
+                    pts = new PointF[clippedPolygon.Count];
+                    for (int n = 0; n < pts.Length; ++n)
+                    {
+                        pts[n] = new PointF((float)clippedPolygon[n].X * Scale, (float)clippedPolygon[n].Y * Scale);
+                    }
+                    holePts = new PointF[clippedHole.Count];
+                    for (int n = 0; n < holePts.Length; ++n)
+                    {
+                        holePts[n] = new PointF((float)clippedHole[n].X * Scale, (float)clippedHole[n].Y * Scale);
+                    }
+                    path = new System.Drawing.Drawing2D.GraphicsPath();
+                    path.FillMode = System.Drawing.Drawing2D.FillMode.Winding;
+
+                    //because we're drawing upside down we need to reverse the points to correct the winding order
+                    Array.Reverse(pts);
+                    Array.Reverse(holePts);
+
+                    path.AddPolygon(pts);
+                    path.AddPolygon(holePts);
+
+                    g.FillPath(Brushes.Yellow, path);
+
+                    //using (Pen p = new Pen(Color.Green, 2))
+                    //{
+                    //    g.DrawPath(p, path);
+                    //}
+
+                    //draw the clipping rectangle
+                    using (Pen p = new Pen(Color.Red, 2))
+                    {
+                        g.DrawRectangle(p, new Rectangle((int)clipBounds.XMin * Scale, (int)clipBounds.YMin * Scale,
+                            (int)(clipBounds.XMax - clipBounds.XMin) * Scale,
+                            (int)(clipBounds.YMax - clipBounds.YMin) * Scale));
+                    }
+
+                    for (int n = 0; n < pts.Length; ++n)
+                    {
+                        g.DrawString(n.ToString(), this.Font, Brushes.Black, pts[n]);
+                    }
+                    
+                }
+                bm.Save(@"c:\temp\clippedpolygon.bmp", System.Drawing.Imaging.ImageFormat.Bmp);
+            }
+
+
 
         }
     }

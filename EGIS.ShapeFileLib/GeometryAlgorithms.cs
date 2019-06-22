@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace EGIS.ShapeFileLib
 {
@@ -141,6 +142,32 @@ namespace EGIS.ShapeFileLib
             }
             return area > 0;
         }
+
+        /// <summary>
+        /// determines if a polygon is a "hole"
+        /// </summary>
+        /// <param name="points"></param>
+        /// <param name="numPoints"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// <para>
+        /// Vertices of a rings defining holes in polygons are in a counterclockwise direction. 
+        /// </para>
+        /// </remarks>
+        public static unsafe bool IsPolygonHole(IList<PointD> points, int numPoints)
+        {
+            //if we are detecting holes then we need to calculate the area
+            double area = 0;
+            int j = numPoints - 1;
+            for (int i = 0; i < numPoints; ++i)
+            {
+                area += (points[j].X * points[i].Y - points[i].X * points[j].Y);
+                j = i;
+            }
+           
+            return area > 0;
+        }
+       
 
         /// <summary>
         /// 
@@ -1117,6 +1144,120 @@ namespace EGIS.ShapeFileLib
                 inside = insideBounds;
             }
 
+        }
+
+
+        public static void PolygonClip(PointD[] inputPolygon, int inputCount, ClipBounds clipBounds, List<PointD> clippedPolygon)
+        {
+            List<PointD> inputList = new List<PointD>(inputCount);
+            List<PointD> outputList = clippedPolygon;
+            bool previousInside;
+            for (int n = 0; n < inputCount; ++n)
+            {
+                inputList.Add(inputPolygon[n]);
+            }
+
+            bool inputPolygonIsHole = IsPolygonHole(inputPolygon, inputCount);
+            
+            
+            //test left
+            previousInside = inputList[inputList.Count - 1].X >= clipBounds.XMin; 
+            outputList.Clear();
+            for (int n = 0; n < inputList.Count; ++n)
+            {
+                PointD currentPoint = inputList[n];
+                bool currentInside = currentPoint.X >= clipBounds.XMin;
+                if (currentInside != previousInside)
+                {
+                    //add intersection
+                    PointD prevPoint = n==0 ? inputList[inputList.Count-1] : inputList[n-1];
+                    double x = clipBounds.XMin;
+                    double y = prevPoint.Y + (currentPoint.Y-prevPoint.Y)*(x-prevPoint.X)/(currentPoint.X-prevPoint.X);
+                    outputList.Add(new PointD(x, y));   
+                }
+                if (currentInside)
+                {
+                    outputList.Add(currentPoint);
+                }
+                previousInside = currentInside;
+            }
+            if (outputList.Count == 0) return;
+
+            //test top
+            inputList = outputList.ToList();
+            previousInside = inputList[inputList.Count - 1].Y <= clipBounds.YMax; ;
+            outputList.Clear();
+            for (int n = 0; n < inputList.Count; ++n)
+            {
+                PointD currentPoint = inputList[n];
+                bool currentInside = currentPoint.Y <= clipBounds.YMax;                
+                if (currentInside != previousInside)
+                {
+                    //add intersection
+                    PointD prevPoint = n == 0 ? inputList[inputList.Count - 1] : inputList[n - 1];
+                    double y = clipBounds.YMax;
+                    double x = prevPoint.X + (currentPoint.X - prevPoint.X) * (y - prevPoint.Y) / (currentPoint.Y - prevPoint.Y);
+                    outputList.Add(new PointD(x, y));
+                }
+                if (currentInside)
+                {
+                    outputList.Add(currentPoint);
+                }
+                previousInside = currentInside;
+            }
+            if (outputList.Count == 0) return;
+
+            //test right
+            inputList = outputList.ToList();
+            previousInside = inputList[inputList.Count - 1].X <= clipBounds.XMax;
+            outputList.Clear();
+            for (int n = 0; n < inputList.Count; ++n)
+            {
+                PointD currentPoint = inputList[n];
+                bool currentInside = currentPoint.X <= clipBounds.XMax;
+                if (currentInside != previousInside)
+                {
+                    //add intersection
+                    PointD prevPoint = n == 0 ? inputList[inputList.Count - 1] : inputList[n - 1];
+                    double x = clipBounds.XMax;
+                    double y = prevPoint.Y + (currentPoint.Y - prevPoint.Y) * (x - prevPoint.X) / (currentPoint.X - prevPoint.X);
+                    outputList.Add(new PointD(x, y));
+                }
+                if (currentInside)
+                {
+                    outputList.Add(currentPoint);
+                }
+                previousInside = currentInside;
+            }
+            if (outputList.Count == 0) return;
+
+            //test bottom
+            inputList = outputList.ToList();
+            previousInside = inputList[inputList.Count - 1].Y >= clipBounds.YMin;
+            outputList.Clear();
+            for (int n = 0; n < inputList.Count; ++n)
+            {
+                PointD currentPoint = inputList[n];
+                bool currentInside = currentPoint.Y >= clipBounds.YMin;
+                if (currentInside != previousInside)
+                {
+                    //add intersection
+                    PointD prevPoint = n == 0 ? inputList[inputList.Count - 1] : inputList[n - 1];
+                    double y = clipBounds.YMin;
+                    double x = prevPoint.X + (currentPoint.X - prevPoint.X) * (y - prevPoint.Y) / (currentPoint.Y - prevPoint.Y);
+                    outputList.Add(new PointD(x, y));
+                }
+                if (currentInside)
+                {
+                    outputList.Add(currentPoint);
+                }
+                previousInside = currentInside;
+            }
+            if (outputList.Count == 0) return;
+
+            bool clippedPolygonIsHole = IsPolygonHole(outputList, outputList.Count);
+            if (clippedPolygonIsHole != inputPolygonIsHole) outputList.Reverse();
+            //clippedPolygon
         }
 
 
