@@ -33,6 +33,7 @@ using System.Drawing;
 using System.Collections.Generic;
 using System.Xml;
 using System.Security.Permissions;
+using EGIS.Projections;
 
 [assembly: CLSCompliant(true)]
 //give the EGIS.Controls access to the internal methods
@@ -240,7 +241,29 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        private string projectionWkt;
+
         public string ProjectionWKT
+        {
+            get
+            {
+                return this.projectionWkt;
+            }
+            private set
+            {
+                this.projectionWkt = value;
+                if (!string.IsNullOrEmpty(value))
+                {
+                    this.CoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(value);
+                }
+                else
+                {
+                    CoordinateReferenceSystem = null;
+                }
+            }
+        }
+
+        public ICRS CoordinateReferenceSystem
         {
             get;
             private set;
@@ -282,22 +305,22 @@ namespace EGIS.ShapeFileLib
 			}
 		}
 
-        /// <summary>
-        /// Returns the actual ShapeFile Extent in unprojected coordinates
-        /// </summary>
-        /// <remarks>The returned rectanlge is the extent contained in the shapefile's header</remarks>
-        /// <returns></returns>
-        public RectangleF GetActualExtent()
-        {
-            if (sfRecordCol != null)
-            {
-                return RectangleF.FromLTRB((float)sfRecordCol.MainHeader.Xmin, (float)sfRecordCol.MainHeader.Ymin, (float)sfRecordCol.MainHeader.Xmax, (float)sfRecordCol.MainHeader.Ymax);                
-            }
-            else
-            {
-                return RectangleF.Empty;
-            }
-        }
+        ///// <summary>
+        ///// Returns the actual ShapeFile Extent in unprojected coordinates
+        ///// </summary>
+        ///// <remarks>The returned rectanlge is the extent contained in the shapefile's header</remarks>
+        ///// <returns></returns>
+        //public RectangleF GetActualExtent()
+        //{
+        //    if (sfRecordCol != null)
+        //    {
+        //        return RectangleF.FromLTRB((float)sfRecordCol.MainHeader.Xmin, (float)sfRecordCol.MainHeader.Ymin, (float)sfRecordCol.MainHeader.Xmax, (float)sfRecordCol.MainHeader.Ymax);                
+        //    }
+        //    else
+        //    {
+        //        return RectangleF.Empty;
+        //    }
+        //}
 
         /// <summary>
         /// Returns a projected point to its Lat Long equivalent 
@@ -330,6 +353,36 @@ namespace EGIS.ShapeFileLib
         }
 
 
+        public static RectangleD ConvertExtent(RectangleD sourceExtent, ICRS source, ICRS target)
+        {
+            if (source == null || target == null || source.IsEquivalent(target)) return sourceExtent;
+            ICoordinateTransformation transformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(source, target);
+
+            double[] pts = new double[8];
+            RectangleD r = sourceExtent;
+            pts[0] = r.Left; pts[1] = r.Bottom;
+            pts[2] = r.Right; pts[3] = r.Bottom;
+            pts[4] = r.Right; pts[5] = r.Top;
+            pts[6] = r.Left; pts[7] = r.Top;
+            transformation.Transform(pts, 4);
+            return RectangleD.FromLTRB(Math.Min(pts[0], pts[6]),
+                Math.Min(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
+                Math.Max(pts[1], pts[3]));
+        }
+
+        public static RectangleD ConvertExtent(RectangleD sourceExtent, ICoordinateTransformation transformation)
+        {           
+            double[] pts = new double[8];
+            RectangleD r = sourceExtent;
+            pts[0] = r.Left; pts[1] = r.Bottom;
+            pts[2] = r.Right; pts[3] = r.Bottom;
+            pts[4] = r.Right; pts[5] = r.Top;
+            pts[6] = r.Left; pts[7] = r.Top;
+            transformation.Transform(pts, 4);
+            return RectangleD.FromLTRB(Math.Min(pts[0], pts[6]),
+                Math.Min(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
+                Math.Max(pts[1], pts[3]));
+        }
 
         /// <summary>
         /// Gets the rectangular extent of each shape in the shapefile
@@ -560,6 +613,29 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        void Render(Graphics g, Size clientArea, RectangleD extent, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation)
+        {
+            //convert extent from the target coordinates to the shapefile coordinates
+            ICoordinateTransformation invTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+
+            double[] pts = new double[8];
+            RectangleD r = extent;
+            pts[0] = r.Left; pts[1] = r.Bottom;
+            pts[2] = r.Right; pts[3] = r.Bottom;
+            pts[4] = r.Right; pts[5] = r.Top;
+            pts[6] = r.Left; pts[7] = r.Top;
+            invTransformation.Transform(pts, 4);
+            r = RectangleD.FromLTRB(Math.Min(pts[0], pts[6]), 
+                Math.Min(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
+                Math.Max(pts[1], pts[3]));
+
+            if (!r.IntersectsWith(ShapeFile.LLExtentToProjectedExtent(Extent, projectionType))) return;
+            if (sfRecordCol != null)
+            {
+                sfRecordCol.paint(g, clientArea, r, shapeFileStream, RenderSettings, projectionType, coordinateTransformation, extent);
+            }
+        }
+
 
 
         /// <summary>
@@ -606,6 +682,34 @@ namespace EGIS.ShapeFileLib
             this.RenderInternal(graphics, clientArea, centre, zoom, this.RenderSettings, projectionType);
         }
 
+        /// <summary>
+        /// Renders the shapefile centered at given point and zoom
+        /// </summary>
+        /// <param name="graphics">The Graphics device to render to</param>
+        /// <param name="clientArea">The client area in pixels to draw </param>
+        /// <param name="centre">The centre point in the ShapeFiles coordinates</param>
+        /// <param name="zoom">The scaling to apply</param>
+        /// <param name="projectionType">The Map Projection to use when rendering the shapefile</param>
+        /// <param name="targetCRS"></param>
+        /// <remarks>
+        /// If zoom is 1 and the width of the ShapeFile's extent is N units wide, then the
+        /// ShapeFile wil be rendered N pixels wide. If zoom is 2 then shapefile will be rendered 2N pixels wide
+        /// </remarks>
+        public void Render(Graphics graphics, Size clientArea, PointD centre, double zoom, ProjectionType projectionType, ICRS targetCRS)
+        {
+            if(targetCRS == null || this.CoordinateReferenceSystem == null ||
+                this.CoordinateReferenceSystem.IsEquivalent(targetCRS))
+            {
+                //either target or this CRS is null or they are equivalent
+                this.RenderInternal(graphics, clientArea, centre, zoom, this.RenderSettings, projectionType);
+            }
+            else
+            {
+                ICoordinateTransformation coordinateTransformation =  EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(this.CoordinateReferenceSystem, targetCRS);
+                this.RenderInternal(graphics, clientArea, centre, zoom, this.RenderSettings, projectionType, coordinateTransformation);
+            }
+        }
+
 
         internal void RenderInternal(Graphics graphics, Size clientArea, PointF centre, float zoom, RenderSettings renderSetings, ProjectionType projectionType)
         {
@@ -633,6 +737,20 @@ namespace EGIS.ShapeFileLib
             double sy = clientArea.Height * zoom;
             RectangleD r = RectangleD.FromLTRB((centre.X - (sx * 0.5f)), (centre.Y - (sy * 0.5f)), (centre.X + (sx * 0.5f)), (centre.Y + (sy * 0.5f)));
             Render(graphics, clientArea, r, renderSetings, projectionType);
+        }
+
+        internal void RenderInternal(Graphics graphics, Size clientArea, PointD centre, double zoom, RenderSettings renderSetings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation)
+        {
+            if (!IsVisibleAtZoomLevel((float)zoom))
+            {
+                return;
+            }
+            if (zoom <= double.Epsilon) throw new ArgumentException("zoom can not be <= zero");
+            zoom = 1d / zoom;
+            double sx = clientArea.Width * zoom;
+            double sy = clientArea.Height * zoom;
+            RectangleD r = RectangleD.FromLTRB((centre.X - (sx * 0.5f)), (centre.Y - (sy * 0.5f)), (centre.X + (sx * 0.5f)), (centre.Y + (sy * 0.5f)));
+            Render(graphics, clientArea, r, renderSetings, projectionType, coordinateTransformation);
         }
 
 
@@ -1142,8 +1260,8 @@ namespace EGIS.ShapeFileLib
 
         private void CreateQuadTree(SFRecordCol col)
         {
-            RectangleF r = GetActualExtent();
-            r.Inflate(r.Width * 0.05f, r.Height * 0.05f);
+            RectangleD r = Extent;
+            r.Inflate(r.Width * 0.05, r.Height * 0.05);
             shapeQuadTree = new QuadTree(r);
             QTNodeHelper helper = (QTNodeHelper)col;
             for (int n = 0; n < col.RecordHeaders.Length; n++)
@@ -2318,7 +2436,13 @@ namespace EGIS.ShapeFileLib
 
 		public abstract void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType);
 
-		public abstract void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType);
+		public abstract void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent);
+
+        public void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        {
+            paint(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, null, RectangleD.Empty);
+        }
+
 
         public abstract List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream);
         public abstract List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer);
@@ -3433,7 +3557,7 @@ namespace EGIS.ShapeFileLib
             paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             if (this.UseGDI(extent, renderSettings))
             {
@@ -4284,7 +4408,7 @@ namespace EGIS.ShapeFileLib
             paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             bool useGDI = (this.UseGDI(extent, renderSettings) && renderSettings.GetImageSymbol()==null);
 
@@ -5075,7 +5199,7 @@ namespace EGIS.ShapeFileLib
             paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             bool useGDI = (this.UseGDI(extent, renderSettings) && renderSettings.GetImageSymbol() == null);
 
@@ -5826,7 +5950,7 @@ namespace EGIS.ShapeFileLib
             paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             bool useGDI = (this.UseGDI(extent, renderSettings) && renderSettings.GetImageSymbol() == null);
 
@@ -6634,7 +6758,7 @@ namespace EGIS.ShapeFileLib
             paint(g, clientArea, extent, shapeFileStream, null, projectionType);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             bool useGDI = (this.UseGDI(extent, renderSettings) && renderSettings.GetImageSymbol() == null);
 
@@ -7413,10 +7537,10 @@ namespace EGIS.ShapeFileLib
 
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
-            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType, null, RectangleD.Empty);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             if (this.UseGDI(extent, renderSettings))
             {
@@ -8559,23 +8683,25 @@ namespace EGIS.ShapeFileLib
 
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
-            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType, null, RectangleD.Empty);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
+            DateTime tick = DateTime.Now;
             if (this.UseGDI(extent, renderSettings))
             {
-                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
+                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
             }
             else
             {
-                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType);
+                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
             }
+            Console.Out.WriteLine("render time:" + DateTime.Now.Subtract(tick).TotalSeconds + "s");
 
         }
 
-        private unsafe void PaintHighQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        private unsafe void PaintHighQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             Pen gdiplusPen = null;
             Pen rwPen = null;
@@ -8589,7 +8715,8 @@ namespace EGIS.ShapeFileLib
             byte* dataPtr = null;
             if (fileMappingPtr != IntPtr.Zero)
             {
-                mapView = NativeMethods.MapViewOfFile(fileMappingPtr, NativeMethods.FileMapAccess.FILE_MAP_READ, 0, 0, 0);
+                //mapView = NativeMethods.MapViewOfFile(fileMappingPtr, NativeMethods.FileMapAccess.FILE_MAP_READ, 0, 0, 0);
+                mapView = NativeMethods.MapViewOfFile(fileMappingPtr, NativeMethods.FileMapAccess.FILE_MAP_WRITE, 0, 0, 0);
             }
             bool fileMapped = (mapView != IntPtr.Zero);
 
@@ -8600,10 +8727,28 @@ namespace EGIS.ShapeFileLib
                 double scaleX = (double)(clientArea.Width / extent.Width);
                 double scaleY = -scaleX;
 
-                RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+                //RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+
+                RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, extent.Width, extent.Width* (double)clientArea.Height /(double)clientArea.Width);
+
                 double offX = -projectedExtent.Left;
                 double offY = -projectedExtent.Bottom;
                 RectangleD actualExtent = projectedExtent;
+
+                if (coordinateTransformation != null)
+                {
+                   // RectangleD targetExtent = ShapeFile.ConvertExtent(extent, coordinateTransformation);
+                    scaleX = (double)(clientArea.Width / targetExtent.Width);
+                    scaleY = -scaleX;
+
+                    projectedExtent = new RectangleD(targetExtent.Left, targetExtent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+
+                    offX = -projectedExtent.Left;
+                    offY = -projectedExtent.Bottom;
+                    //actualExtent = projectedExtent;
+                    actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                }
+
 
                 if (MercProj)
                 {
@@ -8732,8 +8877,16 @@ namespace EGIS.ShapeFileLib
                                     //overwrite if using CustomRenderSettings
                                     if (useCustomRenderSettings) renderShape = customRenderSettings.RenderShape(index);
 
-                                    if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && renderShape )
+                                    if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && renderShape)
                                     {
+
+                                        //if coordinateTransformation not null then transform the points
+                                        if (coordinateTransformation != null)
+                                        {
+                                            coordinateTransformation.Transform((double*)(dataPtr + 8 + dataOffset), nextRec->NumPoints);
+                                        }
+
+
                                         int numParts = nextRec->NumParts;
                                         Point[] pts;
 
@@ -8796,7 +8949,7 @@ namespace EGIS.ShapeFileLib
                                                 gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                                                 if (renderSettings.LineType == LineType.Solid)
                                                 {
-                                                    gdiplusPen.DashStyle = renderSettings.LineDashStyle;                                                    
+                                                    gdiplusPen.DashStyle = renderSettings.LineDashStyle;
                                                 }
                                             }
                                         }
@@ -8816,7 +8969,7 @@ namespace EGIS.ShapeFileLib
                                             {
                                                 continue;
                                             }
-                                           
+
                                             pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, MercProj);
 
                                             //add any labels to the poly-lines
@@ -8834,13 +8987,13 @@ namespace EGIS.ShapeFileLib
                                                 }
                                             }
 
-                                            if(recordSelected[index] && selectPen != null)
+                                            if (recordSelected[index] && selectPen != null)
                                             {
                                                 g.DrawLines(selectPen, pts);
                                             }
                                             else
                                             {
-                                                g.DrawLines(gdiplusPen, pts);
+                                                //g.DrawLines(gdiplusPen, pts);
                                             }
                                             if (renderRailway)
                                             {
@@ -8892,11 +9045,16 @@ namespace EGIS.ShapeFileLib
                                                 }
                                                 finally
                                                 {
-                                                    g.Transform =  savedMatrix;                                                    
+                                                    g.Transform = savedMatrix;
                                                 }
                                             }
                                         }
-                                    }                                    
+                                    }
+                                    //else
+                                    //{
+                                    //    int sd = 0;
+                                    //    //Console.Out.WriteLine(
+                                    //}
                                     ++index;
                                 }
                             }
@@ -8985,7 +9143,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        private unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        private unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             IntPtr dc = IntPtr.Zero;
             IntPtr gdiPen = IntPtr.Zero;
@@ -8998,7 +9156,8 @@ namespace EGIS.ShapeFileLib
             byte* dataPtr = null;
             if (fileMappingPtr != IntPtr.Zero)
             {
-                mapView = NativeMethods.MapViewOfFile(fileMappingPtr, NativeMethods.FileMapAccess.FILE_MAP_READ, 0, 0, 0);
+               // mapView = NativeMethods.MapViewOfFile(fileMappingPtr, NativeMethods.FileMapAccess.FILE_MAP_READ, 0, 0, 0);
+                mapView = NativeMethods.MapViewOfFile(fileMappingPtr, NativeMethods.FileMapAccess.FILE_MAP_READ , 0, 0, 0);
             }
             bool fileMapped = (mapView != IntPtr.Zero);
             
@@ -9009,6 +9168,20 @@ namespace EGIS.ShapeFileLib
             double offX = -projectedExtent.Left;
             double offY = -projectedExtent.Bottom;
             RectangleD actualExtent = projectedExtent;
+
+            if (coordinateTransformation != null)
+            {
+                // RectangleD targetExtent = ShapeFile.ConvertExtent(extent, coordinateTransformation);
+                scaleX = (double)(clientArea.Width / targetExtent.Width);
+                scaleY = -scaleX;
+
+                projectedExtent = new RectangleD(targetExtent.Left, targetExtent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
+
+                offX = -projectedExtent.Left;
+                offY = -projectedExtent.Bottom;
+                //actualExtent = projectedExtent;
+                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+            }
 
             bool MercProj = projectionType == ProjectionType.Mercator;
 
@@ -9132,6 +9305,13 @@ namespace EGIS.ShapeFileLib
 
                                 if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && renderShape)
                                 {
+
+                                    //if coordinateTransformation not null then transform the points
+                                    if (coordinateTransformation != null)
+                                    {
+                                        coordinateTransformation.Transform((double*)(dataPtr + 8 + dataOffset), nextRec->NumPoints);
+                                    }
+
                                     int numParts = nextRec->NumParts;
                                     Point[] pts;
 
@@ -9705,10 +9885,10 @@ namespace EGIS.ShapeFileLib
 
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
-            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType, null,RectangleD.Empty);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             if (this.UseGDI(extent, renderSettings))
             {
@@ -10594,10 +10774,10 @@ namespace EGIS.ShapeFileLib
 
         public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, ProjectionType projectionType)
         {
-            paint(g, clientArea, extent, shapeFileStream, null, projectionType);
+            paint(g, clientArea, extent, shapeFileStream, null, projectionType, null, RectangleD.Empty);
         }
 
-        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType)
+        public override void paint(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             if (this.UseGDI(extent, renderSettings))
             {

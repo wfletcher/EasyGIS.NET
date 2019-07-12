@@ -181,6 +181,10 @@
       <Project>{EB97525D-0906-4A14-A995-93667B565521}</Project>
       <Name>EGIS.Controls</Name>
     </ProjectReference>
+    <ProjectReference Include="..\EGIS.Projections\EGIS.Projections.csproj">
+      <Project>{9b3d02d0-d57d-4e7d-a04c-9ddcb36f0ce7}</Project>
+      <Name>EGIS.Projections</Name>
+    </ProjectReference>
     <ProjectReference Include="..\egis.ShapeFileLib\EGIS.ShapeFileLib.csproj">
       <Project>{C89DEB9B-4DCA-4792-B216-F00808606AF7}</Project>
       <Name>EGIS.ShapeFileLib</Name>

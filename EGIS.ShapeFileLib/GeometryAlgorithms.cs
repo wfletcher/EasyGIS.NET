@@ -369,7 +369,8 @@ namespace EGIS.ShapeFileLib
         public static double ClosestPointOnPolyline(PointD[] points, int offset, int numPoints, PointD pt)
         {
             double closestDistance = double.PositiveInfinity;
-            for (int i = offset; i < numPoints - 1; i++)
+            int end = offset + numPoints - 1;
+            for (int i = offset; i < end; i++)
             {
                 double segmentDistance = LineSegPointDist(ref points[i], ref points[i + 1], ref pt);
                 if (segmentDistance < closestDistance) closestDistance = segmentDistance;
@@ -400,7 +401,9 @@ namespace EGIS.ShapeFileLib
             closestPoint = PointD.Empty;
             segmentIndex = offset;
 
-            for (int i = offset; i < numPoints - 1; i++)
+            //for (int i = offset; i < numPoints - 1; i++)
+            int end = offset + numPoints - 1;
+            for (int i = offset; i < end; i++)
             {
                 double t;
                 PointD segmentPoint;
@@ -419,7 +422,9 @@ namespace EGIS.ShapeFileLib
         {
             polylineDistanceInfo = PolylineDistanceInfo.Empty;
             
-            for (int i = offset; i < numPoints - 1; i++)
+            //for (int i = offset; i < numPoints - 1; i++)
+            int end = offset + numPoints - 1;
+            for (int i = offset; i < end; i++)
             {
                 double segmentDistance = LineSegPointDist(ref points[i], ref points[i + 1], ref pt, ref polylineDistanceInfo);
                 if (segmentDistance < polylineDistanceInfo.Distance)
@@ -618,7 +623,7 @@ namespace EGIS.ShapeFileLib
             return pointSegmentDistance;
         }
 
-        internal static double LineSegPointDist(ref PointD a, ref PointD b, ref PointD c, ref PolylineDistanceInfo polylineDistanceInfo)
+        public static double LineSegPointDist(ref PointD a, ref PointD b, ref PointD c, ref PolylineDistanceInfo polylineDistanceInfo)
         {
             double pointSegmentDistance;
             if (Dot(ref a, ref b, ref c) > 0)

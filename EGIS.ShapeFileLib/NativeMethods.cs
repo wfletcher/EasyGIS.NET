@@ -93,6 +93,7 @@ namespace EGIS.ShapeFileLib
             return CreateFileMapping(fs.SafeFileHandle, IntPtr.Zero, /*fs.CanWrite ? PAGE_READWRITE :*/ PAGE_READONLY, 0, 0, null);
         }
 
+        [Flags]
         internal enum FileMapAccess { FILE_MAP_WRITE = 0x02, FILE_MAP_READ = 0x04 };
 
         [DllImport("kernel32.dll", SetLastError = true)]

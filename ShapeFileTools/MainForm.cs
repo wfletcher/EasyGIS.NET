@@ -83,6 +83,13 @@ namespace egis
         private void MainForm_Load(object sender, EventArgs e)
         {
             CheckLicence();
+
+            try            
+            {
+                var crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+                this.sfMap1.MapCoordinateReferenceSystem = crs;
+            }
+            catch { }
         }
 
 
@@ -1745,6 +1752,15 @@ namespace egis
 
 
 
+        }
+
+        private void setCRSToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (EGIS.Controls.CRSSelectionForm form = new EGIS.Controls.CRSSelectionForm())
+            {
+                form.ShowDialog(this);
+                this.sfMap1.MapCoordinateReferenceSystem = form.SelectedCRS;
+            }
         }
     }
   

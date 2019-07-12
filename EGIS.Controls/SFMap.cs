@@ -35,6 +35,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Xml;
 using EGIS.ShapeFileLib;
+using EGIS.Projections;
 
 [assembly: CLSCompliant(true)]
 namespace EGIS.Controls
@@ -322,7 +323,7 @@ namespace EGIS.Controls
             if (_useBalloonToolTip)
             {
                 this.toolTipOffset = new Point(5, 5);
-            }                    
+            }                                
         }
 
         #region XmlMethods
@@ -591,13 +592,32 @@ namespace EGIS.Controls
             }
         }
 
-        //private void UpdateLayersProjectionType(ProjectionType projectionType)
+        /// <summary>
+        /// Get/Set the map Coordinate Reference System
+        /// </summary>
+        public ICRS MapCoordinateReferenceSystem
+        {
+            get;
+            set;
+        }
+
+        //public static RectangleD ConvertExtent(RectangleD sourceExtent, ICRS source, ICRS target)
         //{
-        //    foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
-        //    {
-        //        sf.MapProjectionType = projectionType;                
-        //    }
+        //    if (source == null || target == null || source.IsEquivalent(target)) return sourceExtent;
+        //    ICoordinateTransformation transformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(source, target);
+
+        //    double[] pts = new double[8];
+        //    RectangleD r = sourceExtent;
+        //    pts[0] = r.Left; pts[1] = r.Bottom;
+        //    pts[2] = r.Right; pts[3] = r.Bottom;
+        //    pts[4] = r.Right; pts[5] = r.Top;
+        //    pts[6] = r.Left; pts[7] = r.Top;
+        //    transformation.Transform(pts, 4);
+        //    return RectangleD.FromLTRB(Math.Min(pts[0], pts[6]),
+        //        Math.Max(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
+        //        Math.Min(pts[1], pts[3]));
         //}
+
 
         /// <summary>
         /// Convenience method to set the ZoomLevel and CentrePoint in one method
@@ -845,10 +865,17 @@ namespace EGIS.Controls
                 }
                 else
                 {
-                    RectangleD r = myShapefiles[0].Extent;
+                   // RectangleD r1 = myShapefiles[0].Extent;
+                    //Console.Out.WriteLine("r1 = " + r1);
+
+                    RectangleD r = ShapeFile.ConvertExtent(myShapefiles[0].Extent, myShapefiles[0].CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+
+                    //RectangleD r2 = ShapeFile.ConvertExtent(r, this.MapCoordinateReferenceSystem, myShapefiles[0].CoordinateReferenceSystem);
+                     
                     foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
                     {
-                        r = RectangleD.Union(r, sf.Extent);
+                        var extent = ShapeFile.ConvertExtent(sf.Extent, myShapefiles[0].CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+                        r = RectangleD.Union(r, extent);
                     }
                     return r;
                 }
@@ -1131,7 +1158,7 @@ namespace EGIS.Controls
                 this.OnPaintMapBackground(new PaintEventArgs(g, new Rectangle(0,0,this.ClientSize.Width, this.ClientSize.Height)));
                 foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
                 {
-                    sf.Render(g, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType);
+                    sf.Render(g, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
                 }
             }
             finally

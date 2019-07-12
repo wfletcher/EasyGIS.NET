@@ -42,6 +42,9 @@ namespace EGIS.Projections
             }
         }
 
+        public const int Wgs84EpsgCode = 4326;
+
+
         private void LoadData()
         {
             var resourceName = "EGIS.Projections.SRID.csv.gz";
@@ -72,6 +75,11 @@ namespace EGIS.Projections
                         ++count;
                         ICRS crs = Proj6.CRS.FromWKT(wkt.WKT);
                         if(crs == null) continue;
+
+                        if (string.IsNullOrEmpty(crs.Id))
+                        {
+                            ((Proj6.CRS)crs).Id = wkt.WKID.ToString();
+                        }
                         
                         coordinateSystems.Add(wkt.WKID, wkt.WKT);
                         if (crs as IGeographicCRS != null)
@@ -127,7 +135,12 @@ namespace EGIS.Projections
             string wkt;
             if (this.coordinateSystems.TryGetValue(id, out wkt))
             {
-                return CreateCRSFromWKT(wkt);
+                ICRS crs =  CreateCRSFromWKT(wkt);
+                if (string.IsNullOrEmpty(crs.Id))
+                {
+                    ((Proj6.CRS)crs).Id = id.ToString();
+                }
+                return crs;
             }
             return null;
         }

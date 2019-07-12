@@ -37,7 +37,7 @@ namespace EGIS.ShapeFileLib
     {
         private QTNode rootNode;
 
-        public QuadTree(RectangleF bounds)
+        public QuadTree(RectangleD bounds)
         {
             rootNode = new QTNode(bounds, 0);
         }

@@ -34,6 +34,12 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>egis.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -54,7 +60,9 @@
   <ItemGroup>
     <EmbeddedResource Include="SRID.csv.gz" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="egis.snk" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="Proj6\x64\proj_6_1.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

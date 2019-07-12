@@ -58,6 +58,12 @@ namespace EGIS.Projections
 
             }
 
+            public override string ToString()
+            {
+                if (!string.IsNullOrEmpty(Authority)) return string.Format("{0} [{1}:{2}]", Name, Authority, Id);
+                if( !string.IsNullOrEmpty(Id)) return string.Format("{0} [{1}]", Name, Id);
+                return Name;
+            }
 
             public static CRS FromWKT(string wkt)
             {
@@ -69,7 +75,25 @@ namespace EGIS.Projections
                     string name = Proj6Native.GetName(p);
                     string authName = Proj6Native.GetAuthName(p);
                     string id = Proj6Native.ProjGetIdCode(p);
-                        
+
+                    //string axisName;
+                    //string axisAbbrev;
+                    //string axisDirection;
+                    //double unit_conv_factor=1;
+                    //string unit_name;
+                    //string unit_auth_name;
+                    //string unit_code;
+
+                    //int axisCount = Proj6Native.proj_cs_get_axis_count(IntPtr.Zero, p);
+
+                    //if (axisCount > 0)
+                    //{
+                    //    if (Proj6Native.Proj_cs_get_axis_info(IntPtr.Zero, p, 0, out axisName, out axisAbbrev, out axisDirection, out unit_conv_factor, out unit_name, out unit_auth_name, out unit_code))
+                    //    {
+                    //        Console.Out.WriteLine(axisName);
+                    //    }
+                    //}
+
                     if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_2D_CRS)
                     {
                         return new GeographicCRS()

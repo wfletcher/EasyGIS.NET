@@ -100,6 +100,7 @@ namespace egis
             this.sfdMapImage = new System.Windows.Forms.SaveFileDialog();
             this.shapeFileListControl1 = new EGIS.Controls.ShapeFileListControl();
             this.sfMap1 = new EGIS.Controls.SFMap();
+            this.setCRSToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.mainToolStrip.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -240,6 +241,7 @@ namespace egis
             this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miMapBackgroundColor,
             this.miMercatorProjection,
+            this.setCRSToolStripMenuItem,
             this.toolStripSeparator8,
             this.renderQualityToolStripMenuItem,
             this.useNativeFileMappingToolStripMenuItem,
@@ -738,6 +740,13 @@ namespace egis
             this.sfMap1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseMove);
             this.sfMap1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseUp);
             // 
+            // setCRSToolStripMenuItem
+            // 
+            this.setCRSToolStripMenuItem.Name = "setCRSToolStripMenuItem";
+            this.setCRSToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
+            this.setCRSToolStripMenuItem.Text = "Set CRS";
+            this.setCRSToolStripMenuItem.Click += new System.EventHandler(this.setCRSToolStripMenuItem_Click);
+            // 
             // MainForm
             // 
             this.AllowDrop = true;
@@ -843,6 +852,7 @@ namespace egis
         private System.Windows.Forms.ToolStripMenuItem miZoomToExtentWhenCtrlkeyDown;
         private System.Windows.Forms.ToolStripMenuItem exportProjectforUseInWebEditionAsSingleZIPFileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addXYDatacsvToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem setCRSToolStripMenuItem;
     }
 }
 
