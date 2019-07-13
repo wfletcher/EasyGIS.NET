@@ -49,6 +49,7 @@ namespace egis
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.miMapBackgroundColor = new System.Windows.Forms.ToolStripMenuItem();
             this.miMercatorProjection = new System.Windows.Forms.ToolStripMenuItem();
+            this.setCRSToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
             this.renderQualityToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.highToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -100,7 +101,6 @@ namespace egis
             this.sfdMapImage = new System.Windows.Forms.SaveFileDialog();
             this.shapeFileListControl1 = new EGIS.Controls.ShapeFileListControl();
             this.sfMap1 = new EGIS.Controls.SFMap();
-            this.setCRSToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.mainToolStrip.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -267,6 +267,13 @@ namespace egis
             this.miMercatorProjection.Size = new System.Drawing.Size(315, 22);
             this.miMercatorProjection.Text = "Mercator Projection";
             this.miMercatorProjection.Click += new System.EventHandler(this.miMercatorProjection_Click);
+            // 
+            // setCRSToolStripMenuItem
+            // 
+            this.setCRSToolStripMenuItem.Name = "setCRSToolStripMenuItem";
+            this.setCRSToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
+            this.setCRSToolStripMenuItem.Text = "Set CRS";
+            this.setCRSToolStripMenuItem.Click += new System.EventHandler(this.setCRSToolStripMenuItem_Click);
             // 
             // toolStripSeparator8
             // 
@@ -721,6 +728,7 @@ namespace egis
             this.sfMap1.CentrePoint2D = ((EGIS.ShapeFileLib.PointD)(resources.GetObject("sfMap1.CentrePoint2D")));
             this.sfMap1.Location = new System.Drawing.Point(267, 68);
             this.sfMap1.MapBackColor = System.Drawing.SystemColors.Control;
+            this.sfMap1.MapCoordinateReferenceSystem = null;
             this.sfMap1.Name = "sfMap1";
             this.sfMap1.PanSelectMode = EGIS.Controls.PanSelectMode.Pan;
             this.sfMap1.RenderQuality = EGIS.ShapeFileLib.RenderQuality.Auto;
@@ -739,13 +747,6 @@ namespace egis
             this.sfMap1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseDown);
             this.sfMap1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseMove);
             this.sfMap1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseUp);
-            // 
-            // setCRSToolStripMenuItem
-            // 
-            this.setCRSToolStripMenuItem.Name = "setCRSToolStripMenuItem";
-            this.setCRSToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
-            this.setCRSToolStripMenuItem.Text = "Set CRS";
-            this.setCRSToolStripMenuItem.Click += new System.EventHandler(this.setCRSToolStripMenuItem_Click);
             // 
             // MainForm
             // 

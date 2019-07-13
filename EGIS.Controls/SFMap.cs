@@ -601,23 +601,7 @@ namespace EGIS.Controls
             set;
         }
 
-        //public static RectangleD ConvertExtent(RectangleD sourceExtent, ICRS source, ICRS target)
-        //{
-        //    if (source == null || target == null || source.IsEquivalent(target)) return sourceExtent;
-        //    ICoordinateTransformation transformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(source, target);
-
-        //    double[] pts = new double[8];
-        //    RectangleD r = sourceExtent;
-        //    pts[0] = r.Left; pts[1] = r.Bottom;
-        //    pts[2] = r.Right; pts[3] = r.Bottom;
-        //    pts[4] = r.Right; pts[5] = r.Top;
-        //    pts[6] = r.Left; pts[7] = r.Top;
-        //    transformation.Transform(pts, 4);
-        //    return RectangleD.FromLTRB(Math.Min(pts[0], pts[6]),
-        //        Math.Max(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
-        //        Math.Min(pts[1], pts[3]));
-        //}
-
+        
 
         /// <summary>
         /// Convenience method to set the ZoomLevel and CentrePoint in one method
@@ -874,7 +858,7 @@ namespace EGIS.Controls
                      
                     foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
                     {
-                        var extent = ShapeFile.ConvertExtent(sf.Extent, myShapefiles[0].CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+                        var extent = ShapeFile.ConvertExtent(sf.Extent, sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
                         r = RectangleD.Union(r, extent);
                     }
                     return r;
@@ -967,7 +951,10 @@ namespace EGIS.Controls
         public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName)
         {            
             EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(path, name, labelFieldName);
-            FitToExtent(sf.Extent);
+
+            RectangleD extent = ShapeFile.ConvertExtent(sf.Extent, sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+
+            FitToExtent(extent);
             OnShapeFilesChanged();            
             return sf;
         }
@@ -1119,22 +1106,36 @@ namespace EGIS.Controls
         /// Load optimal render settings
         /// </summary>
         /// <param name="sf"></param>
-        protected static void LoadOptimalRenderSettings(EGIS.ShapeFileLib.ShapeFile sf)
+        protected void LoadOptimalRenderSettings(EGIS.ShapeFileLib.ShapeFile sf)
         {
-            RectangleF r = sf.Extent;
-            if (r.Top > 90 || r.Bottom < -90)
+            try
             {
-                //assume projected coordinates
-                sf.RenderSettings.PenWidthScale = 5;
+                sf.RenderSettings.MaxPixelPenWidth = 10;
+
+                if (this.MapCoordinateReferenceSystem is EGIS.Projections.IProjectedCRS)
+                {
+                    //assume projected coordinates
+                    sf.RenderSettings.PenWidthScale = 5;
+                }
+                else
+                {
+                    RectangleD r = sf.Extent;
+                    double[] pt = new double[]{r.Left + r.Width / 2, r.Top + r.Height / 2};
+                    using (ICoordinateTransformation coordTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem))
+                    {
+
+                        coordTransformation.Transform(pt, 1);
+                        EGIS.ShapeFileLib.UtmCoordinate utm1 = EGIS.ShapeFileLib.ConversionFunctions.LLToUtm(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, pt[1], pt[0]);
+                        EGIS.ShapeFileLib.UtmCoordinate utm2 = utm1;
+                        utm2.Northing += 15;
+                        EGIS.ShapeFileLib.LatLongCoordinate ll = EGIS.ShapeFileLib.ConversionFunctions.UtmToLL(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, utm2);
+                        sf.RenderSettings.PenWidthScale = (float)Math.Abs(ll.Latitude - pt[1]);
+                    }
+                }
             }
-            else
+            catch
             {
-                PointF pt = new PointF(r.Left + r.Width/2, r.Top + r.Height/2);
-                EGIS.ShapeFileLib.UtmCoordinate utm1 = EGIS.ShapeFileLib.ConversionFunctions.LLToUtm(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, pt.Y, pt.X);
-                EGIS.ShapeFileLib.UtmCoordinate utm2 = utm1;
-                utm2.Northing += 15;
-                EGIS.ShapeFileLib.LatLongCoordinate ll = EGIS.ShapeFileLib.ConversionFunctions.UtmToLL(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, utm2);
-                sf.RenderSettings.PenWidthScale = (float)Math.Abs(ll.Latitude - pt.Y);
+                sf.RenderSettings.PenWidthScale = -1;
             }
         }
 

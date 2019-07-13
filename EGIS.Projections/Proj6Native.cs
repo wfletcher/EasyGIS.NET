@@ -111,17 +111,7 @@ namespace EGIS.Projections
             return proj_trans_generic(p, direction, points, 16, pointCount,
                 points + 1, 16, pointCount,
                 null, 0, 0,
-                null, 0, 0);        
-            //double* ptr = points;
-            //for (int n = 0; n < pointCount; ++n)
-            //{
-
-            //    PJ_COORD coord = proj_trans(p, direction, *((PJ_COORD*)ptr));
-            //    *ptr++ = coord.X;
-            //    *ptr++ = coord.Y;
-            //}
-            //return pointCount;
-
+                null, 0, 0);                    
         }
 
         public enum PJ_TYPE
