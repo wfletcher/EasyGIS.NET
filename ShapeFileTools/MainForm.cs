@@ -1758,8 +1758,12 @@ namespace egis
         {
             using (EGIS.Controls.CRSSelectionForm form = new EGIS.Controls.CRSSelectionForm())
             {
-                form.ShowDialog(this);
-                this.sfMap1.MapCoordinateReferenceSystem = form.SelectedCRS;
+                form.SelectedCRS = this.sfMap1.MapCoordinateReferenceSystem;
+                if (form.ShowDialog(this) == DialogResult.OK)
+                {
+                    this.sfMap1.MapCoordinateReferenceSystem = form.SelectedCRS;
+
+                }
             }
         }
     }

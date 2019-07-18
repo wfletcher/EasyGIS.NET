@@ -26,9 +26,15 @@ namespace EGIS.Controls
 
         public void LoadCoordinateSystems(ICRSFactory crsFactory)
         {
+            ICRS crs = SelectedCRS;
             this.crsFactory = crsFactory;
 
             LoadCoordinateSystems();
+
+            if (crs != null)
+            {
+                SelectedCRS = crs;
+            }
         }
 
         public ICRS SelectedCRS
@@ -40,7 +46,7 @@ namespace EGIS.Controls
             set
             {
                 this.selectedCRS = value;
-                UpdateSelectedCRS();
+                UpdateSelectedCRS(true);
             }
         }
 
@@ -66,7 +72,7 @@ namespace EGIS.Controls
             }
         }
 
-        private void UpdateSelectedCRS()
+        private void UpdateSelectedCRS( bool findCrs = false)
         {
             if (this.selectedCRS == null)
             {
@@ -78,6 +84,28 @@ namespace EGIS.Controls
                 int code = 0;
                 int.TryParse(this.selectedCRS.Id, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out code);
                 this.nudEPGS.Value = code;
+
+                if (findCrs && crsFactory!= null)
+                {
+                    int index = crsFactory.GeographicCoordinateSystems.OrderBy(o => o.Name).ToList().FindIndex(crs => crs.Id == this.selectedCRS.Id);
+                    if (index >= 0)
+                    {
+                        this.rbGeographic.Checked = true;
+                        LoadCoordinateSystems();
+                        this.cbSelectedCRS.SelectedIndex = index;
+                    }
+                    else
+                    {
+                        index = crsFactory.ProjectedCoordinateSystems.OrderBy(o => o.Name).ToList().FindIndex(crs => crs.Id == this.selectedCRS.Id);
+                        if (index >= 0)
+                        {
+                            this.rbProjected.Checked = true;
+                            LoadCoordinateSystems();
+                            this.cbSelectedCRS.SelectedIndex = index;
+                        }
+                    }
+                }
+
                 
             }
         }

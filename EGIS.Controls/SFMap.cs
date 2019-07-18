@@ -829,7 +829,7 @@ namespace EGIS.Controls
         {
             double delta = pixelDelta / ZoomLevel;
             PointD ptd = PixelCoordToGisPoint(pt);                               
-            return this[shapeIndex].GetShapeIndexContainingPoint(ptd, delta);            
+            return this[shapeIndex].GetShapeIndexContainingPoint(ptd, delta, this.MapCoordinateReferenceSystem);            
         }
 
         /// <summary>
@@ -1201,7 +1201,9 @@ namespace EGIS.Controls
         {               
             if (dirtyScreenBuf)
             {
+                DateTime tick = DateTime.Now;
                 RenderShapefiles();
+                Console.Out.WriteLine("RenderShapefiles time:{0:0.000}s", DateTime.Now.Subtract(tick).TotalSeconds);
             }
             if (screenBuf != null)
             {
@@ -1224,6 +1226,21 @@ namespace EGIS.Controls
                             
                             e.Graphics.FillRectangle(b, selectRect);
                             e.Graphics.DrawRectangle(p, selectRect);
+
+                            if (!MouseOffsetPoint.IsEmpty)
+                            {
+                                PointD p0 = PixelCoordToGisPoint(selectRect.Location);
+                                PointD p1 = PixelCoordToGisPoint(new Point(selectRect.Right, selectRect.Top ));
+                                PointD p2 = PixelCoordToGisPoint(new Point(selectRect.Left, selectRect.Bottom));
+
+                                double dist1 = DistanceBetweenPoints(p0, p1);
+                                double dist2 = DistanceBetweenPoints(p0, p2);
+
+                                e.Graphics.DrawString(string.Format("{0:0.000}m", dist1), this.Font, Brushes.Red, new PointF(0.5F * (selectRect.Left + selectRect.Right), selectRect.Top));
+                                e.Graphics.DrawString(string.Format("{0:0.000}m", dist2), this.Font, Brushes.Red, new PointF(selectRect.Left, 0.5F * (selectRect.Top + selectRect.Bottom)));
+
+                            }
+
                         }
                     }
                 }
@@ -1245,6 +1262,16 @@ namespace EGIS.Controls
 
                             e.Graphics.FillEllipse(b, selectRect);
                             e.Graphics.DrawEllipse(p, selectRect);
+
+                            if(!MouseOffsetPoint.IsEmpty)
+                            {
+                                PointD p0 = PixelCoordToGisPoint(MouseDownPoint);
+                                PointD p1 = PixelCoordToGisPoint(new Point(MouseDownPoint.X + MouseOffsetPoint.X, MouseDownPoint.Y + MouseOffsetPoint.Y));
+                                double dist = DistanceBetweenPoints(p0, p1);
+
+                                e.Graphics.DrawLine(p, MouseDownPoint, new Point(MouseDownPoint.X + MouseOffsetPoint.X, MouseDownPoint.Y + MouseOffsetPoint.Y));
+                                e.Graphics.DrawString(string.Format("{0:0.000}m", dist), this.Font, Brushes.Red, new PointF(0.5F * (MouseDownPoint.X + MouseDownPoint.X + MouseOffsetPoint.X), 0.5F * (MouseDownPoint.Y + MouseDownPoint.Y + MouseOffsetPoint.Y)));
+                            }
                         }
                     }
 
@@ -1645,7 +1672,7 @@ namespace EGIS.Controls
                         if (!myShapefiles[n].IsSelectable) continue;
                         fireEvent = true;
                         List<int> ind = new List<int>();
-                        myShapefiles[n].GetShapeIndiciesIntersectingRect(ind, selRect);
+                        myShapefiles[n].GetShapeIndiciesIntersectingRect(ind, selRect, this.MapCoordinateReferenceSystem);
 
                         if (ToggleSelect)
                         {
@@ -1689,7 +1716,7 @@ namespace EGIS.Controls
                         fireEvent = true;
                         
                         List<int> ind = new List<int>();
-                        myShapefiles[n].GetShapeIndiciesIntersectingCircle(ind, pt1, radius);
+                        myShapefiles[n].GetShapeIndiciesIntersectingCircle(ind, pt1, radius, this.MapCoordinateReferenceSystem);
 
                         if (ToggleSelect)
                         {
@@ -1822,11 +1849,11 @@ namespace EGIS.Controls
             {
                 bool useToolTip = (_useHints && this[l].RenderSettings != null && this[l].RenderSettings.UseToolTip);
                 bool useCustomToolTip = (useToolTip && this[l].RenderSettings.CustomRenderSettings != null && this[l].RenderSettings.CustomRenderSettings.UseCustomTooltips);
-                RectangleD layerExtent = this[l].Extent;//.GetActualExtent();
-                layerExtent.Inflate(delta, delta);
-                if ((this[l].IsSelectable || useToolTip) && layerExtent.Contains(pt) && this[l].IsVisibleAtZoomLevel((float)ZoomLevel))
+                //RectangleD layerExtent = this[l].Extent;//.GetActualExtent();
+                //layerExtent.Inflate(delta, delta);
+                if ((this[l].IsSelectable || useToolTip) /*&& layerExtent.Contains(pt)*/ && this[l].IsVisibleAtZoomLevel((float)ZoomLevel))
                 {
-                    int selectedIndex = this[l].GetShapeIndexContainingPoint(pt, delta);
+                    int selectedIndex = this[l].GetShapeIndexContainingPoint(pt, delta, this.MapCoordinateReferenceSystem);
                     if (selectedIndex >= 0)
                     {
                         if (this[l].IsSelectable) Cursor = Cursors.Hand;
@@ -1904,6 +1931,27 @@ namespace EGIS.Controls
                 double y = ClientSize.Height - MouseDownPoint.Y;
                 SetZoomAndCentre(z * 0.5, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));
             }
+        }
+
+        #endregion
+
+
+        #region distance calculations
+
+        private double DistanceBetweenPoints(PointD p0, PointD p1)
+        {
+            double distance = double.NaN;
+            if ((this.MapCoordinateReferenceSystem as IGeographicCRS) != null)
+            {
+                distance = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                
+            }
+            else if ((this.MapCoordinateReferenceSystem as IProjectedCRS) != null)
+            {
+                //calculate euclidean distance
+                distance = Math.Sqrt((p1.X - p0.X) * (p1.X - p0.X) + (p1.Y - p0.Y) * (p1.Y - p0.Y));
+            }
+            return distance;
         }
 
         #endregion

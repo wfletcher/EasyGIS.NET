@@ -24,9 +24,10 @@ namespace EGIS.Controls
             : this()
         {
             this.crsFactory = crsFactory;
+            
         }
 
-        
+
 
         public ICRS SelectedCRS
         {
@@ -43,10 +44,7 @@ namespace EGIS.Controls
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-
             this.crsSelectionControl1.LoadCoordinateSystems(this.crsFactory != null ? this.crsFactory : CoordinateReferenceSystemFactory.Default);
-
-
         }
     }
 }

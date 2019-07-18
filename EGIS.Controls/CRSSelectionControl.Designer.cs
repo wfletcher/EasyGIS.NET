@@ -74,7 +74,7 @@
             // 
             this.nudEPGS.Location = new System.Drawing.Point(76, 71);
             this.nudEPGS.Maximum = new decimal(new int[] {
-            100000,
+            1000000,
             0,
             0,
             0});

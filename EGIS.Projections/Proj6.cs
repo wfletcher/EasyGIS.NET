@@ -8,8 +8,7 @@ namespace EGIS.Projections
 {
     internal class Proj6
     {
-        //public static 
-
+     
         public abstract class CRS : ICRS
         {
             public string WKT
@@ -74,7 +73,8 @@ namespace EGIS.Projections
                     //Console.Out.WriteLine("pType=" + pType);
                     string name = Proj6Native.GetName(p);
                     string authName = Proj6Native.GetAuthName(p);
-                    string id = Proj6Native.ProjGetIdCode(p);
+                    string id = Proj6Native.ProjGetIdCode(p);                    
+
 
                     //string axisName;
                     //string axisAbbrev;
@@ -154,7 +154,7 @@ namespace EGIS.Projections
                 }
 
             }
-
+           
         }
 
         public class GeographicCRS : CRS, IGeographicCRS

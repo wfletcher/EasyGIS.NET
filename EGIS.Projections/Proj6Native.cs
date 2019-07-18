@@ -25,7 +25,11 @@ namespace EGIS.Projections
 
             dllPath = string.Format(@"proj6/{0}/{1}", (Environment.Is64BitProcess ? "x64" : "x86"), ProjDllName);
             LoadLibrary(System.IO.Path.Combine(startupPath, dllPath));
-        
+
+            string projDbPath = System.IO.Path.Combine(startupPath, "Proj6", "proj.db");
+            proj_context_set_database_path(IntPtr.Zero, projDbPath, null, null);
+
+
         }
 
         [DllImport("kernel32", SetLastError = true)]
@@ -74,11 +78,21 @@ namespace EGIS.Projections
 
 
         struct PJ_COORD
-        {
+        {            
             public double X;
             public double Y;
             double extra1;
             double extra2;
+
+
+            public PJ_COORD(double x, double y)
+            {
+                X = x;
+                Y = y;
+                extra1 = 0;
+                extra2 = 1;
+            }
+
         }
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
@@ -153,6 +167,16 @@ namespace EGIS.Projections
             PJ_TYPE_CONCATENATED_OPERATION,
             PJ_TYPE_OTHER_COORDINATE_OPERATION,
         } ;
+
+
+        public enum PJ_CATEGORY
+        {
+            PJ_CATEGORY_ELLIPSOID,
+            PJ_CATEGORY_PRIME_MERIDIAN,
+            PJ_CATEGORY_DATUM,
+            PJ_CATEGORY_CRS,
+            PJ_CATEGORY_COORDINATE_OPERATION
+        };
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern PJ_TYPE proj_get_type(IntPtr PJ);
@@ -275,6 +299,154 @@ namespace EGIS.Projections
             return result != 0;
         }
 
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        static extern double proj_lp_dist(IntPtr PJ, PJ_COORD a, PJ_COORD b);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        static extern double proj_lpz_dist(IntPtr P, PJ_COORD a, PJ_COORD b);
+
+        public static double Proj_lp_dist(IntPtr PJ, double x0, double y0, double x1, double y1)
+        {
+            PJ_COORD p1 = new PJ_COORD(x0, y0);
+            PJ_COORD p2 = new PJ_COORD(x1, y1);
+            double d = proj_lpz_dist(PJ, p1, p2);
+            return d;
+        }
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        static extern double proj_xy_dist(PJ_COORD a, PJ_COORD b);
+
+        public static double Proj_xy_dist(double x0, double y0, double x1, double y1)
+        {
+            PJ_COORD p1 = new PJ_COORD(x0, y0);
+            PJ_COORD p2 = new PJ_COORD(x1, y1);
+            double d = proj_xy_dist(p1, p2);
+            return d;
+
+        }
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int proj_context_set_database_path(IntPtr ctx, string dbPath, string auxDbPaths, string options);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr proj_crs_get_geodetic_crs(IntPtr ctx, IntPtr crs);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr proj_get_ellipsoid(IntPtr ctx, IntPtr pj);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr proj_crs_get_coordinate_system(IntPtr ctx, IntPtr crs);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr proj_crs_get_datum(IntPtr ctx, IntPtr crs);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr proj_create_from_database(IntPtr ctx, string auth_name, string code, PJ_CATEGORY category, int usePROJAlternativeGridNames, string options);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static unsafe extern byte** proj_get_authorities_from_database(IntPtr ctx);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static unsafe extern void proj_string_list_destroy(byte** list);
+
+        public static unsafe List<string> Proj_get_authorities_from_database(IntPtr ctx)
+        {
+            List<string> result = new List<string>();
+
+            byte** list = proj_get_authorities_from_database(ctx);
+            try
+            {
+                byte** ptr = list;
+                while (*ptr != null)
+                {
+                    
+                    string s = new string((sbyte*)*ptr);
+                    result.Add(s);
+                    ptr++;
+                }
+            }
+            finally
+            {
+                if (list != null)
+                {
+                    proj_string_list_destroy(list);
+                }
+            }
+
+            return result;
+        }
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static unsafe extern byte** proj_get_codes_from_database(IntPtr ctx, string auth_name, PJ_TYPE type, int allow_deprecated);
+
+        public static unsafe List<string> Proj_get_codes_from_database(IntPtr ctx, string auth_name, PJ_TYPE type, int allow_deprecated)
+        {
+            List<string> result = new List<string>();
+
+            byte** list = proj_get_codes_from_database(ctx, auth_name, type, allow_deprecated);
+            if (list != null)
+            {
+                try
+                {
+                    byte** ptr = list;
+                    while (*ptr != null)
+                    {
+
+                        string s = new string((sbyte*)*ptr);
+                        result.Add(s);
+                        ptr++;
+                    }
+                }
+                finally
+                {                   
+                   proj_string_list_destroy(list);                   
+                }
+            }
+
+            return result;
+        }
+
+        public enum PJ_WKT_TYPE
+        {
+            /** cf osgeo::proj::io::WKTFormatter::Convention::WKT2 */
+            PJ_WKT2_2015,
+            /** cf osgeo::proj::io::WKTFormatter::Convention::WKT2_SIMPLIFIED */
+            PJ_WKT2_2015_SIMPLIFIED,
+            /** cf osgeo::proj::io::WKTFormatter::Convention::WKT2_2018 */
+            PJ_WKT2_2018,
+            /** cf osgeo::proj::io::WKTFormatter::Convention::WKT2_2018_SIMPLIFIED */
+            PJ_WKT2_2018_SIMPLIFIED,
+            /** cf osgeo::proj::io::WKTFormatter::Convention::WKT1_GDAL */
+            PJ_WKT1_GDAL,
+            /** cf osgeo::proj::io::WKTFormatter::Convention::WKT1_ESRI */
+            PJ_WKT1_ESRI
+        }
+
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        static unsafe extern byte* proj_as_wkt(IntPtr ctx, IntPtr pj, PJ_WKT_TYPE type, byte** options);
+
+        public static unsafe string Proj_as_wkt(IntPtr ctx, IntPtr pj, PJ_WKT_TYPE type, bool indentText = true)
+        {
+            if (indentText)
+            {
+                byte* wkt = proj_as_wkt(ctx, pj, type, null);
+                return wkt != null ? new string((sbyte*)wkt) : null;
+            }
+            else
+            {
+                byte[] optionBytes = System.Text.Encoding.ASCII.GetBytes("MULTILINE=NO\0");
+                fixed (byte* ptr = optionBytes)
+                {
+                    byte** options = stackalloc byte*[1];
+                    options[0] = ptr;
+                    byte* wkt = proj_as_wkt(ctx, pj, type, options);
+                    return wkt != null ? new string((sbyte*)wkt) : null;
+                    
+                }
+            }
+        }
 
     }
 }
