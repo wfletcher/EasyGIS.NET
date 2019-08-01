@@ -52,9 +52,7 @@ namespace EGIS.Projections
                             //convert both to ESRI WKT and compare
                             string wkt1 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjThis, Proj6Native.PJ_WKT_TYPE.PJ_WKT1_ESRI);
                             string wkt2 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjOther, Proj6Native.PJ_WKT_TYPE.PJ_WKT1_ESRI);
-                            Console.Out.WriteLine("wkt1:" + wkt1);
-                            Console.Out.WriteLine("wkt2:" + wkt2);
-
+                           
                             same = string.Compare(wkt1, wkt2, StringComparison.OrdinalIgnoreCase) == 0;
 
                             if (!same)
@@ -66,7 +64,6 @@ namespace EGIS.Projections
                                     if (pjWkt1 != IntPtr.Zero && pjWkt2 != IntPtr.Zero)
                                     {
                                         same = Proj6Native.proj_is_equivalent_to(pjWkt1, pjWkt2, Proj6Native.PJ_COMPARISON_CRITERION.PJ_COMP_EQUIVALENT_EXCEPT_AXIS_ORDER_GEOGCRS) != 0;
-                                        Console.Out.WriteLine("same is now " + same);
                                     }
 
                                 }

@@ -37,6 +37,15 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        public static bool IsValidExtent(this RectangleD @this)
+        {
+            if (double.IsInfinity(@this.Width) || double.IsInfinity(@this.Height) ||
+                double.IsNaN(@this.X) || double.IsNaN(@this.Y) ||
+                double.IsNaN(@this.Width) || double.IsNaN(@this.Height)) return false;
+
+            return true;
+        }
+
 
         public static RectangleD Transform(this EGIS.Projections.ICoordinateTransformation @this, RectangleD rect)
         {
