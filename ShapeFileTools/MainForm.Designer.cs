@@ -97,6 +97,7 @@ namespace egis
             this.tsLabelVisibleArea = new System.Windows.Forms.ToolStripStatusLabel();
             this.tsLblMapMousePos = new System.Windows.Forms.ToolStripStatusLabel();
             this.mainProgressBar = new System.Windows.Forms.ToolStripProgressBar();
+            this.tsLblMapCRS = new System.Windows.Forms.ToolStripStatusLabel();
             this.tsLblSelectMessage = new System.Windows.Forms.ToolStripStatusLabel();
             this.sfdMapImage = new System.Windows.Forms.SaveFileDialog();
             this.shapeFileListControl1 = new EGIS.Controls.ShapeFileListControl();
@@ -114,7 +115,7 @@ namespace egis
             this.helpToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(949, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(959, 24);
             this.menuStrip1.TabIndex = 0;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -431,7 +432,7 @@ namespace egis
             this.helpToolStripButton});
             this.mainToolStrip.Location = new System.Drawing.Point(0, 24);
             this.mainToolStrip.Name = "mainToolStrip";
-            this.mainToolStrip.Size = new System.Drawing.Size(949, 39);
+            this.mainToolStrip.Size = new System.Drawing.Size(959, 39);
             this.mainToolStrip.TabIndex = 17;
             this.mainToolStrip.Text = "Main Tool Strip";
             // 
@@ -655,10 +656,11 @@ namespace egis
             this.tsLabelVisibleArea,
             this.tsLblMapMousePos,
             this.mainProgressBar,
+            this.tsLblMapCRS,
             this.tsLblSelectMessage});
             this.statusStrip1.Location = new System.Drawing.Point(0, 543);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(949, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(959, 22);
             this.statusStrip1.TabIndex = 18;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -696,6 +698,15 @@ namespace egis
             this.mainProgressBar.Size = new System.Drawing.Size(150, 16);
             this.mainProgressBar.Visible = false;
             // 
+            // tsLblMapCRS
+            // 
+            this.tsLblMapCRS.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.tsLblMapCRS.DoubleClickEnabled = true;
+            this.tsLblMapCRS.Name = "tsLblMapCRS";
+            this.tsLblMapCRS.Size = new System.Drawing.Size(31, 17);
+            this.tsLblMapCRS.Text = "CRS:";
+            this.tsLblMapCRS.DoubleClick += new System.EventHandler(this.tsLblMapCRS_DoubleClick);
+            // 
             // tsLblSelectMessage
             // 
             this.tsLblSelectMessage.AutoSize = false;
@@ -732,7 +743,7 @@ namespace egis
             this.sfMap1.Name = "sfMap1";
             this.sfMap1.PanSelectMode = EGIS.Controls.PanSelectMode.Pan;
             this.sfMap1.RenderQuality = EGIS.ShapeFileLib.RenderQuality.Auto;
-            this.sfMap1.Size = new System.Drawing.Size(674, 468);
+            this.sfMap1.Size = new System.Drawing.Size(684, 468);
             this.sfMap1.TabIndex = 7;
             this.sfMap1.UseMercatorProjection = true;
             this.sfMap1.ZoomLevel = 1D;
@@ -753,7 +764,7 @@ namespace egis
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(949, 565);
+            this.ClientSize = new System.Drawing.Size(959, 565);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.mainToolStrip);
             this.Controls.Add(this.shapeFileRenderPropertyGrid);
@@ -854,6 +865,7 @@ namespace egis
         private System.Windows.Forms.ToolStripMenuItem exportProjectforUseInWebEditionAsSingleZIPFileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addXYDatacsvToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem setCRSToolStripMenuItem;
+        private System.Windows.Forms.ToolStripStatusLabel tsLblMapCRS;
     }
 }
 

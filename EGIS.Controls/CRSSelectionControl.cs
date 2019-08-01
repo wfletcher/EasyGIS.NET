@@ -24,7 +24,7 @@ namespace EGIS.Controls
 
         #region public properties and methods
 
-        public void LoadCoordinateSystems(ICRSFactory crsFactory)
+        public void LoadCoordinateSystems(ICRSFactory crsFactory, List<int> recentCRSList = null)
         {
             ICRS crs = SelectedCRS;
             this.crsFactory = crsFactory;
@@ -34,6 +34,19 @@ namespace EGIS.Controls
             if (crs != null)
             {
                 SelectedCRS = crs;
+            }
+
+            LoadRecentCRSList(recentCRSList);
+        }
+
+        public void LoadRecentCRSList(List<int> recentList)
+        {
+            this.lstRecentCRS.Items.Clear();
+            if (recentList == null) return;
+            foreach (int id in recentList)
+            {
+                ICRS crs = FindCRSByEpgsCode(id);
+                if (crs != null) lstRecentCRS.Items.Add(crs);
             }
         }
 
@@ -104,9 +117,7 @@ namespace EGIS.Controls
                             this.cbSelectedCRS.SelectedIndex = index;
                         }
                     }
-                }
-
-                
+                }                
             }
         }
 
@@ -133,6 +144,8 @@ namespace EGIS.Controls
 
         }
 
+        
+
         private void rbGeographic_CheckedChanged(object sender, EventArgs e)
         {
             LoadCoordinateSystems();
@@ -141,6 +154,15 @@ namespace EGIS.Controls
         private void rbProjected_CheckedChanged(object sender, EventArgs e)
         {
             LoadCoordinateSystems();
+        }
+
+        private void lstRecentCRS_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lstRecentCRS.SelectedIndex >= 0)
+            {
+                this.selectedCRS = lstRecentCRS.SelectedItem as ICRS;
+                UpdateSelectedCRS(true);
+            }
         }
 
     }

@@ -45,7 +45,42 @@ namespace EGIS.Projections
                 {
                     if (pjThis != IntPtr.Zero && pjOther != IntPtr.Zero)
                     {
-                        return Proj6Native.proj_is_equivalent_to(pjThis, pjOther, Proj6Native.PJ_COMPARISON_CRITERION.PJ_COMP_EQUIVALENT) != 0;
+                        bool same = Proj6Native.proj_is_equivalent_to(pjThis, pjOther, Proj6Native.PJ_COMPARISON_CRITERION.PJ_COMP_EQUIVALENT_EXCEPT_AXIS_ORDER_GEOGCRS) != 0;
+                        if (!same)
+                        {
+                            //proj_is_equivalent_to doesn't seem to compare different WKT representations
+                            //convert both to ESRI WKT and compare
+                            string wkt1 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjThis, Proj6Native.PJ_WKT_TYPE.PJ_WKT1_ESRI);
+                            string wkt2 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjOther, Proj6Native.PJ_WKT_TYPE.PJ_WKT1_ESRI);
+                            Console.Out.WriteLine("wkt1:" + wkt1);
+                            Console.Out.WriteLine("wkt2:" + wkt2);
+
+                            same = string.Compare(wkt1, wkt2, StringComparison.OrdinalIgnoreCase) == 0;
+
+                            if (!same)
+                            {
+                                IntPtr pjWkt1 = Proj6Native.proj_create(IntPtr.Zero, wkt1);
+                                IntPtr pjWkt2 = Proj6Native.proj_create(IntPtr.Zero, wkt2);
+                                try
+                                {
+                                    if (pjWkt1 != IntPtr.Zero && pjWkt2 != IntPtr.Zero)
+                                    {
+                                        same = Proj6Native.proj_is_equivalent_to(pjWkt1, pjWkt2, Proj6Native.PJ_COMPARISON_CRITERION.PJ_COMP_EQUIVALENT_EXCEPT_AXIS_ORDER_GEOGCRS) != 0;
+                                        Console.Out.WriteLine("same is now " + same);
+                                    }
+
+                                }
+                                finally
+                                {
+                                    if (pjWkt1 != IntPtr.Zero) Proj6Native.proj_destroy(pjWkt1);
+                                    if (pjWkt2 != IntPtr.Zero) Proj6Native.proj_destroy(pjWkt2);
+                                }
+
+                            }
+
+                        }
+                        return same;
+                        
                     }
                 }
                 finally
@@ -55,6 +90,12 @@ namespace EGIS.Projections
                 }
                 return false;
 
+            }
+
+            public CRSBoundingBox AreaOfUse
+            {
+                get;
+                internal set;
             }
 
             public override string ToString()
@@ -73,7 +114,23 @@ namespace EGIS.Projections
                     //Console.Out.WriteLine("pType=" + pType);
                     string name = Proj6Native.GetName(p);
                     string authName = Proj6Native.GetAuthName(p);
-                    string id = Proj6Native.ProjGetIdCode(p);                    
+                    string id = Proj6Native.ProjGetIdCode(p);
+
+                    CRSBoundingBox areaOfUse = new CRSBoundingBox()
+                    {
+                        WestLongitudeDegrees = -1000,
+                        NorthLatitudeDegrees = -1000,
+                        EastLongitudeDegrees = -1000,
+                        SouthLatitudeDegrees = -1000
+                    };
+ 
+                    Proj6Native.proj_get_area_of_use(IntPtr.Zero, p, 
+                        ref areaOfUse.WestLongitudeDegrees, 
+                        ref areaOfUse.SouthLatitudeDegrees,
+                        ref areaOfUse.EastLongitudeDegrees,
+                        ref areaOfUse.NorthLatitudeDegrees, 
+                        IntPtr.Zero);
+
 
 
                     //string axisName;
@@ -101,7 +158,8 @@ namespace EGIS.Projections
                             Id = id,
                             Name = name,
                             Authority = authName,
-                            WKT = wkt
+                            WKT = wkt,
+                            AreaOfUse = areaOfUse
                         };
                     }
                     else if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_PROJECTED_CRS)
@@ -113,7 +171,8 @@ namespace EGIS.Projections
                             Name = name,
                             Authority = authName,
                             WKT = wkt,
-                            UnitsToMeters = 1
+                            UnitsToMeters = 1,
+                            AreaOfUse = areaOfUse
                         };
                         
                     }
@@ -127,7 +186,8 @@ namespace EGIS.Projections
                                 Name = name,
                                 Authority = authName,
                                 WKT = wkt,
-                                UnitsToMeters = 1
+                                UnitsToMeters = 1,
+                                AreaOfUse = areaOfUse
                             };
                         }
                         else
@@ -137,7 +197,8 @@ namespace EGIS.Projections
                                 Id = id,
                                 Name = name,
                                 Authority = authName,
-                                WKT = wkt
+                                WKT = wkt,
+                                AreaOfUse = areaOfUse
                             };
                         }                                                
                     }
@@ -154,7 +215,8 @@ namespace EGIS.Projections
                 }
 
             }
-           
+
+            
         }
 
         public class GeographicCRS : CRS, IGeographicCRS
@@ -208,21 +270,49 @@ namespace EGIS.Projections
                 private set;            
             }
 
-            public int Transform(double[] points, int pointCount)
+            public int Transform(double[] points, int pointCount, TransformDirection direction= TransformDirection.Forward)
             {
-                int count = Proj6Native.proj_trans_generic(pjNative, Proj6Native.PJ_DIRECTION.PJ_FWD, points, pointCount);
-                return count;
+                switch (direction)
+                {
+                    case TransformDirection.Forward:
+                        return Proj6Native.proj_trans_generic(pjNative, Proj6Native.PJ_DIRECTION.PJ_FWD, points, pointCount);
+                    case TransformDirection.Inverse:
+                        return Proj6Native.proj_trans_generic(pjNative, Proj6Native.PJ_DIRECTION.PJ_INV, points, pointCount);
+                    default:
+                        return Proj6Native.proj_trans_generic(pjNative, Proj6Native.PJ_DIRECTION.PJ_IDENT, points, pointCount);
+                }
             }
 
-            public int Transform(double[] points, int startIndex, int pointCount)
+            public unsafe int Transform(double[] points, int startIndex, int pointCount, TransformDirection direction = TransformDirection.Forward)
             {
-                throw new NotImplementedException();
+                fixed (double* ptr = points)
+                {
+                    switch (direction)
+                    {
+                        case TransformDirection.Forward:
+                            return Proj6Native.proj_trans_generic(pjNative, Proj6Native.PJ_DIRECTION.PJ_FWD, ptr+startIndex, pointCount);
+                        case TransformDirection.Inverse:
+                            return Proj6Native.proj_trans_generic(pjNative, Proj6Native.PJ_DIRECTION.PJ_INV, ptr + startIndex, pointCount);
+                        default:
+                            return Proj6Native.proj_trans_generic(pjNative, Proj6Native.PJ_DIRECTION.PJ_IDENT, ptr + startIndex, pointCount);
+                    }
+                }
+
             }
 
-            public unsafe int Transform(double* points, int pointCount)
+            public unsafe int Transform(double* points, int pointCount, TransformDirection direction = TransformDirection.Forward)
             {
-                int count = Proj6Native.proj_trans_generic(pjNative, Proj6Native.PJ_DIRECTION.PJ_FWD, points, pointCount);
-                return count;
+                
+                switch (direction)
+                {
+                    case TransformDirection.Forward:
+                        return Proj6Native.proj_trans_generic(pjNative, Proj6Native.PJ_DIRECTION.PJ_FWD, points, pointCount);
+                    case TransformDirection.Inverse:
+                        return Proj6Native.proj_trans_generic(pjNative, Proj6Native.PJ_DIRECTION.PJ_INV, points, pointCount);
+                    default:
+                        return Proj6Native.proj_trans_generic(pjNative, Proj6Native.PJ_DIRECTION.PJ_IDENT, points, pointCount);
+                }
+
             }
 
 

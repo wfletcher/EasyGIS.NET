@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2046
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "egis", "ShapeFileTools\egis.csproj", "{9B44F499-6935-4FD7-8078-4FAEEEDA1CF4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EGIS.ShapeFileLib", "egis.ShapeFileLib\EGIS.ShapeFileLib.csproj", "{C89DEB9B-4DCA-4792-B216-F00808606AF7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EGIS.Controls", "egis.controls\EGIS.Controls.csproj", "{EB97525D-0906-4A14-A995-93667B565521}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VectorTileGenerator", "VectorTileGenerator\VectorTileGenerator.csproj", "{D3560B79-CB71-4E57-9727-E7D3F3239138}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EGIS.Projections", "EGIS.Projections\EGIS.Projections.csproj", "{9B3D02D0-D57D-4E7D-A04C-9DDCB36F0CE7}"
 EndProject
@@ -57,14 +57,6 @@ Global
 		{EB97525D-0906-4A14-A995-93667B565521}.Release|x64.Build.0 = Release|x64
 		{EB97525D-0906-4A14-A995-93667B565521}.Release|x86.ActiveCfg = Release|x86
 		{EB97525D-0906-4A14-A995-93667B565521}.Release|x86.Build.0 = Release|x86
-		{D3560B79-CB71-4E57-9727-E7D3F3239138}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D3560B79-CB71-4E57-9727-E7D3F3239138}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D3560B79-CB71-4E57-9727-E7D3F3239138}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{D3560B79-CB71-4E57-9727-E7D3F3239138}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{D3560B79-CB71-4E57-9727-E7D3F3239138}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D3560B79-CB71-4E57-9727-E7D3F3239138}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D3560B79-CB71-4E57-9727-E7D3F3239138}.Release|x64.ActiveCfg = Release|Any CPU
-		{D3560B79-CB71-4E57-9727-E7D3F3239138}.Release|x86.ActiveCfg = Release|Any CPU
 		{9B3D02D0-D57D-4E7D-A04C-9DDCB36F0CE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9B3D02D0-D57D-4E7D-A04C-9DDCB36F0CE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9B3D02D0-D57D-4E7D-A04C-9DDCB36F0CE7}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -76,5 +68,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {60B36582-ED97-4BA9-B1F1-FC4A3E293696}
 	EndGlobalSection
 EndGlobal

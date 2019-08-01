@@ -439,6 +439,10 @@ namespace EGIS.Controls
             set
             {
                 if (value < double.Epsilon) throw new ArgumentException("ZoomLevel can not be <= Zero");
+
+                //avoid overflow if zooming to less than 1mm
+                if (value > this._zoomLevel && this.mapCoordinateReferenceSystem is IProjectedCRS && (1/value < 0.00001)) return;
+
                 _zoomLevel = value;
                 dirtyScreenBuf=true;
                 Invalidate();
@@ -592,13 +596,25 @@ namespace EGIS.Controls
             }
         }
 
+
+        private ICRS mapCoordinateReferenceSystem = null;
         /// <summary>
         /// Get/Set the map Coordinate Reference System
         /// </summary>
         public ICRS MapCoordinateReferenceSystem
         {
-            get;
-            set;
+            get
+            {
+                return mapCoordinateReferenceSystem;
+            }
+            set
+            {
+                //convert the current visible extent to equivalent extent of the new CRS
+                RectangleD currentExtent = this.VisibleExtent;
+                currentExtent = currentExtent.Transform(this.mapCoordinateReferenceSystem, value);
+                this.mapCoordinateReferenceSystem = value;
+                FitToExtent(currentExtent);                
+            }
         }
 
         
@@ -613,6 +629,10 @@ namespace EGIS.Controls
         public void SetZoomAndCentre(double zoom,PointD centre)
         {
             if (zoom < double.Epsilon) throw new ArgumentException("ZoomLevel can not be <= Zero");
+
+            //avoid overflow if zooming to less than 1mm
+            if (zoom > this._zoomLevel && this.mapCoordinateReferenceSystem is IProjectedCRS && (1 / zoom < 0.00001)) return;
+
             _centrePoint = centre;
             if(UseMercatorProjection) _centrePoint = ShapeFile.LatLongToProjection(_centrePoint); // v2.5
             _zoomLevel = zoom;
@@ -627,7 +647,8 @@ namespace EGIS.Controls
         /// <remarks>Call this method to apply a "zoom 100%"</remarks>
         public void ZoomToFullExtent()
         {
-            RectangleF r = ShapeFile.LLExtentToProjectedExtent(this.Extent,this.projectionType);
+            RectangleD r = ShapeFile.LLExtentToProjectedExtent(this.Extent,this.projectionType);
+
             this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
             Size cs = ClientSize;
             //eliminate possible div by zero
@@ -656,9 +677,14 @@ namespace EGIS.Controls
         public void FitToExtent(RectangleD extent)
         {
             if (extent.IsEmpty) return;
+
+            extent = RestrictExtentToCRS(extent);
+
             MouseOffsetPoint = Point.Empty;            
-            RectangleF r = ShapeFile.LLExtentToProjectedExtent(extent, this.projectionType);
+            RectangleD r = ShapeFile.LLExtentToProjectedExtent(extent, this.projectionType);
             this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
+
+            if(this.mapCoordinateReferenceSystem is IProjectedCRS && (r.Width < 0.0001 || r.Height < 0.0001)) return;
             Size cs = ClientSize;
             //eliminate possible div by zero
             if (cs.Width <= 0 || cs.Height <= 0) cs = new System.Drawing.Size(100, 100);
@@ -673,6 +699,8 @@ namespace EGIS.Controls
             {
                 this._zoomLevel = cs.Height / r.Height;
             }
+            //Console.Out.WriteLine("r=" + r);
+            //Console.Out.WriteLine("_zoomLevel = " + _zoomLevel);
 
             dirtyScreenBuf = true;
             Refresh();
@@ -703,6 +731,7 @@ namespace EGIS.Controls
                 {
                     extent = RectangleD.Union(extent, layer.GetShapeBoundsD(selectedIndicies[n]));                    
                 }
+                extent = extent.Transform(layer.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
                 FitToExtent(extent);
             }
         }
@@ -852,13 +881,21 @@ namespace EGIS.Controls
                    // RectangleD r1 = myShapefiles[0].Extent;
                     //Console.Out.WriteLine("r1 = " + r1);
 
-                    RectangleD r = ShapeFile.ConvertExtent(myShapefiles[0].Extent, myShapefiles[0].CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+                    RectangleD r = myShapefiles[0].Extent.Transform(myShapefiles[0].CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
 
+                    if (double.IsInfinity(r.Width) || double.IsInfinity(r.Height))
+                    {
+                        r = RestrictExtentToCRS(r);
+                    }
                     //RectangleD r2 = ShapeFile.ConvertExtent(r, this.MapCoordinateReferenceSystem, myShapefiles[0].CoordinateReferenceSystem);
                      
                     foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
                     {
-                        var extent = ShapeFile.ConvertExtent(sf.Extent, sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+                        var extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+                        if (double.IsInfinity(extent.Width) || double.IsInfinity(extent.Height))
+                        {
+                            extent = RestrictExtentToCRS(extent);
+                        }
                         r = RectangleD.Union(r, extent);
                     }
                     return r;
@@ -890,7 +927,7 @@ namespace EGIS.Controls
         /// To get the extent of the ENTIRE map call Extent</remarks>
         /// <seealso cref="Extent"/>
         [Browsable(false)] 
-        public RectangleF VisibleExtent        
+        public RectangleD VisibleExtent        
         {
             get
             {
@@ -898,8 +935,28 @@ namespace EGIS.Controls
                 //PointD tr = MousePosToGisPoint(this.ClientSize.Width - 1, 0);
                 PointD bl = PixelCoordToGisPoint(0, this.ClientSize.Height - 1);
                 PointD tr = PixelCoordToGisPoint(this.ClientSize.Width - 1, 0);
-                return RectangleF.FromLTRB((float)bl.X, (float)bl.Y, (float)tr.X, (float)tr.Y);
+                return RectangleD.FromLTRB(bl.X, bl.Y, tr.X, tr.Y);
             }
+        }
+
+        public RectangleD RestrictExtentToCRS(RectangleD extent)
+        {
+            if (this.MapCoordinateReferenceSystem != null && this.MapCoordinateReferenceSystem.AreaOfUse.IsDefined)
+            {
+                if (double.IsInfinity(extent.Width) || double.IsInfinity(extent.Height))
+                {
+                    //convert the area of use from lat/lon degrees to the shapefile CRS
+                    ICRS wgs84 = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+                    RectangleD areaOfUse = RectangleD.FromLTRB(this.MapCoordinateReferenceSystem.AreaOfUse.WestLongitudeDegrees,
+                        this.MapCoordinateReferenceSystem.AreaOfUse.SouthLatitudeDegrees,
+                        this.MapCoordinateReferenceSystem.AreaOfUse.EastLongitudeDegrees,
+                        this.MapCoordinateReferenceSystem.AreaOfUse.NorthLatitudeDegrees);
+                    areaOfUse = areaOfUse.Transform(wgs84, this.MapCoordinateReferenceSystem);
+
+                    return areaOfUse;
+                }
+            }
+            return extent;
         }
 
         /// <summary>
@@ -952,7 +1009,7 @@ namespace EGIS.Controls
         {            
             EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(path, name, labelFieldName);
 
-            RectangleD extent = ShapeFile.ConvertExtent(sf.Extent, sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+            RectangleD extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
 
             FitToExtent(extent);
             OnShapeFilesChanged();            
@@ -1293,9 +1350,12 @@ namespace EGIS.Controls
             System.Drawing.Drawing2D.Matrix m = e.Graphics.Transform;
             try
             {
-                System.Drawing.Drawing2D.Matrix m2 = new System.Drawing.Drawing2D.Matrix();
-                m2.Translate(MouseOffsetPoint.X, MouseOffsetPoint.Y);
-                e.Graphics.Transform = m2;
+                if (InternalPanSelectMode == PanSelectMode.Pan)
+                {
+                    System.Drawing.Drawing2D.Matrix m2 = new System.Drawing.Drawing2D.Matrix();
+                    m2.Translate(MouseOffsetPoint.X, MouseOffsetPoint.Y);
+                    e.Graphics.Transform = m2;
+                }                
                 base.OnPaint(e);
             }
             finally

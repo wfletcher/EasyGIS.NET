@@ -294,8 +294,8 @@ namespace EGIS.ShapeFileLib
 			get
 			{
                 if (sfRecordCol != null)
-                {                   
-                    RectangleD r = RectangleD.FromLTRB(sfRecordCol.MainHeader.Xmin, sfRecordCol.MainHeader.Ymin, sfRecordCol.MainHeader.Xmax, sfRecordCol.MainHeader.Ymax);
+                {                    
+                    RectangleD r = RectangleD.FromLTRB(sfRecordCol.MainHeader.Xmin, sfRecordCol.MainHeader.Ymin, sfRecordCol.MainHeader.Xmax, sfRecordCol.MainHeader.Ymax);                    
                     return r;                    
                 }
 				else
@@ -353,60 +353,32 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        public static RectangleD ConvertExtent(RectangleD sourceExtent, ICRS source, ICRS target)
-        {
-            if (source == null || target == null || source.IsEquivalent(target)) return sourceExtent;
-            using (ICoordinateTransformation transformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(source, target))
-            {
-
-                double[] pts = new double[8];
-                RectangleD r = sourceExtent;
-                pts[0] = r.Left; pts[1] = r.Bottom;
-                pts[2] = r.Right; pts[3] = r.Bottom;
-                pts[4] = r.Right; pts[5] = r.Top;
-                pts[6] = r.Left; pts[7] = r.Top;
-                transformation.Transform(pts, 4);
-                return RectangleD.FromLTRB(Math.Min(pts[0], pts[6]),
-                    Math.Min(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
-                    Math.Max(pts[1], pts[3]));
-            }
-        }
-
-        public static RectangleD ConvertExtent(RectangleD sourceExtent, ICoordinateTransformation transformation)
-        {           
-            double[] pts = new double[8];
-            RectangleD r = sourceExtent;
-            pts[0] = r.Left; pts[1] = r.Bottom;
-            pts[2] = r.Right; pts[3] = r.Bottom;
-            pts[4] = r.Right; pts[5] = r.Top;
-            pts[6] = r.Left; pts[7] = r.Top;
-            transformation.Transform(pts, 4);
-            return RectangleD.FromLTRB(Math.Min(pts[0], pts[6]),
-                Math.Min(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
-                Math.Max(pts[1], pts[3]));
-        }
-
         /// <summary>
-        /// Gets the rectangular extent of each shape in the shapefile
+        /// Convert source extent to WGS84 extent
         /// </summary>
-        /// <returns>RectangleF[] representing the extent of each shape in the shapefile</returns>
-        //public RectangleF[] GetShapeExtents()
-        //{
-        //    if (sfRecordCol!= null)                
-        //    {
-        //        RectangleF[] extents = new RectangleF[sfRecordCol.RecordHeaders.Length];
-        //        int index = 0;
-        //        int numRecords = sfRecordCol.RecordHeaders.Length;
-        //        while (index <numRecords)
-        //        {
-        //            extents[index] = sfRecordCol.GetRecordBounds(index, shapeFileStream);
-        //            ++index;
-        //        }
-        //        return extents;
-        //    }
-        //    return null;
-        //}
+        /// <param name="sourceExtent"></param>
+        /// <param name="source"></param>
+        /// <param name="ensure"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// For an area of interest crossing the anti-meridian, where west_lon_degree will be greater than east_lon_degree
+        /// 360 degrees is added to the returned extent.Right to ensure the rectangle width is not negative
+        /// </remarks>
+        public static RectangleD ConvertExtentToWgs84(RectangleD sourceExtent, ICRS source, bool ensureWidthPositive=true)
+        {
+            ICRS target = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
 
+            //RectangleD extent = ConvertExtent(sourceExtent, source, target);
+            RectangleD extent = sourceExtent.Transform(source, target);
+            if (ensureWidthPositive && extent.Right < extent.Left)
+            {
+                extent = RectangleD.FromLTRB(extent.Left, extent.Top, extent.Right + 360, extent.Bottom);
+            }
+
+            return extent;
+        }
+
+        
         /// <summary>
         /// Gets the rectangular extent of each shape in the shapefile in double precision form
         /// </summary>
@@ -608,6 +580,7 @@ namespace EGIS.ShapeFileLib
 
         void Render(Graphics g, Size clientArea, RectangleD extent, RenderSettings renderSettings, ProjectionType projectionType)
         {
+            RectangleD thisExtent = ShapeFile.LLExtentToProjectedExtent(Extent, projectionType);
             if (!extent.IntersectsWith(ShapeFile.LLExtentToProjectedExtent(Extent, projectionType))) return;
             if (sfRecordCol != null)
             {
@@ -618,25 +591,47 @@ namespace EGIS.ShapeFileLib
         void Render(Graphics g, Size clientArea, RectangleD extent, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation)
         {
             //convert extent from the target coordinates to the shapefile coordinates
-            using (ICoordinateTransformation invTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS))
+            //using (ICoordinateTransformation invTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS))
             {
+                //covert the target extent and the shapefile's extent to geographic WGS84 and test if they intersect
+                ICRS wgs84CRS = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+                RectangleD targetWgs84 = ConvertExtentToWgs84(extent, coordinateTransformation.TargetCRS);
 
-                double[] pts = new double[8];
-                RectangleD r = extent;
-                pts[0] = r.Left; pts[1] = r.Bottom;
-                pts[2] = r.Right; pts[3] = r.Bottom;
-                pts[4] = r.Right; pts[5] = r.Top;
-                pts[6] = r.Left; pts[7] = r.Top;
-                invTransformation.Transform(pts, 4);
-                r = RectangleD.FromLTRB(Math.Min(pts[0], pts[6]),
-                    Math.Min(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
-                    Math.Max(pts[1], pts[3]));
+                Console.Out.WriteLine("left = " + targetWgs84.Left);
+                Console.Out.WriteLine("right = " + targetWgs84.Right);
 
-                if (!r.IntersectsWith(ShapeFile.LLExtentToProjectedExtent(Extent, projectionType))) return;
+
+                RectangleD shapeFileExtentWgs84 = ConvertExtentToWgs84(this.Extent, this.CoordinateReferenceSystem);
+
+                if (!shapeFileExtentWgs84.IntersectsWith(targetWgs84)) return;
+
+                RectangleD intersectingExtent = RectangleD.Intersect(targetWgs84, shapeFileExtentWgs84);
+                //convert the intersecting geographic coordinates to the shapefile coordinates
+
+                RectangleD r = intersectingExtent.Transform(wgs84CRS, this.CoordinateReferenceSystem);
+
                 if (sfRecordCol != null)
                 {
                     sfRecordCol.paint(g, clientArea, r, shapeFileStream, RenderSettings, projectionType, coordinateTransformation, extent);
                 }
+
+                //double[] pts = new double[8];
+                //RectangleD r = extent;
+                //pts[0] = r.Left; pts[1] = r.Bottom;
+                //pts[2] = r.Right; pts[3] = r.Bottom;
+                //pts[4] = r.Right; pts[5] = r.Top;
+                //pts[6] = r.Left; pts[7] = r.Top;
+                ////invTransformation.Transform(pts, 4);
+                //coordinateTransformation.Transform(pts, 4, TransformDirection.Inverse);
+                //r = RectangleD.FromLTRB(Math.Min(pts[0], pts[6]),
+                //    Math.Min(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
+                //    Math.Max(pts[1], pts[3]));
+
+                //if (!r.IntersectsWith(ShapeFile.LLExtentToProjectedExtent(Extent, projectionType))) return;
+                //if (sfRecordCol != null)
+                //{
+                //    sfRecordCol.paint(g, clientArea, r, shapeFileStream, RenderSettings, projectionType, coordinateTransformation, extent);
+                //}
             }
         }
 
@@ -856,7 +851,7 @@ namespace EGIS.ShapeFileLib
 
             //open the main file and adjust the mainheader file length
             this.shapeFileStream = new FileStream(shapeFilePath + ".shp", FileMode.Open, FileAccess.Read, FileShare.Read);
-            this.mainHeader.FileLength = (int)shapeFileStream.Length;
+            this.mainHeader.FileLength = (int)shapeFileStream.Length;            
 
             switch (mainHeader.ShapeType)
             {
@@ -892,6 +887,14 @@ namespace EGIS.ShapeFileLib
                     throw new NotSupportedException("ShapeType: " + mainHeader.ShapeType + " not supported");
                     
             }
+
+            if (double.IsInfinity(this.mainHeader.Xmax) || double.IsInfinity(this.mainHeader.Ymax))
+            {
+                //FixHeaderRecordBounds();
+
+                
+
+            }
             
                         
             DateTime end = DateTime.Now;
@@ -901,6 +904,87 @@ namespace EGIS.ShapeFileLib
             //data = null;
         }
 
+        private void FixHeaderRecordBounds()
+        {
+
+            double xMin = this.mainHeader.Xmin;
+            double xMax = this.mainHeader.Xmax;
+            double yMin = this.mainHeader.Ymin;
+            double yMax = this.mainHeader.Ymax;
+            if (this.CoordinateReferenceSystem != null && this.CoordinateReferenceSystem.AreaOfUse.IsDefined)
+            {
+                //convert the area of use from lat/lon degrees to the shapefile CRS
+                ICRS wgs84 = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+                RectangleD areaOfUse = RectangleD.FromLTRB(this.CoordinateReferenceSystem.AreaOfUse.WestLongitudeDegrees,
+                    this.CoordinateReferenceSystem.AreaOfUse.SouthLatitudeDegrees,
+                    this.CoordinateReferenceSystem.AreaOfUse.EastLongitudeDegrees,
+                    this.CoordinateReferenceSystem.AreaOfUse.NorthLatitudeDegrees);
+                
+                areaOfUse = areaOfUse.Transform(wgs84, this.CoordinateReferenceSystem);
+                
+                //check for infinite bounds (common when geographic coords have been converted to 
+                //a world mercator projection for areas such as Antarctica
+                if (double.IsInfinity(xMin))
+                {
+                    xMin = areaOfUse.Left;
+                }
+                if (double.IsInfinity(xMax))
+                {
+                    xMax = areaOfUse.Right;
+                }
+                if (double.IsInfinity(yMin))
+                {
+                    yMin = areaOfUse.Top;
+                }
+                if (double.IsInfinity(yMax))
+                {
+                    yMax = areaOfUse.Bottom;
+                }                
+            }
+            this.mainHeader.Xmin = this.sfRecordCol.MainHeader.Xmin = xMin;
+            this.mainHeader.Xmax = this.sfRecordCol.MainHeader.Xmax = xMax;
+            this.mainHeader.Ymin = this.sfRecordCol.MainHeader.Ymin = yMin;
+            this.mainHeader.Ymax = this.sfRecordCol.MainHeader.Ymax = yMax;
+
+            //RectangleD bounds = RectangleD.Empty;//this.GetShapeBoundsD(0);
+            //for (int n = 0; n < this.RecordCount; ++n)
+            //{
+            //    RectangleD r = this.GetShapeBoundsD(n);
+            //    if (double.IsInfinity(r.Width) || double.IsInfinity(r.Height))
+            //    {
+            //        //yikes! the shapefile has a bad record bounds
+            //        var shapeData = this.GetShapeDataD(n);
+            //        double minX, minY, maxX, maxY;
+            //        minX = minY = double.PositiveInfinity;
+            //        maxX = maxY = double.NegativeInfinity;
+            //        foreach (var part in shapeData)
+            //        {
+            //            for (int i = 0; i < part.Length; ++i)
+            //            {
+            //                if (!(double.IsInfinity(part[i].X) || double.IsInfinity(part[i].Y)))
+            //                {
+            //                    minX = Math.Min(minX, part[i].X);
+            //                    maxX = Math.Max(maxX, part[i].X);
+
+            //                    minY = Math.Min(minY, part[i].Y);
+            //                    maxY = Math.Max(maxY, part[i].Y);
+            //                }
+            //            }
+            //        }
+            //        bounds = RectangleD.Union(bounds, RectangleD.FromLTRB(minX, minY, maxX, maxY));
+
+
+            //    }
+            //    else
+            //    {
+            //        bounds = RectangleD.Union(bounds, r);
+            //    }
+            //}
+            //this.mainHeader.Xmax = bounds.Right;
+            //this.mainHeader.Ymax = bounds.Bottom;
+            //this.sfRecordCol.MainHeader.Xmax = bounds.Right;
+            //this.sfRecordCol.MainHeader.Ymax = bounds.Bottom;
+        }
 
         /// <summary>
         /// Loads a ShapeFile using a path to a .shp shape file
@@ -908,11 +992,14 @@ namespace EGIS.ShapeFileLib
         /// <param name="shapeFilePath">The path to the ".shp" shape file</param>
         public unsafe void LoadFromFile(string shapeFilePath)
         {
+            //read the projection first
+            ReadPrjFile(shapeFilePath);
+            
             LoadFromFile2(shapeFilePath);            
             //create a default RenderSettings object
             this.RenderSettings = CreateRenderSettings(shapeFilePath);
 
-            ReadPrjFile(shapeFilePath);
+            
         }
 
         #region Read Projection WKT
@@ -1595,7 +1682,8 @@ namespace EGIS.ShapeFileLib
                 !this.CoordinateReferenceSystem.IsEquivalent(sourceCRS))
             {
                 //transform rect to the shapefile's coordinates 
-                rect = ShapeFile.ConvertExtent(rect, sourceCRS, this.CoordinateReferenceSystem);                
+                //rect = ShapeFile.ConvertExtent(rect, sourceCRS, this.CoordinateReferenceSystem);                
+                rect = rect.Transform(sourceCRS, this.CoordinateReferenceSystem);
             }
 
 
@@ -1900,25 +1988,25 @@ namespace EGIS.ShapeFileLib
         #endregion
 
      
-        private const float MaxLLMercProjF = 85.0511287798066f;
-        /// <summary>
-        /// Utillity method to translate a Lat/Long Point to its Mercator Projection representation.
-        /// </summary>
-        public static PointF LLToMercator(PointF pt)
-        {
-            if (pt.Y > MaxLLMercProjF)
-            {
-                pt.Y = MaxLLMercProjF;
-            }
-            else if (pt.Y < -MaxLLMercProjF)
-            {
-                pt.Y = -MaxLLMercProjF;
-            }
-            double d = (Math.PI / 180) * pt.Y;
-            double sd = Math.Sin(d);
-            d = (90 / Math.PI) * Math.Log((1 + sd) / (1 - sd));
-            return new PointF(pt.X, (float)d);            
-        }        
+        //private const float MaxLLMercProjF = 85.0511287798066f;
+        ///// <summary>
+        ///// Utillity method to translate a Lat/Long Point to its Mercator Projection representation.
+        ///// </summary>
+        //public static PointF LLToMercator(PointF pt)
+        //{
+        //    if (pt.Y > MaxLLMercProjF)
+        //    {
+        //        pt.Y = MaxLLMercProjF;
+        //    }
+        //    else if (pt.Y < -MaxLLMercProjF)
+        //    {
+        //        pt.Y = -MaxLLMercProjF;
+        //    }
+        //    double d = (Math.PI / 180) * pt.Y;
+        //    double sd = Math.Sin(d);
+        //    d = (90 / Math.PI) * Math.Log((1 + sd) / (1 - sd));
+        //    return new PointF(pt.X, (float)d);            
+        //}        
 
         private const double MaxLLMercProjD = 85.0511287798066;
         /// <summary>
@@ -1948,13 +2036,13 @@ namespace EGIS.ShapeFileLib
         /// <summary>
         /// Utillity method to translate a Point using a Mercator Projection t its Lat/Long representation.
         /// </summary>
-        public static PointF MercatorToLLF(PointF pt)
-        {            
-            double d = (Math.PI / 180) * pt.Y;
-            d = Math.Atan(Math.Sinh(d));
-            d = d * (180 / Math.PI);
-            return new PointF(pt.X, (float)d);            
-        }
+        //public static PointF MercatorToLLF(PointF pt)
+        //{            
+        //    double d = (Math.PI / 180) * pt.Y;
+        //    d = Math.Atan(Math.Sinh(d));
+        //    d = d * (180 / Math.PI);
+        //    return new PointF(pt.X, (float)d);            
+        //}
 
         /// <summary>
         /// Utillity method to translate a Point using a Mercator Projection t its Lat/Long representation.
@@ -2014,7 +2102,17 @@ namespace EGIS.ShapeFileLib
 				this = *(ShapeFileMainHeader*)bPtr;
 			}
 			//adjust FileLength to be number of bytes (not num words)
-			FileLength*=2;            
+			FileLength*=2;
+
+            //double d = BitConverter.ToDouble(data, 9 * 4 + 8);
+            //Console.Out.WriteLine("d=" + d);
+
+            //d = BitConverter.ToDouble(data, 9 * 4 + 16);
+            //Console.Out.WriteLine("d=" + d);
+
+            //byte[] dbytes = BitConverter.GetBytes(d);
+            
+
 		}
 
 		public override string ToString()
@@ -2522,10 +2620,10 @@ namespace EGIS.ShapeFileLib
 
         public abstract RectangleF GetRecordBounds(int recordIndex, System.IO.Stream shapeFileStream);
 
-        public virtual RectangleD GetRecordBoundsD(int recordIndex, System.IO.Stream shapeFileStream)
-        {
-            return GetRecordBounds(recordIndex, shapeFileStream);
-        }
+        public abstract RectangleD GetRecordBoundsD(int recordIndex, System.IO.Stream shapeFileStream);
+        //{
+        //    return GetRecordBounds(recordIndex, shapeFileStream);
+        //}
 
         public abstract bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream);
         
@@ -2713,8 +2811,15 @@ namespace EGIS.ShapeFileLib
             while (ptIndex < numPoints)
             {
                 PointD ptd = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++);
-                pts[ptIndex].X = (int)Math.Round((ptd.X + offX) * scaleX);
-                pts[ptIndex].Y = (int)Math.Round((ptd.Y + offY) * scaleY);
+                if(ptIndex>0 &&(double.IsInfinity(ptd.X) || double.IsInfinity(ptd.Y)))
+                {
+                    pts[ptIndex] = pts[ptIndex-1];
+                }
+                else
+                {
+                    pts[ptIndex].X = (int)Math.Round((ptd.X + offX) * scaleX);
+                    pts[ptIndex].Y = (int)Math.Round((ptd.Y + offY) * scaleY);
+                }
                 ++ptIndex;
             }
             return pts;
@@ -2733,12 +2838,19 @@ namespace EGIS.ShapeFileLib
             while (ptIndex < numPoints)
             {
                 PointD ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); ;// LLToProjection(*(pPtr++));
-                pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
-                pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
-                left = Math.Min(pts[ptIndex].X, left);
-                right = Math.Max(pts[ptIndex].X, right);
-                top = Math.Min(pts[ptIndex].Y, top);
-                bottom = Math.Max(pts[ptIndex].Y, bottom);
+                if (ptIndex>0 && (double.IsInfinity(ptf.X) || double.IsInfinity(ptf.Y)))
+                {
+                    pts[ptIndex] = pts[ptIndex - 1];
+                }
+                else
+                {
+                    pts[ptIndex].X = (int)Math.Round((ptf.X + offX) * scaleX);
+                    pts[ptIndex].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
+                    left = Math.Min(pts[ptIndex].X, left);
+                    right = Math.Max(pts[ptIndex].X, right);
+                    top = Math.Min(pts[ptIndex].Y, top);
+                    bottom = Math.Max(pts[ptIndex].Y, bottom);
+                }
                 ++ptIndex;
             }
             pixBounds = Rectangle.FromLTRB(left, top, right, bottom);
@@ -2765,15 +2877,18 @@ namespace EGIS.ShapeFileLib
             while (ptIndex < numPoints)
             {
                 PointD ptf = mercProj ? LLToProjection(*(pPtr++)) : *(pPtr++); //LLToProjection((*(pPtr++)));
-                pts[usedPoints].X = (int)Math.Round((ptf.X + offX) * scaleX);
-                pts[usedPoints].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
-                if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
+                if (!(double.IsInfinity(ptf.X) || double.IsInfinity(ptf.Y)))
                 {
-                    left = Math.Min(pts[usedPoints].X, left);
-                    right = Math.Max(pts[usedPoints].X, right);
-                    top = Math.Min(pts[usedPoints].Y, top);
-                    bottom = Math.Max(pts[usedPoints].Y, bottom);
-                    ++usedPoints;
+                    pts[usedPoints].X = (int)Math.Round((ptf.X + offX) * scaleX);
+                    pts[usedPoints].Y = (int)Math.Round((ptf.Y + offY) * scaleY);
+                    if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
+                    {
+                        left = Math.Min(pts[usedPoints].X, left);
+                        right = Math.Max(pts[usedPoints].X, right);
+                        top = Math.Min(pts[usedPoints].Y, top);
+                        bottom = Math.Max(pts[usedPoints].Y, bottom);
+                        ++usedPoints;
+                    }
                 }
                 ++ptIndex;
             }
@@ -2799,12 +2914,23 @@ namespace EGIS.ShapeFileLib
             while (ptIndex < numPoints)
             {
                 PointD ptd = MercProj ? LLToProjection(*(pPtr++)) : *(pPtr++);
-                pts[usedPoints].X = (int)Math.Round((ptd.X + offX) * scale);
-                pts[usedPoints].Y = (int)Math.Round((ptd.Y + offY) * -scale);
-                if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
+                if (!(double.IsInfinity(ptd.X) || double.IsInfinity(ptd.Y)))
                 {
-                    ++usedPoints;
+
+                    pts[usedPoints].X = (int)Math.Round((ptd.X + offX) * scale);
+                    pts[usedPoints].Y = (int)Math.Round((ptd.Y + offY) * -scale);
+
+                    //if (pts[usedPoints].Y < -214648 && pts[usedPoints].X < -2147483)
+                    //{
+                    //    Console.Out.WriteLine("sdfdsf");
+                    //}
+
+                    if ((pts[usedPoints].X != pts[usedPoints - 1].X) || (pts[usedPoints].Y != pts[usedPoints - 1].Y))
+                    {
+                        ++usedPoints;
+                    }
                 }
+                
                 ++ptIndex;
             }
             if (usedPoints == 1)
@@ -2869,7 +2995,7 @@ namespace EGIS.ShapeFileLib
             int inputIndex = 2;
             int outputIndex = 0;
             for (int n = 1; n < pointCount - 1; ++n)
-            {
+            {                
                 if (Math.Abs(pts[inputIndex] - outputPoints[outputIndex]) > minDistance ||
                     Math.Abs(pts[inputIndex + 1] - outputPoints[outputIndex + 1]) > minDistance)
                 {
@@ -3163,7 +3289,10 @@ namespace EGIS.ShapeFileLib
                 projectedExtent = new RectangleD(targetExtent.Left, targetExtent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
 
 
@@ -3436,13 +3565,22 @@ namespace EGIS.ShapeFileLib
             double scaleX = (double)(clientArea.Width / extent.Width);
             double scaleY = -scaleX;
 
-            simplificationDistance = 1 / scaleX;
+            if (Math.Abs(scaleX) < double.Epsilon)
+            {
+                simplificationDistance = 0;
+            }
+            else
+            {
+                simplificationDistance = 1 / scaleX;
+            }
+            
 
             RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, extent.Width, extent.Width * (double)clientArea.Height / (double)clientArea.Width);
 
             double offX = -projectedExtent.Left;
             double offY = -projectedExtent.Bottom;
-            RectangleD actualExtent = projectedExtent;
+            
+            RectangleD testExtent = projectedExtent;
 
             if (coordinateTransformation != null)
             {
@@ -3453,7 +3591,10 @@ namespace EGIS.ShapeFileLib
 
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                testExtent = targetExtent;
             }
 
             ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
@@ -3465,9 +3606,9 @@ namespace EGIS.ShapeFileLib
             if (MercProj)
             {
                 //if we're using a Mercator Projection then convert the actual Extent to LL coords
-                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
-                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
-                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+                PointD tl = SFRecordCol.ProjectionToLL(new PointD(testExtent.Left, testExtent.Top));
+                PointD br = SFRecordCol.ProjectionToLL(new PointD(testExtent.Right, testExtent.Bottom));
+                testExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
             }
 
             bool labelfields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
@@ -3544,12 +3685,20 @@ namespace EGIS.ShapeFileLib
                         bool renderShape = recordVisible[index];
                         //overwrite if using CustomRenderSettings
                         if (useCustomRenderSettings) renderShape = customRenderSettings.RenderShape(index);
-                        if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && renderShape)
+                        RectangleD recordBounds = nextRec->bounds.ToRectangleD();
+                        BoundsTestResult boundsTestResult = BoundsTestResult.Intersects;// TestBoundsIntersect(recordBounds, testExtent, coordinateTransformation);
+                        if (nextRec->ShapeType != ShapeType.NullShape &&
+                            boundsTestResult != BoundsTestResult.NoIntersection && renderShape)
                         {
                             //check if the simplifiedDataBuffer sized needs to be increased
                             if ((nextRec->NumPoints << 1) > simplifiedDataBuffer.Length)
                             {
                                 simplifiedDataBuffer = new double[nextRec->NumPoints << 1];
+                            }
+
+                            if (simplificationDistance <= double.Epsilon)
+                            {
+                                simplificationDistance = CalculateSimplificationDistance(recordBounds, scaleX, coordinateTransformation);
                             }
 
                             fixed (double* simplifiedDataPtr = simplifiedDataBuffer)
@@ -3597,7 +3746,11 @@ namespace EGIS.ShapeFileLib
 
                                     if (coordinateTransformation != null)
                                     {
-                                        coordinateTransformation.Transform((double*)simplifiedDataPtr, usedPoints);
+                                        int transformCount = coordinateTransformation.Transform((double*)simplifiedDataPtr, usedPoints);
+                                        //if (transformCount != usedPoints)
+                                        //{
+                                        //    Console.Out.WriteLine("transformcount={0}, usedpoints={1}", transformCount, usedPoints);
+                                        //}
                                     }
 
                                     if (usedPoints == 2)
@@ -3622,6 +3775,8 @@ namespace EGIS.ShapeFileLib
                                         //GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref offX, ref offY, ref scaleX, sharedPointBuffer, ref usedPoints, MercProj);
                                         GetPointsRemoveDuplicatesD((byte*)simplifiedDataPtr, 0, usedPoints, ref offX, ref offY, ref scaleX, sharedPointBuffer, ref usedPoints, MercProj);
                                     }
+                                    
+
                                     if (recordSelected[index])
                                     {
                                         IntPtr tempPen = IntPtr.Zero;
@@ -3719,6 +3874,48 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        enum BoundsTestResult
+        {
+            Undetermined,
+            NoIntersection,
+            Intersects            
+        }
+
+        private BoundsTestResult TestBoundsIntersect(RectangleD subjectBounds, RectangleD testBounds, ICoordinateTransformation transformation)
+        {
+            if (transformation == null)
+            {
+                if(subjectBounds.IntersectsWith(testBounds)) return BoundsTestResult.Intersects;
+                return BoundsTestResult.NoIntersection;
+            }
+            if(double.IsInfinity(subjectBounds.Width) || double.IsInfinity(subjectBounds.Height) ||
+               double.IsInfinity(testBounds.Width) || double.IsInfinity(testBounds.Height) ) return BoundsTestResult.Undetermined;
+           
+            RectangleD subjectTransformedBounds = subjectBounds.Transform(transformation);
+            if (double.IsInfinity(subjectTransformedBounds.Width) || double.IsInfinity(subjectTransformedBounds.Height) || subjectTransformedBounds.Width < 0) return BoundsTestResult.Undetermined;
+
+            if (subjectTransformedBounds.IntersectsWith(testBounds)) return BoundsTestResult.Intersects;
+            return BoundsTestResult.NoIntersection;
+
+
+        }
+
+        private double CalculateSimplificationDistance(RectangleD recordBounds, double scaling, ICoordinateTransformation coordinateTransformation)        
+        {
+            if (coordinateTransformation == null)
+            {
+                // simplificatoin distance = extent.Width /pixels
+                //                         = width/(width*scaling)
+                return scaling > double.Epsilon ? (1 / scaling) : 0;
+            }
+            
+            if(recordBounds.Width < double.Epsilon ||  double.IsInfinity(recordBounds.Width) || double.IsInfinity(recordBounds.Height)) return 0;
+
+            //RectangleD transformedExtent = ShapeFile.ConvertExtent(recordBounds, coordinateTransformation);
+            RectangleD transformedExtent = recordBounds.Transform(coordinateTransformation);
+            if (double.IsInfinity(transformedExtent.Width) || scaling <= double.Epsilon) return 0;
+            return recordBounds.Width / (transformedExtent.Width * scaling);
+        }
 
         internal unsafe bool ContainsPoint(int shapeIndex, PointD pt, System.IO.FileStream shapeFileStream)
         {
@@ -4056,17 +4253,10 @@ namespace EGIS.ShapeFileLib
 
         public unsafe void PaintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
-            //bool useGDI = this.UseGDI(extent);
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
-            //double scaleX = (double)(clientArea.Width / extent.Width);
-            //double scaleY = -scaleX;
-            //RectangleD actualExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-            //double offX = -actualExtent.Left;
-            //double offY = -actualExtent.Bottom;
-
+     
             double scaleX = (double)(clientArea.Width / extent.Width);
             double scaleY = -scaleX;
-            //RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, extent.Width, extent.Width * (double)clientArea.Height / (double)clientArea.Width);
             RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
             double offX = -projectedExtent.Left;
             double offY = -projectedExtent.Bottom;
@@ -4076,14 +4266,14 @@ namespace EGIS.ShapeFileLib
             {
                 scaleX = (double)(clientArea.Width / targetExtent.Width);
                 scaleY = -scaleX;
-
                 projectedExtent = new RectangleD(targetExtent.Left, targetExtent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
-
 
             bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
             bool renderInterior = true;
@@ -4363,16 +4553,9 @@ namespace EGIS.ShapeFileLib
         public unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
-            //double scaleX = (double)(clientArea.Width / extent.Width);
-            //double scaleY = -scaleX;
-            //RectangleD actualExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-            //double offX = -actualExtent.Left;
-            //double offY = -actualExtent.Bottom;
-
-
+           
             double scaleX = (double)(clientArea.Width / extent.Width);
             double scaleY = -scaleX;            
-            //RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, extent.Width, extent.Width * (double)clientArea.Height / (double)clientArea.Width);
             RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
             double offX = -projectedExtent.Left;
             double offY = -projectedExtent.Bottom;
@@ -4387,7 +4570,10 @@ namespace EGIS.ShapeFileLib
 
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
             
             bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
@@ -4903,7 +5089,6 @@ namespace EGIS.ShapeFileLib
             
             double scaleX = (double)(clientArea.Width / extent.Width);
             double scaleY = -scaleX;
-            //RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, extent.Width, extent.Width * (double)clientArea.Height / (double)clientArea.Width);
             RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
             double offX = -projectedExtent.Left;
             double offY = -projectedExtent.Bottom;
@@ -4918,7 +5103,10 @@ namespace EGIS.ShapeFileLib
 
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
             
             bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
@@ -5199,15 +5387,9 @@ namespace EGIS.ShapeFileLib
         public unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
-            //double scaleX = (double)(clientArea.Width / extent.Width);
-            //double scaleY = -scaleX;
-            //RectangleD actualExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-            //double offX = -actualExtent.Left;
-            //double offY = -actualExtent.Bottom;
-
+         
             double scaleX = (double)(clientArea.Width / extent.Width);
             double scaleY = -scaleX;
-            //RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, extent.Width, extent.Width * (double)clientArea.Height / (double)clientArea.Width);
             RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
             double offX = -projectedExtent.Left;
             double offY = -projectedExtent.Bottom;
@@ -5222,7 +5404,10 @@ namespace EGIS.ShapeFileLib
 
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
 
             bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
@@ -5709,11 +5894,6 @@ namespace EGIS.ShapeFileLib
         public unsafe void PaintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
-            //double scaleX = (double)(clientArea.Width / extent.Width);
-            //double scaleY = -scaleX;
-            //RectangleD actualExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-            //double offX = -actualExtent.Left;
-            //double offY = -actualExtent.Bottom;
             double scaleX = (double)(clientArea.Width / extent.Width);
             double scaleY = -scaleX;
             RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
@@ -5728,7 +5908,10 @@ namespace EGIS.ShapeFileLib
                 projectedExtent = new RectangleD(targetExtent.Left, targetExtent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
            
             bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
@@ -6022,11 +6205,6 @@ namespace EGIS.ShapeFileLib
         public unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
-            //double scaleX = (double)(clientArea.Width / extent.Width);
-            //double scaleY = -scaleX;
-            //RectangleD actualExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-            //double offX = -actualExtent.Left;
-            //double offY = -actualExtent.Bottom;
             
             double scaleX = (double)(clientArea.Width / extent.Width);
             double scaleY = -scaleX;
@@ -6042,7 +6220,10 @@ namespace EGIS.ShapeFileLib
                 projectedExtent = new RectangleD(targetExtent.Left, targetExtent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
 
             bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
@@ -6578,11 +6759,6 @@ namespace EGIS.ShapeFileLib
         public unsafe void PaintHiQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
-            //double scaleX = (double)(clientArea.Width / extent.Width);
-            //double scaleY = -scaleX;
-            //RectangleD actualExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-            //double offX = -actualExtent.Left;
-            //double offY = -actualExtent.Bottom;
             double scaleX = (double)(clientArea.Width / extent.Width);
             double scaleY = -scaleX;
             RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
@@ -6597,7 +6773,10 @@ namespace EGIS.ShapeFileLib
                 projectedExtent = new RectangleD(targetExtent.Left, targetExtent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
            
             bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
@@ -6891,11 +7070,6 @@ namespace EGIS.ShapeFileLib
         public unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
         {
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
-            //double scaleX = (double)(clientArea.Width / extent.Width);
-            //double scaleY = -scaleX;
-            //RectangleD actualExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-            //double offX = -actualExtent.Left;
-            //double offY = -actualExtent.Bottom;
             double scaleX = (double)(clientArea.Width / extent.Width);
             double scaleY = -scaleX;
             RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
@@ -6910,7 +7084,10 @@ namespace EGIS.ShapeFileLib
                 projectedExtent = new RectangleD(targetExtent.Left, targetExtent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
            
             bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
@@ -7463,7 +7640,9 @@ namespace EGIS.ShapeFileLib
 
                     offX = -projectedExtent.Left;
                     offY = -projectedExtent.Bottom;
-                    actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                    //when the coordinateTransformation has been supplied the extent will already contain
+                    //the actual intersecting extent in the shapefile CRS
+                    actualExtent = extent;
                 }
 
 
@@ -7656,7 +7835,8 @@ namespace EGIS.ShapeFileLib
                                                 if (labelFields && paintCount == 0 && usePolySimplificationLabeling)
                                                 {
                                                     //check what the scaled bounds of this part are
-                                                    if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                    //if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                    if ((nextRec->bounds.Width > 6 * simplificationDistance) || (nextRec->bounds.Height > 6 * simplificationDistance))
                                                     {
                                                         int usedTempPoints = 0;
                                                         NativeMethods.SimplifyDouglasPeucker(pts, pts.Length, 2, tempPoints, ref usedTempPoints);
@@ -7859,8 +8039,9 @@ namespace EGIS.ShapeFileLib
 
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                //actualExtent = projectedExtent;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
 
 
@@ -8057,7 +8238,8 @@ namespace EGIS.ShapeFileLib
                                             if (labelFields && paintCount == 0 && usePolySimplificationLabeling)
                                             {
                                                 //check what the scaled bounds of this part are
-                                                if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                //if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                if ((nextRec->bounds.Width > 6 * simplificationDistance) || (nextRec->bounds.Height > 6 * simplificationDistance))
                                                 {
                                                     int usedTempPoints = 0;
                                                     NativeMethods.SimplifyDouglasPeucker(sharedPoints, gprdParam.usedPoints, 2, tempPoints, ref usedTempPoints);
@@ -8595,7 +8777,6 @@ namespace EGIS.ShapeFileLib
 
                 if (coordinateTransformation != null)
                 {
-                   // RectangleD targetExtent = ShapeFile.ConvertExtent(extent, coordinateTransformation);
                     scaleX = (double)(clientArea.Width / targetExtent.Width);
                     scaleY = -scaleX;
 
@@ -8603,8 +8784,10 @@ namespace EGIS.ShapeFileLib
 
                     offX = -projectedExtent.Left;
                     offY = -projectedExtent.Bottom;
-                    //actualExtent = projectedExtent;
-                    actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                    //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                    //when the coordinateTransformation has been supplied the extent will already contain
+                    //the actual intersecting extent in the shapefile CRS
+                    actualExtent = extent;
                 }
 
 
@@ -8799,7 +8982,8 @@ namespace EGIS.ShapeFileLib
                                                 if (labelFields && paintCount == 0 && usePolySimplificationLabeling)
                                                 {
                                                     //check what the scaled bounds of this part are
-                                                    if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                    //if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                    if ((nextRec->bounds.Width > 6 * simplificationDistance) || (nextRec->bounds.Height > 6 * simplificationDistance))
                                                     {
                                                         int usedTempPoints = 0;
                                                         NativeMethods.SimplifyDouglasPeucker(pts, pts.Length, 2, tempPoints, ref usedTempPoints);
@@ -8989,6 +9173,7 @@ namespace EGIS.ShapeFileLib
             double scaleY = -scaleX;
 
             simplificationDistance = 1 / scaleX;
+            Console.Out.WriteLine("simplificationDistance = " + simplificationDistance);
 
             RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
             double offX = -projectedExtent.Left;
@@ -8997,7 +9182,6 @@ namespace EGIS.ShapeFileLib
 
             if (coordinateTransformation != null)
             {
-                // RectangleD targetExtent = ShapeFile.ConvertExtent(extent, coordinateTransformation);
                 scaleX = (double)(clientArea.Width / targetExtent.Width);
                 scaleY = -scaleX;
 
@@ -9005,8 +9189,11 @@ namespace EGIS.ShapeFileLib
 
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                //actualExtent = projectedExtent;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
 
             bool MercProj = projectionType == ProjectionType.Mercator;
@@ -9169,7 +9356,11 @@ namespace EGIS.ShapeFileLib
                                             
                                             if (coordinateTransformation != null)
                                             {
-                                                coordinateTransformation.Transform((double*)simplifiedDataPtr, usedPoints);
+                                                int transformCount = coordinateTransformation.Transform((double*)simplifiedDataPtr, usedPoints);
+                                                if (transformCount != usedPoints)
+                                                {
+                                                    Console.Out.WriteLine("transformcount={0}, usedpoints={1}", transformCount, usedPoints);
+                                                }
                                             }
 
 
@@ -9181,7 +9372,8 @@ namespace EGIS.ShapeFileLib
                                             if (labelFields && paintCount == 0 && usePolySimplificationLabeling)
                                             {
                                                 //check what the scaled bounds of this part are
-                                                if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                //if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                if ((nextRec->bounds.Width > 6 * simplificationDistance) || (nextRec->bounds.Height > 6 * simplificationDistance))
                                                 {
                                                     int usedTempPoints = 0;
                                                     NativeMethods.SimplifyDouglasPeucker(sharedPoints, usedPoints, 2, labelPoints, ref usedTempPoints);
@@ -9729,7 +9921,10 @@ namespace EGIS.ShapeFileLib
                 projectedExtent = new RectangleD(targetExtent.Left, targetExtent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
 
             ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
@@ -10022,7 +10217,10 @@ namespace EGIS.ShapeFileLib
                 projectedExtent = new RectangleD(targetExtent.Left, targetExtent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
 
             ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
@@ -10717,7 +10915,10 @@ namespace EGIS.ShapeFileLib
 
                     offX = -projectedExtent.Left;
                     offY = -projectedExtent.Bottom;
-                    actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                    //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                    //when the coordinateTransformation has been supplied the extent will already contain
+                    //the actual intersecting extent in the shapefile CRS
+                    actualExtent = extent;
                 }
 
                 bool MercProj = projectionType == ProjectionType.Mercator;
@@ -10959,7 +11160,8 @@ namespace EGIS.ShapeFileLib
                                                 if (labelFields && paintCount == 0 )
                                                 {
                                                     //check what the scaled bounds of this part are
-                                                    if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                    //if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                    if ((nextRec->bounds.Width > 6 * simplificationDistance) || (nextRec->bounds.Height > 6 * simplificationDistance))
                                                     {
                                                         int usedTempPoints = 0;
                                                         NativeMethods.SimplifyDouglasPeucker(pts, pts.Length, 2, tempPoints, ref usedTempPoints);
@@ -11171,7 +11373,10 @@ namespace EGIS.ShapeFileLib
 
                 offX = -projectedExtent.Left;
                 offY = -projectedExtent.Bottom;
-                actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
+                //when the coordinateTransformation has been supplied the extent will already contain
+                //the actual intersecting extent in the shapefile CRS
+                actualExtent = extent;
             }
 
             bool MercProj = projectionType == ProjectionType.Mercator;
@@ -11393,7 +11598,8 @@ namespace EGIS.ShapeFileLib
                                             if (labelFields && paintCount == 0)
                                             {
                                                 //check what the scaled bounds of this part are
-                                                if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                //if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+                                                if ((nextRec->bounds.Width > 6 * simplificationDistance) || (nextRec->bounds.Height > 6 * simplificationDistance))
                                                 {
                                                     int usedTempPoints = 0;
                                                     NativeMethods.SimplifyDouglasPeucker(sharedPoints, usedPoints, 2, tempPoints, ref usedTempPoints);

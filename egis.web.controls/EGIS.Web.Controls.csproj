@@ -12,7 +12,7 @@
     <AssemblyName>EGIS.Web.Controls</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>egis.snk</AssemblyOriginatorKeyFile>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>2.0</OldToolsVersion>
@@ -44,6 +44,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Debug\EGIS.Web.Controls.XML</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -53,6 +54,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -110,6 +112,10 @@
     <EmbeddedResource Include="tooltip.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\EGIS.Projections\EGIS.Projections.csproj">
+      <Project>{9b3d02d0-d57d-4e7d-a04c-9ddcb36f0ce7}</Project>
+      <Name>EGIS.Projections</Name>
+    </ProjectReference>
     <ProjectReference Include="..\EGIS.ShapeFileLib\EGIS.ShapeFileLib.csproj">
       <Project>{C89DEB9B-4DCA-4792-B216-F00808606AF7}</Project>
       <Name>EGIS.ShapeFileLib</Name>

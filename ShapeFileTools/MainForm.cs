@@ -36,6 +36,7 @@ using System.Windows.Forms;
 using System.Xml;
 using EGIS.ShapeFileLib;
 using System.Drawing.Printing;
+using EGIS.Projections;
 
 namespace egis
 {
@@ -71,6 +72,9 @@ namespace egis
 
            // TestLineClipping();
             //TestPolygonClipping();
+
+            
+            //CreateTestShapeFile(@"c:\temp\TestShapefile.shp");
           
             sfMap1.MapDoubleClick += new EventHandler<EGIS.Controls.SFMap.MapDoubleClickedEventArgs>(sfMap1_MapDoubleClick);
         }
@@ -88,6 +92,7 @@ namespace egis
             {
                 var crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
                 this.sfMap1.MapCoordinateReferenceSystem = crs;
+                this.tsLblMapCRS.Text = "" + crs;
             }
             catch { }
         }
@@ -1754,16 +1759,91 @@ namespace egis
 
         }
 
+       
         private void setCRSToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (EGIS.Controls.CRSSelectionForm form = new EGIS.Controls.CRSSelectionForm())
+            using (EGIS.Controls.CRSSelectionForm form = new EGIS.Controls.CRSSelectionForm(CoordinateReferenceSystemFactory.Default ))
             {
                 form.SelectedCRS = this.sfMap1.MapCoordinateReferenceSystem;
                 if (form.ShowDialog(this) == DialogResult.OK)
                 {
                     this.sfMap1.MapCoordinateReferenceSystem = form.SelectedCRS;
-
+                    Console.Out.WriteLine("AreaofUse:W:{0:0.000},N:{1:0.000},E:{2:0.000},S:{3:0.000}", form.SelectedCRS.AreaOfUse.WestLongitudeDegrees,
+                        form.SelectedCRS.AreaOfUse.NorthLatitudeDegrees,
+                        form.SelectedCRS.AreaOfUse.EastLongitudeDegrees,
+                        form.SelectedCRS.AreaOfUse.SouthLatitudeDegrees);
+                    this.tsLblMapCRS.Text = this.sfMap1.MapCoordinateReferenceSystem != null ? this.sfMap1.MapCoordinateReferenceSystem.ToString() : "Unknown CRS";                    
                 }
+            }
+        }
+
+        private void tsLblMapCRS_DoubleClick(object sender, EventArgs e)
+        {
+            setCRSToolStripMenuItem_Click(sender, e);
+
+        }
+
+        private void CreateTestShapeFile(string filename)
+        {
+            DbfFieldDesc[] fields = new DbfFieldDesc[1];
+            fields[0] = new DbfFieldDesc()
+            {
+                FieldName = "Name",
+                FieldLength = 10,
+                FieldType = DbfFieldType.Character
+            };
+            using(ShapeFileWriter writer = ShapeFileWriter.CreateWriter(System.IO.Path.GetDirectoryName(filename),
+                System.IO.Path.GetFileNameWithoutExtension(filename),
+                ShapeType.Polygon,
+                fields))
+            {
+                PointD[] pts = new PointD[5];
+                pts[0].X = -25; pts[0].Y = 30;
+                pts[1].X = 25; pts[1].Y = 30;
+                pts[2].X = 25; pts[2].Y = -30;
+                pts[3].X = -25; pts[3].Y = -30;
+                pts[4] = pts[0];
+
+                writer.AddRecord(pts, 5, new string[] { "1" });
+
+                pts[0].X = 100; pts[0].Y = 30;
+                pts[1].X = 150; pts[1].Y = 30;
+                pts[2].X = 150; pts[2].Y = -30;
+                pts[3].X = 100; pts[3].Y = -30;
+                pts[4] = pts[0];
+
+                writer.AddRecord(pts, 5, new string[] { "2" });
+
+                pts[0].X = -150; pts[0].Y = 30;
+                pts[1].X = -100; pts[1].Y = 30;
+                pts[2].X = -100; pts[2].Y = -30;
+                pts[3].X = -150; pts[3].Y = -30;
+                pts[4] = pts[0];
+
+                writer.AddRecord(pts, 5, new string[] { "3" });
+
+                pts[0].X = -180; pts[0].Y = 30;
+                pts[1].X = -170; pts[1].Y = 30;
+                pts[2].X = -170; pts[2].Y = -30;
+                pts[3].X = -180; pts[3].Y = -30;
+                pts[4] = pts[0];
+
+                writer.AddRecord(pts, 5, new string[] { "4" });
+
+                pts[0].X = 170; pts[0].Y = 30;
+                pts[1].X = 180; pts[1].Y = 30;
+                pts[2].X = 180; pts[2].Y = -30;
+                pts[3].X = 170; pts[3].Y = -30;
+                pts[4] = pts[0];
+
+                writer.AddRecord(pts, 5, new string[] { "3" });
+
+
+            }
+            using(System.IO.StreamWriter sw =new System.IO.StreamWriter(System.IO.Path.ChangeExtension(filename, ".prj")))
+            {
+                ICRS wgs84 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+                sw.WriteLine(wgs84.WKT);
             }
         }
     }

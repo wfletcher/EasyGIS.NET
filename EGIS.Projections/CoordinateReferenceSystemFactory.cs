@@ -42,7 +42,15 @@ namespace EGIS.Projections
             }
         }
 
+        /// <summary>
+        /// EPSG code for WGS84 (World Geodetic System) Ellipsoid
+        /// </summary>
         public const int Wgs84EpsgCode = 4326;
+
+        /// <summary>
+        /// EPSG code for popular Web Mercator projection used for GoogleMaps, MapBox, OSM 
+        /// </summary>
+        public const int Wgs84PseudoMercatorEpsgCode = 3857;
 
 
         private void LoadData()
@@ -56,6 +64,9 @@ namespace EGIS.Projections
                 LoadData(reader);
             }
 
+            Console.Out.WriteLine("Loaded {0} Geographic Systems", GeographicCoordinateSystems.Count);
+            Console.Out.WriteLine("Loaded {0} Projection Systems", ProjectedCoordinateSystems.Count);
+            Console.Out.WriteLine("Total Systems: {0}", coordinateSystems.Count);
             //List<string> authorites = new List<string>(new string[] { "EPSG" });// Proj6Native.Proj_get_authorities_from_database(IntPtr.Zero);
             //using (System.IO.StreamWriter writer = new StreamWriter(@"c:\temp\EPSG.csv"))
             //{

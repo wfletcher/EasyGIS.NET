@@ -38,9 +38,12 @@
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.btnParseWKT = new System.Windows.Forms.Button();
             this.txtWKT = new System.Windows.Forms.TextBox();
+            this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.lstRecentCRS = new System.Windows.Forms.ListBox();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nudEPGS)).BeginInit();
             this.groupBox2.SuspendLayout();
+            this.groupBox3.SuspendLayout();
             this.SuspendLayout();
             // 
             // groupBox1
@@ -53,7 +56,7 @@
             this.groupBox1.Controls.Add(this.cbSelectedCRS);
             this.groupBox1.Controls.Add(this.rbProjected);
             this.groupBox1.Controls.Add(this.rbGeographic);
-            this.groupBox1.Location = new System.Drawing.Point(3, 3);
+            this.groupBox1.Location = new System.Drawing.Point(3, 90);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(346, 102);
             this.groupBox1.TabIndex = 0;
@@ -133,7 +136,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox2.Controls.Add(this.btnParseWKT);
             this.groupBox2.Controls.Add(this.txtWKT);
-            this.groupBox2.Location = new System.Drawing.Point(3, 111);
+            this.groupBox2.Location = new System.Drawing.Point(3, 198);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(346, 123);
             this.groupBox2.TabIndex = 1;
@@ -159,19 +162,45 @@
             this.txtWKT.Size = new System.Drawing.Size(334, 66);
             this.txtWKT.TabIndex = 0;
             // 
+            // groupBox3
+            // 
+            this.groupBox3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.groupBox3.Controls.Add(this.lstRecentCRS);
+            this.groupBox3.Location = new System.Drawing.Point(3, 3);
+            this.groupBox3.Name = "groupBox3";
+            this.groupBox3.Size = new System.Drawing.Size(346, 81);
+            this.groupBox3.TabIndex = 2;
+            this.groupBox3.TabStop = false;
+            this.groupBox3.Text = "Recent";
+            // 
+            // lstRecentCRS
+            // 
+            this.lstRecentCRS.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lstRecentCRS.FormattingEnabled = true;
+            this.lstRecentCRS.Location = new System.Drawing.Point(6, 20);
+            this.lstRecentCRS.Name = "lstRecentCRS";
+            this.lstRecentCRS.Size = new System.Drawing.Size(334, 56);
+            this.lstRecentCRS.TabIndex = 0;
+            this.lstRecentCRS.SelectedIndexChanged += new System.EventHandler(this.lstRecentCRS_SelectedIndexChanged);
+            // 
             // CRSSelectionControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Name = "CRSSelectionControl";
-            this.Size = new System.Drawing.Size(352, 240);
+            this.Size = new System.Drawing.Size(352, 327);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nudEPGS)).EndInit();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
+            this.groupBox3.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -188,5 +217,7 @@
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.Button btnParseWKT;
         private System.Windows.Forms.TextBox txtWKT;
+        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.ListBox lstRecentCRS;
     }
 }

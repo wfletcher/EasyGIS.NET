@@ -33,6 +33,7 @@ using System.Drawing;
 using System.Data;
 using System.Text;
 using System.Windows.Forms;
+using EGIS.ShapeFileLib;
 
 namespace EGIS.Controls
 {
@@ -244,8 +245,8 @@ namespace EGIS.Controls
             EGIS.ShapeFileLib.ShapeFile selectedLayer = layerContextMenu.Tag as EGIS.ShapeFileLib.ShapeFile;
             if (selectedLayer != null)
             {
-                _map.FitToExtent(selectedLayer.Extent);
-                //selectedLayer.Extent
+                RectangleD extent = selectedLayer.Extent.Transform(selectedLayer.CoordinateReferenceSystem, _map.MapCoordinateReferenceSystem);                
+                _map.FitToExtent(extent);                
             }
         }
 
@@ -254,8 +255,7 @@ namespace EGIS.Controls
             EGIS.ShapeFileLib.ShapeFile selectedLayer = layerContextMenu.Tag as EGIS.ShapeFileLib.ShapeFile;
             if (selectedLayer != null)
             {
-                _map.ZoomToSelection(selectedLayer);
-                //selectedLayer.Extent
+                _map.ZoomToSelection(selectedLayer);                
             }
 
         }

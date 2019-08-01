@@ -1,8 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 
+[assembly: CLSCompliant(true)]
 namespace EGIS.Projections
 {
+    public struct CRSBoundingBox
+    {
+        public double WestLongitudeDegrees;
+        public double NorthLatitudeDegrees;
+        public double EastLongitudeDegrees;
+        public double SouthLatitudeDegrees;        
+
+        public bool IsDefined
+        {
+            get
+            {
+                //if the area of interest is unknown then parameters will be -1000
+                return !(Math.Abs(WestLongitudeDegrees + 1000) < 0.01 ||
+                         Math.Abs(NorthLatitudeDegrees + 1000) < 0.01 ||
+                         Math.Abs(EastLongitudeDegrees + 1000) < 0.01 ||
+                         Math.Abs(SouthLatitudeDegrees + 1000) < 0.01);
+            }
+        }
+    }
     
     /// <summary>
     /// interface defining a Coordinate Reference System
@@ -33,6 +53,11 @@ namespace EGIS.Projections
         }
 
         bool IsEquivalent(ICRS other);
+
+        CRSBoundingBox AreaOfUse
+        {
+            get;
+        }
     }
 
     /// <summary>
@@ -53,6 +78,13 @@ namespace EGIS.Projections
         }
     }
 
+
+    public enum TransformDirection
+    {
+        None,
+        Forward,
+        Inverse
+    }
     /// <summary>
     /// interface defining a Coordinate Transformation used to transform a coordinate from a source CRS
     /// to a target CRS.
@@ -76,11 +108,11 @@ namespace EGIS.Projections
         /// <param name="points"></param>
         /// <param name="pointCount"></param>
         /// <returns>number of points transformed</returns>
-        int Transform(double[] points, int pointCount);
+        int Transform(double[] points, int pointCount, TransformDirection direction = TransformDirection.Forward);
 
-        int Transform(double[] points, int startIndex, int pointCount);
+        int Transform(double[] points, int startIndex, int pointCount, TransformDirection direction = TransformDirection.Forward);
 
-        unsafe int Transform(double* points, int pointCount);
+        unsafe int Transform(double* points, int pointCount, TransformDirection direction = TransformDirection.Forward);
 
         
     }
