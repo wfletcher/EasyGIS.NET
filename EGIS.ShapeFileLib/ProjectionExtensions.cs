@@ -40,6 +40,7 @@ namespace EGIS.ShapeFileLib
         public static bool IsValidExtent(this RectangleD @this)
         {
             if (double.IsInfinity(@this.Width) || double.IsInfinity(@this.Height) ||
+                @this.Width < 0 ||
                 double.IsNaN(@this.X) || double.IsNaN(@this.Y) ||
                 double.IsNaN(@this.Width) || double.IsNaN(@this.Height)) return false;
 
@@ -47,14 +48,14 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        public static RectangleD Transform(this EGIS.Projections.ICoordinateTransformation @this, RectangleD rect)
+        public static RectangleD Transform(this EGIS.Projections.ICoordinateTransformation @this, RectangleD rect, Projections.TransformDirection direction = Projections.TransformDirection.Forward)
         {
             double[] pts = new double[8];
             pts[0] = rect.Left; pts[1] = rect.Bottom;
             pts[2] = rect.Right; pts[3] = rect.Bottom;
             pts[4] = rect.Right; pts[5] = rect.Top;
             pts[6] = rect.Left; pts[7] = rect.Top;
-            @this.Transform(pts, 4);
+            @this.Transform(pts, 4, direction);
             return RectangleD.FromLTRB(Math.Min(pts[0], pts[6]),
                 Math.Min(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
                 Math.Max(pts[1], pts[3]));

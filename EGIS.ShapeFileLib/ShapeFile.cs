@@ -596,26 +596,33 @@ namespace EGIS.ShapeFileLib
             //using (ICoordinateTransformation invTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS))
             {
                 //covert the target extent and the shapefile's extent to geographic WGS84 and test if they intersect
-                if (wgs84Crs == null) wgs84Crs = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+                if (false)
+                {
+                    if (wgs84Crs == null) wgs84Crs = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
 
-                RectangleD targetWgs84 = ConvertExtentToWgs84(extent, coordinateTransformation.TargetCRS);
+                    RectangleD targetWgs84 = ConvertExtentToWgs84(extent, coordinateTransformation.TargetCRS);
 
-                //Console.Out.WriteLine("left = " + targetWgs84.Left);
-                //Console.Out.WriteLine("right = " + targetWgs84.Right);
+                    RectangleD shapeFileExtentWgs84 = ConvertExtentToWgs84(this.Extent, this.CoordinateReferenceSystem);
 
+                    if (!shapeFileExtentWgs84.IntersectsWith(targetWgs84)) return;
 
-                RectangleD shapeFileExtentWgs84 = ConvertExtentToWgs84(this.Extent, this.CoordinateReferenceSystem);
+                    RectangleD intersectingExtent = RectangleD.Intersect(targetWgs84, shapeFileExtentWgs84);
+                    //convert the intersecting geographic coordinates to the shapefile coordinates
 
-                if (!shapeFileExtentWgs84.IntersectsWith(targetWgs84)) return;
+                    RectangleD r = intersectingExtent.Transform(wgs84Crs, this.CoordinateReferenceSystem);
+                }
 
-                RectangleD intersectingExtent = RectangleD.Intersect(targetWgs84, shapeFileExtentWgs84);
-                //convert the intersecting geographic coordinates to the shapefile coordinates
-
-                RectangleD r = intersectingExtent.Transform(wgs84Crs, this.CoordinateReferenceSystem);
+                extent.Transform(coordinateTransformation );
+                RectangleD shapeFileExtent = coordinateTransformation.Transform(extent, TransformDirection.Inverse);
+                if (shapeFileExtent.IsValidExtent() && this.Extent.IsValidExtent())
+                {
+                    shapeFileExtent = RectangleD.Intersect(Extent, shapeFileExtent);
+                }
 
                 if (sfRecordCol != null)
                 {
-                    sfRecordCol.paint(g, clientArea, r, shapeFileStream, RenderSettings, projectionType, coordinateTransformation, extent);
+                    //sfRecordCol.paint(g, clientArea, r, shapeFileStream, RenderSettings, projectionType, coordinateTransformation, extent);
+                    sfRecordCol.paint(g, clientArea, shapeFileExtent, shapeFileStream, RenderSettings, projectionType, coordinateTransformation, extent);
                 }
 
                 //double[] pts = new double[8];
@@ -3278,7 +3285,7 @@ namespace EGIS.ShapeFileLib
             
             double scaleX = (double)(clientArea.Width / extent.Width);
             double scaleY = -scaleX;
-            if (Math.Abs(scaleX) < double.Epsilon)
+            if (double.IsNaN(scaleX) || Math.Abs(scaleX) < double.Epsilon)
             {
                 simplificationDistance = 0;
             }
@@ -3290,7 +3297,8 @@ namespace EGIS.ShapeFileLib
             RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, extent.Width, extent.Width * (double)clientArea.Height / (double)clientArea.Width);
             double offX = -projectedExtent.Left;
             double offY = -projectedExtent.Bottom;
-            RectangleD actualExtent = projectedExtent;
+
+            RectangleD testExtent = projectedExtent;
 
             if (coordinateTransformation != null)
             {
@@ -3302,9 +3310,8 @@ namespace EGIS.ShapeFileLib
                 //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
                 //when the coordinateTransformation has been supplied the extent will already contain
                 //the actual intersecting extent in the shapefile CRS
-                actualExtent = extent;
+                testExtent = extent;
             }
-
 
 
             ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
@@ -3316,9 +3323,9 @@ namespace EGIS.ShapeFileLib
             if (MercProj)
             {
                 //if we're using a Mercator Projection then convert the actual Extent to LL coords
-                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
-                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
-                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+                PointD tl = SFRecordCol.ProjectionToLL(new PointD(testExtent.Left, testExtent.Top));
+                PointD br = SFRecordCol.ProjectionToLL(new PointD(testExtent.Right, testExtent.Bottom));
+                testExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
             }
 
             bool labelfields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
@@ -3358,7 +3365,8 @@ namespace EGIS.ShapeFileLib
                 fixed (byte* dataBufPtr = data)
                 {
                     if (!fileMapped) dataPtr = dataBufPtr;
-                                
+
+                    int partPaintCount = 0;
                     while (index < pgRecs.Length)
                     {
 
@@ -3382,7 +3390,9 @@ namespace EGIS.ShapeFileLib
                         //overwrite if using CustomRenderSettings
                         if (useCustomRenderSettings) renderShape = customRenderSettings.RenderShape(index);
                         RectangleD recordBounds = nextRec->bounds.ToRectangleD();
-                        if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(recordBounds) && renderShape)
+                        BoundsTestResult boundsTestResult = BoundsTestResult.Undetermined;// TestBoundsIntersect(recordBounds, testExtent);//, coordinateTransformation);
+                        if (nextRec->ShapeType != ShapeType.NullShape &&
+                            boundsTestResult != BoundsTestResult.NoIntersection && renderShape)
                         {
                             //check if the simplifiedDataBuffer sized needs to be increased
                             if ((nextRec->NumPoints << 1) > simplifiedDataBuffer.Length)
@@ -3455,10 +3465,12 @@ namespace EGIS.ShapeFileLib
                                         ++usedPoints;
                                     }
 
+                                    pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
+
                                     if (labelfields)
                                     {
                                         //pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
-                                        pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
+                                       // pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
                                         if (partBounds.Width > 5 && partBounds.Height > 5)
                                         {
                                             partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
@@ -3467,9 +3479,13 @@ namespace EGIS.ShapeFileLib
                                     else
                                     {
                                         //pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, MercProj);
-                                        pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, MercProj);
+                                       // pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, MercProj);
                                     }
-                                    gp.AddPolygon(pts);
+                                    if (partBounds.IntersectsWith(new Rectangle(0, 0, clientArea.Width, clientArea.Height)))
+                                    {
+                                        ++partPaintCount;
+                                        gp.AddPolygon(pts);
+                                    }
                                 }
                                 if (recordSelected[index])
                                 {
@@ -3490,12 +3506,13 @@ namespace EGIS.ShapeFileLib
                                 gp.Dispose();
                             }
                         }
-                        else
-                        {
-                            Console.Out.WriteLine("hq skipping record " + index);
-                        }
+                        //else
+                        //{
+                        //    Console.Out.WriteLine("hq skipping record " + index);
+                        //}
                         ++index;
                     }
+                    Console.Out.WriteLine("partPaintCount = " + partPaintCount);
                 }
             }
             finally
@@ -3585,7 +3602,7 @@ namespace EGIS.ShapeFileLib
             double scaleX = (double)(clientArea.Width / extent.Width);
             double scaleY = -scaleX;
 
-            if (Math.Abs(scaleX) < double.Epsilon)
+            if (double.IsNaN(scaleX) || Math.Abs(scaleX) < double.Epsilon)
             {
                 simplificationDistance = 0;
             }
@@ -3824,10 +3841,10 @@ namespace EGIS.ShapeFileLib
                                 }
                             }
                         }
-                        else
-                        {
-                            Console.Out.WriteLine("skipping record " + index);
-                        }
+                        //else
+                        //{
+                        //    Console.Out.WriteLine("skipping record " + index);
+                        //}
                         
                         ++index;
                     }
@@ -3921,6 +3938,17 @@ namespace EGIS.ShapeFileLib
             if (subjectTransformedBounds.IntersectsWith(testBounds)) return BoundsTestResult.Intersects;
             return BoundsTestResult.NoIntersection;
 
+
+        }
+
+        private BoundsTestResult TestBoundsIntersect(RectangleD subjectBounds, RectangleD testBounds)
+        {
+            
+            if (testBounds.Width < 0  || double.IsInfinity(subjectBounds.Width) || double.IsInfinity(subjectBounds.Height) ||
+               double.IsInfinity(testBounds.Width) || double.IsInfinity(testBounds.Height)) return BoundsTestResult.Undetermined;
+            
+            if (subjectBounds.IntersectsWith(testBounds)) return BoundsTestResult.Intersects;
+            return BoundsTestResult.NoIntersection;
 
         }
 
