@@ -4,6 +4,9 @@ using EGIS.Projections;
 
 namespace EGIS.ShapeFileLib
 {
+    /// <summary>
+    /// EGIS.Projections Extensions
+    /// </summary>
     public static class ProjectionExtensions
     {
         public static RectangleD Transform(this RectangleD @this, ICoordinateTransformation transformation)
