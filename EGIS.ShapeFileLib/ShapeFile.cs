@@ -3126,8 +3126,64 @@ namespace EGIS.ShapeFileLib
             color = (color << 8) | (c.R & 0xff);
             return color;
         }
-        
-#endregion 
+
+
+        protected enum BoundsTestResult
+        {
+            Undetermined,
+            NoIntersection,
+            Intersects
+        }
+
+        protected static BoundsTestResult TestBoundsIntersect(RectangleD subjectBounds, RectangleD testBounds, ICoordinateTransformation transformation)
+        {
+            if (transformation == null)
+            {
+                if (subjectBounds.IntersectsWith(testBounds)) return BoundsTestResult.Intersects;
+                return BoundsTestResult.NoIntersection;
+            }
+            if (double.IsInfinity(subjectBounds.Width) || double.IsInfinity(subjectBounds.Height) ||
+               double.IsInfinity(testBounds.Width) || double.IsInfinity(testBounds.Height)) return BoundsTestResult.Undetermined;
+
+            RectangleD subjectTransformedBounds = subjectBounds.Transform(transformation);
+            if (double.IsInfinity(subjectTransformedBounds.Width) || double.IsInfinity(subjectTransformedBounds.Height) || subjectTransformedBounds.Width < 0) return BoundsTestResult.Undetermined;
+
+            if (subjectTransformedBounds.IntersectsWith(testBounds)) return BoundsTestResult.Intersects;
+            return BoundsTestResult.NoIntersection;
+
+
+        }
+
+        protected static BoundsTestResult TestBoundsIntersect(RectangleD subjectBounds, RectangleD testBounds)
+        {
+
+            if (testBounds.Width < 0 || double.IsInfinity(subjectBounds.Width) || double.IsInfinity(subjectBounds.Height) ||
+               double.IsInfinity(testBounds.Width) || double.IsInfinity(testBounds.Height)) return BoundsTestResult.Undetermined;
+
+            if (subjectBounds.IntersectsWith(testBounds)) return BoundsTestResult.Intersects;
+            return BoundsTestResult.NoIntersection;
+
+        }
+
+        protected static double CalculateSimplificationDistance(RectangleD recordBounds, double scaling, ICoordinateTransformation coordinateTransformation)
+        {
+            if (coordinateTransformation == null)
+            {
+                // simplificatoin distance = extent.Width /pixels
+                //                         = width/(width*scaling)
+                return scaling > double.Epsilon ? (1 / scaling) : 0;
+            }
+
+            if (recordBounds.Width < double.Epsilon || double.IsInfinity(recordBounds.Width) || double.IsInfinity(recordBounds.Height)) return 0;
+
+            //RectangleD transformedExtent = ShapeFile.ConvertExtent(recordBounds, coordinateTransformation);
+            RectangleD transformedExtent = recordBounds.Transform(coordinateTransformation);
+            if (double.IsInfinity(transformedExtent.Width) || scaling <= double.Epsilon) return 0;
+            return recordBounds.Width / (transformedExtent.Width * scaling);
+        }
+
+
+        #endregion
 
     }
 
@@ -3915,60 +3971,44 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        enum BoundsTestResult
-        {
-            Undetermined,
-            NoIntersection,
-            Intersects            
-        }
+        //enum BoundsTestResult
+        //{
+        //    Undetermined,
+        //    NoIntersection,
+        //    Intersects            
+        //}
 
-        private BoundsTestResult TestBoundsIntersect(RectangleD subjectBounds, RectangleD testBounds, ICoordinateTransformation transformation)
-        {
-            if (transformation == null)
-            {
-                if(subjectBounds.IntersectsWith(testBounds)) return BoundsTestResult.Intersects;
-                return BoundsTestResult.NoIntersection;
-            }
-            if(double.IsInfinity(subjectBounds.Width) || double.IsInfinity(subjectBounds.Height) ||
-               double.IsInfinity(testBounds.Width) || double.IsInfinity(testBounds.Height) ) return BoundsTestResult.Undetermined;
+        //private BoundsTestResult TestBoundsIntersect(RectangleD subjectBounds, RectangleD testBounds, ICoordinateTransformation transformation)
+        //{
+        //    if (transformation == null)
+        //    {
+        //        if(subjectBounds.IntersectsWith(testBounds)) return BoundsTestResult.Intersects;
+        //        return BoundsTestResult.NoIntersection;
+        //    }
+        //    if(double.IsInfinity(subjectBounds.Width) || double.IsInfinity(subjectBounds.Height) ||
+        //       double.IsInfinity(testBounds.Width) || double.IsInfinity(testBounds.Height) ) return BoundsTestResult.Undetermined;
            
-            RectangleD subjectTransformedBounds = subjectBounds.Transform(transformation);
-            if (double.IsInfinity(subjectTransformedBounds.Width) || double.IsInfinity(subjectTransformedBounds.Height) || subjectTransformedBounds.Width < 0) return BoundsTestResult.Undetermined;
+        //    RectangleD subjectTransformedBounds = subjectBounds.Transform(transformation);
+        //    if (double.IsInfinity(subjectTransformedBounds.Width) || double.IsInfinity(subjectTransformedBounds.Height) || subjectTransformedBounds.Width < 0) return BoundsTestResult.Undetermined;
 
-            if (subjectTransformedBounds.IntersectsWith(testBounds)) return BoundsTestResult.Intersects;
-            return BoundsTestResult.NoIntersection;
+        //    if (subjectTransformedBounds.IntersectsWith(testBounds)) return BoundsTestResult.Intersects;
+        //    return BoundsTestResult.NoIntersection;
 
 
-        }
+        //}
 
-        private BoundsTestResult TestBoundsIntersect(RectangleD subjectBounds, RectangleD testBounds)
-        {
+        //private BoundsTestResult TestBoundsIntersect(RectangleD subjectBounds, RectangleD testBounds)
+        //{
             
-            if (testBounds.Width < 0  || double.IsInfinity(subjectBounds.Width) || double.IsInfinity(subjectBounds.Height) ||
-               double.IsInfinity(testBounds.Width) || double.IsInfinity(testBounds.Height)) return BoundsTestResult.Undetermined;
+        //    if (testBounds.Width < 0  || double.IsInfinity(subjectBounds.Width) || double.IsInfinity(subjectBounds.Height) ||
+        //       double.IsInfinity(testBounds.Width) || double.IsInfinity(testBounds.Height)) return BoundsTestResult.Undetermined;
             
-            if (subjectBounds.IntersectsWith(testBounds)) return BoundsTestResult.Intersects;
-            return BoundsTestResult.NoIntersection;
+        //    if (subjectBounds.IntersectsWith(testBounds)) return BoundsTestResult.Intersects;
+        //    return BoundsTestResult.NoIntersection;
 
-        }
+        //}
 
-        private double CalculateSimplificationDistance(RectangleD recordBounds, double scaling, ICoordinateTransformation coordinateTransformation)        
-        {
-            if (coordinateTransformation == null)
-            {
-                // simplificatoin distance = extent.Width /pixels
-                //                         = width/(width*scaling)
-                return scaling > double.Epsilon ? (1 / scaling) : 0;
-            }
-            
-            if(recordBounds.Width < double.Epsilon ||  double.IsInfinity(recordBounds.Width) || double.IsInfinity(recordBounds.Height)) return 0;
-
-            //RectangleD transformedExtent = ShapeFile.ConvertExtent(recordBounds, coordinateTransformation);
-            RectangleD transformedExtent = recordBounds.Transform(coordinateTransformation);
-            if (double.IsInfinity(transformedExtent.Width) || scaling <= double.Epsilon) return 0;
-            return recordBounds.Width / (transformedExtent.Width * scaling);
-        }
-
+       
         internal unsafe bool ContainsPoint(int shapeIndex, PointD pt, System.IO.FileStream shapeFileStream)
         {
             byte[] data = SFRecordCol.SharedBuffer;
@@ -9224,13 +9264,21 @@ namespace EGIS.ShapeFileLib
             double scaleX = (double)(clientArea.Width / extent.Width);
             double scaleY = -scaleX;
 
-            simplificationDistance = 1 / scaleX;
+            if (double.IsNaN(scaleX) || Math.Abs(scaleX) < double.Epsilon)
+            {
+                simplificationDistance = 0;
+            }
+            else
+            {
+                simplificationDistance = 1 / scaleX;
+            }
+
             Console.Out.WriteLine("simplificationDistance = " + simplificationDistance);
 
             RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
             double offX = -projectedExtent.Left;
             double offY = -projectedExtent.Bottom;
-            RectangleD actualExtent = projectedExtent;
+            RectangleD testExtent = projectedExtent;
 
             if (coordinateTransformation != null)
             {
@@ -9245,7 +9293,7 @@ namespace EGIS.ShapeFileLib
                 //actualExtent = ShapeFile.ConvertExtent(projectedExtent, coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS);
                 //when the coordinateTransformation has been supplied the extent will already contain
                 //the actual intersecting extent in the shapefile CRS
-                actualExtent = extent;
+                testExtent = targetExtent;
             }
 
             bool MercProj = projectionType == ProjectionType.Mercator;
@@ -9253,9 +9301,9 @@ namespace EGIS.ShapeFileLib
             if (MercProj)
             {
                 //if we're using a Mercator Projection then convert the actual Extent to LL coords
-                PointD tl = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Left, actualExtent.Top));
-                PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
-                actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
+                PointD tl = SFRecordCol.ProjectionToLL(new PointD(testExtent.Left, testExtent.Top));
+                PointD br = SFRecordCol.ProjectionToLL(new PointD(testExtent.Right, testExtent.Bottom));
+                testExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
             }
             ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
             bool useCustomRenderSettings = (renderSettings != null && customRenderSettings != null);
@@ -9362,12 +9410,20 @@ namespace EGIS.ShapeFileLib
                                 //overwrite if using CustomRenderSettings
                                 if (useCustomRenderSettings) renderShape = customRenderSettings.RenderShape(index);
 
-                                if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && renderShape)
+                                RectangleD recordBounds = nextRec->bounds.ToRectangleD();
+                                BoundsTestResult boundsTestResult = TestBoundsIntersect(recordBounds, testExtent, coordinateTransformation);
+
+                                if (nextRec->ShapeType != ShapeType.NullShape && boundsTestResult != BoundsTestResult.NoIntersection && renderShape)
                                 {
                                     //check if the simplifiedDataBuffer sized needs to be increased
                                     if ((nextRec->NumPoints << 1) > simplifiedDataBuffer.Length)
                                     {
                                         simplifiedDataBuffer = new double[nextRec->NumPoints << 1];
+                                    }
+
+                                    if (simplificationDistance <= double.Epsilon)
+                                    {
+                                        simplificationDistance = CalculateSimplificationDistance(recordBounds, scaleX, coordinateTransformation);
                                     }
 
                                     fixed (double* simplifiedDataPtr = simplifiedDataBuffer)

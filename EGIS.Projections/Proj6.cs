@@ -105,6 +105,10 @@ namespace EGIS.Projections
             public static CRS FromWKT(string wkt)
             {
                 IntPtr p = Proj6Native.proj_create(IntPtr.Zero, wkt);
+                
+                //this code returns null?
+                //IntPtr p = Proj6Native.Proj_create_from_wkt(IntPtr.Zero, wkt);
+
                 try
                 {
                     Proj6Native.PJ_TYPE pType = Proj6Native.proj_get_type(p);

@@ -452,6 +452,15 @@ namespace EGIS.Projections
 
         internal static extern int proj_get_area_of_use(IntPtr ctx, IntPtr pjObj, ref double out_west_lon_degree, ref double out_south_lat_degree, ref double out_east_lon_degree, ref double out_north_lat_degree, IntPtr out_area_name);
 
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+
+        internal static unsafe extern IntPtr proj_create_from_wkt(IntPtr ctx, string wkt, byte** options, byte** out_warnings, byte** out_grammar_errors);
+
+        internal static unsafe IntPtr Proj_create_from_wkt(IntPtr ctx, string wkt)
+        {
+            return proj_create_from_wkt(ctx, wkt, null, null, null);
+        }
     }
 }
 
