@@ -102,12 +102,31 @@ namespace EGIS.Projections
                 return Name;
             }
 
-            public static CRS FromWKT(string wkt)
+            public static CRS FromWKT(string wkt, bool identify = false)
             {
                 IntPtr p = Proj6Native.proj_create(IntPtr.Zero, wkt);
-                
+
                 //this code returns null?
                 //IntPtr p = Proj6Native.Proj_create_from_wkt(IntPtr.Zero, wkt);
+                if (p != IntPtr.Zero && identify)
+                {
+                    string name = Proj6Native.GetAuthName(p);
+                    int confidence = 0;
+                    IntPtr p2 = Proj6Native.Proj_identify(IntPtr.Zero, p, name, out confidence);
+                    if (p2 != IntPtr.Zero && confidence > 85)
+                    {
+                        Proj6Native.proj_destroy(p);
+                        p = p2;
+                    }
+                    else
+                    {
+                        if (p2 != IntPtr.Zero)
+                        {
+                            Proj6Native.proj_destroy(p2);
+                        }
+                    }
+
+                }
 
                 try
                 {

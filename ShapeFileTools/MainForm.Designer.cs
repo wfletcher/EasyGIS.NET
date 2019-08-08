@@ -50,6 +50,7 @@ namespace egis
             this.miMapBackgroundColor = new System.Windows.Forms.ToolStripMenuItem();
             this.miMercatorProjection = new System.Windows.Forms.ToolStripMenuItem();
             this.setCRSToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.setMapCRSFromFirstLayerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
             this.renderQualityToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.highToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -239,10 +240,13 @@ namespace egis
             // 
             // optionsToolStripMenuItem
             // 
+            this.optionsToolStripMenuItem.Checked = true;
+            this.optionsToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
             this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.miMapBackgroundColor,
             this.miMercatorProjection,
             this.setCRSToolStripMenuItem,
+            this.setMapCRSFromFirstLayerToolStripMenuItem,
             this.toolStripSeparator8,
             this.renderQualityToolStripMenuItem,
             this.useNativeFileMappingToolStripMenuItem,
@@ -275,6 +279,15 @@ namespace egis
             this.setCRSToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
             this.setCRSToolStripMenuItem.Text = "Set CRS";
             this.setCRSToolStripMenuItem.Click += new System.EventHandler(this.setCRSToolStripMenuItem_Click);
+            // 
+            // setMapCRSFromFirstLayerToolStripMenuItem
+            // 
+            this.setMapCRSFromFirstLayerToolStripMenuItem.Checked = true;
+            this.setMapCRSFromFirstLayerToolStripMenuItem.CheckOnClick = true;
+            this.setMapCRSFromFirstLayerToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.setMapCRSFromFirstLayerToolStripMenuItem.Name = "setMapCRSFromFirstLayerToolStripMenuItem";
+            this.setMapCRSFromFirstLayerToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
+            this.setMapCRSFromFirstLayerToolStripMenuItem.Text = "Use CRS From First Layer Added to Map";
             // 
             // toolStripSeparator8
             // 
@@ -752,6 +765,7 @@ namespace egis
             this.sfMap1.ZoomLevelChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_ZoomLevelChanged);
             this.sfMap1.TooltipDisplayed += new System.EventHandler<EGIS.Controls.SFMap.TooltipEventArgs>(this.sfMap1_TooltipDisplayed);
             this.sfMap1.SelectedRecordsChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_SelectedRecordsChanged);
+            this.sfMap1.CoordinateReferenceSystemChanged += new System.EventHandler<System.EventArgs>(this.sfMap1_CoordinateReferenceSystemChanged);
             this.sfMap1.ClientSizeChanged += new System.EventHandler(this.sfMap1_ClientSizeChanged);
             this.sfMap1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.sfMap1_KeyDown);
             this.sfMap1.KeyUp += new System.Windows.Forms.KeyEventHandler(this.sfMap1_KeyUp);
@@ -866,6 +880,7 @@ namespace egis
         private System.Windows.Forms.ToolStripMenuItem addXYDatacsvToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem setCRSToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel tsLblMapCRS;
+        private System.Windows.Forms.ToolStripMenuItem setMapCRSFromFirstLayerToolStripMenuItem;
     }
 }
 

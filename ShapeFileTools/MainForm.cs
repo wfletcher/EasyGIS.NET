@@ -173,6 +173,17 @@ namespace egis
             string name = path.Substring(path.LastIndexOf("\\") + 1);
             EGIS.ShapeFileLib.ShapeFile sf = sfMap1.AddShapeFile(path, name, "NAME");
             this.shapeFileRenderPropertyGrid.SelectedObject = sf.RenderSettings;
+
+            if (setMapCRSFromFirstLayerToolStripMenuItem.Checked && sfMap1.ShapeFileCount == 1)
+            {
+                ICRS crs = sf.CoordinateReferenceSystem;
+                if (crs != null)
+                {
+                    this.sfMap1.MapCoordinateReferenceSystem = crs;
+                }
+
+            }
+            
         }
 
         private void SelectAndCenterRecord(int index, ShapeFile sf)
@@ -1771,10 +1782,14 @@ namespace egis
                     Console.Out.WriteLine("AreaofUse:W:{0:0.000},N:{1:0.000},E:{2:0.000},S:{3:0.000}", form.SelectedCRS.AreaOfUse.WestLongitudeDegrees,
                         form.SelectedCRS.AreaOfUse.NorthLatitudeDegrees,
                         form.SelectedCRS.AreaOfUse.EastLongitudeDegrees,
-                        form.SelectedCRS.AreaOfUse.SouthLatitudeDegrees);
-                    this.tsLblMapCRS.Text = this.sfMap1.MapCoordinateReferenceSystem != null ? this.sfMap1.MapCoordinateReferenceSystem.ToString() : "Unknown CRS";                    
+                        form.SelectedCRS.AreaOfUse.SouthLatitudeDegrees);                    
                 }
             }
+        }
+
+        private void sfMap1_CoordinateReferenceSystemChanged(object sender, EventArgs e)
+        {
+            this.tsLblMapCRS.Text = this.sfMap1.MapCoordinateReferenceSystem != null ? this.sfMap1.MapCoordinateReferenceSystem.ToString() : "Unknown CRS";
         }
 
         private void tsLblMapCRS_DoubleClick(object sender, EventArgs e)
@@ -1846,6 +1861,8 @@ namespace egis
                 sw.WriteLine(wgs84.WKT);
             }
         }
+
+       
     }
   
 }

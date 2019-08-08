@@ -306,9 +306,28 @@ namespace EGIS.Controls
                 MapDoubleClick(this, args);
             }
         }
-        
 
-#endregion
+
+        /// <summary>
+        /// Event fired when the map's Coordinate Reference System is changed
+        /// </summary>
+        public event EventHandler<EventArgs> CoordinateReferenceSystemChanged;
+
+
+        /// <summary>
+        /// Raises the CoordinateReferenceSystemChanged event.
+        /// </summary>
+        /// <param name="args">EventArgs object</param>
+        protected void OnCoordinateReferenceSystemChanged(EventArgs args)
+        {            
+            if (CoordinateReferenceSystemChanged != null)
+            {
+                CoordinateReferenceSystemChanged(this, args);
+            }
+        }
+
+
+        #endregion
 
         /// <summary>
         /// SFMap contructor
@@ -610,6 +629,8 @@ namespace EGIS.Controls
             set
             {
                 //convert the current visible extent to equivalent extent of the new CRS
+                bool fireEvent = (this.mapCoordinateReferenceSystem != null && value == null) || (this.mapCoordinateReferenceSystem == null && value != null) ||
+                                   (this.mapCoordinateReferenceSystem != null && value != null && !this.mapCoordinateReferenceSystem.IsEquivalent(value));
                 RectangleD currentExtent = this.VisibleExtent;
                 currentExtent = currentExtent.Transform(this.mapCoordinateReferenceSystem, value);                
                 this.mapCoordinateReferenceSystem = value;
@@ -621,6 +642,7 @@ namespace EGIS.Controls
                 {
                     ZoomToFullExtent();
                 }
+                if (fireEvent) OnCoordinateReferenceSystemChanged(new EventArgs());
             }
         }
 
@@ -1728,7 +1750,7 @@ namespace EGIS.Controls
 
         /// <summary>
         /// Handles the MouseUp event. Derived classes overriding this method should call base.OnMouseUp
-        /// to ensure the SFMap control handles the event correctly
+        /// to ensure the SFMap control raises the event correctly
         /// </summary>
         /// <param name="e"></param>
         protected override void OnMouseUp(MouseEventArgs e)

@@ -13,6 +13,9 @@ namespace EGIS.Controls
 {
     public partial class CRSSelectionForm : Form
     {
+
+        private const int MaxRecentCRSListSize = 12;
+
         private ICRSFactory crsFactory;
        
         public CRSSelectionForm()
@@ -82,6 +85,12 @@ namespace EGIS.Controls
             if (index == 0) return; //already first element in the list. just return
             if (index > 0) recentList.RemoveAt(index);
             recentList.Insert(0, crs);
+
+            //limit the number of entries we store in the recent list
+            while(recentList.Count > MaxRecentCRSListSize)
+            {
+                recentList.RemoveAt(recentList.Count - 1);
+            }
             Properties.Settings.Default.Save();
         }
 

@@ -231,7 +231,7 @@ namespace EGIS.Projections
 
         public ICRS CreateCRSFromWKT(string wkt)
         {
-            return Proj6.CRS.FromWKT(wkt);
+            return Proj6.CRS.FromWKT(wkt, true);
         }
 
         public ICoordinateTransformation CreateCoordinateTrasformation(ICRS source, ICRS target)

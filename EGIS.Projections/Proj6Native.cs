@@ -461,6 +461,46 @@ namespace EGIS.Projections
         {
             return proj_create_from_wkt(ctx, wkt, null, null, null);
         }
+
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+
+        internal static extern int proj_list_get_count(IntPtr result);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr proj_list_get(IntPtr ctx, IntPtr result, int index);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void proj_list_destroy(IntPtr result);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static unsafe extern IntPtr proj_identify(IntPtr ctx, IntPtr pjObj, string auth_name, byte** options, int** out_confidence);
+
+
+        internal static unsafe IntPtr Proj_identify(IntPtr ctx, IntPtr pjObj, string auth_name, out int confidence)
+        {
+            confidence = 0;
+            int* confidenceArray = null;
+            IntPtr pjObjList = proj_identify(ctx, pjObj, auth_name, null, &confidenceArray);
+
+            if (pjObjList == IntPtr.Zero) return IntPtr.Zero;
+
+            int count = proj_list_get_count(pjObjList);
+            if (count == 0) return IntPtr.Zero;
+
+            IntPtr result = proj_list_get(ctx, pjObjList, 0);
+            confidence = confidenceArray[0];
+
+            proj_int_list_destroy(confidenceArray);
+            proj_list_destroy(pjObjList);
+            return result;
+        }
+
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static unsafe extern void proj_int_list_destroy(int* list);
+
+
     }
 }
 

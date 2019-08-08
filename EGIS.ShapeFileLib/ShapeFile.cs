@@ -243,6 +243,9 @@ namespace EGIS.ShapeFileLib
 
         private string projectionWkt;
 
+        /// <summary>
+        /// The WKT representation of the ShapeFile's Coordinate Reference System as read from the .prj file
+        /// </summary>
         public string ProjectionWKT
         {
             get
@@ -263,6 +266,9 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        /// <summary>
+        /// The Coordinate Reference System of the ShapeFile as read from the .prj file WKT
+        /// </summary>
         public ICRS CoordinateReferenceSystem
         {
             get;
