@@ -75,7 +75,7 @@ namespace EGIS.ShapeFileLib
         private Color _selectFillColor = Color.SlateBlue;
         private Color _selectOutlineColor = Color.Yellow;
         
-        private float _penWidthScale = 0.001f;
+        private float _penWidthScale = 0.00025f;
 
         private int maxPixelPenWidth = -1;
         private int minPixelPenWidth = -1;

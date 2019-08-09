@@ -1198,6 +1198,12 @@ namespace EGIS.Controls
             {
                 sf.RenderSettings.MaxPixelPenWidth = 10;
 
+                if (sf.CoordinateReferenceSystem == null)
+                {
+                    sf.RenderSettings.MinPixelPenWidth = 1;
+                    return;
+                }
+
                 if (this.MapCoordinateReferenceSystem is EGIS.Projections.IProjectedCRS)
                 {
                     //assume projected coordinates
@@ -1207,21 +1213,23 @@ namespace EGIS.Controls
                 {
                     RectangleD r = sf.Extent;
                     double[] pt = new double[]{r.Left + r.Width / 2, r.Top + r.Height / 2};
+                    
                     using (ICoordinateTransformation coordTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem))
                     {
-
                         coordTransformation.Transform(pt, 1);
-                        EGIS.ShapeFileLib.UtmCoordinate utm1 = EGIS.ShapeFileLib.ConversionFunctions.LLToUtm(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, pt[1], pt[0]);
-                        EGIS.ShapeFileLib.UtmCoordinate utm2 = utm1;
-                        utm2.Northing += 15;
-                        EGIS.ShapeFileLib.LatLongCoordinate ll = EGIS.ShapeFileLib.ConversionFunctions.UtmToLL(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, utm2);
-                        sf.RenderSettings.PenWidthScale = (float)Math.Abs(ll.Latitude - pt[1]);
                     }
+                    EGIS.ShapeFileLib.UtmCoordinate utm1 = EGIS.ShapeFileLib.ConversionFunctions.LLToUtm(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, pt[1], pt[0]);
+                    EGIS.ShapeFileLib.UtmCoordinate utm2 = utm1;
+                    utm2.Northing += 15;
+                    EGIS.ShapeFileLib.LatLongCoordinate ll = EGIS.ShapeFileLib.ConversionFunctions.UtmToLL(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, utm2);
+                    sf.RenderSettings.PenWidthScale = (float)Math.Abs(ll.Latitude - pt[1]);
+                    
                 }
             }
             catch
             {
                 sf.RenderSettings.PenWidthScale = -1;
+                sf.RenderSettings.MinPixelPenWidth = 1;
             }
         }
 
