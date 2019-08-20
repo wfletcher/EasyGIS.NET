@@ -89,12 +89,12 @@ namespace EGIS.Controls
             int xIndex = -1, yIndex = -1;
             xIndex = Array.FindIndex<string>(fieldNames, s => s.IndexOf("Longitude", StringComparison.OrdinalIgnoreCase) >= 0);
             if (xIndex < 0) xIndex = Array.FindIndex<string>(fieldNames, s => s.IndexOf("Easting", StringComparison.OrdinalIgnoreCase) >= 0);
-            if (xIndex < 0) xIndex = Array.FindIndex<string>(fieldNames, s => s.IndexOf("Lat", StringComparison.OrdinalIgnoreCase) >= 0);
+            if (xIndex < 0) xIndex = Array.FindIndex<string>(fieldNames, s => s.IndexOf("Lon", StringComparison.OrdinalIgnoreCase) >= 0);
             if (xIndex < 0) xIndex = Array.FindIndex<string>(fieldNames, s => s.IndexOf("East", StringComparison.OrdinalIgnoreCase) >= 0);
 
             yIndex = Array.FindIndex<string>(fieldNames, s => s.IndexOf("Latitude", StringComparison.OrdinalIgnoreCase) >= 0);
             if (yIndex < 0) yIndex = Array.FindIndex<string>(fieldNames, s => s.IndexOf("Northing", StringComparison.OrdinalIgnoreCase) >= 0);
-            if (yIndex < 0) yIndex = Array.FindIndex<string>(fieldNames, s => s.IndexOf("Lon", StringComparison.OrdinalIgnoreCase) >= 0);
+            if (yIndex < 0) yIndex = Array.FindIndex<string>(fieldNames, s => s.IndexOf("Lat", StringComparison.OrdinalIgnoreCase) >= 0);
             if (yIndex < 0) yIndex = Array.FindIndex<string>(fieldNames, s => s.IndexOf("North", StringComparison.OrdinalIgnoreCase) >= 0);
 
             if (xIndex >= 0) cbXCoordField.SelectedIndex = xIndex;

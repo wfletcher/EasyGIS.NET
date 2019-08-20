@@ -218,6 +218,12 @@ namespace EGIS.ShapeFileLib
                         {
                             continue;
                         }
+
+                        if(Math.Abs(pts[0] - -100000000) < 0.000001  || Math.Abs(pts[1] - -100000000) < 0.000001)
+                        {
+                            continue;                              
+                        }
+
                         writer.AddRecord(pts, 1, values);
                         ++count;
                         if (progressHandler != null && (totalRecords > 0))

@@ -1322,7 +1322,7 @@ namespace EGIS.ShapeFileLib
         /// <param name="minDistance">the min distance (in sourceCRS coordinate units or in the shapefile's coordinate units if sourceCRS is null)
         /// between pt and a shape when searching point or line shapes that will return a "hit". </param>
         ///  <param name="sourceCRS">The source CRS that pt and minDistance is defined in. If this parameter is null then the shapefile's coordinate units will be used, which was the 
-        ///  default behaviour prior to version 4.6.x. To support backwards compatibility the default value of courceCRS is set to null</param>
+        ///  default behaviour prior to version 4.6.x. To support backwards compatibility the default value of sourceCRS is set to null</param>
         /// <returns>zero based index of the shape containing pt or -1 if no shape contains the point</returns>
         /// <remarks>When searching in a Point ShapeFile a point will be defined as contining pt if the distance between the found point and pt is less than or equal to minDistance
         /// <para>When searching in a PolyLine ShapeFile a Line will be defined as containing the point if the distance between a line segment in the found shape and pt is less than or equal to minDistance</para>
