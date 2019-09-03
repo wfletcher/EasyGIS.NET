@@ -7760,7 +7760,10 @@ namespace EGIS.ShapeFileLib
                 List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
 
                 float renderPenWidth = (float)(renderSettings.PenWidthScale * scaleX);
-
+                if (float.IsNaN(renderPenWidth) || float.IsInfinity(renderPenWidth))
+                {
+                    renderPenWidth = 1;
+                }
                 if (renderSettings.MaxPixelPenWidth > 0 && renderPenWidth > renderSettings.MaxPixelPenWidth)
                 {
                     renderPenWidth = renderSettings.MaxPixelPenWidth;
@@ -7925,7 +7928,8 @@ namespace EGIS.ShapeFileLib
                                                     coordinateTransformation.Transform((double*)simplifiedDataPtr, usedPoints);
                                                 }
 
-                                                pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, MercProj);
+                                                Rectangle pixelBounds = new Rectangle();
+                                                pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, ref pixelBounds, MercProj);
 
                                                 //pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, MercProj);
 
@@ -7945,65 +7949,100 @@ namespace EGIS.ShapeFileLib
                                                     }
                                                 }
 
-                                                if (recordSelected[index] && selectPen != null)
+                                                List<Point[]> pointList = new List<Point[]>();
+                                                if (pixelBounds.Left < -1000 || pixelBounds.Top < -1000 || pixelBounds.Right > clientArea.Width + 1000 || pixelBounds.Bottom > clientArea.Height + 1000)
                                                 {
-                                                    g.DrawLines(selectPen, pts);
+                                                    //clip the polyline to avoid overflow
+                                                    GeometryAlgorithms.ClipBounds clipBounds = new GeometryAlgorithms.ClipBounds()
+                                                    {
+                                                        XMin = 0,
+                                                        YMin = 0,
+                                                        XMax = clientArea.Width,
+                                                        YMax = clientArea.Height
+                                                    };
+                                                    List<int> clippedPoints = new List<int>();
+                                                    List<int> clippedParts = new List<int>();
+                                                    GeometryAlgorithms.PolyLineClip(pts, pts.Length, clipBounds, clippedPoints, clippedParts);
+                                                    for (int clipPartIndex = 0; clipPartIndex < clippedParts.Count; ++clipPartIndex)
+                                                    {
+                                                        int startIndex = clippedParts[clipPartIndex];
+                                                        int endIndex = clipPartIndex < clippedParts.Count - 1 ? clippedParts[clipPartIndex + 1] : clippedPoints.Count;
+                                                        Point[] partPoints = new Point[(endIndex - startIndex) >> 1];
+                                                        for (int s = startIndex, p = 0; s < endIndex; s += 2, ++p)
+                                                        {
+                                                            partPoints[p].X = clippedPoints[s];
+                                                            partPoints[p].Y = clippedPoints[s + 1];
+                                                        }
+                                                        pointList.Add(partPoints);
+                                                    }
                                                 }
                                                 else
                                                 {
-                                                    g.DrawLines(gdiplusPen, pts);
+                                                    pointList.Add(pts);
                                                 }
-                                                if (renderRailway)
+                                                foreach (var partPoints in pointList)
                                                 {
-                                                    int th = (int)Math.Ceiling((renderPenWidth + 2) / 2);
-                                                    int tw = (int)Math.Max(Math.Round((7f * th) / 7), 5);
-                                                    int pIndx = 0;
-                                                    int lx = 0;
-                                                    System.Drawing.Drawing2D.Matrix savedTransform = g.Transform;
-                                                    try
+                                                    pts = partPoints;
+                                                    if (recordSelected[index] && selectPen != null)
                                                     {
-                                                        while (pIndx < pts.Length - 1)
-                                                        {
-                                                            //draw the next line segment
-
-                                                            int dy = pts[pIndx + 1].Y - pts[pIndx].Y;
-                                                            int dx = pts[pIndx + 1].X - pts[pIndx].X;
-                                                            float a = (float)(Math.Atan2(dy, dx) * 180f / Math.PI);
-                                                            int d = (int)Math.Round(Math.Sqrt(dy * dy + dx * dx));
-                                                            if (d > 0)
-                                                            {
-                                                                g.Transform = savedTransform;
-                                                                if (Math.Abs(a) > 90f && Math.Abs(a) <= 270f)
-                                                                {
-                                                                    a -= 180f;
-                                                                    g.TranslateTransform(pts[pIndx + 1].X, pts[pIndx + 1].Y);
-                                                                    g.RotateTransform(a);
-                                                                    while (lx < d)
-                                                                    {
-                                                                        g.DrawLine(rwPen, lx, -th, lx, th);
-                                                                        lx += tw;
-                                                                    }
-                                                                    lx -= d;
-                                                                }
-                                                                else
-                                                                {
-                                                                    g.TranslateTransform(pts[pIndx].X, pts[pIndx].Y);
-                                                                    g.RotateTransform(a);
-                                                                    while (lx < d)
-                                                                    {
-                                                                        g.DrawLine(rwPen, lx, -th, lx, th);
-                                                                        lx += tw;
-                                                                    }
-                                                                    lx -= d;
-                                                                }
-                                                            }
-
-                                                            pIndx++;
-                                                        }
+                                                        g.DrawLines(selectPen, pts);
                                                     }
-                                                    finally
+                                                    else
                                                     {
-                                                        g.Transform = savedTransform;
+                                                        g.DrawLines(gdiplusPen, pts);
+                                                    }
+                                                    if (renderRailway)
+                                                    {
+                                                        int th = (int)Math.Ceiling((renderPenWidth + 2) / 2);
+                                                        int tw = (int)Math.Max(Math.Round((7f * th) / 7), 5);
+                                                        int pIndx = 0;
+                                                        int lx = 0;
+                                                        System.Drawing.Drawing2D.Matrix savedTransform = g.Transform;
+                                                        try
+                                                        {
+                                                            while (pIndx < pts.Length - 1)
+                                                            {
+                                                                //draw the next line segment
+
+                                                                int dy = pts[pIndx + 1].Y - pts[pIndx].Y;
+                                                                int dx = pts[pIndx + 1].X - pts[pIndx].X;
+                                                                float a = (float)(Math.Atan2(dy, dx) * 180f / Math.PI);
+                                                                int d = (int)Math.Round(Math.Sqrt(dy * dy + dx * dx));
+                                                                if (d > 0)
+                                                                {
+                                                                    g.Transform = savedTransform;
+                                                                    if (Math.Abs(a) > 90f && Math.Abs(a) <= 270f)
+                                                                    {
+                                                                        a -= 180f;
+                                                                        g.TranslateTransform(pts[pIndx + 1].X, pts[pIndx + 1].Y);
+                                                                        g.RotateTransform(a);
+                                                                        while (lx < d)
+                                                                        {
+                                                                            g.DrawLine(rwPen, lx, -th, lx, th);
+                                                                            lx += tw;
+                                                                        }
+                                                                        lx -= d;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        g.TranslateTransform(pts[pIndx].X, pts[pIndx].Y);
+                                                                        g.RotateTransform(a);
+                                                                        while (lx < d)
+                                                                        {
+                                                                            g.DrawLine(rwPen, lx, -th, lx, th);
+                                                                            lx += tw;
+                                                                        }
+                                                                        lx -= d;
+                                                                    }
+                                                                }
+
+                                                                pIndx++;
+                                                            }
+                                                        }
+                                                        finally
+                                                        {
+                                                            g.Transform = savedTransform;
+                                                        }
                                                     }
                                                 }
                                             }

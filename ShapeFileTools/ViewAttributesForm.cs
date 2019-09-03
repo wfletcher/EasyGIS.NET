@@ -343,7 +343,7 @@ namespace egis
                     dataGridView1.SelectionChanged -= dataGridView1_SelectionChanged;
                     selectingRecords = true;
                     dataGridView1.ClearSelection();
-                    Dictionary<int, bool> dictionary = new Dictionary<int, bool>();                    
+                    Dictionary<int, bool> dictionary = new Dictionary<int, bool>();
                     foreach (int index in selectedRecordIndicies)
                     {
                         dictionary[index] = true;
@@ -354,7 +354,12 @@ namespace egis
                     {
                         int rowIndex = (int)dataView[n][colIndex];
                         if (dictionary.ContainsKey(rowIndex)) dataGridView1.Rows[n].Selected = true;
-                    }                    
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.Message, "Error loading selected records", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
                 }
                 finally
                 {
@@ -392,7 +397,16 @@ namespace egis
         {
             if (cbCurrentLayer.SelectedIndex >= 0 && cbCurrentLayer.SelectedIndex < mapReference.ShapeFileCount)
             {
-                LoadAttributes(mapReference[cbCurrentLayer.SelectedIndex]);
+                try
+                {
+                    LoadAttributes(mapReference[cbCurrentLayer.SelectedIndex]);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, ex.Message, "Error loading attributes", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    cbCurrentLayer.SelectedIndex = -1;
+                    ClearData();
+                }
             }
 
         }

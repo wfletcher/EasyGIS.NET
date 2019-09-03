@@ -1222,7 +1222,16 @@ namespace EGIS.Controls
                     EGIS.ShapeFileLib.UtmCoordinate utm2 = utm1;
                     utm2.Northing += 15;
                     EGIS.ShapeFileLib.LatLongCoordinate ll = EGIS.ShapeFileLib.ConversionFunctions.UtmToLL(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, utm2);
-                    sf.RenderSettings.PenWidthScale = (float)Math.Abs(ll.Latitude - pt[1]);
+                    double penWidthScale = Math.Abs(ll.Latitude - pt[1]);
+                    if (double.IsNaN(penWidthScale) || double.IsInfinity(penWidthScale))
+                    {
+                        sf.RenderSettings.PenWidthScale = -1;
+                        sf.RenderSettings.MinPixelPenWidth = 1;
+                    }
+                    else
+                    {
+                        sf.RenderSettings.PenWidthScale = (float)penWidthScale;
+                    }
                     
                 }
             }
