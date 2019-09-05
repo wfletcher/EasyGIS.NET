@@ -99,6 +99,8 @@ namespace EGIS.ShapeFileLib
         private int toolTipFieldIndex;
         private bool useToolTip;
 
+        private System.Drawing.Drawing2D.LineCap _lineStartCap = System.Drawing.Drawing2D.LineCap.Round;
+        private System.Drawing.Drawing2D.LineCap _lineEndCap = System.Drawing.Drawing2D.LineCap.Round;
 
         internal static RenderSettings PropertyGridInstance;
 
@@ -490,7 +492,33 @@ namespace EGIS.ShapeFileLib
             {
                 _lineDashStyle = value;
             }
-        } 
+        }
+
+        [Category("Layer Render Settings"), Description("The start LineCap to use when rending solid lines and the outline of polygons")]
+        public System.Drawing.Drawing2D.LineCap LineStartCap
+        {
+            get
+            {
+                return _lineStartCap;
+            }
+            set
+            {
+                _lineStartCap = value;
+            }
+        }
+
+        [Category("Layer Render Settings"), Description("The End LineCap to use when rending solid lines and the outline of polygons")]
+        public System.Drawing.Drawing2D.LineCap LineEndCap
+        {
+            get
+            {
+                return _lineEndCap;
+            }
+            set
+            {
+                _lineEndCap = value;
+            }
+        }
 
         /// <summary>
         /// Gets / Sets whether to fill the interior of each shape (Polygon)
@@ -811,6 +839,14 @@ namespace EGIS.ShapeFileLib
             writer.WriteString(this.LineType.ToString());
             writer.WriteEndElement();
 
+            writer.WriteStartElement("LineStartCap");
+            writer.WriteString(this.LineStartCap.ToString());
+            writer.WriteEndElement();
+
+            writer.WriteStartElement("LineEndCap");
+            writer.WriteString(this.LineEndCap.ToString());
+            writer.WriteEndElement();
+
             if (!string.IsNullOrEmpty(PointImageSymbol) && System.IO.File.Exists(PointImageSymbol))
             {
                 writer.WriteStartElement("PointImageSymbol");
@@ -1060,7 +1096,19 @@ namespace EGIS.ShapeFileLib
             {
                 this.RenderQuality = RenderQuality.Auto;
             }
-                        
+
+            nl = element.GetElementsByTagName("LineStartCap");
+            if (nl != null && nl.Count > 0)
+            {
+                LineStartCap = (System.Drawing.Drawing2D.LineCap)Enum.Parse(typeof(System.Drawing.Drawing2D.LineCap), nl[0].InnerText, true);
+            }
+
+            nl = element.GetElementsByTagName("LineEndCap");
+            if (nl != null && nl.Count > 0)
+            {
+                LineEndCap = (System.Drawing.Drawing2D.LineCap)Enum.Parse(typeof(System.Drawing.Drawing2D.LineCap), nl[0].InnerText, true);
+            }
+
         }
 
         #endregion

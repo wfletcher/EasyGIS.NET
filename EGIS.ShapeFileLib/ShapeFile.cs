@@ -7822,11 +7822,11 @@ namespace EGIS.ShapeFileLib
                                     }
                                 }
                             }
-                            gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-                            gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-                            gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;                            
-                            selectPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-                            selectPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                            gdiplusPen.EndCap = renderSettings.LineEndCap;//  System.Drawing.Drawing2D.LineCap.Round;
+                            gdiplusPen.StartCap = renderSettings.LineStartCap;// System.Drawing.Drawing2D.LineCap.Round;
+                            gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                            selectPen.EndCap = renderSettings.LineEndCap;// System.Drawing.Drawing2D.LineCap.Round;
+                            selectPen.StartCap = renderSettings.LineStartCap;// System.Drawing.Drawing2D.LineCap.Round;
                             selectPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                             if (renderSettings.LineType == LineType.Solid)
                             {
@@ -7893,8 +7893,8 @@ namespace EGIS.ShapeFileLib
                                                 {
                                                     gdiplusPen = new Pen(customColor, penWidth);
                                                     currentPenColor = customColor;
-                                                    gdiplusPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-                                                    gdiplusPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                                                    gdiplusPen.EndCap = renderSettings.LineEndCap;// System.Drawing.Drawing2D.LineCap.Round;
+                                                    gdiplusPen.StartCap = renderSettings.LineStartCap;// System.Drawing.Drawing2D.LineCap.Round;
                                                     gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                                                     if (renderSettings.LineType == LineType.Solid)
                                                     {
