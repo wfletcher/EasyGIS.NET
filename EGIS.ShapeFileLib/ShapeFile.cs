@@ -12419,7 +12419,8 @@ namespace EGIS.ShapeFileLib
             string[] records = new string[this.dBFRecordHeader.RecordCount];
             for (int n = 0; n < records.Length; n++)
             {
-                records[n] = this.GetField(n, fieldIndex).Trim();
+                records[n] = this.GetField(n, fieldIndex).Trim(new char[] { ' ', (char)0 });
+                
             }
             return records;
         }

@@ -1342,6 +1342,7 @@ namespace EGIS.Controls
                 Graphics g = Graphics.FromImage(bm);
                 try
                 {
+                    g.Clear(MapBackColor);
                     g.DrawImage(screenBuf, 0, 0);
                 }
                 finally
