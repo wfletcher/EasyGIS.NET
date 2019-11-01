@@ -7683,10 +7683,17 @@ namespace EGIS.ShapeFileLib
             DateTime tick = DateTime.Now;
             if (this.UseGDI(extent, renderSettings))
             {
-                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighSpeed;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
+                //PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
             }
             else
             {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
                 PaintHighQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
             }
             Console.Out.WriteLine("Render time: " + DateTime.Now.Subtract(tick).TotalSeconds + "s");
@@ -7779,8 +7786,8 @@ namespace EGIS.ShapeFileLib
                 }
 
                 
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                //g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
                 
                 int maxPaintCount = 2;
                 if ((renderSettings.LineType == LineType.Solid) || (Math.Round(renderPenWidth) < 3))
@@ -8866,10 +8873,17 @@ namespace EGIS.ShapeFileLib
             DateTime tick = DateTime.Now;
             if (this.UseGDI(extent, renderSettings))
             {
-                PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
+                //PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighSpeed;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+                PaintHighQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
             }
             else
             {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
                 PaintHighQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
             }
             Console.Out.WriteLine("render time:" + DateTime.Now.Subtract(tick).TotalSeconds + "s");
@@ -8959,8 +8973,8 @@ namespace EGIS.ShapeFileLib
                     renderPenWidth = Math.Min(renderPenWidth, 7f);
                 }
 
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                //g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
                 int maxPaintCount = 2;
                 if ((renderSettings.LineType == LineType.Solid) || (Math.Round(renderPenWidth) < 3))
