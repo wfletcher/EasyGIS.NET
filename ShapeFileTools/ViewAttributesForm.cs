@@ -135,10 +135,14 @@ namespace egis
             for (int n = 0; n < fieldDescriptions.Length; ++n)
             {
                 Type dataType;
-                switch(fieldDescriptions[n].FieldType)
+                switch (fieldDescriptions[n].FieldType)
                 {
                     case DbfFieldType.Number:
-                        if(fieldDescriptions[n].DecimalCount == 0) dataType = typeof(Int32);
+                        if (fieldDescriptions[n].DecimalCount == 0)
+                        {
+                            if (fieldDescriptions[n].FieldLength < 10) dataType = typeof(Int32);
+                            else dataType = typeof(Int64);
+                        }
                         else dataType = typeof(Double);
                         break;
                     case DbfFieldType.FloatingPoint:
@@ -162,15 +166,30 @@ namespace egis
                     case DbfFieldType.Number:
                         if (fieldDescriptions[n].DecimalCount == 0)
                         {
-                            int intValue;
-                            if (Int32.TryParse(dbfFields[n], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out intValue))
+                            if (fieldDescriptions[n].FieldLength < 10)
                             {
-                                dataValues[dataValuesOffset + n] = intValue;
+                                int intValue;
+                                if (Int32.TryParse(dbfFields[n], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out intValue))
+                                {
+                                    dataValues[dataValuesOffset + n] = intValue;
+                                }
+                                else
+                                {
+                                    dataValues[dataValuesOffset + n] = DBNull.Value;
+                                }
                             }
                             else
                             {
-                                dataValues[dataValuesOffset + n] = DBNull.Value;
-                            }                            
+                                Int64 int64Value;
+                                if (Int64.TryParse(dbfFields[n], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int64Value))
+                                {
+                                    dataValues[dataValuesOffset + n] = int64Value;
+                                }
+                                else
+                                {
+                                    dataValues[dataValuesOffset + n] = DBNull.Value;
+                                }
+                            }
                         }
                         else
                         {
