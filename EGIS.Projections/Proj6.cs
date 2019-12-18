@@ -152,25 +152,44 @@ namespace EGIS.Projections
                         IntPtr.Zero);
 
 
+                    if (identify)
+                    {
+                        string axisName;
+                        string axisAbbrev;
+                        string axisDirection;
+                        double unit_conv_factor = 1;
+                        string unit_name;
+                        string unit_auth_name;
+                        string unit_code;
 
-                    //string axisName;
-                    //string axisAbbrev;
-                    //string axisDirection;
-                    //double unit_conv_factor=1;
-                    //string unit_name;
-                    //string unit_auth_name;
-                    //string unit_code;
+                        //int axisCount = Proj6Native.proj_cs_get_axis_count(IntPtr.Zero, p);
 
-                    //int axisCount = Proj6Native.proj_cs_get_axis_count(IntPtr.Zero, p);
+                        //if (axisCount > 0)
+                        //{
+                        //    if (Proj6Native.Proj_cs_get_axis_info(IntPtr.Zero, p, 0, out axisName, out axisAbbrev, out axisDirection, out unit_conv_factor, out unit_name, out unit_auth_name, out unit_code))
+                        //    {
+                        //        Console.Out.WriteLine(axisName);
+                        //    }
+                        //}
 
-                    //if (axisCount > 0)
-                    //{
-                    //    if (Proj6Native.Proj_cs_get_axis_info(IntPtr.Zero, p, 0, out axisName, out axisAbbrev, out axisDirection, out unit_conv_factor, out unit_name, out unit_auth_name, out unit_code))
-                    //    {
-                    //        Console.Out.WriteLine(axisName);
-                    //    }
-                    //}
 
+                        IntPtr pCrs = Proj6Native.proj_crs_get_coordinate_system(IntPtr.Zero, p);
+                        if (pCrs != IntPtr.Zero)
+                        {
+                            int axisCount = Proj6Native.proj_cs_get_axis_count(IntPtr.Zero, pCrs);
+
+                            if (axisCount > 0)
+                            {
+                                if (Proj6Native.Proj_cs_get_axis_info(IntPtr.Zero, pCrs, 0, out axisName, out axisAbbrev, out axisDirection, out unit_conv_factor, out unit_name, out unit_auth_name, out unit_code))
+                                {
+                                    Console.Out.WriteLine(axisName);
+                                    Console.Out.WriteLine("unit_conv_factor:" + unit_conv_factor);
+                                }
+                            }
+
+                            Proj6Native.proj_destroy(pCrs);
+                        }
+                    }
                     if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_2D_CRS)
                     {
                         return new GeographicCRS()
