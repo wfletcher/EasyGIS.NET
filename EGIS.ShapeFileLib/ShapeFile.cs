@@ -3453,6 +3453,7 @@ namespace EGIS.ShapeFileLib
                         if (useCustomRenderSettings) renderShape = customRenderSettings.RenderShape(index);
                         RectangleD recordBounds = nextRec->bounds.ToRectangleD();
                         BoundsTestResult boundsTestResult = BoundsTestResult.Undetermined;// TestBoundsIntersect(recordBounds, testExtent);//, coordinateTransformation);
+                        if (coordinateTransformation == null && !recordBounds.IntersectsWith(testExtent)) boundsTestResult = BoundsTestResult.NoIntersection;
                         if (nextRec->ShapeType != ShapeType.NullShape &&
                             boundsTestResult != BoundsTestResult.NoIntersection && renderShape)
                         {
@@ -3529,24 +3530,21 @@ namespace EGIS.ShapeFileLib
 
                                     pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
 
-                                    if (labelfields)
-                                    {
-                                        //pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
-                                       // pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
-                                        if (partBounds.Width > 5 && partBounds.Height > 5)
-                                        {
-                                            partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
-                                        }
-                                    }
-                                    else
-                                    {
-                                        //pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, MercProj);
-                                       // pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, MercProj);
-                                    }
+                                    
+                                    
                                     if (partBounds.IntersectsWith(new Rectangle(0, 0, clientArea.Width, clientArea.Height)))
                                     {
                                         ++partPaintCount;
                                         gp.AddPolygon(pts);
+
+                                        if (labelfields)
+                                        {
+                                            if (partBounds.Width > 5 && partBounds.Height > 5)
+                                            {
+                                                partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
+                                            }
+                                        }
+
                                     }
                                 }
                                 if (recordSelected[index])
