@@ -1156,10 +1156,41 @@ namespace EGIS.Controls
             myShapefiles.Insert(index + 1, shapeFile);
             dirtyScreenBuf = true;
             Invalidate();
-            OnShapeFilesChanged();
+            OnShapeFilesChanged();            
         }
 
+        /// <summary>
+        /// Creates a Graphics object from the SFMap's internal Image used for double buffering. 
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The SFMap control uses double buffering for all drawing. All drawing is performed on an 
+        /// image buffer before painting the control. This method creates a Graphics object from the 
+        /// control's Image buffer.
+        /// </para>
+        /// <para>
+        /// Every call to this method will create a new Graphics obect and the returned Graphics object should be disposed by the caller. 
+        /// If the control is resized the internal buffer will be re-created and a Graphics object returned from this method 
+        /// previously may not be valid.
+        /// </para>
+        /// </remarks>
+        public Graphics CreateMapGraphics()
+        {
+            return Graphics.FromImage(this.screenBuf);
+        }
 
+        /// <summary>
+        /// Gets the SFMap's internal Image used for double buffering. All drawing is performed on this
+        /// image before painting the control
+        /// </summary>
+        protected Image ScreenBuffer
+        {
+            get
+            {
+                return this.screenBuf;
+            }
+        }
+        
 
         #endregion
 
