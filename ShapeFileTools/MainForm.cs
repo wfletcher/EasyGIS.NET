@@ -70,11 +70,13 @@ namespace egis
             //dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(23, lat1, lon1, lat2, lon2);
             //Console.Out.WriteLine("dist bw points:" + dist);       
 
-           // TestLineClipping();
+            // TestLineClipping();
             //TestPolygonClipping();
 
-            
+
             //CreateTestShapeFile(@"c:\temp\TestShapefile.shp");
+
+           // TestLineIntersection();
           
             sfMap1.MapDoubleClick += new EventHandler<EGIS.Controls.SFMap.MapDoubleClickedEventArgs>(sfMap1_MapDoubleClick);
         }
@@ -1862,7 +1864,76 @@ namespace egis
             }
         }
 
-       
+        private void TestLineIntersection()
+        {
+            PointD A = new PointD(0, 0);
+            PointD B = new PointD(1, 0);
+
+            PointD C = new PointD(0, 1);
+            PointD D = new PointD(0, 0);
+
+            PointD P;
+            double tVal, vVal;
+            bool intersects = GeometryAlgorithms.LineLineIntersection(ref A, ref B, ref C, ref D, out P, out tVal, out vVal);
+
+            Console.Out.WriteLine("interects:{0}, pt:{1}, tVal:{2}, vVal:{3}", intersects, P, tVal, vVal);
+
+            C = new PointD(0.5, 0.5);
+            D = new PointD(0.5, -0.5);
+
+            intersects = GeometryAlgorithms.LineLineIntersection(ref A, ref B, ref C, ref D, out P, out tVal, out vVal);
+
+            Console.Out.WriteLine("interects:{0}, pt:{1}, tVal:{2}, vVal:{3}", intersects, P, tVal, vVal);
+
+
+            C = new PointD(0.5, 0.5);
+            D = new PointD(1, 0.5);
+
+            intersects = GeometryAlgorithms.LineLineIntersection(ref A, ref B, ref C, ref D, out P, out tVal, out vVal);
+
+            Console.Out.WriteLine("interects:{0}, pt:{1}, tVal:{2}, vVal:{3}", intersects, P, tVal, vVal);
+
+            C = new PointD(0.5, -5);
+            D = new PointD(0.5, -2.5);
+
+            intersects = GeometryAlgorithms.LineLineIntersection(ref A, ref B, ref C, ref D, out P, out tVal, out vVal);
+
+            Console.Out.WriteLine("interects:{0}, pt:{1}, tVal:{2}, vVal:{3}", intersects, P, tVal, vVal);
+
+
+            A = new PointD(0,0);
+            B = new PointD(1,1);
+
+            C = new PointD(0, 1);
+            D = new PointD(1, 0);
+
+            intersects = GeometryAlgorithms.LineLineIntersection(ref A, ref B, ref C, ref D, out P, out tVal, out vVal);
+
+            Console.Out.WriteLine("interects:{0}, pt:{1}, tVal:{2}, vVal:{3}", intersects, P, tVal, vVal);
+
+            A = new PointD(0, 0);
+            B = new PointD(10, 10);
+
+            C = new PointD(-2, -1);
+            D = new PointD(8, -1);
+
+            intersects = GeometryAlgorithms.LineLineIntersection(ref A, ref B, ref C, ref D, out P, out tVal, out vVal);
+
+            Console.Out.WriteLine("interects:{0}, pt:{1}, tVal:{2}, vVal:{3}", intersects, P, tVal, vVal);
+
+            A = new PointD(0, 0);
+            B = new PointD(10, 10);
+
+            C = new PointD(0, 1);
+            D = new PointD(10, 11);
+
+            intersects = GeometryAlgorithms.LineLineIntersection(ref A, ref B, ref C, ref D, out P, out tVal, out vVal);
+
+            Console.Out.WriteLine("interects:{0}, pt:{1}, tVal:{2}, vVal:{3}", intersects, P, tVal, vVal);
+
+        }
+
+
     }
   
 }

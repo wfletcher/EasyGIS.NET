@@ -625,6 +625,8 @@ namespace EGIS.ShapeFileLib
 
         public static double LineSegPointDist(ref PointD a, ref PointD b, ref PointD c, ref PolylineDistanceInfo polylineDistanceInfo)
         {
+
+            //see this http://geomalgorithms.com/a02-_lines.html and check if we can simplify this function
             double pointSegmentDistance;
             if (Dot(ref a, ref b, ref c) > 0)
             {
@@ -713,7 +715,85 @@ namespace EGIS.ShapeFileLib
 
         }
 
-        
+
+        /// <summary>
+        /// returns whether two (infinite) lines intersect and calculates intersection point if the lines intersect 
+        /// </summary>
+        /// <param name="p0">first point defining line 1</param>
+        /// <param name="p1">second point defining line 1</param>
+        /// <param name="p2">first point defining line 2</param>
+        /// <param name="p3">second point defining line 2</param>
+        /// <param name="intersectionPoint">the calculated intersectino point (PointD.Empty if lines do not intersect)</param>
+        /// <param name="tVal">The parametric tValue where the interection ocurrs on line 1. See remarks</param>
+        /// <param name="vVal">The parametric vValue where the interection ocurrs on line 2. See remarks</param>
+        /// <returns>true if the two lines intersect</returns>
+        /// <remarks>
+        /// <para>
+        /// This method tests "infinite" lines defined by two points on the line. Line 1 is defined as the line passing through points p0 and p1.
+        /// Line 2 is defined as the line passing through points p2 and p3
+        /// </para>
+        /// <para>
+        /// The two lines will not intersect if the lines are parallel and the method will return false. If either p0 == p1 or p2 == p3 then a line cannot be defined
+        /// and the method will return false;
+        /// </para>
+        /// <para>
+        /// The tVal and vVal are from the parametric representations of the lines in the equations: <br/>
+        /// line1   : (X,Y) = p0 + (t * (p1 - p0)) <br/>
+        ///         : X = p0.X + (t * (p1.X-p0.X)) <br/>
+        ///         : Y = p0.Y + (t * (p1.Y-p0.Y)) <br/>
+        /// The tVal returned indicates where on Line1 the intersection ocurrs. <br/>
+        /// If tVal &lt; 0 the intersection ocurrs before p0 on the line. <br/>
+        /// If tVal &gt; 1 the intersection ocurrs after p1 on the line. <br/>
+        /// If tVal is between 0 and 1 the intersection ocurrs between p0 and p1 on the line
+        /// </para>
+        /// </remarks>
+        public static bool LineLineIntersection(ref PointD p0, ref PointD p1, ref PointD p2, ref PointD p3, out PointD intersectionPoint, out double tVal, out double vVal)
+        {
+            intersectionPoint = PointD.Empty;
+            tVal = vVal = 0;
+
+            //derive parametric representation of lines
+            // line 0 (X,Y) = p0 + (t * vec0)
+            //         X    = p0.X + (t * vec0.X)
+            //         Y    = p0.Y + (t * vec0.Y)
+            // line 1 (X,Y) = p2 + (v * vec1)
+            //         X    = p2.X + (v * vec1.X)
+            //         Y    = p2.Y + (v * vec1.Y)
+            PointD vec0 = new PointD(p1.X - p0.X, p1.Y - p0.Y);
+            PointD vec1 = new PointD(p3.X - p2.X, p3.Y - p2.Y);
+
+            if (vec0.IsEmpty || vec1.IsEmpty) return false;
+
+            //when lines intersect they will have the same (X,Y) value
+            // p0.X + (t * vec0.X) = p2.X + (v * vec1.X)
+            // p0.Y + (t * vec0.Y) = p2.Y + (v * vec1.Y)
+
+            //re-arrange and solve for t and v using determinants
+            // (vec0.X * t) - (vec1.X * v) = p2.X - p0.X
+            // (vec0.Y * t) - (vec1.Y * v) = p2.Y - p0.Y
+
+            //double detDenom = (vec0.X * -vec1.Y) - (vec0.Y * -vec1.X);
+            double detDenom =   (vec0.Y * vec1.X) - (vec0.X * vec1.Y);
+
+            if (Math.Abs(detDenom) <= double.Epsilon) return false; //denominator determinant is zero => not solvable (lines parallel)
+
+            //double detT = ((p2.X - p0.X) * -vec1.Y) - ( (p2.Y - p0.Y) * -(vec1.X));
+            double detT = ((p2.Y - p0.Y) * (vec1.X)) - ((p2.X - p0.X) * vec1.Y);
+
+            double detV = (vec0.X * (p2.Y - p0.Y)) - (vec0.Y * (p2.X - p0.X));
+            
+            tVal = detT / detDenom;
+            vVal = detV / detDenom;
+
+            //calculate the intersectin point using the calculated tVal
+            intersectionPoint.X = p0.X + (tVal * vec0.X);
+            intersectionPoint.Y = p0.Y + (tVal * vec0.Y);
+
+
+            return true;
+
+        }
+
 
         #endregion
 
