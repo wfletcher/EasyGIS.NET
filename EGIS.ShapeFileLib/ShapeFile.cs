@@ -3314,10 +3314,18 @@ namespace EGIS.ShapeFileLib
             DateTime tick = DateTime.Now;
             if (this.UseGDI(extent, renderSettings))
             {
-                paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighSpeed;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+
+               //paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
+                paintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
+
             }
             else
             {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;// ClearTypeGridFit;              
+
                 paintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
             }
             System.Diagnostics.Debug.WriteLine("Render time: " + DateTime.Now.Subtract(tick).TotalSeconds + "s");
@@ -3394,8 +3402,8 @@ namespace EGIS.ShapeFileLib
             if (renderSettings != null) renderInterior = renderSettings.FillInterior;
             List<PartBoundsIndex> partBoundsIndexList = new List<PartBoundsIndex>(256);
 
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;// ClearTypeGridFit;              
+           // g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+           // g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;// ClearTypeGridFit;              
 
             try
             {
@@ -3572,7 +3580,7 @@ namespace EGIS.ShapeFileLib
                         //}
                         ++index;
                     }
-                    Console.Out.WriteLine("partPaintCount = " + partPaintCount);
+                    //Console.Out.WriteLine("partPaintCount = " + partPaintCount);
                 }
             }
             finally
