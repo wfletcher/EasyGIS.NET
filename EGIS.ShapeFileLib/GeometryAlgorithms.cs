@@ -167,7 +167,21 @@ namespace EGIS.ShapeFileLib
            
             return area > 0;
         }
-       
+
+        internal static unsafe bool IsPolygonHole(IList<System.Drawing.Point> points, int numPoints)
+        {
+            //if we are detecting holes then we need to calculate the area
+            double area = 0;
+            int j = numPoints - 1;
+            for (int i = 0; i < numPoints; ++i)
+            {
+                area += (points[j].X * points[i].Y - points[i].X * points[j].Y);
+                j = i;
+            }
+
+            return area > 0;
+        }
+
 
         /// <summary>
         /// 
@@ -1331,6 +1345,119 @@ namespace EGIS.ShapeFileLib
                     double y = clipBounds.YMin;
                     double x = prevPoint.X + (currentPoint.X - prevPoint.X) * (y - prevPoint.Y) / (currentPoint.Y - prevPoint.Y);
                     outputList.Add(new PointD(x, y));
+                }
+                if (currentInside)
+                {
+                    outputList.Add(currentPoint);
+                }
+                previousInside = currentInside;
+            }
+            if (outputList.Count == 0) return;
+
+            bool clippedPolygonIsHole = IsPolygonHole(outputList, outputList.Count);
+            if (clippedPolygonIsHole != inputPolygonIsHole) outputList.Reverse();
+            //clippedPolygon
+        }
+
+        public static void PolygonClip(System.Drawing.Point[] inputPolygon, int inputCount, ClipBounds clipBounds, List<System.Drawing.Point> clippedPolygon)
+        {
+            List<System.Drawing.Point> inputList = new List<System.Drawing.Point>(inputCount);
+            List<System.Drawing.Point> outputList = clippedPolygon;
+            bool previousInside;
+            for (int n = 0; n < inputCount; ++n)
+            {
+                inputList.Add(new System.Drawing.Point(inputPolygon[n].X, inputPolygon[n].Y));
+            }
+
+            bool inputPolygonIsHole = IsPolygonHole(inputList, inputCount);
+
+
+            //test left
+            previousInside = inputList[inputList.Count - 1].X >= clipBounds.XMin;
+            outputList.Clear();
+            for (int n = 0; n < inputList.Count; ++n)
+            {
+                System.Drawing.Point currentPoint = inputList[n];
+                bool currentInside = currentPoint.X >= clipBounds.XMin;
+                if (currentInside != previousInside)
+                {
+                    //add intersection
+                    System.Drawing.Point prevPoint = n == 0 ? inputList[inputList.Count - 1] : inputList[n - 1];
+                    double x = clipBounds.XMin;
+                    double y = prevPoint.Y + (double)(currentPoint.Y - prevPoint.Y) * (x - prevPoint.X) / (double)(currentPoint.X - prevPoint.X);
+                    outputList.Add(new System.Drawing.Point((int)Math.Round(x), (int)Math.Round(y)));
+                }
+                if (currentInside)
+                {
+                    outputList.Add(currentPoint );
+                }
+                previousInside = currentInside;
+            }
+            if (outputList.Count == 0) return;
+
+            //test top
+            inputList = outputList.ToList();
+            previousInside = inputList[inputList.Count - 1].Y <= clipBounds.YMax; ;
+            outputList.Clear();
+            for (int n = 0; n < inputList.Count; ++n)
+            {
+                System.Drawing.Point currentPoint = inputList[n];
+                bool currentInside = currentPoint.Y <= clipBounds.YMax;
+                if (currentInside != previousInside)
+                {
+                    //add intersection
+                    System.Drawing.Point prevPoint = n == 0 ? inputList[inputList.Count - 1] : inputList[n - 1];
+                    double y = clipBounds.YMax;
+                    double x = prevPoint.X + (double)(currentPoint.X - prevPoint.X) * (y - prevPoint.Y) / (double)(currentPoint.Y - prevPoint.Y);
+                    outputList.Add(new System.Drawing.Point((int)Math.Round(x), (int)Math.Round(y)));
+                }
+                if (currentInside)
+                {
+                    outputList.Add(currentPoint);
+                }
+                previousInside = currentInside;
+            }
+            if (outputList.Count == 0) return;
+
+            //test right
+            inputList = outputList.ToList();
+            previousInside = inputList[inputList.Count - 1].X <= clipBounds.XMax;
+            outputList.Clear();
+            for (int n = 0; n < inputList.Count; ++n)
+            {
+                System.Drawing.Point currentPoint = inputList[n];
+                bool currentInside = currentPoint.X <= clipBounds.XMax;
+                if (currentInside != previousInside)
+                {
+                    //add intersection
+                    System.Drawing.Point prevPoint = n == 0 ? inputList[inputList.Count - 1] : inputList[n - 1];
+                    double x = clipBounds.XMax;
+                    double y = prevPoint.Y + (double)(currentPoint.Y - prevPoint.Y) * (x - prevPoint.X) / (double)(currentPoint.X - prevPoint.X);
+                    outputList.Add(new System.Drawing.Point((int)Math.Round(x), (int)Math.Round(y)));
+                }
+                if (currentInside)
+                {
+                    outputList.Add(currentPoint);
+                }
+                previousInside = currentInside;
+            }
+            if (outputList.Count == 0) return;
+
+            //test bottom
+            inputList = outputList.ToList();
+            previousInside = inputList[inputList.Count - 1].Y >= clipBounds.YMin;
+            outputList.Clear();
+            for (int n = 0; n < inputList.Count; ++n)
+            {
+                System.Drawing.Point currentPoint = inputList[n];
+                bool currentInside = currentPoint.Y >= clipBounds.YMin;
+                if (currentInside != previousInside)
+                {
+                    //add intersection
+                    System.Drawing.Point prevPoint = n == 0 ? inputList[inputList.Count - 1] : inputList[n - 1];
+                    double y = clipBounds.YMin;
+                    double x = prevPoint.X + (double)(currentPoint.X - prevPoint.X) * (y - prevPoint.Y) / (double)(currentPoint.Y - prevPoint.Y);
+                    outputList.Add(new System.Drawing.Point((int)Math.Round(x), (int)Math.Round(y)));
                 }
                 if (currentInside)
                 {

@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <AssemblyName>EGIS.Mapbox.Vector.Tile</AssemblyName>
+    <RootNamespace>EGIS.Mapbox.Vector.Tile</RootNamespace>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>egis.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="ClassifyRings.cs" />
+    <Compile Remove="Extensions\CoordinateExtensions.cs" />
+    <Compile Remove="Extensions\IEnumerableExtensions.cs" />
+    <Compile Remove="Extensions\VectorTileFeatureExtensions.cs" />
+    <Compile Remove="Extensions\VectorTileLayerExtensions.cs" />
+    <Compile Remove="VTPolygon.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GeoJSON.Net" Version="1.1.70" />
+    <PackageReference Include="protobuf-net" Version="3.0.0-alpha.3" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="Extensions\" />
+  </ItemGroup>
+
+</Project>
