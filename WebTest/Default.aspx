@@ -42,6 +42,9 @@
         <asp:HyperLink ID="HyperLink8" runat="server" NavigateUrl="~/demos/SimpleMapMarker.aspx">SimpleMapMarker</asp:HyperLink> - Simple demo showing how to add map markers at run-time using javascript
     </div>
     
+    <div>
+        <asp:HyperLink ID="HyperLink10" runat="server" NavigateUrl="~/demos/mb/Index.html">Mapbox Vector Tiles</asp:HyperLink> - Mapbox Vector Tiles example
+    </div>
 
     </form>
 </body>

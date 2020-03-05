@@ -13,15 +13,28 @@ namespace WebTest
     public class TestVectorTileHandler :  VectorTileHandler
     {
 
+        protected override bool CacheOnServer
+        {
+            get
+            {
+                return true;
+            }
+        }
 
         protected override void OnBeginRequest(HttpContext context)
         {
             context.Response.AddHeader("Access-Control-Allow-Origin", "*");
         }
 
+        private const string MyLayersId = "MyVectorTiles";
+
         protected override List<ShapeFile> CreateMapLayers(HttpContext context)
         {
-            List<ShapeFile> layers = new List<ShapeFile>();
+            List<ShapeFile> layers = context.Application[MyLayersId] as List<ShapeFile>;
+
+            if (layers != null) return layers;
+
+            layers = new List<ShapeFile>();
             //load the shapefiles                
 
             string shapeFilePath = context.Server.MapPath("/demos/new_hampshire_files/new_hampshire_natural.shp");
@@ -39,8 +52,8 @@ namespace WebTest
 
             layers.Add(sf);
 
-            
 
+            context.Application[MyLayersId] = layers;
 
             return layers;
         }

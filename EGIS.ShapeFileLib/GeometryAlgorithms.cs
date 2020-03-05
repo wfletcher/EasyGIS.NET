@@ -1006,16 +1006,18 @@ namespace EGIS.ShapeFileLib
             public double XMax;
             public double YMin;
             public double YMax;
+
+            public override string ToString()
+            {
+                return string.Format("ClipBounds XMin:{0}, XMax:{1}, YMin:{2}, YMax:{3}", XMin, XMax, YMin, YMax);
+            }
         }
 
         [Flags]
         enum OutCode { Inside = 0, Left = 1, Right = 2, Bottom = 4, Top = 8 };
 
-        private const int INSIDE = 0; // 0000
-        private const int LEFT = 1;   // 0001
-        private const int RIGHT = 2;  // 0010
-        private const int BOTTOM = 4; // 0100
-        private const int TOP = 8;    // 1000
+        [Flags]
+        enum ClipState { None = 0, Start = 1, End = 2 };
 
         // Compute the bit code for a point (x, y) using the clip rectangle
         // bounded diagonally by (xmin, ymin), and (xmax, ymax)
@@ -1039,15 +1041,25 @@ namespace EGIS.ShapeFileLib
             return code;
         }
 
-        // Cohen–Sutherland clipping algorithm clips a line from
-        // P0 = (x0, y0) to P1 = (x1, y1) against a rectangle with 
-        // diagonal from (xmin, ymin) to (xmax, ymax).
-        static bool CohenSutherlandLineClip(ref double x0, ref double y0, ref double x1, ref double y1, ref ClipBounds clipBounds)
+        /// <summary>
+        /// Cohen–Sutherland clipping algorithm clips a line from P0 = (x0, y0) to P1 = (x1, y1) against a clipBounds rectangle 
+        /// </summary>
+        /// <param name="x0"></param>
+        /// <param name="y0"></param>
+        /// <param name="x1"></param>
+        /// <param name="y1"></param>
+        /// <param name="clipBounds"></param>
+        /// <param name="clipState"> state of clipped line. ClipState.None if line is not clipped. If either end of the line 
+        /// is clipped then the clipState flag are set (ClipState.Start or ClipState.End) </param>
+        /// <returns>true if clipped line is inside given clip bounds</returns>
+        static bool CohenSutherlandLineClip(ref double x0, ref double y0, ref double x1, ref double y1, ref ClipBounds clipBounds, out ClipState clipState)
         {
             // compute outcodes for P0, P1, and whatever point lies outside the clip rectangle
             OutCode outcode0 = ComputeOutCode(x0, y0, ref clipBounds);
             OutCode outcode1 = ComputeOutCode(x1, y1, ref clipBounds);
             bool accept = false;
+
+            clipState = ClipState.None;
 
             while (true)
             {
@@ -1104,29 +1116,22 @@ namespace EGIS.ShapeFileLib
                     // and get ready for next pass.
                     if (outcodeOut == outcode0)
                     {
+                        clipState |= ClipState.Start;
                         x0 = x;
                         y0 = y;
                         outcode0 = ComputeOutCode(x0, y0, ref clipBounds);
                     }
                     else
                     {
+                        clipState |= ClipState.End;
+
                         x1 = x;
                         y1 = y;
                         outcode1 = ComputeOutCode(x1, y1, ref clipBounds);
                     }
                 }
             }
-            //if (accept)
-            //{
-            //    // Following functions are left for implementation by user based on
-            //    // their platform (OpenGL/graphics.h etc.)
-            //    // DrawRectangle(xmin, ymin, xmax, ymax);
-            //    // LineSegment(x0, y0, x1, y1);
-            //    clippedPoints.Add(x0);
-            //    clippedPoints.Add(y0);
-            //    clippedPoints.Add(x1);
-            //    clippedPoints.Add(y1);
-            //}
+            
             return accept;
         }
 
@@ -1136,12 +1141,12 @@ namespace EGIS.ShapeFileLib
             for (int n = 0; n < inputCount-1; ++n)
             {
                 double x0 = input[n].X, y0 = input[n].Y, x1 = input[n + 1].X, y1 = input[n + 1].Y;
-
-                bool insideBounds = CohenSutherlandLineClip(ref x0, ref y0, ref x1, ref y1, ref clipBounds);
+                ClipState clipState;
+                bool insideBounds = CohenSutherlandLineClip(ref x0, ref y0, ref x1, ref y1, ref clipBounds, out clipState);
                 if (insideBounds)
                 {
                     //new part
-                    if (!inside)
+                    if (!inside || (clipState & ClipState.Start) == ClipState.Start)
                     {
                         parts.Add(clippedPoints.Count);
                         clippedPoints.Add(x0);
@@ -1162,12 +1167,12 @@ namespace EGIS.ShapeFileLib
             for (int n = 0; n < inputCount - 1; ++n)
             {
                 double x0 = input[n].X, y0 = input[n].Y, x1 = input[n + 1].X, y1 = input[n + 1].Y;
-
-                bool insideBounds = CohenSutherlandLineClip(ref x0, ref y0, ref x1, ref y1, ref clipBounds);
+                ClipState clipState;
+                bool insideBounds = CohenSutherlandLineClip(ref x0, ref y0, ref x1, ref y1, ref clipBounds, out clipState);
                 if (insideBounds)
                 {
                     //new part
-                    if (!inside)
+                    if (!inside || (clipState & ClipState.Start) == ClipState.Start)
                     {
                         parts.Add(clippedPoints.Count);
                         clippedPoints.Add((int)Math.Round(x0));
@@ -1175,7 +1180,6 @@ namespace EGIS.ShapeFileLib
                     }
                     clippedPoints.Add((int)Math.Round(x1));
                     clippedPoints.Add((int)Math.Round(y1));
-
                 }
                 inside = insideBounds;
             }
@@ -1189,15 +1193,16 @@ namespace EGIS.ShapeFileLib
             {
                 double x0 = input[n].X, y0 = input[n].Y, x1 = input[n + 1].X, y1 = input[n + 1].Y;
 
-                bool insideBounds = CohenSutherlandLineClip(ref x0, ref y0, ref x1, ref y1, ref clipBounds);
+                ClipState clipState;
+                bool insideBounds = CohenSutherlandLineClip(ref x0, ref y0, ref x1, ref y1, ref clipBounds, out clipState);
                 if (insideBounds)
                 {
                     int dx = input[n + 1].X - input[n].X;
                     int dy = input[n + 1].Y - input[n].Y;
-                                 
+
 
                     //new part
-                    if (!inside)
+                    if (!inside || (clipState & ClipState.Start) == ClipState.Start)
                     {
                         parts.Add(clippedPoints.Count);
                         clippedPoints.Add((int)Math.Round(x0));

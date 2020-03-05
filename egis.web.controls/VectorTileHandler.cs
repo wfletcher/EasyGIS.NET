@@ -8,51 +8,7 @@ using System.IO;
 
 namespace EGIS.Web.Controls
 {
-    //public class VectorTileModule : IHttpModule
-    //{
-    //    /// <summary>
-    //    /// You will need to configure this module in the Web.config file of your
-    //    /// web and register it with IIS before being able to use it. For more information
-    //    /// see the following link: https://go.microsoft.com/?linkid=8101007
-    //    /// </summary>
-    //    #region IHttpModule Members
-
-    //    public void Dispose()
-    //    {
-    //        //clean-up code here.
-    //    }
-
-    //    public void Init(HttpApplication context)
-    //    {
-    //        // Below is an example of how you can handle LogRequest event and provide 
-    //        // custom logging implementation for it
-    //        //context.LogRequest += new EventHandler(OnLogRequest);
-
-    //        context.PostAuthorizeRequest -= Context_PostAuthorizeRequest;
-    //        context.PostAuthorizeRequest += Context_PostAuthorizeRequest;
-
-    //        context.PreSendRequestContent -= Context_PreSendRequestContent;
-    //        context.PreSendRequestContent += Context_PreSendRequestContent;
-    //    }
-
-    //    private void Context_PreSendRequestContent(object sender, EventArgs e)
-    //    {
-    //        //throw new NotImplementedException();
-    //    }
-
-    //    private void Context_PostAuthorizeRequest(object sender, EventArgs e)
-    //    {
-    //        //throw new NotImplementedException();
-    //    }
-
-    //    #endregion
-
-    //    public void OnLogRequest(Object source, EventArgs e)
-    //    {
-    //        //custom logging logic can go here
-    //    }
-    //}
-
+  
 
     public abstract class VectorTileHandler : IHttpHandler
     {
@@ -205,7 +161,7 @@ namespace EGIS.Web.Controls
             if (string.IsNullOrEmpty(cachePath)) useCache = false;
 
             context.Response.ContentType = "application/vnd.mapbox-vector-tile";
-            //is the image cached on the server?
+            //is the tile cached on the server?
             if (useCache && System.IO.File.Exists(cachePath))
             {
                 context.Response.Cache.SetCacheability(HttpCacheability.Public);
@@ -294,11 +250,9 @@ namespace EGIS.Web.Controls
         {
             int tileSize = TileSize;
             RectangleD tileBounds = TileUtil.GetTileLatLonBounds(tileX, tileY, zoom, tileSize);
-            //  Console.Out.WriteLine(string.Format("tile X:{0}, Y:{1}, Zoom:{2} bounds:{3}", new object[] { tileX, tileY, zoom, tileBounds }));
             //create a buffer around the tileBounds 
             tileBounds.Inflate(tileBounds.Width * 0.05, tileBounds.Height * 0.05);
-            //Console.Out.WriteLine(string.Format("tile X:{0}, Y:{1}, Zoom:{2} bounds:{3}", new object[] { tileX, tileY, zoom, tileBounds }));
-
+          
             int simplificationFactor = Math.Min(10, Math.Max(1, SimplificationPixelThreshold));
 
             System.Drawing.Point tilePixelOffset = new System.Drawing.Point((tileX * tileSize), (tileY * tileSize));
@@ -358,8 +312,7 @@ namespace EGIS.Web.Controls
 
                         int outputCount = 0;
                         SimplifyPointData(pixelPoints, null, points.Length, simplificationFactor, simplifiedPixelPoints, null, ref pointsBuffer, ref outputCount);
-                        //GeometryAlgorithms.SimplifyDouglasPeucker(pixelPoints, points.Length, simplificationFactor, simplifiedPixelPoints, ref outputCount);
-
+                      
                         //output count may be zero for short records at low zoom levels as 
                         //the pixel coordinates wil be a single point after simplification
                         if (outputCount > 0)
@@ -368,7 +321,7 @@ namespace EGIS.Web.Controls
                             List<int> parts = new List<int>();
                             //List<double> clippedMeasures = new List<double>();
                             //GeometryAlgorithms.PolyLineClip(simplifiedPixelPoints, outputCount, clipBounds, clippedPoints, parts, simplifiedMeasures, clippedMeasures);
-                            GeometryAlgorithms.PolyLineClip(simplifiedPixelPoints, outputCount, clipBounds, clippedPoints, parts);
+                            GeometryAlgorithms.PolyLineClip(simplifiedPixelPoints, outputCount, clipBounds, clippedPoints, parts);                           
 
                             if (parts.Count > 0)
                             {
@@ -385,16 +338,14 @@ namespace EGIS.Web.Controls
                                     for (int i = index1; i < index2; i += 2)
                                     {
                                         lineString.Add(new Coordinate(clippedPoints[i], clippedPoints[i + 1]));                                        
-                                    }
-                                    
+                                    }                                    
                                 }
-
                             }
                         }
-
                         ++partIndex;
                     }
 
+                    //add the record attributes
                     string[] fieldNames = shapeFile.GetAttributeFieldNames();
                     string[] values = shapeFile.GetAttributeFieldValues(index);
                     for (int n = 0; n < values.Length; ++n)
@@ -408,10 +359,7 @@ namespace EGIS.Web.Controls
                     }
 
                 }
-
-
             }
-
             return tileLayer;
         }
 
@@ -419,11 +367,9 @@ namespace EGIS.Web.Controls
         {
             int tileSize = TileSize;
             RectangleD tileBounds = TileUtil.GetTileLatLonBounds(tileX, tileY, zoom, tileSize);
-            //  Console.Out.WriteLine(string.Format("tile X:{0}, Y:{1}, Zoom:{2} bounds:{3}", new object[] { tileX, tileY, zoom, tileBounds }));
             //create a buffer around the tileBounds 
             tileBounds.Inflate(tileBounds.Width * 0.05, tileBounds.Height * 0.05);
-            //Console.Out.WriteLine(string.Format("tile X:{0}, Y:{1}, Zoom:{2} bounds:{3}", new object[] { tileX, tileY, zoom, tileBounds }));
-
+        
             int simplificationFactor = Math.Min(10, Math.Max(1, SimplificationPixelThreshold));
 
             System.Drawing.Point tilePixelOffset = new System.Drawing.Point((tileX * tileSize), (tileY * tileSize));
@@ -449,10 +395,8 @@ namespace EGIS.Web.Controls
             tileLayer.Version = 2;
             tileLayer.Name = !string.IsNullOrEmpty(shapeFile.Name) ? shapeFile.Name : System.IO.Path.GetFileNameWithoutExtension(shapeFile.FilePath);
 
-
             if (indicies.Count > 0)
             {
-
                 foreach (int index in indicies)
                 {
                     VectorTileFeature feature = new VectorTileFeature()
@@ -465,18 +409,15 @@ namespace EGIS.Web.Controls
 
                     //get the point data
                     var recordPoints = shapeFile.GetShapeDataD(index);
-                    //var recordMeasures = shapeFile.GetShapeMDataD(index);
-
+                 
                     int partIndex = 0;
                     foreach (PointD[] points in recordPoints)
                     {
-                        //double[] measures = recordMeasures[partIndex];
                         //convert to pixel coordinates;
                         if (pixelPoints.Length < points.Length)
                         {
                             pixelPoints = new System.Drawing.Point[points.Length + 10];
                             simplifiedPixelPoints = new System.Drawing.Point[points.Length + 10];
-                            //simplifiedMeasures = new double[points.Length + 10];
                         }
 
                         for (int n = 0; n < points.Length; ++n)
@@ -489,34 +430,26 @@ namespace EGIS.Web.Controls
 
                         int outputCount = 0;
                         SimplifyPointData(pixelPoints, null, points.Length-1, simplificationFactor, simplifiedPixelPoints, null, ref pointsBuffer, ref outputCount);
-                        //GeometryAlgorithms.SimplifyDouglasPeucker(pixelPoints, points.Length, simplificationFactor, simplifiedPixelPoints, ref outputCount);                        
-                        //output count may be zero for short records at low zoom levels as 
-                        //the pixel coordinates wil be a single point after simplification
                         simplifiedPixelPoints[outputCount++] = pixelPoints[points.Length - 1];
                         if (outputCount > 1)
-                        {
-                            
-                            
+                        {                                                        
                             GeometryAlgorithms.PolygonClip(simplifiedPixelPoints, outputCount, clipBounds, clippedPolygon);
 
                             if (clippedPolygon.Count > 0)
                             {
-                                //output the clipped polygon
-                                                                                             
+                                //output the clipped polygon                                                                                             
                                 List<Coordinate> lineString = new List<Coordinate>();
                                 feature.Geometry.Add(lineString);
-                                //for (int i = 0; i < clippedPolygon.Count; ++i)
                                 for (int i = clippedPolygon.Count-1; i>=0;--i)
                                 {
                                     lineString.Add(new Coordinate(clippedPolygon[i].X, clippedPolygon[i].Y));
-                                }
-                                
+                                }                                
                             }
                         }
-
                         ++partIndex;
                     }
-
+                    
+                    //add the record attributes
                     string[] fieldNames = shapeFile.GetAttributeFieldNames();
                     string[] values = shapeFile.GetAttributeFieldValues(index);
                     for (int n = 0; n < values.Length; ++n)
@@ -528,15 +461,11 @@ namespace EGIS.Web.Controls
                     {
                         tileLayer.VectorTileFeatures.Add(feature);
                     }
-
                 }
-
-
             }
 
             return tileLayer;
         }
-
 
 
         private void SimplifyPointData(System.Drawing.Point[] points, double[] measures, int pointCount, int simplificationFactor, System.Drawing.Point[] reducedPoints, double[] reducedMeasures, ref PointD[] pointsBuffer, ref int reducedPointCount)
@@ -557,7 +486,6 @@ namespace EGIS.Web.Controls
                 reducedPoints[n] = points[reducedIndices[n]];
                 if(measures != null) reducedMeasures[n] = measures[reducedIndices[n]];
             }
-
         }
 
 

@@ -912,10 +912,10 @@ namespace EGIS.ShapeFileLib
             }
             
                         
-            DateTime end = DateTime.Now;
-            System.Diagnostics.Debug.WriteLine("Shape Type : " + this.mainHeader.ShapeType);
-            System.Diagnostics.Debug.WriteLine("total number of records = " + recordHeaders.Length);
-            System.Diagnostics.Debug.WriteLine("Total time to read shapefile is " + end.Subtract(start).ToString());
+            //DateTime end = DateTime.Now;
+            //System.Diagnostics.Debug.WriteLine("Shape Type : " + this.mainHeader.ShapeType);
+            //System.Diagnostics.Debug.WriteLine("total number of records = " + recordHeaders.Length);
+            //System.Diagnostics.Debug.WriteLine("Total time to read shapefile is " + end.Subtract(start).ToString());
             //data = null;
         }
 

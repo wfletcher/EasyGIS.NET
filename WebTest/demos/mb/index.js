@@ -1,5 +1,5 @@
 
-var url3 = 'http://localhost:64200/demos/TestVectorTileHandler.ashx?tx={x}&ty={y}&zoom={z}&mapid=none&version=6.91';
+var url3 = 'http://localhost:64200/demos/TestVectorTileHandler.ashx?tx={x}&ty={y}&zoom={z}&mapid=none&version=6.93';
 
 
 
@@ -45,7 +45,8 @@ var map = new ol.Map({
         format: new ol.format.MVT(),
         url: url3
       }),
-	  style: function(feature, number) {
+        style: function (feature, number) {
+            
 		  if(map.getView().getZoom() > 14)
 		  {
 			style.getText().setText(feature.get('NAME'));
@@ -54,7 +55,8 @@ var map = new ol.Map({
 			  style.getText().setText('');
 		  }
 		  var w = 6/number;
-		  if(w < 1) w = 1;
+          if (w < 1) w = 1;
+          if (w > 10) w = 10;
 		style.getStroke().setWidth(w);	
 		style2.getStroke().setWidth(w+2);
 		  return [style2,style];
