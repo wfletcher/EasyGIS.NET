@@ -1021,6 +1021,11 @@ namespace EGIS.ShapeFileLib
 
         private void ReadPrjFile(string shapeFilePath)
         {
+            if (shapeFilePath.EndsWith(".shp", StringComparison.OrdinalIgnoreCase))
+            {
+                shapeFilePath = shapeFilePath.Substring(0, shapeFilePath.Length - 4);
+            }
+
             string prjFilePath = shapeFilePath + ".prj";
             if (System.IO.File.Exists(prjFilePath))
             {
@@ -8879,7 +8884,7 @@ namespace EGIS.ShapeFileLib
             DateTime tick = DateTime.Now;
             if (this.UseGDI(extent, renderSettings))
             {
-                //PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
+               // PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighSpeed;
                 g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
@@ -12410,8 +12415,13 @@ namespace EGIS.ShapeFileLib
 			
 			int numFields = this.dBFRecordHeader.FieldCount;
 			string[] strFields = new string[numFields];
-			dbfFileStream.Seek(RecordOffset,SeekOrigin.Begin);
+            //if (RecordOffset > dbfFileStream.Length)
+            //{
+            //    Console.Out.WriteLine("record Number:" + recordNumber);
+            //}
+            dbfFileStream.Seek(RecordOffset,SeekOrigin.Begin);
 			byte[] data = new byte[this.dBFRecordHeader.RecordLength];
+            
 			dbfFileStream.Read(data,0,data.Length);
             //fixed(byte* bPtr = data)
             //{				
