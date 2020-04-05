@@ -1021,6 +1021,11 @@ namespace EGIS.ShapeFileLib
 
         private void ReadPrjFile(string shapeFilePath)
         {
+            if (shapeFilePath.EndsWith(".shp", StringComparison.OrdinalIgnoreCase))
+            {
+                shapeFilePath = shapeFilePath.Substring(0, shapeFilePath.Length - 4);
+            }
+
             string prjFilePath = shapeFilePath + ".prj";
             if (System.IO.File.Exists(prjFilePath))
             {
@@ -8879,7 +8884,7 @@ namespace EGIS.ShapeFileLib
             DateTime tick = DateTime.Now;
             if (this.UseGDI(extent, renderSettings))
             {
-                //PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
+               // PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighSpeed;
                 g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
@@ -12355,7 +12360,7 @@ namespace EGIS.ShapeFileLib
                 throw new ArgumentException("fieldIndex must be <= DBFRecordHeader.NumFields and >=0");
             }
 			
-			int FieldOffset = this.dBFRecordHeader.HeaderLength + this.dBFRecordHeader.RecordLength*recordNumber + this.dBFRecordHeader.GetFieldDescriptions()[fieldIndex].RecordOffset;
+			long FieldOffset = this.dBFRecordHeader.HeaderLength + this.dBFRecordHeader.RecordLength*(long)recordNumber + this.dBFRecordHeader.GetFieldDescriptions()[fieldIndex].RecordOffset;
 			//string strField;
 			dbfFileStream.Seek(FieldOffset,SeekOrigin.Begin);
 			byte[] data = new byte[this.dBFRecordHeader.GetFieldDescriptions()[fieldIndex].FieldLength];
@@ -12406,12 +12411,17 @@ namespace EGIS.ShapeFileLib
 				throw new ArgumentException("recordNumber must be <= DBFRecordHeader.NumRecords and >=0");
 			}
 			
-			int RecordOffset = this.dBFRecordHeader.HeaderLength + this.dBFRecordHeader.RecordLength*recordNumber;
+			long RecordOffset = this.dBFRecordHeader.HeaderLength + this.dBFRecordHeader.RecordLength* (long)recordNumber;
 			
 			int numFields = this.dBFRecordHeader.FieldCount;
 			string[] strFields = new string[numFields];
-			dbfFileStream.Seek(RecordOffset,SeekOrigin.Begin);
+            //if (RecordOffset > dbfFileStream.Length)
+            //{
+            //    Console.Out.WriteLine("record Number:" + recordNumber);
+            //}
+            dbfFileStream.Seek(RecordOffset,SeekOrigin.Begin);
 			byte[] data = new byte[this.dBFRecordHeader.RecordLength];
+            
 			dbfFileStream.Read(data,0,data.Length);
             //fixed(byte* bPtr = data)
             //{				
@@ -12462,7 +12472,7 @@ namespace EGIS.ShapeFileLib
             List<string> records = new List<string>();
             Dictionary<string, int> d = new Dictionary<string, int>();
 
-            int FieldOffset = this.dBFRecordHeader.HeaderLength + this.dBFRecordHeader.GetFieldDescriptions()[fieldIndex].RecordOffset;
+            long FieldOffset = this.dBFRecordHeader.HeaderLength + this.dBFRecordHeader.GetFieldDescriptions()[fieldIndex].RecordOffset;
             
             int fieldLength = this.dBFRecordHeader.GetFieldDescriptions()[fieldIndex].FieldLength;
             dbfFileStream.Seek(FieldOffset, SeekOrigin.Begin);

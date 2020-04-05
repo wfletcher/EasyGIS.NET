@@ -668,6 +668,21 @@ namespace EGIS.ShapeFileLib
         public abstract void AddRecord(PointD[] points, int pointCount, double[] measures, string[] fieldData);
 
         /// <summary>
+        /// abstract method used to add a new record to the shapefile    
+        /// </summary>
+        /// <param name="parts"> collection of double arrays containing the individual points of each part in the shape record.    
+        /// </param>
+        /// <param name="fieldData">fieldData string values of the data associated with the shape record (which is stored
+        /// in the dbf file)
+        ///</param>
+        ///<remarks>
+        /// Implementing subclasses override this method to write the appropriate data
+        /// depending on the ShapeType being used.
+        /// </remarks>
+        public abstract void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts, System.Collections.ObjectModel.ReadOnlyCollection<double[]> measures, string[] fieldData);
+
+
+        /// <summary>
         /// Creates a ShapeFileWriter class
         /// </summary>
         /// <remarks>
@@ -902,7 +917,14 @@ namespace EGIS.ShapeFileLib
     {
         throw new NotSupportedException("Not supported for polygon shapefiles");
     }
-    
+
+
+    public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts, System.Collections.ObjectModel.ReadOnlyCollection<double[]> measures, string[] fieldData)
+    {
+        throw new NotSupportedException("Not supported for polygon shapefiles");
+    }
+
+
     private const int ShapeTypeLE = ((0x05)<<24);
 
 
@@ -1317,7 +1339,7 @@ namespace EGIS.ShapeFileLib
             RecordCount++;
             //obfuscation was casting parts to following line - renamed private methods
             //writeShapeRecord4((System.Collections.ObjectModel.ReadOnlyCollection<PointF[]>)parts);            
-            writeShapeRecord5(parts);
+            writeShapeRecord5(parts, null);
             WriteDbfRecord(fieldData);
         }
 
@@ -1325,6 +1347,15 @@ namespace EGIS.ShapeFileLib
         {
             throw new NotImplementedException();
         }
+
+
+        public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts, System.Collections.ObjectModel.ReadOnlyCollection<double[]> measures, string[] fieldData)
+        {
+            RecordCount++;
+            writeShapeRecord5(parts, measures);
+            WriteDbfRecord(fieldData);
+        }
+
 
         private void writeShapeRecord1(PointF[] pts, int numPoints)
         {
@@ -1615,7 +1646,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        private void writeShapeRecord5(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts)
+        private void writeShapeRecord5(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts, System.Collections.ObjectModel.ReadOnlyCollection<double[]> measures)
         {
 
             int numPoints = 0;
@@ -1630,6 +1661,12 @@ namespace EGIS.ShapeFileLib
             ShapeStream.Write(EndianUtils.GetBytesBE(RecordCount), 0, 4);
             //output the content length in words = [ 4 (shapetype) + 32 (box) + 4 + 4 + (4*numparts) + 16*numPoints]/2
             int contentLength = (4 + 32 + 4 + 4 + (4 * parts.Count) + (16 * numPoints)) / 2;
+
+            if (this.useMeasures && measures != null)
+            {
+                contentLength += (8 + 8 + (8 * numPoints)) / 2;
+            }
+
             ShapeStream.Write(EndianUtils.GetBytesBE(contentLength), 0, 4);
 
             //write the shapeType (LE)
@@ -1646,14 +1683,15 @@ namespace EGIS.ShapeFileLib
                 PointD[] pts = parts[n];
                 for (int i = 0; i < pts.Length; i++)
                 {
-                    double x = pts[index].X;
-                    double y = pts[index++].Y;
+                    double x = pts[i].X;
+                    double y = pts[i].Y;
                     if (x < minX) minX = x;
                     if (x > maxX) maxX = x;
                     if (y < minY) minY = y;
                     if (y > maxY) maxY = y;
                 }
             }
+           
             ShapeStream.Write(BitConverter.GetBytes(minX), 0, 8);
             ShapeStream.Write(BitConverter.GetBytes(minY), 0, 8);
             ShapeStream.Write(BitConverter.GetBytes(maxX), 0, 8);
@@ -1666,8 +1704,14 @@ namespace EGIS.ShapeFileLib
             }
             else
             {
-                ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
+                if (numPoints > 0)
+                {
+                    ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
+                }
             }
+
+            //Console.Out.WriteLine("Record : " + RecordCount + ", ShapeBounds: " + ShapeBounds);
+
             //write number of parts
             ShapeStream.Write(BitConverter.GetBytes((int)parts.Count), 0, 4);
             //write number of points
@@ -1682,12 +1726,35 @@ namespace EGIS.ShapeFileLib
             //now write the point data
             for (int n = 0; n < parts.Count; n++)
             {
-                index = 0;
                 PointD[] pts = parts[n];
                 for (int i = 0; i < pts.Length; i++)
                 {
-                    ShapeStream.Write(BitConverter.GetBytes((double)pts[index].X), 0, 8);
-                    ShapeStream.Write(BitConverter.GetBytes((double)pts[index++].Y), 0, 8);
+                    ShapeStream.Write(BitConverter.GetBytes((double)pts[i].X), 0, 8);
+                    ShapeStream.Write(BitConverter.GetBytes((double)pts[i].Y), 0, 8);
+                }
+            }
+
+            if (this.useMeasures && measures != null)
+            {
+                //write the measures;
+                double minMeasure = double.MaxValue, maxMeasure = double.MinValue;
+                foreach (double[] measuresPart in measures)
+                {
+                    for (int n = 0; n < measuresPart.Length; ++n)
+                    {
+                        if (minMeasure < measuresPart[n]) minMeasure = measuresPart[n];
+                        if (maxMeasure > measuresPart[n]) maxMeasure = measuresPart[n];
+                    }
+                }
+                ShapeStream.Write(BitConverter.GetBytes(minMeasure), 0, 8);
+                ShapeStream.Write(BitConverter.GetBytes(maxMeasure), 0, 8);
+
+                foreach (double[] measuresPart in measures)
+                {
+                    for (int n = 0; n < measuresPart.Length; ++n)
+                    {
+                        ShapeStream.Write(BitConverter.GetBytes(measuresPart[n]), 0, 8);
+                    }
                 }
             }
 
@@ -1757,6 +1824,12 @@ namespace EGIS.ShapeFileLib
         {
             throw new NotSupportedException("Point Shapes do not support measures");
         }
+
+        public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts, System.Collections.ObjectModel.ReadOnlyCollection<double[]> measures, string[] fieldData)
+        {
+            throw new NotSupportedException("Point Shapes do not support measures");
+        }
+
 
         private void WriteShapeRecord1(double[] pts, int numPoints)
         {
