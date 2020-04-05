@@ -82,7 +82,7 @@ namespace EGIS.Web.Controls
 
         private static string CreateCachePath(string cacheDirectory, int tileX, int tileY, int zoom)
         {
-            string file = string.Format("{0}_{1}_{2}.mvt", new object[] { tileX, tileY, zoom });
+            string file = string.Format("{0}_{1}_{2}.mvt", new object[] {zoom,  tileX, tileY });
             return System.IO.Path.Combine(cacheDirectory, file);
         }
 
@@ -111,7 +111,7 @@ namespace EGIS.Web.Controls
         {
             get
             {
-                return 1024;
+                return 512;
             }
         }
 
@@ -123,7 +123,10 @@ namespace EGIS.Web.Controls
             }
         }
 
-
+        protected virtual bool OutputTileFeature(ShapeFile shapeFile, int recordIndex, int tileZ, int tileX, int tileY)
+        {
+            return true;
+        }
 
         protected virtual void ProcessGetTileRequest(HttpContext context)
         {
@@ -282,6 +285,8 @@ namespace EGIS.Web.Controls
                                 
                 foreach (int index in indicies)
                 {
+                    if (!OutputTileFeature(shapeFile, index, zoom, tileX, tileY)) continue;
+
                     VectorTileFeature feature = new VectorTileFeature() { Id = index.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     Geometry = new List<List<Coordinate>>(),
                     Attributes = new List<AttributeKeyValue>()};
@@ -399,6 +404,8 @@ namespace EGIS.Web.Controls
             {
                 foreach (int index in indicies)
                 {
+                    if (!OutputTileFeature(shapeFile, index, zoom, tileX, tileY)) continue;
+
                     VectorTileFeature feature = new VectorTileFeature()
                     {
                         Id = index.ToString(System.Globalization.CultureInfo.InvariantCulture),

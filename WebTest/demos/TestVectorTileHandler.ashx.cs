@@ -47,10 +47,10 @@ namespace WebTest
 
             layers.Add(sf);
 
-            shapeFilePath = context.Server.MapPath("/demos/demo2_files/j5505_nativevegetationareas.shp");
-            sf = new ShapeFile(shapeFilePath);
+            //shapeFilePath = context.Server.MapPath("/demos/demo2_files/j5505_nativevegetationareas.shp");
+            //sf = new ShapeFile(shapeFilePath);
 
-            layers.Add(sf);
+            //layers.Add(sf);
 
 
             context.Application[MyLayersId] = layers;

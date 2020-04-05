@@ -1,6 +1,7 @@
 
-var url3 = 'http://localhost:64200/demos/TestVectorTileHandler.ashx?tx={x}&ty={y}&zoom={z}&mapid=none&version=6.93';
+var url3 = 'http://localhost:64200/demos/TestVectorTileHandler.ashx?tx={x}&ty={y}&zoom={z}&mapid=none&version=1.3';
 
+var url4 = 'http://localhost:64200/demos/TexasVectorTileHandler.ashx?tx={x}&ty={y}&zoom={z}&mapid=none&version=1.3';
 
 
 var style = new ol.style.Style({
@@ -29,6 +30,21 @@ var style2 = new ol.style.Style({
   zIndex:1
 });
 
+var texas_style = new ol.style.Style({
+  text: new ol.style.Text({
+    font: '10px "Open Sans", "Arial Unicode MS", "sans-serif"',
+    placement: 'line',
+    fill: new ol.style.Fill({
+       color: '#606060'
+     })
+  }),  
+  stroke : new ol.style.Stroke( {
+	  color: '#adadcd',
+	  width:1
+  }),
+  zIndex:2
+});
+
 var map = new ol.Map({
   target: 'map',
   layers: [
@@ -40,6 +56,7 @@ var map = new ol.Map({
     
 	new ol.layer.VectorTile({
       declutter: true,
+	  tileSize : 512,
       source: new ol.source.VectorTile({
         
         format: new ol.format.MVT(),
@@ -63,8 +80,34 @@ var map = new ol.Map({
     },
 	  opacity:1.0
 	  
-	})
+      })
+    /*
+      ,
 	
+	new ol.layer.VectorTile({
+      declutter: true,
+	  tileSize : 512,
+      source: new ol.source.VectorTile({
+        
+        format: new ol.format.MVT(),
+        url: url4
+      }),
+        style: function (feature, number) {
+            
+		  if(map.getView().getZoom() > 14)
+		  {
+			texas_style.getText().setText(feature.get('MAP_LBL'));
+		  }
+		  else{
+			  texas_style.getText().setText('');
+		  }
+		  
+		  return [texas_style];
+    },   
+	  opacity:1.0
+	  
+	})
+	*/
   ],
   view: new ol.View({
     //center: [0, 0],
