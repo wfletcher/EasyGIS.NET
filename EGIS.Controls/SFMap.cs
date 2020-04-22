@@ -1291,7 +1291,6 @@ namespace EGIS.Controls
             {
                 g.Clear(MapBackColor);
                 this.OnPaintMapBackground(new PaintEventArgs(g, new Rectangle(0,0,this.ClientSize.Width, this.ClientSize.Height)));
-                DateTime tick = DateTime.Now;
                 foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
                 {
                     //this is an expensive operation
@@ -1301,54 +1300,10 @@ namespace EGIS.Controls
                     //using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode)))
                     //{
                     //}
-
                     
-
                     sf.Render(g, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
-                }
-                Console.Out.WriteLine("RenderShapefiles foreach time:{0:0.000}s", DateTime.Now.Subtract(tick).TotalSeconds);
-
-                //foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
-                //{
-                //    tick = DateTime.Now;
-                //    for (int n = 0; n < 1000; ++n)
-                //    {
-                //        this.MapCoordinateReferenceSystem.IsEquivalent(sf.CoordinateReferenceSystem);
-                //    }
-
-                //    Console.Out.WriteLine("CRS.IsEquivalent time:{0:0.000}s", DateTime.Now.Subtract(tick).TotalSeconds/1000);
-
-                //}
-
-                //foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
-                //{
-                //    tick = DateTime.Now;
-                //    for (int n = 0; n < 1000; ++n)
-                //    {
-                //        using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, MapCoordinateReferenceSystem))
-                //        {
-                //        }
-                //        //using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode)))
-                //        //{
-                //        //}
-                //    }
-
-                //    Console.Out.WriteLine("CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, MapCoordinateReferenceSystem) time:{0:0.000}s", DateTime.Now.Subtract(tick).TotalSeconds / 1000);
-
-                //    tick = DateTime.Now;
-                //    for (int n = 0; n < 1000; ++n)
-                //    {
-                //        //using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, MapCoordinateReferenceSystem))
-                //        //{
-                //        //}
-                //        using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode)))
-                //        {
-                //        }
-                //    }
-
-                //    Console.Out.WriteLine("CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode)) time:{0:0.000}s", DateTime.Now.Subtract(tick).TotalSeconds / 1000);
-                //}
-
+                }               
+                
             }
             finally
             {
@@ -1390,9 +1345,7 @@ namespace EGIS.Controls
         {               
             if (dirtyScreenBuf)
             {
-                DateTime tick = DateTime.Now;
-                RenderShapefiles();
-                Console.Out.WriteLine("RenderShapefiles time:{0:0.000}s", DateTime.Now.Subtract(tick).TotalSeconds);
+                RenderShapefiles();                
             }
             if (screenBuf != null)
             {

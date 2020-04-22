@@ -70,6 +70,33 @@ var map = new ol.Map({
   })
 });
 
+/*
+ generic AJAX function to load data from a server
+*/
+function loadData(url, callbackFunction) {
+  var client;
+  client = new XMLHttpRequest();
+  
+  client.onload = function(){
+	  callbackFunction(this);
+  }
+  
+  client.open("GET", url, true);
+  client.send();
+}
+
+
+var vehicleMetadata = null;
+
+function readVehicleMetadata(xhttpClient){
+
+  vehicleMetadata = JSON.parse(xhttpClient.responseText);
+  
+  console.log('vehicleMetadata', vehicleMetadata);
+  
+};
+
+
 var vehicleFeatures = [];
 var dataLoaded = false;
 var vehicleFeaturesIndex = -1;
@@ -79,6 +106,46 @@ var vehicleFeaturesIncrement = 96;
 //records[0].LocationRecord.TimeStamp:20/01/2016 4:14:23 PM +00:00
 var dateZero = new Date(2016,0,20,16,14,23);
 
+function readVehicleData(xhttpClient){
+
+  var csv = xhttpClient.responseText;
+  
+  var prevIndex = csv.indexOf('\n') + 1; // scan past the header line
+
+  var curIndex;
+  var timeZero = -1;
+  while ((curIndex = csv.indexOf('\n', prevIndex)) != -1) {
+    var line = csv.substr(prevIndex, curIndex - prevIndex).split(',');
+    prevIndex = curIndex + 1;
+
+    var coords = ol.proj.fromLonLat([parseFloat(line[2]), parseFloat(line[1])]);
+    if (isNaN(coords[0]) || isNaN(coords[1])) {
+      // guard against bad data
+      continue;
+    }
+	
+	if(timeZero < 0)
+	{
+		timeZero = Number(line[3]);
+	}
+
+	var days = Number(line[3]) - timeZero;
+	days = days / (60*24); //time in days
+    vehicleFeatures.push(new ol.Feature({
+      veh: line[0], 
+	  time: days,
+      geometry: new ol.geom.Point(coords)
+    }));
+  }
+
+  vehicleFeaturesIndex = 0;
+  var indexEnd = Math.min(vehicleFeaturesIndex+vehicleFeaturesIntervalSize,vehicleFeatures.length-1); 
+  vectorSource.addFeatures(vehicleFeatures.slice(0,indexEnd));
+  dataLoaded = true;
+	
+};
+
+/*
 var client = new XMLHttpRequest();
 client.open('GET', 'data/csv/vehicles.csv');
 client.onload = function() {
@@ -121,6 +188,8 @@ client.onload = function() {
 };
 client.send();
 
+*/
+
 
 var blurHandler = function() {
   vector.setBlur(parseInt(blur.value, 10));
@@ -141,7 +210,7 @@ function animate() {
 	
 	++cnt;
 	
-	if(cnt >= 10 && dataLoaded)
+	if(cnt >= 20 && dataLoaded)
 	{			
 		++id;
 		cnt = 0;
@@ -180,4 +249,8 @@ function animate() {
   
   window.requestAnimationFrame(animate);
 }
+
+loadData('data/csv/vehicles_metadata.json', readVehicleMetadata);
+loadData('data/csv/vehicles.csv', readVehicleData);
+
 animate();

@@ -18,6 +18,7 @@ namespace EGIS.Projections
         private List<IProjectedCRS> projectedCoordinateSystems = new List<IProjectedCRS>();
         private List<IGeographicCRS> geographicCoordinateSystems = new List<IGeographicCRS>();
 
+        private object _sync = new object();
 
         protected CoordinateReferenceSystemFactory(string sridFilename)
         {
@@ -28,17 +29,21 @@ namespace EGIS.Projections
             LoadData();
         }
 
+        private static object instance_sync = new object();
         private static CoordinateReferenceSystemFactory _instance;
 
         public static ICRSFactory Default
         {
             get
             {
-                if (_instance == null)
+                lock (instance_sync)
                 {
-                    _instance = new CoordinateReferenceSystemFactory();
+                    if (_instance == null)
+                    {
+                        _instance = new CoordinateReferenceSystemFactory();
+                    }
+                    return _instance;
                 }
-                return _instance;
             }
         }
 
@@ -219,7 +224,8 @@ namespace EGIS.Projections
             string wkt;
             if (this.coordinateSystems.TryGetValue(id, out wkt))
             {
-                ICRS crs =  CreateCRSFromWKT(wkt);
+                ICRS crs = CreateCRSFromWKT(wkt);
+                
                 if (string.IsNullOrEmpty(crs.Id))
                 {
                     ((Proj6.CRS)crs).Id = id.ToString();
@@ -229,21 +235,49 @@ namespace EGIS.Projections
             return null;
         }
 
+        /// <summary>
+        /// Creates a ICRS CoordinateReferenceSystem from a well known text string
+        /// </summary>
+        /// <param name="wkt"></param>
+        /// <returns></returns>
         public ICRS CreateCRSFromWKT(string wkt)
         {
-            return Proj6.CRS.FromWKT(wkt, true);
+            lock (_sync)
+            {
+                return Proj6.CRS.FromWKT(wkt, true);
+            }
         }
 
+        /// <summary>
+        /// creates a ICoordinateTransformation object used to transform coordinates
+        /// from source CRS to target CRS
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
         public ICoordinateTransformation CreateCoordinateTrasformation(ICRS source, ICRS target)
         {
             if (source == null || target == null) throw new Exception("source and target ICRS cannot be null");
 
-            return new Proj6.CoordinateTransformation(source, target);
+            lock (_sync)
+            {
+                return new Proj6.CoordinateTransformation(source, target);
+            }
         }
 
+        /// <summary>
+        /// creates a ICoordinateTransformation object used to transform coordinates
+        /// from source CRS to target CRS        
+        /// </summary>
+        /// <param name="sourceWKT"></param>
+        /// <param name="targetWKT"></param>
+        /// <returns></returns>
         public ICoordinateTransformation CreateCoordinateTrasformation(string sourceWKT, string targetWKT)
         {
-            return CreateCoordinateTrasformation(Proj6.CRS.FromWKT(sourceWKT), Proj6.CRS.FromWKT(targetWKT));
+            lock (_sync)
+            {
+                return CreateCoordinateTrasformation(Proj6.CRS.FromWKT(sourceWKT), Proj6.CRS.FromWKT(targetWKT));
+            }
         }
 
         #endregion

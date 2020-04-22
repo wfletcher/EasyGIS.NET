@@ -16,9 +16,17 @@ namespace EGIS.Projections
 
         static Proj6Native()
         {
-            
+            //System.Configuration.ConfigurationManager.AppSettings["Proj6Dir"];
             // register path to native dll      
             var startupPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+            //are we running in web site?
+            if (!System.IO.Directory.Exists(System.IO.Path.Combine(startupPath, "Proj6")))
+            {
+                startupPath = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory,"bin");                
+            }
+
+            System.Diagnostics.Debug.WriteLine("proj6 startupPath:" + startupPath);
 
             var dllPath = string.Format(@"proj6/{0}/{1}", (Environment.Is64BitProcess ? "x64" : "x86"), "sqlite3.dll");
             LoadLibrary(System.IO.Path.Combine(startupPath, dllPath));
@@ -37,7 +45,11 @@ namespace EGIS.Projections
 
         #endregion
 
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr proj_context_create();
 
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void proj_context_destroy(IntPtr context);
 
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]

@@ -71,5 +71,13 @@ namespace EGIS.ShapeFileLib
             return pt;
         }
 
+        public static unsafe void Transform(this EGIS.Projections.ICoordinateTransformation @this, PointD[] points, Projections.TransformDirection direction = Projections.TransformDirection.Forward)
+        {
+            fixed (PointD* ptr = points)
+            {
+                @this.Transform((double*)ptr, points.Length, direction);                
+            }
+        }
+
     }
 }

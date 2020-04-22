@@ -22,6 +22,17 @@ namespace EGIS.Projections
                          Math.Abs(SouthLatitudeDegrees + 1000) < 0.01);
             }
         }
+
+        public override string ToString()
+        {
+            return string.Format("WestLongitudeDegrees:{0}, EastLongitudeDegrees:{1}, NorthLatitudeDegrees:{2}, SouthLatitudeDegrees:{3}",
+                WestLongitudeDegrees, EastLongitudeDegrees, NorthLatitudeDegrees, SouthLatitudeDegrees);
+        }
+
+        public override int GetHashCode()
+        {
+            return ToString().GetHashCode();
+        }
     }
     
     /// <summary>

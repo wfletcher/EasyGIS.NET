@@ -257,7 +257,7 @@ namespace EGIS.ShapeFileLib
                 this.projectionWkt = value;
                 if (!string.IsNullOrEmpty(value))
                 {
-                    this.CoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(value);
+                    this.CoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(value);                   
                 }
                 else
                 {
@@ -4353,9 +4353,15 @@ namespace EGIS.ShapeFileLib
             if (useGDI)
             {
                 PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
+                
+                //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighSpeed;
+                //g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                //PaintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);                  
             }
             else
             {
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
                 PaintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
             }
         }
@@ -4437,7 +4443,7 @@ namespace EGIS.ShapeFileLib
                     actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
                 }
                                 
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
                 Brush fillBrush = null;
                 Pen outlinePen = null;
                 Pen selectPen = null;
