@@ -122,15 +122,24 @@ namespace EGIS.Mapbox.Vector.Tile
 
     }
 
-
-
-
+    /// <summary>
+    /// Class representing a Vector Tile Feature
+    /// </summary>
     public class VectorTileFeature
 	{
+        /// <summary>
+        /// Get set the feature Id. features in a tile layer should be unique
+        /// </summary>
         public string Id { get; set; }
+
+        /// <summary>
+        /// Get/Set the feature geometry
+        /// </summary>
 		public List<List<Coordinate>> Geometry {get;set;}
-		///public List<KeyValuePair<string, object>> Attributes { get; set; }
-        
+		
+        /// <summary>
+        /// Get/Set the feature attributes
+        /// </summary>
         public List<AttributeKeyValue> Attributes { get; set; }
 
 		public Tile.GeomType GeometryType { get; set; }

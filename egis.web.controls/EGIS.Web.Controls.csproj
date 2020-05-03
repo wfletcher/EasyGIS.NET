@@ -70,6 +70,7 @@
     <Compile Include="GeoJson.cs" />
     <Compile Include="ISFMap.cs" />
     <Compile Include="MapPanControl.cs" />
+    <Compile Include="VectorTileGenerator.cs" />
     <Compile Include="VectorTileHandler.cs" />
     <Compile Include="QuantileCustomRenderSettings.cs" />
     <Compile Include="SFMap.cs" />

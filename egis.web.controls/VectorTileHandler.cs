@@ -1,4 +1,31 @@
-﻿using EGIS.ShapeFileLib;
+﻿#region Copyright and License
+
+/****************************************************************************
+**
+** Copyright (C) 2008 - 2020 Winston Fletcher.
+** All rights reserved.
+**
+** This file is part of the EGIS.ShapeFileLib class library of Easy GIS .NET.
+** 
+** Easy GIS .NET is free software: you can redistribute it and/or modify
+** it under the terms of the GNU Lesser General Public License version 3 as
+** published by the Free Software Foundation and appearing in the file
+** lgpl-license.txt included in the packaging of this file.
+**
+** Easy GIS .NET is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License and
+** GNU Lesser General Public License along with Easy GIS .NET.
+** If not, see <http://www.gnu.org/licenses/>.
+**
+****************************************************************************/
+
+#endregion
+
+using EGIS.ShapeFileLib;
 using System;
 using System.Collections.Generic;
 using System.Web;
@@ -8,8 +35,10 @@ using System.IO;
 
 namespace EGIS.Web.Controls
 {
-  
 
+    /// <summary>
+    /// Generic IHttpHandler handler that serves Mapbox .mvt Vector Tiles 
+    /// </summary>
     public abstract class VectorTileHandler : IHttpHandler
     {
 
@@ -73,7 +102,7 @@ namespace EGIS.Web.Controls
         /// <param name="tileY"></param>
         /// <param name="zoom"></param>
         /// <returns></returns>
-        /// <remarks>Default name is &qt; CacheDirectory/tileX_tileY_zoom.png &qt;</remarks>
+        /// <remarks>Default name is  CacheDirectory/zoom_tileX_tileY.mvt </remarks>
         protected virtual string CreateCachePath(HttpContext context, int tileX, int tileY, int zoom)
         {
             string cacheDirectory = context.Server.MapPath(CacheDirectory);
@@ -107,6 +136,9 @@ namespace EGIS.Web.Controls
 
         }
 
+        /// <summary>
+        /// Vector Tile Size. Default is 512 x 512
+        /// </summary>
         protected virtual int TileSize
         {
             get
@@ -115,6 +147,13 @@ namespace EGIS.Web.Controls
             }
         }
 
+        /// <summary>
+        /// Simplification Threshold. Default is 1
+        /// </summary>
+        /// <remarks>
+        /// This property will simplify geometry points when the vector data is generated at lower tile
+        /// zoom levels. In general this property should not be changed from the default value of 1
+        /// </remarks>
         protected virtual int SimplificationPixelThreshold
         {
             get
@@ -135,9 +174,7 @@ namespace EGIS.Web.Controls
             int w = 256 * 3;
             int h = 256 * 3;
             int tileX = 0, tileY = 0, zoomLevel = 0;
-            PointD centerPoint = PointD.Empty;
-            double zoom = -1;
-
+           
             bool foundCompulsoryParameters = false;
             if (int.TryParse(context.Request["tx"], out tileX))
             {
@@ -146,8 +183,6 @@ namespace EGIS.Web.Controls
                     if (int.TryParse(context.Request["zoom"], out zoomLevel))
                     {
                         TileUtil.NormaliseTileCoordinates(ref tileX, ref tileY, zoomLevel);
-                        centerPoint = TileUtil.GetMercatorCenterPointFromTile(tileX, tileY, zoomLevel);
-                        zoom = TileUtil.ZoomLevelToScale(zoomLevel);
                         foundCompulsoryParameters = true;
                     }
                 }
@@ -164,6 +199,7 @@ namespace EGIS.Web.Controls
             if (string.IsNullOrEmpty(cachePath)) useCache = false;
 
             context.Response.ContentType = "application/vnd.mapbox-vector-tile";
+
             //is the tile cached on the server?
             if (useCache && System.IO.File.Exists(cachePath))
             {
@@ -178,32 +214,14 @@ namespace EGIS.Web.Controls
             List<ShapeFile> mapLayers = CreateMapLayers(context);
             if (mapLayers == null) throw new InvalidOperationException("No Map Layers");
 
-
-            List<VectorTileLayer> tileLayers = new List<VectorTileLayer>();
-
-            lock (EGIS.ShapeFileLib.ShapeFile.Sync)
+            VectorTileGenerator tileGenerator = new VectorTileGenerator()
             {
-                foreach (ShapeFile shapeFile in mapLayers)
-                {
-                    if (shapeFile.ShapeType == ShapeType.PolyLine || shapeFile.ShapeType == ShapeType.PolyLineM)
-                    {
-                        var layer = ProcessLineStringTile(shapeFile, tileX, tileY, zoomLevel);
-                        if (layer.VectorTileFeatures != null && layer.VectorTileFeatures.Count > 0)
-                        {
-                            tileLayers.Add(layer);
-                        }
-                    }                   
-                    else if (shapeFile.ShapeType == ShapeType.Polygon || shapeFile.ShapeType == ShapeType.PolygonZ)
-                    {
-                        var layer = ProcessPolygonTile(shapeFile, tileX, tileY, zoomLevel);
-                        if (layer.VectorTileFeatures != null && layer.VectorTileFeatures.Count > 0)
-                        {
-                            tileLayers.Add(layer);
-                        }
-                    }
-                   
-                }
-            }
+                TileSize = this.TileSize,
+                SimplificationPixelThreshold = this.SimplificationPixelThreshold
+            };
+
+            List<VectorTileLayer> tileLayers = tileGenerator.Generate(tileX, tileY, zoomLevel, mapLayers, this.OutputTileFeature);
+
 
             if (tileLayers.Count == 0)
             {
@@ -212,12 +230,13 @@ namespace EGIS.Web.Controls
                 return;
             }
            
-               
+            //output the vectortile in Mapbox vector tile format   
             using (MemoryStream ms = new MemoryStream())
             {
                 EGIS.Mapbox.Vector.Tile.VectorTileParser.Encode(tileLayers, ms);
                 if (useCache)
                 {
+                    //save the encoded tile to our cache
                     try
                     {
                         using (System.IO.FileStream fs = new FileStream(cachePath, FileMode.Create))
@@ -237,8 +256,7 @@ namespace EGIS.Web.Controls
                 context.Response.Cache.SetExpires(DateTime.Now.AddDays(7));
                 ms.WriteTo(context.Response.OutputStream);
             }
-                
-           
+                           
             context.Response.Flush();
         }
 
@@ -247,257 +265,7 @@ namespace EGIS.Web.Controls
         #endregion
 
 
-        #region private members
-
-        private VectorTileLayer ProcessLineStringTile(ShapeFile shapeFile, int tileX, int tileY, int zoom)
-        {
-            int tileSize = TileSize;
-            RectangleD tileBounds = TileUtil.GetTileLatLonBounds(tileX, tileY, zoom, tileSize);
-            //create a buffer around the tileBounds 
-            tileBounds.Inflate(tileBounds.Width * 0.05, tileBounds.Height * 0.05);
-          
-            int simplificationFactor = Math.Min(10, Math.Max(1, SimplificationPixelThreshold));
-
-            System.Drawing.Point tilePixelOffset = new System.Drawing.Point((tileX * tileSize), (tileY * tileSize));
-
-            List<int> indicies = new List<int>();
-            shapeFile.GetShapeIndiciesIntersectingRect(indicies, tileBounds);
-            GeometryAlgorithms.ClipBounds clipBounds = new GeometryAlgorithms.ClipBounds()
-            {
-                XMin = -20,
-                YMin = -20,
-                XMax = tileSize + 20,
-                YMax = tileSize + 20
-            };
-
-            System.Drawing.Point[] pixelPoints = new System.Drawing.Point[1024];
-            System.Drawing.Point[] simplifiedPixelPoints = new System.Drawing.Point[1024];
-
-            PointD[] pointsBuffer = new PointD[1024];
-
-            VectorTileLayer tileLayer = new VectorTileLayer();
-            tileLayer.Extent = (uint)tileSize;
-            tileLayer.Version = 2;
-            
-
-            if (indicies.Count > 0)
-            {
-                                
-                foreach (int index in indicies)
-                {
-                    if (!OutputTileFeature(shapeFile, index, zoom, tileX, tileY)) continue;
-
-                    VectorTileFeature feature = new VectorTileFeature() { Id = index.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    Geometry = new List<List<Coordinate>>(),
-                    Attributes = new List<AttributeKeyValue>()};
-
-                    //get the point data
-                    var recordPoints = shapeFile.GetShapeDataD(index);
-                    //var recordMeasures = shapeFile.GetShapeMDataD(index);
-
-                    int partIndex = 0;
-                    foreach (PointD[] points in recordPoints)
-                    {
-                        //double[] measures = recordMeasures[partIndex];
-                        //convert to pixel coordinates;
-                        if (pixelPoints.Length < points.Length)
-                        {
-                            pixelPoints = new System.Drawing.Point[points.Length + 10];
-                            simplifiedPixelPoints = new System.Drawing.Point[points.Length + 10];
-                            //simplifiedMeasures = new double[points.Length + 10];
-                        }
-
-                        for (int n = 0; n < points.Length; ++n)
-                        {
-                            Int64 x, y;
-                            TileUtil.LLToPixel(points[n], zoom, out x, out y, tileSize);
-                            pixelPoints[n].X = (int)(x - tilePixelOffset.X);
-                            pixelPoints[n].Y = (int)(y - tilePixelOffset.Y);
-                        }
-
-                        int outputCount = 0;
-                        SimplifyPointData(pixelPoints, null, points.Length, simplificationFactor, simplifiedPixelPoints, null, ref pointsBuffer, ref outputCount);
-                      
-                        //output count may be zero for short records at low zoom levels as 
-                        //the pixel coordinates wil be a single point after simplification
-                        if (outputCount > 0)
-                        {
-                            List<int> clippedPoints = new List<int>();
-                            List<int> parts = new List<int>();
-                            //List<double> clippedMeasures = new List<double>();
-                            //GeometryAlgorithms.PolyLineClip(simplifiedPixelPoints, outputCount, clipBounds, clippedPoints, parts, simplifiedMeasures, clippedMeasures);
-                            GeometryAlgorithms.PolyLineClip(simplifiedPixelPoints, outputCount, clipBounds, clippedPoints, parts);                           
-
-                            if (parts.Count > 0)
-                            {
-                                //output the clipped polyline
-                                for (int n = 0; n < parts.Count; ++n)
-                                {
-                                    int index1 = parts[n];
-                                    int index2 = n < parts.Count - 1 ? parts[n + 1] : clippedPoints.Count;
-
-                                    List<Coordinate> lineString = new List<Coordinate>();
-                                    feature.GeometryType = Tile.GeomType.LineString;
-                                    feature.Geometry.Add(lineString);
-                                    //clipped points store separate x/y pairs so there will be two values per measure
-                                    for (int i = index1; i < index2; i += 2)
-                                    {
-                                        lineString.Add(new Coordinate(clippedPoints[i], clippedPoints[i + 1]));                                        
-                                    }                                    
-                                }
-                            }
-                        }
-                        ++partIndex;
-                    }
-
-                    //add the record attributes
-                    string[] fieldNames = shapeFile.GetAttributeFieldNames();
-                    string[] values = shapeFile.GetAttributeFieldValues(index);
-                    for (int n = 0; n < values.Length; ++n)
-                    {
-                        feature.Attributes.Add(new AttributeKeyValue(fieldNames[n], values[n].Trim()));
-                    }
-                    
-                    if (feature.Geometry.Count > 0)
-                    {
-                        tileLayer.VectorTileFeatures.Add(feature);
-                    }
-
-                }
-            }
-            return tileLayer;
-        }
-
-        private VectorTileLayer ProcessPolygonTile(ShapeFile shapeFile, int tileX, int tileY, int zoom)
-        {
-            int tileSize = TileSize;
-            RectangleD tileBounds = TileUtil.GetTileLatLonBounds(tileX, tileY, zoom, tileSize);
-            //create a buffer around the tileBounds 
-            tileBounds.Inflate(tileBounds.Width * 0.05, tileBounds.Height * 0.05);
-        
-            int simplificationFactor = Math.Min(10, Math.Max(1, SimplificationPixelThreshold));
-
-            System.Drawing.Point tilePixelOffset = new System.Drawing.Point((tileX * tileSize), (tileY * tileSize));
-
-            List<int> indicies = new List<int>();
-            shapeFile.GetShapeIndiciesIntersectingRect(indicies, tileBounds);
-            GeometryAlgorithms.ClipBounds clipBounds = new GeometryAlgorithms.ClipBounds()
-            {
-                XMin = -20,
-                YMin = -20,
-                XMax = tileSize + 20,
-                YMax = tileSize + 20
-            };
-
-            System.Drawing.Point[] pixelPoints = new System.Drawing.Point[1024];
-            System.Drawing.Point[] simplifiedPixelPoints = new System.Drawing.Point[1024];
-            List<System.Drawing.Point> clippedPolygon = new List<System.Drawing.Point>();
-
-            PointD[] pointsBuffer = new PointD[1024];
-
-            VectorTileLayer tileLayer = new VectorTileLayer();
-            tileLayer.Extent = (uint)tileSize;
-            tileLayer.Version = 2;
-            tileLayer.Name = !string.IsNullOrEmpty(shapeFile.Name) ? shapeFile.Name : System.IO.Path.GetFileNameWithoutExtension(shapeFile.FilePath);
-
-            if (indicies.Count > 0)
-            {
-                foreach (int index in indicies)
-                {
-                    if (!OutputTileFeature(shapeFile, index, zoom, tileX, tileY)) continue;
-
-                    VectorTileFeature feature = new VectorTileFeature()
-                    {
-                        Id = index.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                        Geometry = new List<List<Coordinate>>(),
-                        Attributes = new List<AttributeKeyValue>(),
-                        GeometryType = Tile.GeomType.Polygon
-                    };
-
-                    //get the point data
-                    var recordPoints = shapeFile.GetShapeDataD(index);
-                 
-                    int partIndex = 0;
-                    foreach (PointD[] points in recordPoints)
-                    {
-                        //convert to pixel coordinates;
-                        if (pixelPoints.Length < points.Length)
-                        {
-                            pixelPoints = new System.Drawing.Point[points.Length + 10];
-                            simplifiedPixelPoints = new System.Drawing.Point[points.Length + 10];
-                        }
-
-                        for (int n = 0; n < points.Length; ++n)
-                        {
-                            Int64 x, y;
-                            TileUtil.LLToPixel(points[n], zoom, out x, out y, tileSize);
-                            pixelPoints[n].X = (int)(x - tilePixelOffset.X);
-                            pixelPoints[n].Y = (int)(y - tilePixelOffset.Y);
-                        }
-
-                        int outputCount = 0;
-                        SimplifyPointData(pixelPoints, null, points.Length-1, simplificationFactor, simplifiedPixelPoints, null, ref pointsBuffer, ref outputCount);
-                        simplifiedPixelPoints[outputCount++] = pixelPoints[points.Length - 1];
-                        if (outputCount > 1)
-                        {                                                        
-                            GeometryAlgorithms.PolygonClip(simplifiedPixelPoints, outputCount, clipBounds, clippedPolygon);
-
-                            if (clippedPolygon.Count > 0)
-                            {
-                                //output the clipped polygon                                                                                             
-                                List<Coordinate> lineString = new List<Coordinate>();
-                                feature.Geometry.Add(lineString);
-                                for (int i = clippedPolygon.Count-1; i>=0;--i)
-                                {
-                                    lineString.Add(new Coordinate(clippedPolygon[i].X, clippedPolygon[i].Y));
-                                }                                
-                            }
-                        }
-                        ++partIndex;
-                    }
-                    
-                    //add the record attributes
-                    string[] fieldNames = shapeFile.GetAttributeFieldNames();
-                    string[] values = shapeFile.GetAttributeFieldValues(index);
-                    for (int n = 0; n < values.Length; ++n)
-                    {
-                        feature.Attributes.Add(new AttributeKeyValue(fieldNames[n], values[n].Trim()));
-                    }
-
-                    if (feature.Geometry.Count > 0)
-                    {
-                        tileLayer.VectorTileFeatures.Add(feature);
-                    }
-                }
-            }
-
-            return tileLayer;
-        }
-
-
-        private void SimplifyPointData(System.Drawing.Point[] points, double[] measures, int pointCount, int simplificationFactor, System.Drawing.Point[] reducedPoints, double[] reducedMeasures, ref PointD[] pointsBuffer, ref int reducedPointCount)
-        {
-            if (pointsBuffer.Length < pointCount)
-            {
-                pointsBuffer = new PointD[pointCount];
-            }
-            for (int n = 0; n < pointCount; ++n)
-            {
-                pointsBuffer[n].X = points[n].X;
-                pointsBuffer[n].Y = points[n].Y;
-            }
-            List<int> reducedIndices = new List<int>();
-            reducedPointCount = GeometryAlgorithms.SimplifyDouglasPeucker(pointsBuffer, reducedIndices, pointCount, simplificationFactor);
-            for (int n = 0; n < reducedPointCount; ++n)
-            {
-                reducedPoints[n] = points[reducedIndices[n]];
-                if(measures != null) reducedMeasures[n] = measures[reducedIndices[n]];
-            }
-        }
-
-
-        #endregion
-
+     
     }
 
 }

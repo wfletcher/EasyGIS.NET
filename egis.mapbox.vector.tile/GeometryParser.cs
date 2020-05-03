@@ -3,14 +3,14 @@
 
 namespace EGIS.Mapbox.Vector.Tile
 {
-    public enum CommandId : System.UInt32
+    internal enum CommandId : System.UInt32
     {
         MoveTo = 1,
         LineTo = 2,
         ClosePath = 7
     }
 
-    public static class GeometryParser
+    internal static class GeometryParser
     {
 
 

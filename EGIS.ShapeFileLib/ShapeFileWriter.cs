@@ -2,7 +2,7 @@
 
 /****************************************************************************
 **
-** Copyright (C) 2008 - 2011 Winston Fletcher.
+** Copyright (C) 2008 - 2020 Winston Fletcher.
 ** All rights reserved.
 **
 ** This file is part of the EGIS.ShapeFileLib class library of Easy GIS .NET.
@@ -1111,7 +1111,7 @@ namespace EGIS.ShapeFileLib
                 if (y > maxY) maxY = y;
             }
         }
-        Console.Out.WriteLine("minX:{0},minY:{1}, maxX:{2},maxY:{3}", minX, minY, maxX, maxY);
+        //Console.Out.WriteLine("minX:{0},minY:{1}, maxX:{2},maxY:{3}", minX, minY, maxX, maxY);
         ShapeStream.Write(BitConverter.GetBytes(minX), 0, 8);
         ShapeStream.Write(BitConverter.GetBytes(minY), 0, 8);
         ShapeStream.Write(BitConverter.GetBytes(maxX), 0, 8);

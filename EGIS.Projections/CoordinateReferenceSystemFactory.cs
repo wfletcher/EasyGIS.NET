@@ -1,4 +1,31 @@
-﻿using System;
+﻿#region Copyright and License
+
+/****************************************************************************
+**
+** Copyright (C) 2008 - 2020 Winston Fletcher.
+** All rights reserved.
+**
+** This file is part of the EGIS.ShapeFileLib class library of Easy GIS .NET.
+** 
+** Easy GIS .NET is free software: you can redistribute it and/or modify
+** it under the terms of the GNU Lesser General Public License version 3 as
+** published by the Free Software Foundation and appearing in the file
+** lgpl-license.txt included in the packaging of this file.
+**
+** Easy GIS .NET is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
+**
+** You should have received a copy of the GNU General Public License and
+** GNU Lesser General Public License along with Easy GIS .NET.
+** If not, see <http://www.gnu.org/licenses/>.
+**
+****************************************************************************/
+
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -8,6 +35,35 @@ using System.Text;
 
 namespace EGIS.Projections
 {
+    /// <summary>
+    /// Factory class with members to assist in creating and transforming between Coordinate Reference Systems (CRS) 
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// To access the factory class use the EGIS.Projections.CoordinateReferenceSystemFactory.Default member
+    /// </para>
+    /// <para>
+    /// To create a CRS from Well Known Text (as stored in a shapefile .prj file) use: <br/>
+    /// EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wktString);
+    /// <br/>
+    /// To create a CRS from a EPGS code use: <br/>
+    /// EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(code);
+    ///     
+    /// </para>
+    /// <para>
+    /// To transform coordinates from one CRS to another CRS create a ITransformation object:
+    /// EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sourceCRS, targetCRS);
+    /// <br/> or 
+    /// <br/>
+    /// EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sourceWKT, targetWKT);
+    /// </para>
+    /// 
+    /// <para>
+    /// Internally EGIS uses Proj6 to support CRS operations.<br/>
+    /// To use EGIS.Projections in your own projects make sure that the "Proj6" directory and all of its contents is 
+    /// copied to the output directory of your project.
+    /// </para>
+    /// </remarks>
     public class CoordinateReferenceSystemFactory : ICRSFactory
     {
         /// <summary>
@@ -32,6 +88,9 @@ namespace EGIS.Projections
         private static object instance_sync = new object();
         private static CoordinateReferenceSystemFactory _instance;
 
+        /// <summary>
+        /// The default ICRSFactory instance.
+        /// </summary>
         public static ICRSFactory Default
         {
             get

@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace EGIS.Mapbox.Vector.Tile
 {
-    public static class FeatureParser
+    internal static class FeatureParser
     {
 
         public static VectorTileFeature Parse(Tile.Feature feature, List<string> keys, List<Tile.Value> values,uint extent)

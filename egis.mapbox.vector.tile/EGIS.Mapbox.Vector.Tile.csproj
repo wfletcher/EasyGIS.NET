@@ -9,6 +9,10 @@
     <DelaySign>false</DelaySign>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+    <DocumentationFile>C:\Users\wfletcher\working\egis\code\EasyGIS.NET\egis.mapbox.vector.tile\EGIS.Mapbox.Vector.Tile.xml</DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="ClassifyRings.cs" />
     <Compile Remove="Extensions\CoordinateExtensions.cs" />

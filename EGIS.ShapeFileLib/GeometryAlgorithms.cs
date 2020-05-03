@@ -1250,7 +1250,13 @@ namespace EGIS.ShapeFileLib
 
         }
 
-
+        /// <summary>
+        /// Utility method to clip a polygon
+        /// </summary>
+        /// <param name="inputPolygon">Array of PointD points</param>
+        /// <param name="inputCount">point count</param>
+        /// <param name="clipBounds">clipping bounds</param>
+        /// <param name="clippedPolygon">output list of clipped points</param>
         public static void PolygonClip(PointD[] inputPolygon, int inputCount, ClipBounds clipBounds, List<PointD> clippedPolygon)
         {
             List<PointD> inputList = new List<PointD>(inputCount);
@@ -1364,6 +1370,13 @@ namespace EGIS.ShapeFileLib
             //clippedPolygon
         }
 
+        /// <summary>
+        /// Utility method to clip a polygon
+        /// </summary>
+        /// <param name="inputPolygon">Array of System.Drawing.Point points</param>
+        /// <param name="inputCount">point count</param>
+        /// <param name="clipBounds">clipping bounds</param>
+        /// <param name="clippedPolygon">output list of clipped points</param>
         public static void PolygonClip(System.Drawing.Point[] inputPolygon, int inputCount, ClipBounds clipBounds, List<System.Drawing.Point> clippedPolygon)
         {
             List<System.Drawing.Point> inputList = new List<System.Drawing.Point>(inputCount);

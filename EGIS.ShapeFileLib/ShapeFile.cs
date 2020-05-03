@@ -581,10 +581,10 @@ namespace EGIS.ShapeFileLib
 
         #region Render Methods
 
-        void Render(Graphics g, Size clientArea, RectangleF extent, ProjectionType projectionType)
-        {
-            Render(g, clientArea, extent, RenderSettings, projectionType);
-        }
+        //void Render(Graphics g, Size clientArea, RectangleF extent, ProjectionType projectionType)
+        //{
+        //    Render(g, clientArea, extent, RenderSettings, projectionType);
+        //}
 
         void Render(Graphics g, Size clientArea, RectangleD extent, RenderSettings renderSettings, ProjectionType projectionType)
         {
@@ -7713,7 +7713,7 @@ namespace EGIS.ShapeFileLib
 
                 PaintHighQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
             }
-            Console.Out.WriteLine("Render time: " + DateTime.Now.Subtract(tick).TotalSeconds + "s");
+            //Console.Out.WriteLine("Render time: " + DateTime.Now.Subtract(tick).TotalSeconds + "s");
         }
 
         private unsafe void PaintHighQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType,  ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
@@ -8903,7 +8903,7 @@ namespace EGIS.ShapeFileLib
 
                 PaintHighQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
             }
-            Console.Out.WriteLine("render time:" + DateTime.Now.Subtract(tick).TotalSeconds + "s");
+            //Console.Out.WriteLine("render time:" + DateTime.Now.Subtract(tick).TotalSeconds + "s");
 
         }
 
@@ -9349,7 +9349,7 @@ namespace EGIS.ShapeFileLib
                 simplificationDistance = 1 / scaleX;
             }
 
-            Console.Out.WriteLine("simplificationDistance = " + simplificationDistance);
+            //Console.Out.WriteLine("simplificationDistance = " + simplificationDistance);
 
             RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
             double offX = -projectedExtent.Left;
@@ -9543,7 +9543,7 @@ namespace EGIS.ShapeFileLib
                                                 int transformCount = coordinateTransformation.Transform((double*)simplifiedDataPtr, usedPoints);
                                                 if (transformCount != usedPoints)
                                                 {
-                                                    Console.Out.WriteLine("transformcount={0}, usedpoints={1}", transformCount, usedPoints);
+                                                    //Console.Out.WriteLine("transformcount={0}, usedpoints={1}", transformCount, usedPoints);
                                                 }
                                             }
 

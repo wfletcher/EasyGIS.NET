@@ -4,8 +4,24 @@ using ProtoBuf;
 
 namespace EGIS.Mapbox.Vector.Tile
 {
+    /// <summary>
+    /// static class to parse and encode mapbox vector tiles from .NET C# applications
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is the main class class of egis.mapbox.vector.tile <br/>
+    /// egis.mapbox.vector.tile is derived from <a href="https://github.com/bertt/mapbox-vector-tile-cs">mapbox-vector-tile-cs</a> written by Bert Temme
+    ///     
+    /// and has methods to parse and encode mapbox .mvt tiles
+    /// </para>
+    /// </remarks>
     public static class VectorTileParser
     {
+        /// <summary>
+        /// Parses a Mapbox .mvt binary stream and returns a List of VectorTileLayer objects
+        /// </summary>
+        /// <param name="stream">stream opened from a .mvt Mapbox tile</param>
+        /// <returns></returns>
         public static List<VectorTileLayer> Parse(Stream stream)
         {
             var tile = Serializer.Deserialize<Tile>(stream);
@@ -28,6 +44,11 @@ namespace EGIS.Mapbox.Vector.Tile
             return list;
         }
 
+        /// <summary>
+        /// Encodes a Mapbox .mvt tile
+        /// </summary>
+        /// <param name="layers">List of VectorTileLayers to encode. A Tile should contain at least one layer</param>
+        /// <param name="stream">output .mvt tile stream</param>
         public static void Encode(List<VectorTileLayer> layers, Stream stream)
         {
             Tile tile = new Tile();

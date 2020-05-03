@@ -6,10 +6,19 @@
         <LanguageId>1033</LanguageId>
     </PropertyGroup>
     <ItemGroup>
-        <Dlls Include="C:\users\wfletcher\working\egis\ShapeFileTools\bin\Debug\EGIS.ShapeFileLib.dll" />
-        <Dlls Include="C:\users\wfletcher\working\egis\ShapeFileTools\bin\Debug\EGIS.Controls.dll" />
-        <Comments Include="C:\users\wfletcher\working\egis\ShapeFileTools\bin\Debug\EGIS.Controls.xml" />
-        <Comments Include="C:\users\wfletcher\working\egis\ShapeFileTools\bin\Debug\EGIS.ShapeFileLib.xml" />
+        <Dlls Include="C:\Users\wfletcher\working\egis\code\EasyGIS.NET\ShapeFileTools\bin\Debug\EGIS.Projections.dll" />
+        <Dlls Include="C:\Users\wfletcher\working\egis\code\EasyGIS.NET\ShapeFileTools\bin\Debug\EGIS.ShapeFileLib.dll" />
+        <Dlls Include="C:\Users\wfletcher\working\egis\code\EasyGIS.NET\ShapeFileTools\bin\Debug\EGIS.Controls.dll" />
+        <Dlls Include="C:\Users\wfletcher\working\egis\code\EasyGIS.NET\egis.web.controls\bin\Debug\EGIS.Web.Controls.dll" />
+        <Dlls Include="C:\Users\wfletcher\working\egis\code\EasyGIS.NET\egis.web.controls\bin\Debug\EGIS.Mapbox.Vector.Tile.dll" />
+        <Comments Include="C:\Users\wfletcher\working\egis\code\EasyGIS.NET\ShapeFileTools\bin\Debug\EGIS.Projections.xml" />
+        <Comments Include="C:\Users\wfletcher\working\egis\code\EasyGIS.NET\ShapeFileTools\bin\Debug\EGIS.Controls.xml" />
+        <Comments Include="C:\Users\wfletcher\working\egis\code\EasyGIS.NET\ShapeFileTools\bin\Debug\EGIS.ShapeFileLib.xml" />
+        <Comments Include="C:\Users\wfletcher\working\egis\code\EasyGIS.NET\egis.web.controls\bin\Debug\EGIS.Web.Controls.XML" />
+        <Comments Include="C:\Users\wfletcher\working\egis\code\EasyGIS.NET\egis.mapbox.vector.tile\bin\Debug\netstandard2.0\EGIS.Mapbox.Vector.Tile.xml" />
+        <Dependents Include="C:\Users\wfletcher\working\egis\code\EasyGIS.NET\egis.mapbox.vector.tile\bin\Debug\net461\protobuf-net.dll" />
+        <Dependents Include="C:\Users\wfletcher\working\egis\code\EasyGIS.NET\egis.mapbox.vector.tile\bin\Debug\net461\Newtonsoft.Json.dll" />
+        <Dependents Include="C:\Users\wfletcher\working\egis\code\EasyGIS.NET\egis.mapbox.vector.tile\bin\Debug\net461\GeoJSON.Net.dll" />
     </ItemGroup>
     <Import Project="$(DXROOT)\Examples\Generic\generic.targets" />
 </Project>
