@@ -107,9 +107,6 @@
     <Compile Include="demos\GeoJsonHandler.ashx.cs">
       <DependentUpon>GeoJsonHandler.ashx</DependentUpon>
     </Compile>
-    <Compile Include="demos\HIVectorTileHandler.ashx.cs">
-      <DependentUpon>HIVectorTileHandler.ashx</DependentUpon>
-    </Compile>
     <Compile Include="demos\SimpleMapMarker.aspx.cs">
       <DependentUpon>SimpleMapMarker.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -369,7 +366,6 @@
     <Content Include="demos\EGPMapTileHandler.ashx" />
     <Content Include="demos\TileDemo3Handler.ashx" />
     <Content Include="demos\GeoJsonHandler.ashx" />
-    <Content Include="demos\HIVectorTileHandler.ashx" />
     <None Include="demos\us_demo.egp" />
     <None Include="demos\world.egp" />
     <None Include="demos\world_files\world_adm0.dbf" />

@@ -1,0 +1,49 @@
+# Lines starting with '#' are considered comments.
+# Ignore any file named foo.txt.
+# foo.txt
+# Ignore (generated) html files,
+#*.html
+# except foo.html which is maintained by hand.
+#!foo.html
+# Ignore objects and archives.
+#*.[oa]
+
+
+#ignore this file
+#.gitignore
+#ignore shapefiles
+*.shp
+*.dbf
+*.shx
+*.shpx
+*.egp
+#ignore build directories
+Debug
+Release
+obj
+cache
+Release64bit
+ipch
+*.pdb
+#ignore solution user options
+*.suo
+*.user
+tilecache
+vectortilecache
+texastilecache
+WebTest/bin
+geomutil_lib/VS2008
+geomutil_lib/egis_geomutil.sdf
+WebTest/demos/new_hampshire
+WebTest/demos/texas
+WebTest/demos/HI_data
+WebTest/demos/openlayers
+WebTest/demos/mb
+TexasVectorTileHandler.*
+HIVectorTileHandler.*
+.vs/
+/WebTest/demos/demo2_files/j5505_nativevegetationareas.prj
+/WebTest/demos/new_hampshire_files/new_hampshire_natural.prj
+/WebTest/demos/new_hampshire_files/new_hampshire_highway.prj
+/WebTest/demos/VectorTiles
+/WebTest/demos/covid19

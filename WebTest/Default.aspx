@@ -43,7 +43,7 @@
     </div>
     
     <div>
-        <asp:HyperLink ID="HyperLink10" runat="server" NavigateUrl="~/demos/mb/Index.html">Mapbox Vector Tiles</asp:HyperLink> - Mapbox Vector Tiles example
+        <asp:HyperLink ID="HyperLink10" runat="server" NavigateUrl="~/demos/mb/index.html">Mapbox Vector Tiles</asp:HyperLink> - Mapbox Vector Tiles example
     </div>
 
     </form>

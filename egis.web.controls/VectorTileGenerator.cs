@@ -268,6 +268,12 @@ namespace EGIS.Web.Controls
             return tileLayer;
         }
 
+        PointD[] pointsBuffer = new PointD[1024];
+        System.Drawing.Point[] pixelPoints = new System.Drawing.Point[1024];
+        System.Drawing.Point[] simplifiedPixelPoints = new System.Drawing.Point[1024];
+
+
+
         private VectorTileLayer ProcessPolygonTile(ShapeFile shapeFile, int tileX, int tileY, int zoom, OutputTileFeatureDelegate outputTileFeature)
         {
             int tileSize = TileSize;
@@ -289,12 +295,9 @@ namespace EGIS.Web.Controls
                 YMax = tileSize + 20
             };
 
-            System.Drawing.Point[] pixelPoints = new System.Drawing.Point[1024];
-            System.Drawing.Point[] simplifiedPixelPoints = new System.Drawing.Point[1024];
             List<System.Drawing.Point> clippedPolygon = new List<System.Drawing.Point>();
 
-            PointD[] pointsBuffer = new PointD[1024];
-
+            
             VectorTileLayer tileLayer = new VectorTileLayer();
             tileLayer.Extent = (uint)tileSize;
             tileLayer.Version = 2;
@@ -315,8 +318,7 @@ namespace EGIS.Web.Controls
                     };
 
                     //get the point data
-                    var recordPoints = shapeFile.GetShapeDataD(index);
-
+                    var recordPoints = shapeFile.GetShapeDataD(index);                    
                     int partIndex = 0;
                     foreach (PointD[] points in recordPoints)
                     {
@@ -326,24 +328,33 @@ namespace EGIS.Web.Controls
                             pixelPoints = new System.Drawing.Point[points.Length + 10];
                             simplifiedPixelPoints = new System.Drawing.Point[points.Length + 10];
                         }
-
+                        int pointCount = 0;
                         for (int n = 0; n < points.Length; ++n)
                         {
                             Int64 x, y;
                             TileUtil.LLToPixel(points[n], zoom, out x, out y, tileSize);
-                            pixelPoints[n].X = (int)(x - tilePixelOffset.X);
-                            pixelPoints[n].Y = (int)(y - tilePixelOffset.Y);
+                            
+                            pixelPoints[pointCount].X = (int)(x - tilePixelOffset.X);
+                            pixelPoints[pointCount++].Y = (int)(y - tilePixelOffset.Y);
+                            
                         }
+                        ////check for duplicates points at end after they have been converted to pixel coordinates
+                        ////polygons need at least 3 points so don't reduce less than this
+                        //while(pointCount > 3 && (pixelPoints[pointCount-1] == pixelPoints[pointCount - 2]))
+                        //{
+                        //    --pointCount;
+                        //}
 
                         int outputCount = 0;
-                        SimplifyPointData(pixelPoints, null, points.Length - 1, simplificationFactor, simplifiedPixelPoints, null, ref pointsBuffer, ref outputCount);
-                        simplifiedPixelPoints[outputCount++] = pixelPoints[points.Length - 1];
+                        SimplifyPointData(pixelPoints, null, pointCount, simplificationFactor, simplifiedPixelPoints, null, ref pointsBuffer, ref outputCount);                       
+                        //simplifiedPixelPoints[outputCount++] = pixelPoints[pointCount-1];
+                        
                         if (outputCount > 1)
-                        {
+                        {                            
                             GeometryAlgorithms.PolygonClip(simplifiedPixelPoints, outputCount, clipBounds, clippedPolygon);
 
                             if (clippedPolygon.Count > 0)
-                            {
+                            {                               
                                 //output the clipped polygon                                                                                             
                                 List<Coordinate> lineString = new List<Coordinate>();
                                 feature.Geometry.Add(lineString);
@@ -377,10 +388,31 @@ namespace EGIS.Web.Controls
 
         private void SimplifyPointData(System.Drawing.Point[] points, double[] measures, int pointCount, int simplificationFactor, System.Drawing.Point[] reducedPoints, double[] reducedMeasures, ref PointD[] pointsBuffer, ref int reducedPointCount)
         {
+            System.Drawing.Point endPoint = points[pointCount - 1];
+            bool addEndpoint = endPoint == points[0];
+            //check for duplicates points at end after they have been converted to pixel coordinates
+            //polygons need at least 3 points so don't reduce less than this
+            while (pointCount > 2 && (points[pointCount - 1] == points[0]))
+            {
+                --pointCount;
+            }
+
+            if (pointCount <= 2)
+            {
+                reducedPoints[0] = points[0];
+                if (pointCount == 2) reducedPoints[1] = points[1];
+                reducedPointCount = pointCount;
+                if (addEndpoint)
+                {
+                    reducedPoints[reducedPointCount++] = endPoint;
+                }
+                return;
+            }
             if (pointsBuffer.Length < pointCount)
             {
                 pointsBuffer = new PointD[pointCount];
             }
+            
             for (int n = 0; n < pointCount; ++n)
             {
                 pointsBuffer[n].X = points[n].X;
@@ -392,6 +424,10 @@ namespace EGIS.Web.Controls
             {
                 reducedPoints[n] = points[reducedIndices[n]];
                 if (measures != null) reducedMeasures[n] = measures[reducedIndices[n]];
+            }
+            if (addEndpoint)
+            {
+                reducedPoints[reducedPointCount++] = endPoint;
             }
         }
 
