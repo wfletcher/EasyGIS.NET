@@ -562,7 +562,7 @@ namespace EGIS.ShapeFileLib
         /// <param name="inverseFlattening"></param>
         /// <returns></returns>
         /// <remarks>
-        /// <para>Equations from USGS Bulletin 1532 </para>
+        /// <para>Equations from USGS Bulletin 1532
         /// </para>
         /// <para>
         /// returned latitude and longitude points are expressed in decimal degrees.                     

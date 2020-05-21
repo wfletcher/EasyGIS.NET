@@ -107,7 +107,11 @@ namespace EGIS.ShapeFileLib
         internal RenderSettings(string shapeFileName)
         {
             dbfReader = new DbfReader(shapeFileName);
+        }
 
+        internal RenderSettings(System.IO.Stream inputDbfStream)
+        {
+            dbfReader = new DbfReader(inputDbfStream);
         }
 
         /// <summary>
@@ -146,6 +150,27 @@ namespace EGIS.ShapeFileLib
             this.renderFont = renderFont;
 
         }
+
+        /// <summary>
+        /// Constructs a new RenderSettings
+        /// </summary>
+        /// <param name="dbfStream">stream opened from the shapefile dbf file</param>
+        /// <param name="fieldName">The name of the DBF field to use when labelling shapes</param>
+        /// <param name="renderFont">The Font to use when labelling shapes in the shape file</param>
+        public RenderSettings(System.IO.Stream dbfStream, string fieldName, Font renderFont)
+        {            
+            if (fieldName == null)
+            {
+                throw new ArgumentException("fieldName can not be null");
+            }
+
+            dbfReader = new DbfReader(dbfStream);
+
+            fieldIndex = FindFieldIndex(fieldName);
+            FieldName = fieldName;
+            this.renderFont = renderFont;
+        }
+
 
         private int FindFieldIndex(string fieldName)
         {

@@ -171,7 +171,7 @@ namespace egis
         /// </summary>
         /// <param name="path">path to the shapefile to be opened</param>
         public void OpenShapeFile(string path)
-        {
+        {           
             string name = path.Substring(path.LastIndexOf("\\") + 1);
             EGIS.ShapeFileLib.ShapeFile sf = sfMap1.AddShapeFile(path, name, "NAME");
             this.shapeFileRenderPropertyGrid.SelectedObject = sf.RenderSettings;

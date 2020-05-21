@@ -92,7 +92,7 @@ namespace EGIS.ShapeFileLib
         //2.6
         private ShapeFileMainHeader mainHeader;
         private SFRecordCol sfRecordCol;
-        private FileStream shapeFileStream;
+        private Stream shapeFileStream;
         
 
         private static RenderQuality renderQuality = RenderQuality.Auto;
@@ -790,15 +790,38 @@ namespace EGIS.ShapeFileLib
             LoadFromFile(shapeFilePath);
         }
 
+        /// <summary>
+        /// Constructs a ShapeFile using individual streams for the Shapefiles .shx, .shp, .dbf and .prj files
+        /// </summary>
+        /// <param name="shxStream">stream opened from the shx file</param>
+        /// <param name="shpStream">stream opened from the shp file</param>
+        /// <param name="dbfStream">stream opened from the dbf file</param>
+        /// <param name="prjStream">stream opened from the prj file. If the prjStream is null then the shapefile will not use the 
+        /// projection information and no CRS transformations will be performed</param>
+        public ShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream)
+        {
+            LoadFromFile(shxStream, shpStream, dbfStream, prjStream);
+        }
+
+
         private RecordHeader[] LoadIndexfile(string path)
+        {
+            //read record headers from the index file            
+            using (var shxStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                return LoadIndexfile(shxStream);
+            }
+        }
+
+        private RecordHeader[] LoadIndexfile(System.IO.Stream shxStream)
         {
             //read record headers from the index file
             RecordHeader[] recordHeaders = null;
-            System.IO.BinaryReader bReader = new BinaryReader(new FileStream(path, FileMode.Open,FileAccess.Read,FileShare.Read));
-            try
+            shxStream.Seek(0, SeekOrigin.Begin);
+            using (System.IO.BinaryReader bReader = new BinaryReader(shxStream))                
             {
                 this.mainHeader = new ShapeFileMainHeader(bReader.ReadBytes(100));
-                int totalRecords = (mainHeader.FileLength - 100)>>3;
+                int totalRecords = (mainHeader.FileLength - 100) >> 3;
                 recordHeaders = new RecordHeader[totalRecords];
                 int numRecs = 0;
                 //now read the record headers
@@ -807,16 +830,11 @@ namespace EGIS.ShapeFileLib
                 while (numRecs < totalRecords)
                 {
                     RecordHeader recHead = new RecordHeader(numRecs + 1);
-                    recHead.readFromIndexFile(data, numRecs << 3);                    
+                    recHead.readFromIndexFile(data, numRecs << 3);
                     recordHeaders[numRecs++] = recHead;
                 }
                 data = null;
-            }
-            finally
-            {
-                bReader.Close();
-                bReader = null;
-            }
+            }                
             return recordHeaders;
         }
 
@@ -825,6 +843,28 @@ namespace EGIS.ShapeFileLib
         {
             RectangleF r = this.Extent;
             RenderSettings renderSettings = new RenderSettings(this.filePath, fieldName, new Font("Arial", 10)); 
+            //create the PenWidthScale to be approx 15m
+            if (r.Top > 90 || r.Bottom < -90)
+            {
+                //assume UTM
+                renderSettings.PenWidthScale = 15;
+            }
+            else
+            {
+                PointF pt = new PointF(r.Left + r.Width / 2, r.Top + r.Height / 2);
+                EGIS.ShapeFileLib.UtmCoordinate utm1 = EGIS.ShapeFileLib.ConversionFunctions.LLToUtm(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, pt.Y, pt.X);
+                EGIS.ShapeFileLib.UtmCoordinate utm2 = utm1;
+                utm2.Northing += 15;
+                EGIS.ShapeFileLib.LatLongCoordinate ll = EGIS.ShapeFileLib.ConversionFunctions.UtmToLL(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, utm2);
+                renderSettings.PenWidthScale = (float)Math.Abs(ll.Latitude - pt.Y);
+            }
+            return renderSettings;
+        }
+
+        private RenderSettings CreateRenderSettings(string fieldName, System.IO.Stream dbfStream)
+        {
+            RectangleF r = this.Extent;
+            RenderSettings renderSettings = new RenderSettings(dbfStream, fieldName, new Font("Arial", 10));
             //create the PenWidthScale to be approx 15m
             if (r.Top > 90 || r.Bottom < -90)
             {
@@ -918,6 +958,61 @@ namespace EGIS.ShapeFileLib
             //System.Diagnostics.Debug.WriteLine("Total time to read shapefile is " + end.Subtract(start).ToString());
             //data = null;
         }
+
+        /// <summary>
+        /// Loads a ShapeFile using a path to a .shp shape file
+        /// </summary>        
+        private void LoadFromFile2(System.IO.Stream shxStream, System.IO.Stream shpStream)
+        {            
+            DateTime start = DateTime.Now;
+
+            RecordHeader[] recordHeaders = LoadIndexfile(shxStream);
+
+            //Console.Out.WriteLine("Time to load index file: " + ((TimeSpan)DateTime.Now.Subtract(start)).TotalMilliseconds);
+
+            //open the main file and adjust the mainheader file length
+            this.shapeFileStream = shpStream;
+            this.mainHeader.FileLength = (int)shapeFileStream.Length;
+
+            switch (mainHeader.ShapeType)
+            {
+                case ShapeType.Point:
+                    this.sfRecordCol = new SFPointCol(recordHeaders, ref mainHeader);
+                    break;
+                case ShapeType.Polygon:
+                    this.sfRecordCol = new SFPolygonCol(recordHeaders, ref mainHeader);
+                    break;
+                case ShapeType.PolyLine:
+                    this.sfRecordCol = new SFPolyLineCol(recordHeaders, ref mainHeader);
+                    break;
+                case ShapeType.PolyLineM:
+                    this.sfRecordCol = new SFPolyLineMCol(recordHeaders, ref mainHeader);
+                    break;
+                case ShapeType.PolygonZ:
+                    this.sfRecordCol = new SFPolygonZCol(recordHeaders, ref mainHeader);
+                    break;
+                case ShapeType.PointZ:
+                    this.sfRecordCol = new SFPointZCol(recordHeaders, ref mainHeader);
+                    break;
+                case ShapeType.PolyLineZ:
+                    this.sfRecordCol = new SFPolyLineZCol(recordHeaders, ref mainHeader);
+                    break;
+                case ShapeType.MultiPoint:
+                    this.sfRecordCol = new SFMultiPointCol(recordHeaders, ref mainHeader);
+                    break;
+                case ShapeType.MultiPointZ:
+                    this.sfRecordCol = new SFMultiPointZCol(recordHeaders, ref mainHeader);
+                    break;
+                default:
+                    this.Close();
+                    throw new NotSupportedException("ShapeType: " + mainHeader.ShapeType + " not supported");
+
+            }
+
+           
+        }
+
+
 
         private void FixHeaderRecordBounds()
         {
@@ -1016,6 +1111,29 @@ namespace EGIS.ShapeFileLib
 
             
         }
+
+        /// <summary>
+        /// Loads a shapefile from the individual streams from the shapefile's .shx, .shp, .dbf and .prj files
+        /// </summary>
+        /// <param name="shxStream"></param>
+        /// <param name="shpStream"></param>
+        /// <param name="dbfStream"></param>
+        /// <param name="prjStream"></param>
+        public unsafe void LoadFromFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream)
+        {
+            this.ProjectionWKT = "";
+            if (prjStream != null)
+            {                
+                ReadProjection(prjStream);
+            }
+            LoadFromFile2(shxStream, shpStream);
+           //create a default RenderSettings object
+            this.RenderSettings = CreateRenderSettings("", dbfStream);
+        }
+
+
+
+
 
         #region Read Projection WKT
 
@@ -1403,7 +1521,7 @@ namespace EGIS.ShapeFileLib
         }
 
        
-        private int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFPointCol col, FileStream shapefileStream)
+        private int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFPointCol col, Stream shapefileStream)
         {
             if (col.RecordHeaders.Length < 200)
             {
@@ -1451,7 +1569,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        private int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFPointZCol col, FileStream shapefileStream)
+        private int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFPointZCol col, Stream shapefileStream)
         {
             if (col.RecordHeaders.Length < 200)
             {
@@ -1499,7 +1617,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        private int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFMultiPointCol col, FileStream shapefileStream)
+        private int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFMultiPointCol col, Stream shapefileStream)
         {
             //if (col.RecordHeaders.Length < 200)
             {
@@ -1528,7 +1646,7 @@ namespace EGIS.ShapeFileLib
             
         }
 
-        private int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFMultiPointZCol col, FileStream shapefileStream)
+        private int GetShapeIndexContainingPoint(PointD pt, double minDistance, SFMultiPointZCol col, Stream shapefileStream)
         {
             //if (col.RecordHeaders.Length < 200)
             {
@@ -2645,13 +2763,13 @@ namespace EGIS.ShapeFileLib
         //    return GetRecordBounds(recordIndex, shapeFileStream);
         //}
 
-        public abstract bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream);
+        public abstract bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.Stream shapeFileStream);
         
-        public abstract unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream);
+        public abstract unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream);
 
-        public abstract double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream);
+        public abstract double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream);
 
-        public abstract double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo);
+        public abstract double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo);
 
 
         #region static utility methods
@@ -4026,7 +4144,7 @@ namespace EGIS.ShapeFileLib
         //}
 
        
-        internal unsafe bool ContainsPoint(int shapeIndex, PointD pt, System.IO.FileStream shapeFileStream)
+        internal unsafe bool ContainsPoint(int shapeIndex, PointD pt, System.IO.Stream shapeFileStream)
         {
             byte[] data = SFRecordCol.SharedBuffer;
             shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
@@ -4060,7 +4178,7 @@ namespace EGIS.ShapeFileLib
             return inPolygon;            
         }
         
-        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with rect
             if (!GetRecordBoundsD(shapeIndex, shapeFileStream).IntersectsWith(rect)) return false;
@@ -4121,7 +4239,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with the circle
             RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
@@ -4166,7 +4284,7 @@ namespace EGIS.ShapeFileLib
             //return false;
         }
 
-        public unsafe override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public unsafe override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with the circle
             //RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
@@ -4203,7 +4321,7 @@ namespace EGIS.ShapeFileLib
             return minDistance;
         }
 
-        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
         {
             polylineDistanceInfo = PolylineDistanceInfo.Empty;
             return GetDistanceToShape(shapeIndex, centre, radius, shapeFileStream);
@@ -4998,12 +5116,12 @@ namespace EGIS.ShapeFileLib
             return new RectangleD(pt.X, pt.Y, double.Epsilon, double.Epsilon);
         }
 
-        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.Stream shapeFileStream)
         {
             return rect.Contains(GetPointD(recordIndex, shapeFileStream));
         }
 
-        public override bool IntersectCircle(int recordIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override bool IntersectCircle(int recordIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             PointD pt = GetPointD(recordIndex, shapeFileStream);
 
@@ -5014,7 +5132,7 @@ namespace EGIS.ShapeFileLib
 
         #endregion
 
-        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             PointD pt = GetPointD(shapeIndex, shapeFileStream);
             double dx = (pt.X - centre.X);
@@ -5022,7 +5140,7 @@ namespace EGIS.ShapeFileLib
             return Math.Sqrt(dx * dx + dy * dy);                
         }
 
-        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
         {
             polylineDistanceInfo = PolylineDistanceInfo.Empty;
             PointD pt = GetPointD(shapeIndex, shapeFileStream);
@@ -5149,18 +5267,18 @@ namespace EGIS.ShapeFileLib
             throw new NotImplementedException("GetShapeMDataD has not been implemented for PointZ shape type");
         }
 
-        public override bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        public override bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.Stream shapeFileStream)
         {
             return rect.Contains(GetPointD(shapeIndex, shapeFileStream));
         }
 
-        public override bool IntersectCircle(int recordIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override bool IntersectCircle(int recordIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             PointD pt = GetPointD(recordIndex, shapeFileStream);
             return (pt.X - centre.X) * (pt.X - centre.X) + (pt.Y - centre.Y) * (pt.Y - centre.Y) < (radius * radius);
         }
 
-        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             PointD pt = GetPointD(shapeIndex, shapeFileStream);
             double dx = (pt.X - centre.X);
@@ -5168,7 +5286,7 @@ namespace EGIS.ShapeFileLib
             return Math.Sqrt(dx * dx + dy * dy);
         }
 
-        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
         {
             polylineDistanceInfo = PolylineDistanceInfo.Empty;
             PointD pt = GetPointD(shapeIndex, shapeFileStream);
@@ -6665,7 +6783,7 @@ namespace EGIS.ShapeFileLib
             return bounds.ToRectangleD();
         }
 
-        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.Stream shapeFileStream)
         {
             List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
             if (pts != null && pts.Count > 0)
@@ -6678,7 +6796,7 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public override bool IntersectCircle(int recordIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override bool IntersectCircle(int recordIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
             if (pts != null && pts.Count > 0)
@@ -6695,7 +6813,7 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             double distance = double.PositiveInfinity;
             List<PointD[]> pts = GetShapeDataD(shapeIndex, shapeFileStream);
@@ -6711,7 +6829,7 @@ namespace EGIS.ShapeFileLib
             return Math.Sqrt(distance);
         }
 
-        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
         {
             polylineDistanceInfo = PolylineDistanceInfo.Empty;
             double distance = double.PositiveInfinity;
@@ -7529,7 +7647,7 @@ namespace EGIS.ShapeFileLib
             return bounds.ToRectangleD();
         }
 
-        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        public override bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.Stream shapeFileStream)
         {
             List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
             if (pts != null && pts.Count > 0)
@@ -7542,7 +7660,7 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public override bool IntersectCircle(int recordIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override bool IntersectCircle(int recordIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
             if (pts != null && pts.Count > 0)
@@ -7560,7 +7678,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             double distance = double.PositiveInfinity;
             List<PointD[]> pts = GetShapeDataD(shapeIndex, shapeFileStream);
@@ -7576,7 +7694,7 @@ namespace EGIS.ShapeFileLib
             return Math.Sqrt(distance);
         }
 
-        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
         {
             polylineDistanceInfo = PolylineDistanceInfo.Empty;
             double distance = double.PositiveInfinity;
@@ -8527,7 +8645,7 @@ namespace EGIS.ShapeFileLib
         #endregion
 
         
-        public bool ContainsPoint(int shapeIndex, PointD pt, System.IO.FileStream shapeFileStream, byte[] dataBuf, double minDist)
+        public bool ContainsPoint(int shapeIndex, PointD pt, System.IO.Stream shapeFileStream, byte[] dataBuf, double minDist)
         {
             unsafe
             {
@@ -8560,7 +8678,7 @@ namespace EGIS.ShapeFileLib
             return false;
         }        
 
-        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with rect
             RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
@@ -8611,7 +8729,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with the circle
             RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
@@ -8649,7 +8767,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with the circle
             // RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
@@ -8683,7 +8801,7 @@ namespace EGIS.ShapeFileLib
             return foundDistance;
         }
 
-        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
         {
             polylineDistanceInfo = PolylineDistanceInfo.Empty;
             //first check if the record's bounds intersects with the circle
@@ -9679,7 +9797,7 @@ namespace EGIS.ShapeFileLib
         #endregion
 
 
-        public bool ContainsPoint(int shapeIndex, PointD pt, System.IO.FileStream shapeFileStream, byte[] dataBuf, double minDist)
+        public bool ContainsPoint(int shapeIndex, PointD pt, System.IO.Stream shapeFileStream, byte[] dataBuf, double minDist)
         {
             unsafe
             {
@@ -9712,7 +9830,7 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with rect
             RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
@@ -9759,7 +9877,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with the circle
             RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
@@ -9795,7 +9913,7 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with the circle
             // RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
@@ -9829,7 +9947,7 @@ namespace EGIS.ShapeFileLib
             return foundDistance;
         }
 
-        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
         {
             polylineDistanceInfo = PolylineDistanceInfo.Empty;
             //first check if the record's bounds intersects with the circle
@@ -10665,7 +10783,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        internal unsafe bool ContainsPoint(int shapeIndex, PointD pt, System.IO.FileStream shapeFileStream)
+        internal unsafe bool ContainsPoint(int shapeIndex, PointD pt, System.IO.Stream shapeFileStream)
         {
             byte[] data = SFRecordCol.SharedBuffer;
             shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
@@ -10699,7 +10817,7 @@ namespace EGIS.ShapeFileLib
             return inPolygon;
         }
         
-        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with rect
             if (!GetRecordBoundsD(shapeIndex, shapeFileStream).IntersectsWith(rect)) return false;
@@ -10758,7 +10876,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with the circle
             RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
@@ -10802,12 +10920,12 @@ namespace EGIS.ShapeFileLib
             //return false;
         }
 
-        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             throw new NotImplementedException();
         }
 
-        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
         {
             throw new NotImplementedException();
         }
@@ -11931,7 +12049,7 @@ namespace EGIS.ShapeFileLib
         #endregion
 
 
-        public bool ContainsPoint(int shapeIndex, PointD pt, System.IO.FileStream shapeFileStream, byte[] dataBuf, double minDist)
+        public bool ContainsPoint(int shapeIndex, PointD pt, System.IO.Stream shapeFileStream, byte[] dataBuf, double minDist)
         {
             unsafe
             {
@@ -11964,7 +12082,7 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.FileStream shapeFileStream)
+        public override unsafe bool IntersectRect(int shapeIndex, ref RectangleD rect, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with rect
             RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
@@ -12011,7 +12129,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with the circle
             RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
@@ -12047,7 +12165,7 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
-        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream)
+        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with the circle
             // RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
@@ -12081,7 +12199,7 @@ namespace EGIS.ShapeFileLib
             return foundDistance;
         }
 
-        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.FileStream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
+        public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
         {
             polylineDistanceInfo = PolylineDistanceInfo.Empty;
             //first check if the record's bounds intersects with the circle
@@ -12279,7 +12397,7 @@ namespace EGIS.ShapeFileLib
     public sealed class DbfReader : IDisposable
 	{
 		private DbfFileHeader dBFRecordHeader;
-		private FileStream dbfFileStream;
+		private Stream dbfFileStream;
         private const int FileBufSize = 1024*8;//dont set buffer size too high as performance will suffer;
 
         private static System.Text.Encoding DefaultEncoding = System.Text.Encoding.UTF8;
@@ -12334,6 +12452,43 @@ namespace EGIS.ShapeFileLib
 				throw;
 			}
 		}
+
+        /// <summary>
+        /// Constructs a DbfReader from a Stream
+        /// </summary>
+        /// <param name="inputStream">input stream that supports seeking</param>
+        public DbfReader(System.IO.Stream inputStream)
+        {          
+            try
+            {
+                dbfFileStream = inputStream;
+                dBFRecordHeader = new DbfFileHeader();
+                dBFRecordHeader.Read(dbfFileStream);
+                try
+                {
+                    int codePage = LD_CP_LU[dBFRecordHeader.LDID].codepage;
+                    if (codePage > 0)
+                    {
+                        System.Text.Encoding enc = System.Text.Encoding.GetEncoding(codePage);
+                        if (enc != null) this.StringEncoding = enc;
+                    }
+                }
+                catch
+                {
+                    this.StringEncoding = DefaultEncoding;
+                }
+            }
+            catch
+            {
+                if (dbfFileStream != null)
+                {
+                    dbfFileStream.Close();
+                    dbfFileStream = null;
+                }
+                throw;
+            }
+        }
+
 
         /// <summary>
         /// Returns the DbfFileHeader representing the contents of the DBF file's main header

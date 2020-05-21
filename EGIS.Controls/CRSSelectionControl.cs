@@ -11,6 +11,9 @@ using EGIS.Projections;
 
 namespace EGIS.Controls
 {
+    /// <summary>
+    /// UserControl to Select a Coordinate Reference System
+    /// </summary>
     public partial class CRSSelectionControl : UserControl
     {
         private ICRSFactory crsFactory;
