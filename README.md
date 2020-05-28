@@ -6,16 +6,15 @@ Easy GIS .NET is a GIS and Shapefile library written in C# that includes mapping
 * ShapeFile Reader Writer classes
 * Supports Point, PointZ, PolyLine, PolyLineZ, PolyLineM, Polygon, PolygonZ, MultiPoint and MultiPointZ ShapeFiles
 * Coordinate Reference System (CRS) and Projection support
+* CRS conversion including from to WGS84
 * WinForms map control
 * Low memory footprint and xtremely fast rendering speed
 * WMS Tiled map handler for serving map tiles from .NET websites
 * Load ShapeFiles in Google Maps
-* GeoJSON and Mapbox Vector Tile support.
-
-
-## Getting Started
-
-Download the source code and open the Visual Studio solutions. 
+* GeoJSON and Mapbox Vector Tile support
+* Polyline and Polygon clipping algorithms
+* Polyline and Polygon simplification
+* 2D geometry functions including polyline/polygon intersection, distance to shape, closest point on polyline, polygon hole test
 
 ### Prerequisites
 
