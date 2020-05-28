@@ -8,7 +8,7 @@ Easy GIS .NET is a GIS and Shapefile library written in C# that includes mapping
 * Coordinate Reference System (CRS) and Projection support
 * CRS conversion including from to WGS84
 * WinForms map control
-* Low memory footprint and xtremely fast rendering speed
+* Low memory footprint and extremely fast rendering speed
 * WMS Tiled map handler for serving map tiles from .NET websites
 * Load ShapeFiles in Google Maps
 * GeoJSON and Mapbox Vector Tile support
