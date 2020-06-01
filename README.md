@@ -18,8 +18,8 @@ Easy GIS .NET is a GIS and Shapefile library written in C# that includes mapping
 
 ### Prerequisites
 
-Visual Studio 2017 or later.
-.NET 4.5
+* Visual Studio 2017 or later.
+* .NET 4.5
 
 ## Authors
 
