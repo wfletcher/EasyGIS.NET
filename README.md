@@ -1,4 +1,4 @@
-# EasyGIS.NET
+# Easy GIS .NET
 
 Easy GIS .NET is a GIS and Shapefile library written in C# that includes mapping and .NET Shapefile Controls for use in Windows Forms desktop applications and .NET websites. 
 
@@ -18,7 +18,8 @@ Easy GIS .NET is a GIS and Shapefile library written in C# that includes mapping
 
 ### Prerequisites
 
-Visual Studio 2017 or later.
+* Visual Studio 2017 or later.
+* .NET 4.5
 
 ## Authors
 
