@@ -383,7 +383,7 @@ namespace EGIS.Controls
         /// reads and loads XML representation of a .EGP project
         /// </summary>
         /// <param name="projectElement"></param>
-        /// <param name="loadingDelegate"</param>
+        /// <param name="loadingDelegate"></param>
         public void ReadXml(XmlElement projectElement, string baseDirectory, ProgressLoadStatusHandler loadingDelegate)
         {
             XmlNodeList colorList = projectElement.GetElementsByTagName("MapBackColor");

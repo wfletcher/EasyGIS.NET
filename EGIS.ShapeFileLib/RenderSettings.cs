@@ -499,7 +499,7 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         /// <remarks>
         /// <para>
-        /// The Line DashStyle is ignored if LineType is not LineType.Solid when rendering PolyLine, polyLineM or PolyLineZ shapefiles</br>
+        /// The Line DashStyle is ignored if LineType is not LineType.Solid when rendering PolyLine, polyLineM or PolyLineZ shapefiles<br/>
         /// When rendering Polygon or PolygonZ shapefiles the DashStyle is used when rendering the outline of polygons        
         /// </para>
         /// <para>

@@ -268,16 +268,27 @@ namespace EGIS.Projections
 
         #region ICRSFactory
 
+        /// <summary>
+        /// return list of geographic CRS
+        /// </summary>
         public List<IGeographicCRS> GeographicCoordinateSystems
         {
             get { return this.geographicCoordinateSystems; }
         }
 
+        /// <summary>
+        /// return list of projected CRS
+        /// </summary>
         public List<IProjectedCRS> ProjectedCoordinateSystems
         {
             get { return this.projectedCoordinateSystems; }
         }
 
+        /// <summary>
+        /// Get a CRS by (EPSG) code
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public ICRS GetCRSById(int id)
         {
             string wkt;

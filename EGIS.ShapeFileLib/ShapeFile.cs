@@ -501,7 +501,7 @@ namespace EGIS.ShapeFileLib
         /// Sets the visibility of a shapefile record.
         /// </summary>
         /// <param name="index">zero based index of the record to select or de-select</param>
-        /// <param name="selevisiblected"></param>
+        /// <param name="visible"></param>
         public void SetRecordVisibility(int index, bool visible)
         {
             if (sfRecordCol != null) sfRecordCol.SetRecordVisible(index, visible);
@@ -2125,27 +2125,7 @@ namespace EGIS.ShapeFileLib
 
         #endregion
 
-     
-        //private const float MaxLLMercProjF = 85.0511287798066f;
-        ///// <summary>
-        ///// Utillity method to translate a Lat/Long Point to its Mercator Projection representation.
-        ///// </summary>
-        //public static PointF LLToMercator(PointF pt)
-        //{
-        //    if (pt.Y > MaxLLMercProjF)
-        //    {
-        //        pt.Y = MaxLLMercProjF;
-        //    }
-        //    else if (pt.Y < -MaxLLMercProjF)
-        //    {
-        //        pt.Y = -MaxLLMercProjF;
-        //    }
-        //    double d = (Math.PI / 180) * pt.Y;
-        //    double sd = Math.Sin(d);
-        //    d = (90 / Math.PI) * Math.Log((1 + sd) / (1 - sd));
-        //    return new PointF(pt.X, (float)d);            
-        //}        
-
+             
         private const double MaxLLMercProjD = 85.0511287798066;
         /// <summary>
         /// Applys the Mercator projection to a lat long pt and returns
@@ -2170,18 +2150,7 @@ namespace EGIS.ShapeFileLib
             d = (90 / Math.PI) * Math.Log((1 + sd) / (1 - sd));
             return new PointD(pt.X, d);
         }
-
-        /// <summary>
-        /// Utillity method to translate a Point using a Mercator Projection t its Lat/Long representation.
-        /// </summary>
-        //public static PointF MercatorToLLF(PointF pt)
-        //{            
-        //    double d = (Math.PI / 180) * pt.Y;
-        //    d = Math.Atan(Math.Sinh(d));
-        //    d = d * (180 / Math.PI);
-        //    return new PointF(pt.X, (float)d);            
-        //}
-
+        
         /// <summary>
         /// Utillity method to translate a Point using a Mercator Projection t its Lat/Long representation.
         /// </summary>
