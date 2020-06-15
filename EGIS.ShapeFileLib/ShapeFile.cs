@@ -772,11 +772,13 @@ namespace EGIS.ShapeFileLib
 
         #endregion
 
+        #region Constructors
+
         /// <summary>
-		/// Empty constructor. 
-		/// </summary>
+        /// Empty constructor. 
+        /// </summary>
         /// <remarks>If a ShapeFile is constructed using the empty constructor then it should be followed by calling Load or ReadXml</remarks>
-		public ShapeFile()
+        public ShapeFile()
 		{
 									
 		}
@@ -786,8 +788,25 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         /// <param name="shapeFilePath">The path to the ".shp" shape file</param>
         public ShapeFile(string shapeFilePath)
+            : this(shapeFilePath, false)
         {
-            LoadFromFile(shapeFilePath);
+            
+        }
+
+        /// <summary>
+        /// Constructs a ShapeFile using a path to a .shp shape file
+        /// </summary>
+        /// <param name="shapeFilePath">The path to the ".shp" shape file</param>
+        /// <param name="useMemoryStreams">Whether to load shp and dbf into a MemoryStream</param>
+        /// <remarks>
+        /// <para>
+        /// Setting useMemoryStreams to true can improve performance if reading records
+        /// multiple times in scenarios such as linear referencing
+        /// </para>
+        /// </remarks>
+        public ShapeFile(string shapeFilePath, bool useMemoryStreams)
+        {
+            LoadFromFile(shapeFilePath, useMemoryStreams);
         }
 
         /// <summary>
@@ -802,6 +821,8 @@ namespace EGIS.ShapeFileLib
         {
             LoadFromFile(shxStream, shpStream, dbfStream, prjStream);
         }
+
+        #endregion
 
 
         private RecordHeader[] LoadIndexfile(string path)
@@ -883,15 +904,19 @@ namespace EGIS.ShapeFileLib
             return renderSettings;
         }
 
-
         /// <summary>
         /// Loads a ShapeFile using a path to a .shp shape file
         /// </summary>
         /// <param name="shapeFilePath">The path to the ".shp" shape file</param>
-        public void LoadFromFile2(string shapeFilePath)
+        /// <param name="useMemoryStreams">Whether to load shp and dbf into a MemoryStream</param>
+        /// <remarks>
+        /// <para>
+        /// Setting useMemoryStreams to true can improve performance if reading records
+        /// multiple times in scenarios such as linear referencing
+        /// </para>
+        /// </remarks>
+        private void LoadFromFile2(string shapeFilePath, bool useMemoryStreams)
         {
-
-            //Console.Out.WriteLine("PolygonRecord size: " + sizeof(PolygonRecord));
             if (shapeFilePath.EndsWith(".shp", StringComparison.OrdinalIgnoreCase))
             {
                 shapeFilePath = shapeFilePath.Substring(0, shapeFilePath.Length - 4);
@@ -905,7 +930,19 @@ namespace EGIS.ShapeFileLib
             //Console.Out.WriteLine("Time to load index file: " + ((TimeSpan)DateTime.Now.Subtract(start)).TotalMilliseconds);
 
             //open the main file and adjust the mainheader file length
-            this.shapeFileStream = new FileStream(shapeFilePath + ".shp", FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (useMemoryStreams)
+            {
+                this.shapeFileStream = new MemoryStream();
+                using (var fs = new FileStream(shapeFilePath + ".shp", FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    fs.CopyTo(this.shapeFileStream);
+                    this.shapeFileStream.Seek(0, SeekOrigin.Begin);
+                }
+            }
+            else
+            {
+                this.shapeFileStream = new FileStream(shapeFilePath + ".shp", FileMode.Open, FileAccess.Read, FileShare.Read);
+            }
             this.mainHeader.FileLength = (int)shapeFileStream.Length;            
 
             switch (mainHeader.ShapeType)
@@ -942,7 +979,7 @@ namespace EGIS.ShapeFileLib
                     throw new NotSupportedException("ShapeType: " + mainHeader.ShapeType + " not supported");
                     
             }
-
+           
             if (double.IsInfinity(this.mainHeader.Xmax) || double.IsInfinity(this.mainHeader.Ymax))
             {
                 //FixHeaderRecordBounds();
@@ -973,7 +1010,7 @@ namespace EGIS.ShapeFileLib
             //open the main file and adjust the mainheader file length
             this.shapeFileStream = shpStream;
             this.mainHeader.FileLength = (int)shapeFileStream.Length;
-
+                      
             switch (mainHeader.ShapeType)
             {
                 case ShapeType.Point:
@@ -1006,10 +1043,7 @@ namespace EGIS.ShapeFileLib
                 default:
                     this.Close();
                     throw new NotSupportedException("ShapeType: " + mainHeader.ShapeType + " not supported");
-
-            }
-
-           
+            }            
         }
 
 
@@ -1100,16 +1134,45 @@ namespace EGIS.ShapeFileLib
         /// Loads a ShapeFile using a path to a .shp shape file
         /// </summary>
         /// <param name="shapeFilePath">The path to the ".shp" shape file</param>
-        public unsafe void LoadFromFile(string shapeFilePath)
+        /// <param name="useMemoryStreams">Whether to load shp and dbf into a MemoryStream</param>
+        /// <remarks>
+        /// <para>
+        /// Setting useMemoryStreams to true can improve performance if reading records
+        /// multiple times in scenarios such as linear referencing
+        /// </para>
+        /// </remarks>
+        public unsafe void LoadFromFile(string shapeFilePath, bool useMemoryStreams = false)
         {
             //read the projection first
             ReadPrjFile(shapeFilePath);
             
-            LoadFromFile2(shapeFilePath);            
-            //create a default RenderSettings object
-            this.RenderSettings = CreateRenderSettings(shapeFilePath);
+            LoadFromFile2(shapeFilePath, useMemoryStreams);
 
-            
+            //create a default RenderSettings object
+
+            if (useMemoryStreams)
+            {
+                string dbfFilePath = this.filePath;
+                if (dbfFilePath.EndsWith(".shp", StringComparison.OrdinalIgnoreCase))
+                {
+                    dbfFilePath = System.IO.Path.ChangeExtension(filePath, "dbf");
+                }
+                else if (!dbfFilePath.EndsWith(".dbf", StringComparison.OrdinalIgnoreCase))
+                {
+                    dbfFilePath += ".dbf";
+                }
+                MemoryStream dbfStream = new MemoryStream();
+                using (var fs = new FileStream(dbfFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096))
+                {
+                    fs.CopyTo(dbfStream);
+                    dbfStream.Seek(0, SeekOrigin.Begin);
+                }
+                this.RenderSettings = CreateRenderSettings("", dbfStream);
+            }
+            else
+            {                
+                this.RenderSettings = CreateRenderSettings("");
+            }            
         }
 
         /// <summary>
@@ -1119,7 +1182,7 @@ namespace EGIS.ShapeFileLib
         /// <param name="shpStream"></param>
         /// <param name="dbfStream"></param>
         /// <param name="prjStream"></param>
-        public unsafe void LoadFromFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream)
+        public void LoadFromFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream)
         {
             this.ProjectionWKT = "";
             if (prjStream != null)
@@ -1130,9 +1193,6 @@ namespace EGIS.ShapeFileLib
            //create a default RenderSettings object
             this.RenderSettings = CreateRenderSettings("", dbfStream);
         }
-
-
-
 
 
         #region Read Projection WKT
@@ -1247,13 +1307,6 @@ namespace EGIS.ShapeFileLib
             //check if path is relative to project
             if (!Path.IsPathRooted(path))
             {
-                //string rootDir = "";
-                //Uri uri = new Uri(element.OwnerDocument.BaseURI);
-                //if (uri.IsFile)
-                //{
-                //    rootDir = System.IO.Path.GetDirectoryName(uri.AbsolutePath);
-                //}
-                //path = rootDir + "\\" + path;
                 path = System.IO.Path.Combine(baseDirectory, path);
             }
 
@@ -2614,7 +2667,8 @@ namespace EGIS.ShapeFileLib
                 if (SingleThreaded) return sharedPointBuffer;
                 else return new Point[maxRecordLength/8];
             }
-        }
+        }        
+
         #endregion
         
         internal const bool SingleThreaded = true;
@@ -3433,7 +3487,7 @@ namespace EGIS.ShapeFileLib
             Brush selectBrush = null;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             double[] simplifiedDataBuffer = new double[1024];
@@ -3746,7 +3800,7 @@ namespace EGIS.ShapeFileLib
 
             IntPtr fileMappingPtr = IntPtr.Zero;
             long fileSize = shapeFileStream.Length;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             double[] simplifiedDataBuffer = new double[1024];
@@ -4481,7 +4535,7 @@ namespace EGIS.ShapeFileLib
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             if (fileMappingPtr != IntPtr.Zero)
@@ -4782,7 +4836,7 @@ namespace EGIS.ShapeFileLib
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             if (fileMappingPtr != IntPtr.Zero)
@@ -5315,7 +5369,7 @@ namespace EGIS.ShapeFileLib
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             if (fileMappingPtr != IntPtr.Zero)
@@ -5616,7 +5670,7 @@ namespace EGIS.ShapeFileLib
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             if (fileMappingPtr != IntPtr.Zero)
@@ -6120,7 +6174,7 @@ namespace EGIS.ShapeFileLib
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             if (fileMappingPtr != IntPtr.Zero)
@@ -6432,7 +6486,7 @@ namespace EGIS.ShapeFileLib
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             if (fileMappingPtr != IntPtr.Zero)
@@ -6985,7 +7039,7 @@ namespace EGIS.ShapeFileLib
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             if (fileMappingPtr != IntPtr.Zero)
@@ -7296,7 +7350,7 @@ namespace EGIS.ShapeFileLib
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             if (fileMappingPtr != IntPtr.Zero)
@@ -7812,7 +7866,7 @@ namespace EGIS.ShapeFileLib
             Pen selectPen = null;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             double[] simplifiedDataBuffer = new double[1024];
@@ -8255,7 +8309,7 @@ namespace EGIS.ShapeFileLib
             IntPtr selectPen = IntPtr.Zero;                
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             double[] simplifiedDataBuffer = new double[1024];
@@ -9003,7 +9057,7 @@ namespace EGIS.ShapeFileLib
             Pen selectPen = null;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             double[] simplifiedDataBuffer = new double[1024];
@@ -9411,7 +9465,7 @@ namespace EGIS.ShapeFileLib
             IntPtr selectPen = IntPtr.Zero;                
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             double[] simplifiedDataBuffer = new double[1024];
@@ -9890,8 +9944,10 @@ namespace EGIS.ShapeFileLib
             double foundDistance = double.PositiveInfinity;
             //now do an accurate intersection check
             byte[] data = SFRecordCol.SharedBuffer;
+            
             shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
             shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            
             fixed (byte* dataPtr = data)
             {
                 PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + 8);
@@ -9926,8 +9982,9 @@ namespace EGIS.ShapeFileLib
             byte[] data = SFRecordCol.SharedBuffer;
             shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
             shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            
             fixed (byte* dataPtr = data)
-            {
+            {                
                 PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + 8);
                 int dataOffset = nextRec->PointDataOffset;
                 int numParts = nextRec->NumParts;
@@ -10158,7 +10215,7 @@ namespace EGIS.ShapeFileLib
             Brush selectBrush = null;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             double[] simplifiedDataBuffer = new double[1024];
@@ -10452,7 +10509,7 @@ namespace EGIS.ShapeFileLib
             IntPtr selectBrush = IntPtr.Zero;  
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             double[] simplifiedDataBuffer = new double[1024];
@@ -11144,7 +11201,7 @@ namespace EGIS.ShapeFileLib
             Pen selectPen = null;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             double[] simplifiedDataBuffer = new double[1024];
@@ -11607,7 +11664,7 @@ namespace EGIS.ShapeFileLib
             IntPtr selectPen = IntPtr.Zero;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
-            if (MapFilesInMemory) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
+            if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
             double[] simplifiedDataBuffer = new double[1024];

@@ -1,9 +1,6 @@
-Easy GIS .NET uses a native DLL written using VS C++2010.
+Easy GIS .NET uses Proj6 native DLLs written using MSVC++
 
-If you receive a runtime error that the application can not load geomutil_lib.dll or geomutil_libx64.dll you will need to install the Microsoft Visual C++ 2010 SP1 Redistributable Package
+If you receive a runtime error that the application can not load projections you will need to install the Microsoft Visual C++ Redistributable for Visual Studio 2019
 
-XP/Vista/Windows 7 32bit
-http://www.microsoft.com/download/en/details.aspx?id=8328
+https://visualstudio.microsoft.com/downloads/
 
-Windows 7 64bit
-http://www.microsoft.com/download/en/details.aspx?id=13523
