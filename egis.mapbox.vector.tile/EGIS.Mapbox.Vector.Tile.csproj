@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-    <DocumentationFile>egis.mapbox.vector.tile\EGIS.Mapbox.Vector.Tile.xml</DocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +20,10 @@
     <Compile Remove="Extensions\VectorTileFeatureExtensions.cs" />
     <Compile Remove="Extensions\VectorTileLayerExtensions.cs" />
     <Compile Remove="VTPolygon.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="EGIS.Mapbox.Vector.Tile.xml" />
   </ItemGroup>
 
   <ItemGroup>
