@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-    <DocumentationFile>C:\Users\wfletcher\working\egis\code\EasyGIS.NET\egis.mapbox.vector.tile\EGIS.Mapbox.Vector.Tile.xml</DocumentationFile>
+    <DocumentationFile>egis.mapbox.vector.tile\EGIS.Mapbox.Vector.Tile.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
