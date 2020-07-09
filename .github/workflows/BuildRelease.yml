@@ -1,0 +1,62 @@
+name: Build
+on:
+  #push:
+    # Sequence of patterns matched against refs/tags
+    #tags:
+    #  - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+  release:
+    types: created 
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Setup MSBuild.exe
+      uses: warrenbuckley/Setup-MSBuild@v1    
+    - name: Setup Nuget.exe
+      uses: warrenbuckley/Setup-Nuget@v1
+    - uses: actions/checkout@v1
+    - name: Restore EasyGISDesktop packages
+      run: nuget restore EasyGISDesktop.sln
+    - name: Restore EasyGISWeb packages
+      run: nuget restore EasyGISWeb.sln
+    - name: Build EasyGISDesktop
+      run: msbuild  EasyGISDesktop.sln -p:Configuration=Release 
+    - name: Build EasyGISWeb  
+      run: msbuild  EasyGISWeb.sln -p:Configuration=Release 
+    - run: mkdir artifact
+    - run: mkdir artifact\egis_dt_${{ github.event.release.tag_name }}
+    - run: mkdir artifact\egis_web_${{ github.event.release.tag_name }}
+    - run: move ShapeFileTools\bin\Release ShapeFileTools\bin\egis_dt_${{ github.event.release.tag_name }}
+    - run: 7z a "artifact\egis_dt_${{ github.event.release.tag_name }}.zip" .\ShapeFileTools\bin\*
+    - run: move egis.web.controls\bin\Release egis.web.controls\bin\egis_web_${{ github.event.release.tag_name }}
+    - run: 7z a "artifact\egis_web_${{ github.event.release.tag_name }}.zip" .\egis.web.controls\bin\*
+    - uses: actions/upload-artifact@master
+      with:
+        name: Desktop
+        path: ShapeFileTools\bin 
+    - uses: actions/upload-artifact@master
+      with:
+        name: Web
+        path: egis.web.controls\bin
+    - name: Upload desktop release asset
+      #if: github.event.action == 'published'
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./artifact/egis_dt_${{ github.event.release.tag_name }}.zip
+        asset_name: "egis_dt_${{ github.event.release.tag_name }}.zip"
+        asset_content_type: application/zip 
+         
+    - name: Upload web release asset
+      #if: github.event.action == 'published'
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./artifact/egis_web_${{ github.event.release.tag_name }}.zip
+        asset_name: "egis_web_${{ github.event.release.tag_name }}.zip"
+        asset_content_type: application/zip           
