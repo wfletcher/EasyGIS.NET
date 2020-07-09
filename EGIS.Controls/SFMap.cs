@@ -1319,7 +1319,7 @@ namespace EGIS.Controls
         /// <returns></returns>
         public Bitmap GetBitmap()
         {
-            Bitmap bm = new Bitmap(this.Width, this.Height);
+            Bitmap bm = new Bitmap(this.ClientSize.Width, this.ClientSize.Height);
 
             if (screenBuf != null)
             {
