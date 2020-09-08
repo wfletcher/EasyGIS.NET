@@ -53,22 +53,31 @@ namespace EGIS.Projections
         static Proj6Native()
         {
             //System.Configuration.ConfigurationManager.AppSettings["Proj6Dir"];
-            // register path to native dll      
-            var startupPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            // register path to native dll                  
+            //var startupPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            var startupPath = AssemblyDirectory;
+
+            if (!System.IO.Directory.Exists(System.IO.Path.Combine(startupPath, "Proj6")))
+            {
+                Console.Out.WriteLine("could not find {0}", System.IO.Path.Combine(startupPath, "Proj6"));
+                startupPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                Console.Out.WriteLine("startupPath is now: {0}", startupPath);
+            }
 
             //are we running in web site?
             if (!System.IO.Directory.Exists(System.IO.Path.Combine(startupPath, "Proj6")))
             {
                 Console.Out.WriteLine("could not find {0}", System.IO.Path.Combine(startupPath, "Proj6"));
-                startupPath = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory,"bin");                
-            }
-
-            if (!System.IO.Directory.Exists(System.IO.Path.Combine(startupPath, "Proj6")))
-            {
-                Console.Out.WriteLine("Could not find {0}", System.IO.Path.Combine(startupPath, "Proj6"));
-                startupPath = AssemblyDirectory;
+                startupPath = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory,"bin");
                 Console.Out.WriteLine("startupPath is now: {0}", startupPath);
             }
+
+            //if (!System.IO.Directory.Exists(System.IO.Path.Combine(startupPath, "Proj6")))
+            //{
+            //    Console.Out.WriteLine("Could not find {0}", System.IO.Path.Combine(startupPath, "Proj6"));
+            //    startupPath = AssemblyDirectory;
+            //    Console.Out.WriteLine("startupPath is now: {0}", startupPath);
+            //}
 
             Console.Out.WriteLine("proj6 startupPath:" + startupPath);
 
