@@ -56,28 +56,11 @@ namespace egis
 
             tscbSearchLayers.SelectedIndex = 0;
 
-            //EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = false;
-            //this.miMercatorProjection.Checked = EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection;
             this.sfMap1.UseMercatorProjection = false;
             this.miMercatorProjection.Checked = false;
             this.useNativeFileMappingToolStripMenuItem.Checked = EGIS.ShapeFileLib.ShapeFile.MapFilesInMemory;
             LoadRecentProjects();
-
-            //double lat1 = -37, lon1 = 116.25;
-            //double lat2 = -30, lon2 = 117.25;
-            //double dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse, lat1, lon1, lat2, lon2);
-            //Console.Out.WriteLine("dist bw points:" + dist);
-            //dist = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(23, lat1, lon1, lat2, lon2);
-            //Console.Out.WriteLine("dist bw points:" + dist);       
-
-            // TestLineClipping();
-            //TestPolygonClipping();
-
-
-            //CreateTestShapeFile(@"c:\temp\TestShapefile.shp");
-
-           // TestLineIntersection();
-          
+        
             sfMap1.MapDoubleClick += new EventHandler<EGIS.Controls.SFMap.MapDoubleClickedEventArgs>(sfMap1_MapDoubleClick);
         }
 
