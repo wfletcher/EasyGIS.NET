@@ -4714,9 +4714,11 @@ namespace EGIS.ShapeFileLib
                                     }
                                 }
                                 else
-                                {                                    
-                                    g.DrawImage(symbol, pt.X - (symbolSize.Width >> 1), pt.Y - (symbolSize.Height >> 1));
-                                    if (recordSelected[index])
+                                {
+									//Console.Out.WriteLine()
+									g.DrawImage(symbol, pt.X - (symbolSize.Width >> 1), pt.Y - (symbolSize.Height >> 1), symbolSize.Width, symbolSize.Height);
+									//g.DrawImage(symbol, pt.X, pt.Y);
+									if (recordSelected[index])
                                     {
                                         g.DrawRectangle(selectPen, pt.X - (symbolSize.Width >> 1), pt.Y - (symbolSize.Height >> 1), symbolSize.Width, symbolSize.Height);
                                     }
