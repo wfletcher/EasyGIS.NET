@@ -36,6 +36,7 @@ using System.Windows.Forms;
 using System.Xml;
 using EGIS.ShapeFileLib;
 using EGIS.Projections;
+using System.IO;
 
 [assembly: CLSCompliant(true)]
 namespace EGIS.Controls
@@ -1062,6 +1063,17 @@ namespace EGIS.Controls
             return sf;
         }
 
+        public EGIS.ShapeFileLib.ShapeFile AddShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string labelFieldName)
+        {
+            EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(shxStream, shpStream, dbfStream, prjStream, name, labelFieldName);
+
+            RectangleD extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+
+            FitToExtent(extent);
+            OnShapeFilesChanged();
+            return sf;
+        }
+    
         /// <summary>
         /// Removes all ShapeFile layers from the map
         /// </summary>
@@ -1234,6 +1246,20 @@ namespace EGIS.Controls
             return sf;
         }
 
+        private EGIS.ShapeFileLib.ShapeFile OpenShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string renderFieldName)
+        {            
+            EGIS.ShapeFileLib.ShapeFile sf = new EGIS.ShapeFileLib.ShapeFile();
+            sf.LoadFromFile(shxStream,shpStream,dbfStream,prjStream);
+            sf.Name = name;
+            if (sf.RenderSettings != null) sf.RenderSettings.Dispose();
+            sf.RenderSettings = new EGIS.ShapeFileLib.RenderSettings(dbfStream, renderFieldName, new Font(this.Font.FontFamily, 8f));
+            LoadOptimalRenderSettings(sf);
+            myShapefiles.Add(sf);
+            return sf;
+        }
+
+
+        
         /// <summary>
         /// Load optimal render settings
         /// </summary>
