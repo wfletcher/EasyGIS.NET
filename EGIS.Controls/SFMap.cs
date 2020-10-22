@@ -404,7 +404,7 @@ namespace EGIS.Controls
                 {
                     EGIS.ShapeFileLib.ShapeFile sf = new EGIS.ShapeFileLib.ShapeFile();
 
-                    sf.ReadXml((XmlElement)sfList[n], baseDirectory);
+                    sf.ReadXml((XmlElement)sfList[n], baseDirectory, this.UseMemoryStreams);
                     //sf.MapProjectionType = this.projectionType;
 
                     myShapefiles.Add(sf);
@@ -646,7 +646,23 @@ namespace EGIS.Controls
             }
         }
 
-        
+        /// <summary>
+        /// Get/Set whether any ShapeFiless added to the map should use MemoryStreams rather than 
+        /// reading directly from disk.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The default value is false.
+        /// </para>
+        /// <para>
+        /// If UseMemoryStreams is changed it will only apply to any new ShapeFiles added to the map.        
+        /// </para>
+        /// </remarks>
+        public bool UseMemoryStreams
+        {
+            get;
+            set;
+        }
 
         /// <summary>
         /// Convenience method to set the ZoomLevel and CentrePoint in one method
@@ -1029,14 +1045,15 @@ namespace EGIS.Controls
         /// <param name="path">The file path to the ShapeFile</param>
         /// <param name="name">The "display" name of the ShapeFile.</param>
         /// <param name="labelFieldName">The name of the field in the ShapeFiles's DBF file to use when rendering the shape labels</param>
+        /// <param name="useMemoryStreams">Optional parameter indicating whether to open the ShapeFile using MemoryStreams. Default is false</param>
         /// <returns>Returns the created ShapeFile which was added to the SFMap</returns>
         /// <remarks>
         /// After the shapefile is added to the map, the map will auto fit the entire ShapeFile in the control by adjusting the 
         /// current ZomLevel and CentrePoint accordingly.
         /// </remarks>
-        public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName)
+        public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName, bool useMemoryStreams=false)
         {            
-            EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(path, name, labelFieldName);
+            EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(path, name, labelFieldName, useMemoryStreams);
 
             RectangleD extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
 
@@ -1196,7 +1213,7 @@ namespace EGIS.Controls
 
         #region "Private methods"
 
-        private EGIS.ShapeFileLib.ShapeFile OpenShapeFile(string path, string name, string renderFieldName)
+        private EGIS.ShapeFileLib.ShapeFile OpenShapeFile(string path, string name, string renderFieldName, bool useMemoryStreams = false)
         {
             if (path.EndsWith(".shp", StringComparison.OrdinalIgnoreCase))
             {
@@ -1208,7 +1225,7 @@ namespace EGIS.Controls
             }
             
             EGIS.ShapeFileLib.ShapeFile sf = new EGIS.ShapeFileLib.ShapeFile();
-            sf.LoadFromFile(path);
+            sf.LoadFromFile(path, useMemoryStreams || this.UseMemoryStreams);
             sf.Name = name;
             if (sf.RenderSettings != null) sf.RenderSettings.Dispose();
             sf.RenderSettings = new EGIS.ShapeFileLib.RenderSettings(path, renderFieldName, new Font(this.Font.FontFamily, 6f));

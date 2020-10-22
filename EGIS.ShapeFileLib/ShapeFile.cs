@@ -1301,7 +1301,7 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         /// <param name="element"></param>
         /// <seealso cref="WriteXml"/>
-        public void ReadXml(XmlElement element, string baseDirectory)
+        public void ReadXml(XmlElement element, string baseDirectory, bool useMemoryStreams=false)
         {            
             string path = element.GetElementsByTagName("path")[0].InnerText;
             //check if path is relative to project
