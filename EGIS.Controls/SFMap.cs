@@ -1040,44 +1040,95 @@ namespace EGIS.Controls
         }
 
 
-        /// <summary>
-        /// Adds a new ShapeFile layer to the map
-        /// </summary>
-        /// <param name="path">The file path to the ShapeFile</param>
-        /// <param name="name">The "display" name of the ShapeFile.</param>
-        /// <param name="labelFieldName">The name of the field in the ShapeFiles's DBF file to use when rendering the shape labels</param>
-        /// <param name="useMemoryStreams">Optional parameter indicating whether to open the ShapeFile using MemoryStreams. Default is false</param>
-        /// <returns>Returns the created ShapeFile which was added to the SFMap</returns>
-        /// <remarks>
-        /// After the shapefile is added to the map, the map will auto fit the entire ShapeFile in the control by adjusting the 
-        /// current ZomLevel and CentrePoint accordingly.
-        /// </remarks>
-        public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName, bool useMemoryStreams=false)
+		/// <summary>
+		/// Adds a new ShapeFile layer to the map
+		/// </summary>
+		/// <param name="path">The file path to the ShapeFile</param>
+		/// <param name="name">The "display" name of the ShapeFile.</param>
+		/// <param name="labelFieldName">The name of the field in the ShapeFiles's DBF file to use when rendering the shape labels</param>
+		/// <param name="useMemoryStreams">Optional parameter indicating whether to open the ShapeFile using MemoryStreams. Default is false</param>
+		/// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
+		/// <returns>Returns the created ShapeFile which was added to the SFMap</returns>
+		/// <remarks>
+		/// After the shapefile is added to the map, the map will auto fit the entire ShapeFile in the control by adjusting the 
+		/// current ZomLevel and CentrePoint accordingly.
+		/// </remarks>
+		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName, bool useMemoryStreams=false, bool fitMapToLayerExtent=true)
         {            
             EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(path, name, labelFieldName, useMemoryStreams);
 
-            RectangleD extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
-
-            FitToExtent(extent);
-            OnShapeFilesChanged();            
+			if (fitMapToLayerExtent)
+			{
+				RectangleD extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+				FitToExtent(extent);
+			}
+			else
+			{
+				//refresh so the layer is drawn
+				Refresh(true);
+			}
+			OnShapeFilesChanged();            
             return sf;
         }
 
-        public EGIS.ShapeFileLib.ShapeFile AddShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string labelFieldName)
-        {
-            EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(shxStream, shpStream, dbfStream, prjStream, name, labelFieldName);
+		/// <summary>
+		/// Adds a new ShapeFile layer to the map
+		/// </summary>
+		/// <param name="shxStream">stream to the ShapeFile's shx file</param>
+		/// <param name="shpStream">stream to the ShapeFile's shp file</param>
+		/// <param name="dbfStream">stream to the ShapeFile's dbf file</param>
+		/// <param name="prjStream">stream to the ShapeFile's prj file</param>
+		/// <param name="name">The "display" name of the ShapeFile. </param>
+		/// <param name="labelFieldName">The name of the field in the ShapeFiles's DBF file to use when rendering the shape labels</param>
+		/// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
+		/// <returns>Returns the created ShapeFile which was added to the SFMap</returns>
+		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string labelFieldName, bool fitMapToLayerExtent = true)
+		{
+			EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(shxStream, shpStream, dbfStream, prjStream, name, labelFieldName);
 
-            RectangleD extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
-
-            FitToExtent(extent);
-            OnShapeFilesChanged();
+			if (fitMapToLayerExtent)
+			{ 
+				RectangleD extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+				FitToExtent(extent);
+			}
+			else
+			{
+				//refrresh so the layer is drawn
+				Refresh(true);
+			}
+			OnShapeFilesChanged();
             return sf;
         }
-    
-        /// <summary>
-        /// Removes all ShapeFile layers from the map
-        /// </summary>
-        public void ClearShapeFiles()
+
+		/// <summary>
+		/// Adds a new ShapeFile layer to the map
+		/// </summary>
+		/// <param name="shapeFile">ShapeFile object to add to the map</param>
+		/// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
+		/// <returns>Returns the shapeFile which was added to the SFMap</returns>
+		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(EGIS.ShapeFileLib.ShapeFile shapeFile, bool fitMapToLayerExtent = true)
+		{
+			myShapefiles.Add(shapeFile);
+
+			if (fitMapToLayerExtent)
+			{
+				RectangleD extent = shapeFile.Extent.Transform(shapeFile.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+				FitToExtent(extent);
+			}
+			else
+			{
+				//refresh so the layer is drawn
+				Refresh(true);
+			}
+			OnShapeFilesChanged();
+			return shapeFile;
+		}
+
+
+		/// <summary>
+		/// Removes all ShapeFile layers from the map
+		/// </summary>
+		public void ClearShapeFiles()
         {
             for (int n = 0; n < myShapefiles.Count; n++)
             {
