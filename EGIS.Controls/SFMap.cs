@@ -1270,13 +1270,49 @@ namespace EGIS.Controls
                 return this.screenBuf;
             }
         }
-        
 
-        #endregion
+		private Cursor defaultCursor = Cursors.Default;
 
-        #region "Private methods"
+		/// <summary>
+		/// The default Cursor of the control
+		/// </summary>
+		public Cursor DefaultMapCursor
+		{
+			set
+			{
+				this.defaultCursor = value != null ? value : Cursors.Default;
+				this.Cursor = defaultCursor;
+			}
+			get
+			{
+				return this.defaultCursor;
+			}
+		}
 
-        private EGIS.ShapeFileLib.ShapeFile OpenShapeFile(string path, string name, string renderFieldName, bool useMemoryStreams = false)
+		private Cursor selectionCursor = Cursors.Hand;
+
+		/// <summary>
+		/// The default Cursor of the control when the mouse is over a shape that can be selected. Default is Cursors.Hand
+		/// </summary>
+		public Cursor DefaultSelectionCursor
+		{
+			set
+			{
+				this.selectionCursor = value != null ? value : Cursors.Hand;				
+			}
+			get
+			{
+				return this.selectionCursor;
+			}
+		}
+
+
+
+		#endregion
+
+		#region "Private methods"
+
+		private EGIS.ShapeFileLib.ShapeFile OpenShapeFile(string path, string name, string renderFieldName, bool useMemoryStreams = false)
         {
             if (path.EndsWith(".shp", StringComparison.OrdinalIgnoreCase))
             {
@@ -1302,8 +1338,8 @@ namespace EGIS.Controls
             EGIS.ShapeFileLib.ShapeFile sf = new EGIS.ShapeFileLib.ShapeFile();
             sf.LoadFromFile(shxStream,shpStream,dbfStream,prjStream);
             sf.Name = name;
-            if (sf.RenderSettings != null) sf.RenderSettings.Dispose();
-            sf.RenderSettings = new EGIS.ShapeFileLib.RenderSettings(dbfStream, renderFieldName, new Font(this.Font.FontFamily, 8f));
+            sf.RenderSettings.FieldName = renderFieldName;
+			sf.RenderSettings.Font = new Font(this.Font.FontFamily, 8f);
             LoadOptimalRenderSettings(sf);
             myShapefiles.Add(sf);
             return sf;
@@ -2093,7 +2129,7 @@ namespace EGIS.Controls
                     int selectedIndex = this[l].GetShapeIndexContainingPoint(pt, delta, this.MapCoordinateReferenceSystem);
                     if (selectedIndex >= 0)
                     {
-                        if (this[l].IsSelectable) Cursor = Cursors.Hand;
+                        if (this[l].IsSelectable) Cursor = DefaultSelectionCursor;
                         if (_useHints)
                         {
                             if (useCustomToolTip)
@@ -2127,7 +2163,7 @@ namespace EGIS.Controls
                     }
                 }                
             }
-            Cursor = Cursors.Default;
+			Cursor = DefaultMapCursor;
             if (_useHints)
             {                
                 if (layerTooltipVisible)
