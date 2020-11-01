@@ -62,7 +62,11 @@ namespace egis
             LoadRecentProjects();
         
             sfMap1.MapDoubleClick += new EventHandler<EGIS.Controls.SFMap.MapDoubleClickedEventArgs>(sfMap1_MapDoubleClick);
-        }
+
+			//sfMap1.DefaultMapCursor = Cursors.Cross;
+			//sfMap1.DefaultSelectionCursor = new Cursor("pen_i.cur");
+
+		}
 
         void sfMap1_MapDoubleClick(object sender, EGIS.Controls.SFMap.MapDoubleClickedEventArgs e)
         {
@@ -1055,7 +1059,7 @@ namespace egis
             highToolStripMenuItem.Checked = false;
             autoToolStripMenuItem.Checked = false;
             this.sfMap1.RenderQuality = EGIS.ShapeFileLib.RenderQuality.Low;
-        }
+		}
 
         private void autoToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -1063,7 +1067,6 @@ namespace egis
             highToolStripMenuItem.Checked = false;
             autoToolStripMenuItem.Checked = true;
             this.sfMap1.RenderQuality = EGIS.ShapeFileLib.RenderQuality.Auto;
-
         }
 
         private void newProjectToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1916,7 +1919,56 @@ namespace egis
 
         }
 
+		//private void TestMemoryStreams()
+		//{
+		//	if (sfMap1.ShapeFileCount == 0) return;
 
+		//	ShapeFile srcShapeFile = sfMap1[0];
+
+		//	System.IO.MemoryStream shxStream = new System.IO.MemoryStream();
+		//	System.IO.MemoryStream shpStream = new System.IO.MemoryStream();
+		//	System.IO.MemoryStream dbfStream = new System.IO.MemoryStream();
+		//	System.IO.MemoryStream prjStream = new System.IO.MemoryStream();
+
+		//	string projectionWkt = sfMap1.MapCoordinateReferenceSystem.WKT; ;
+		//	if (srcShapeFile.CoordinateReferenceSystem != null)
+		//	{
+		//		projectionWkt = srcShapeFile.CoordinateReferenceSystem.WKT;
+		//	}
+			
+
+			
+		//	byte[] zBuffer = new byte[100000 * 8];
+		//	using (ShapeFileWriter writer = ShapeFileWriter.CreateWriter(shxStream, shpStream, dbfStream, prjStream, srcShapeFile.ShapeType, srcShapeFile.RenderSettings.DbfReader.DbfRecordHeader.GetFieldDescriptions(), projectionWkt))
+		//	{
+		//		for (int n = 0; n < srcShapeFile.RecordCount; n += 5)
+		//		{
+		//			if (srcShapeFile.ShapeType == ShapeType.Polygon)
+		//			{
+		//				writer.AddRecord(srcShapeFile.GetShapeDataD(n), srcShapeFile.GetAttributeFieldValues(n));
+		//			}
+		//			else if (srcShapeFile.ShapeType == ShapeType.PolyLine)
+		//			{
+		//				writer.AddRecord(srcShapeFile.GetShapeDataD(n), srcShapeFile.GetAttributeFieldValues(n));
+		//			}
+		//			else if (srcShapeFile.ShapeType == ShapeType.PolyLineM)
+		//			{
+		//				writer.AddRecord(srcShapeFile.GetShapeDataD(n),srcShapeFile.GetShapeMDataD(n), srcShapeFile.GetAttributeFieldValues(n));
+		//			}
+		//			else if (srcShapeFile.ShapeType == ShapeType.PolyLineZ)
+		//			{
+		//				writer.AddRecord(srcShapeFile.GetShapeDataD(n), srcShapeFile.GetShapeMDataD(n), srcShapeFile.GetShapeZDataD(n, zBuffer), srcShapeFile.GetAttributeFieldValues(n));
+		//			}
+					
+		//		}
+		//	}
+		//	ShapeFile sf = new ShapeFile(shxStream, shpStream, dbfStream, null);
+		//	sf.Name = srcShapeFile.Name + "-copy";
+		//	sf.RenderSettings.FieldName = srcShapeFile.RenderSettings.FieldName;
+		//	sfMap1.AddShapeFile(sf);
+		//	//sfMap1.AddShapeFile(shxStream, shpStream, dbfStream, null, srcShapeFile.Name + "-copy", srcShapeFile.RenderSettings.FieldName);
+
+		//}
     }
   
 }

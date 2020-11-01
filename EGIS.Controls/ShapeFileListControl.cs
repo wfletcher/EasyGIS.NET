@@ -122,6 +122,7 @@ namespace EGIS.Controls
 
                     _map.RemoveShapeFile(sf);
                     sf.Close();
+					System.GC.Collect();
                 }
             }
         }

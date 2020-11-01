@@ -484,9 +484,9 @@
   </metadata>
   <data name="sfMap1.CentrePoint2D" mimetype="application/x-microsoft.net.object.binary.base64">
     <value>
-        AAEAAAD/////AQAAAAAAAAAMAgAAAFRFR0lTLlNoYXBlRmlsZUxpYiwgVmVyc2lvbj00LjYuMC4wLCBD
+        AAEAAAD/////AQAAAAAAAAAMAgAAAFRFR0lTLlNoYXBlRmlsZUxpYiwgVmVyc2lvbj00LjYuNC4wLCBD
         dWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPTA1Yjk4Yzg2OWI1ZmZlNmEFAQAAABhFR0lTLlNo
-        YXBlRmlsZUxpYi5Qb2ludEQCAAAAAXgBeQAABgYCAAAAAAAAAAAAI8D///////8iQAs=
+        YXBlRmlsZUxpYi5Qb2ludEQCAAAAAXgBeQAABgYCAAAAAAAAAAAAJcABAAAAAAAlQAs=
 </value>
   </data>
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">

@@ -1184,20 +1184,32 @@ namespace EGIS.ShapeFileLib
         /// <param name="prjStream"></param>
         public void LoadFromFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream)
         {
-            this.ProjectionWKT = "";
-            if (prjStream != null)
-            {                
-                ReadProjection(prjStream);
-            }
-            LoadFromFile2(shxStream, shpStream);
-           //create a default RenderSettings object
-            this.RenderSettings = CreateRenderSettings("", dbfStream);
+			LoadFromStreams(shxStream, shpStream, dbfStream, prjStream);
         }
 
+		/// <summary>
+		/// Loads a shapefile from the individual streams from the shapefile's .shx, .shp, .dbf and .prj files
+		/// </summary>
+		/// <param name="shxStream"></param>
+		/// <param name="shpStream"></param>
+		/// <param name="dbfStream"></param>
+		/// <param name="prjStream"></param>
+		public void LoadFromStreams(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream)
+		{
+			this.ProjectionWKT = "";
+			if (prjStream != null)
+			{
+				ReadProjection(prjStream);
+			}
+			LoadFromFile2(shxStream, shpStream);
+			//create a default RenderSettings object
+			this.RenderSettings = CreateRenderSettings("", dbfStream);
+		}
 
-        #region Read Projection WKT
 
-        private void ReadPrjFile(string shapeFilePath)
+		#region Read Projection WKT
+
+		private void ReadPrjFile(string shapeFilePath)
         {
             if (shapeFilePath.EndsWith(".shp", StringComparison.OrdinalIgnoreCase))
             {
@@ -1265,7 +1277,7 @@ namespace EGIS.ShapeFileLib
         /// <returns></returns>
         public override string ToString()
         {
-            if (filePath == null) return "Empty";
+            if (this.shapeFileStream == null) return "Empty";
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} [{1}]", new object[] { myName, ShapeType.ToString() });
         }
 
@@ -12506,6 +12518,7 @@ namespace EGIS.ShapeFileLib
             try
             {
                 dbfFileStream = inputStream;
+				dbfFileStream.Seek(0, SeekOrigin.Begin);
                 dBFRecordHeader = new DbfFileHeader();
                 dBFRecordHeader.Read(dbfFileStream);
                 try
@@ -12828,6 +12841,7 @@ namespace EGIS.ShapeFileLib
             if (disposing) //dispose managed resources
             {
                 if (this.dbfFileStream != null) dbfFileStream.Close();
+				dbfFileStream = null;
             }
         }
 
