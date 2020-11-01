@@ -64,6 +64,7 @@ namespace EGIS.ShapeFileLib
         private bool renderDuplicateFields = true;
 
         private DbfReader dbfReader;
+		private bool dbfReaderIsOwned = false;
 
         private Font renderFont;
         private Color fontColor = Color.Black;
@@ -107,11 +108,13 @@ namespace EGIS.ShapeFileLib
         internal RenderSettings(string shapeFileName)
         {
             dbfReader = new DbfReader(shapeFileName);
-        }
+			dbfReaderIsOwned = true;
 
-        internal RenderSettings(System.IO.Stream inputDbfStream)
+		}
+
+        internal RenderSettings(DbfReader dbfReader)
         {
-            dbfReader = new DbfReader(inputDbfStream);
+			this.dbfReader = dbfReader;
         }
 
         /// <summary>
@@ -119,9 +122,10 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         ~RenderSettings()
         {
-            if (dbfReader != null)
+            if (dbfReader != null && dbfReaderIsOwned)
             {
                 dbfReader.Close();
+				dbfReader = null;
             }
         }
 
@@ -141,30 +145,30 @@ namespace EGIS.ShapeFileLib
             {
                 throw new ArgumentException("fieldName can not be null");
             }
-
             
             dbfReader = new DbfReader(shapeFilePath);
+			dbfReaderIsOwned = true;
 
-            fieldIndex = FindFieldIndex(fieldName);
+			fieldIndex = FindFieldIndex(fieldName);
             FieldName = fieldName;
             this.renderFont = renderFont;
 
         }
 
-        /// <summary>
-        /// Constructs a new RenderSettings
-        /// </summary>
-        /// <param name="dbfStream">stream opened from the shapefile dbf file</param>
-        /// <param name="fieldName">The name of the DBF field to use when labelling shapes</param>
-        /// <param name="renderFont">The Font to use when labelling shapes in the shape file</param>
-        public RenderSettings(System.IO.Stream dbfStream, string fieldName, Font renderFont)
+		/// <summary>
+		/// Constructs a new RenderSettings
+		/// </summary>
+		/// <param name="dbfReader">shapefile DbfReader</param>
+		/// <param name="fieldName">The name of the DBF field to use when labelling shapes</param>
+		/// <param name="renderFont">The Font to use when labelling shapes in the shape file</param>
+		public RenderSettings(DbfReader dbfReader, string fieldName, Font renderFont)
         {            
             if (fieldName == null)
             {
                 throw new ArgumentException("fieldName can not be null");
             }
 
-            dbfReader = new DbfReader(dbfStream);
+			this.dbfReader = dbfReader;
 
             fieldIndex = FindFieldIndex(fieldName);
             FieldName = fieldName;
@@ -1159,7 +1163,8 @@ namespace EGIS.ShapeFileLib
         {
             if (disposing) //dispose unmanaged resources
             {
-                if (this.dbfReader != null) dbfReader.Dispose();
+                if (this.dbfReader != null && this.dbfReaderIsOwned) dbfReader.Dispose();
+				this.dbfReader = null;
             }
         }
 

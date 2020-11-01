@@ -93,6 +93,8 @@ namespace EGIS.ShapeFileLib
         private ShapeFileMainHeader mainHeader;
         private SFRecordCol sfRecordCol;
         private Stream shapeFileStream;
+
+		private DbfReader dbfReader;
         
 
         private static RenderQuality renderQuality = RenderQuality.Auto;
@@ -310,23 +312,7 @@ namespace EGIS.ShapeFileLib
 				}
 			}
 		}
-
-        ///// <summary>
-        ///// Returns the actual ShapeFile Extent in unprojected coordinates
-        ///// </summary>
-        ///// <remarks>The returned rectanlge is the extent contained in the shapefile's header</remarks>
-        ///// <returns></returns>
-        //public RectangleF GetActualExtent()
-        //{
-        //    if (sfRecordCol != null)
-        //    {
-        //        return RectangleF.FromLTRB((float)sfRecordCol.MainHeader.Xmin, (float)sfRecordCol.MainHeader.Ymin, (float)sfRecordCol.MainHeader.Xmax, (float)sfRecordCol.MainHeader.Ymax);                
-        //    }
-        //    else
-        //    {
-        //        return RectangleF.Empty;
-        //    }
-        //}
+       
 
         /// <summary>
         /// Returns a projected point to its Lat Long equivalent 
@@ -577,6 +563,18 @@ namespace EGIS.ShapeFileLib
             if (myRenderer == null) return null;
             return myRenderer.DbfReader.GetFields(recordNumber);
         }
+
+		/// <summary>
+		/// returns a DbfReader to read the shapefile's dbf record attributes file
+		/// </summary>
+		public DbfReader DbfReader
+		{
+			get
+			{
+				return this.dbfReader;
+			}
+		}
+
 #endregion
 
         #region Render Methods
@@ -863,7 +861,8 @@ namespace EGIS.ShapeFileLib
         private RenderSettings CreateRenderSettings(string fieldName)
         {
             RectangleF r = this.Extent;
-            RenderSettings renderSettings = new RenderSettings(this.filePath, fieldName, new Font("Arial", 10)); 
+			this.dbfReader = new DbfReader(this.filePath);
+            RenderSettings renderSettings = new RenderSettings(this.dbfReader, fieldName, new Font("Arial", 10)); 
             //create the PenWidthScale to be approx 15m
             if (r.Top > 90 || r.Bottom < -90)
             {
@@ -885,7 +884,8 @@ namespace EGIS.ShapeFileLib
         private RenderSettings CreateRenderSettings(string fieldName, System.IO.Stream dbfStream)
         {
             RectangleF r = this.Extent;
-            RenderSettings renderSettings = new RenderSettings(dbfStream, fieldName, new Font("Arial", 10));
+			this.dbfReader = new DbfReader(dbfStream);
+            RenderSettings renderSettings = new RenderSettings(this.dbfReader, fieldName, new Font("Arial", 10));
             //create the PenWidthScale to be approx 15m
             if (r.Top > 90 || r.Bottom < -90)
             {
@@ -1255,6 +1255,11 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         public void Close()
         {
+			if (this.dbfReader != null)
+			{
+				this.dbfReader.Dispose();
+				this.dbfReader = null;
+			}
             if (this.RenderSettings != null)
             {
                 RenderSettings.Dispose();

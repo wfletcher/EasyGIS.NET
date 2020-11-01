@@ -1058,7 +1058,7 @@ namespace egis
             lowToolStripMenuItem.Checked = true;
             highToolStripMenuItem.Checked = false;
             autoToolStripMenuItem.Checked = false;
-            this.sfMap1.RenderQuality = EGIS.ShapeFileLib.RenderQuality.Low;
+            this.sfMap1.RenderQuality = EGIS.ShapeFileLib.RenderQuality.Low;			
 		}
 
         private void autoToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1935,9 +1935,9 @@ namespace egis
 		//	{
 		//		projectionWkt = srcShapeFile.CoordinateReferenceSystem.WKT;
 		//	}
-			
 
-			
+
+
 		//	byte[] zBuffer = new byte[100000 * 8];
 		//	using (ShapeFileWriter writer = ShapeFileWriter.CreateWriter(shxStream, shpStream, dbfStream, prjStream, srcShapeFile.ShapeType, srcShapeFile.RenderSettings.DbfReader.DbfRecordHeader.GetFieldDescriptions(), projectionWkt))
 		//	{
@@ -1953,22 +1953,22 @@ namespace egis
 		//			}
 		//			else if (srcShapeFile.ShapeType == ShapeType.PolyLineM)
 		//			{
-		//				writer.AddRecord(srcShapeFile.GetShapeDataD(n),srcShapeFile.GetShapeMDataD(n), srcShapeFile.GetAttributeFieldValues(n));
+		//				writer.AddRecord(srcShapeFile.GetShapeDataD(n), srcShapeFile.GetShapeMDataD(n), srcShapeFile.GetAttributeFieldValues(n));
 		//			}
 		//			else if (srcShapeFile.ShapeType == ShapeType.PolyLineZ)
 		//			{
 		//				writer.AddRecord(srcShapeFile.GetShapeDataD(n), srcShapeFile.GetShapeMDataD(n), srcShapeFile.GetShapeZDataD(n, zBuffer), srcShapeFile.GetAttributeFieldValues(n));
 		//			}
-					
+
 		//		}
 		//	}
-		//	ShapeFile sf = new ShapeFile(shxStream, shpStream, dbfStream, null);
-		//	sf.Name = srcShapeFile.Name + "-copy";
-		//	sf.RenderSettings.FieldName = srcShapeFile.RenderSettings.FieldName;
-		//	sfMap1.AddShapeFile(sf);
-		//	//sfMap1.AddShapeFile(shxStream, shpStream, dbfStream, null, srcShapeFile.Name + "-copy", srcShapeFile.RenderSettings.FieldName);
+		//	//ShapeFile sf = new ShapeFile(shxStream, shpStream, dbfStream, null);
+		//	//sf.Name = srcShapeFile.Name + "-copy";
+		//	//sf.RenderSettings.FieldName = srcShapeFile.RenderSettings.FieldName;
+		//	//sfMap1.AddShapeFile(sf);
+		//	sfMap1.AddShapeFile(shxStream, shpStream, dbfStream, null, srcShapeFile.Name + "-copy", srcShapeFile.RenderSettings.FieldName);
 
 		//}
-    }
+	}
   
 }
