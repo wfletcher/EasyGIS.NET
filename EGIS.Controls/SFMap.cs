@@ -630,6 +630,7 @@ namespace EGIS.Controls
         /// <summary>
         /// Get/Set the map Coordinate Reference System
         /// </summary>
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public ICRS MapCoordinateReferenceSystem
         {
             get
