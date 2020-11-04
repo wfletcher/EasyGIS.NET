@@ -343,7 +343,16 @@ namespace EGIS.Controls
             if (_useBalloonToolTip)
             {
                 this.toolTipOffset = new Point(5, 5);
-            }                                
+            }
+            //set default CRS to WGS84
+            try
+            {
+                var crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+                MapCoordinateReferenceSystem = crs;
+            }
+            catch
+            {
+            }
         }
 
         #region XmlMethods
