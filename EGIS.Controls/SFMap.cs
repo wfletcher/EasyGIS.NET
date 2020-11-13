@@ -358,7 +358,16 @@ namespace EGIS.Controls
             writer.WriteString(ColorTranslator.ToHtml(MapBackColor));
             writer.WriteEndElement();
 
-            writer.WriteStartElement("layers");
+			if (MapCoordinateReferenceSystem != null)
+			{
+				writer.WriteStartElement("MapCoordinateReferenceSystem");
+				writer.WriteAttributeString("id", MapCoordinateReferenceSystem.Id);
+				writer.WriteString(this.MapCoordinateReferenceSystem.WKT);
+				writer.WriteEndElement();
+			}
+
+
+			writer.WriteStartElement("layers");
 
             foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
             {
@@ -393,7 +402,27 @@ namespace EGIS.Controls
                 MapBackColor = ColorTranslator.FromHtml(colorList[0].InnerText);
             }
 
-            ClearShapeFiles();
+			bool crsSet = false;
+			XmlNodeList crsList = projectElement.GetElementsByTagName("MapCoordinateReferenceSystem");
+			if (crsList != null && crsList.Count > 0)
+			{
+				try
+				{
+					string wkt = crsList[0].InnerText;
+					if (!string.IsNullOrEmpty(wkt))
+					{
+						this.MapCoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt);
+						crsSet = true;
+					}
+				}
+				catch (Exception ex)
+				{
+					Console.Out.WriteLine("error loading CRS:" + ex.Message);
+				}
+			}
+
+
+			ClearShapeFiles();
 
             XmlNodeList layerNodeList = projectElement.GetElementsByTagName("layers");
             XmlNodeList sfList = ((XmlElement)layerNodeList[0]).GetElementsByTagName("shapefile");
@@ -416,6 +445,13 @@ namespace EGIS.Controls
                     }
 
                 }
+
+				//if the project does not have the CRS set use the first layers CRS
+				if (!crsSet && myShapefiles.Count > 0)
+				{
+					MapCoordinateReferenceSystem = myShapefiles[0].CoordinateReferenceSystem;
+				}
+
                 //set centre point to centre of shapefile and adjust zoom level to fit entire shapefile
                 RectangleF r = ShapeFile.LLExtentToProjectedExtent(this.Extent, this.projectionType);
                 

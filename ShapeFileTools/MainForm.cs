@@ -1222,7 +1222,13 @@ namespace egis
             EGIS.ShapeFileLib.ShapeFile.MapFilesInMemory = useNativeFileMappingToolStripMenuItem.Checked;
         }
 
-        private void sfMap1_KeyDown(object sender, KeyEventArgs e)
+		private void loadShapeFilesInMemoryToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			this.loadShapeFilesInMemoryToolStripMenuItem.Checked = !this.loadShapeFilesInMemoryToolStripMenuItem.Checked;
+			this.sfMap1.UseMemoryStreams = this.loadShapeFilesInMemoryToolStripMenuItem.Checked;
+		}
+
+		private void sfMap1_KeyDown(object sender, KeyEventArgs e)
         {
             this.tsLblSelectMessage.Visible = true;
         }
@@ -1918,6 +1924,8 @@ namespace egis
             Console.Out.WriteLine("interects:{0}, pt:{1}, tVal:{2}, vVal:{3}", intersects, P, tVal, vVal);
 
         }
+
+		
 
 		//private void TestMemoryStreams()
 		//{

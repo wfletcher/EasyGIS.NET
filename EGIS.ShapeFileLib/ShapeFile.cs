@@ -575,6 +575,15 @@ namespace EGIS.ShapeFileLib
 			}
 		}
 
+		/// <summary>
+		/// property to tag a ShapeFile with a generic object.
+		/// </summary>
+		public object Tag
+		{
+			get;
+			set;
+		}
+
 #endregion
 
         #region Render Methods
@@ -3352,11 +3361,40 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        #endregion
+		protected static void DrawDirectionArrows(List<Point[]> pointList, int arrowLength, Pen arrowPen, Graphics g)
+		{
 
-    }
+			//use 10 pixel buffer either side of the arrow
+			int minSegmentLength = (arrowLength + 20) * (arrowLength + 20);
+			foreach (Point[] pts in pointList)
+			{
+				for (int n = 0; n < pts.Length - 1; ++n)
+				{
+					int length = (pts[n + 1].X - pts[n].X) * (pts[n + 1].X - pts[n].X) + (pts[n + 1].Y - pts[n].Y) * (pts[n + 1].Y - pts[n].Y);
+					if (length >= minSegmentLength)
+					{
 
-    internal struct IndexAnglePair
+						Point centre = new Point((pts[n].X + pts[n + 1].X) >> 1, (pts[n].Y + pts[n + 1].Y) >> 1);
+						double lengthD = Math.Sqrt(length);
+						double dx = (pts[n + 1].X - pts[n].X) / lengthD;
+						double dy = (pts[n + 1].Y - pts[n].Y) / lengthD;
+
+						PointF p0 = new PointF(centre.X - (float)(dx * (arrowLength >> 1)), centre.Y - (float)(dy * (arrowLength >> 1)));
+						PointF p1 = new PointF(p0.X + (float)(dx * arrowLength), p0.Y + (float)(dy * arrowLength));
+						g.DrawLine(arrowPen, p0, p1);
+					}
+				}
+
+			}
+
+		}
+
+
+		#endregion
+
+	}
+
+	internal struct IndexAnglePair
     {
         public float Angle;
         public int PointIndex;
@@ -7884,6 +7922,10 @@ namespace EGIS.ShapeFileLib
 
             Pen selectPen = null;
 
+			Pen arrowPen = null;
+			bool drawArrows = false;
+			int arrowLength=50;
+
             IntPtr fileMappingPtr = IntPtr.Zero;
             if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
@@ -7962,6 +8004,14 @@ namespace EGIS.ShapeFileLib
                     renderPenWidth = Math.Min(renderPenWidth, 7f);
                 }
 
+				if (renderSettings.DrawDirectionArrows && (renderSettings.DirectionArrowMinZoomLevel < 0 || scaleX >= renderSettings.DirectionArrowMinZoomLevel) )
+				{
+					int arrowWidth = Math.Max(1,Math.Min(renderSettings.DirectionArrowWidth, 50));
+					arrowPen = new Pen(renderSettings.DirectionArrowColor, arrowWidth);
+					arrowPen.CustomEndCap = new System.Drawing.Drawing2D.AdjustableArrowCap(3, 6);
+					drawArrows = true;
+					arrowLength = Math.Max(renderSettings.DirectionArrowLength, 10);
+				}
                 
                 //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
                 //g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
@@ -8229,6 +8279,10 @@ namespace EGIS.ShapeFileLib
                                                         }
                                                     }
                                                 }
+												if (drawArrows && paintCount == (maxPaintCount-1))
+												{
+													DrawDirectionArrows(pointList, arrowLength, arrowPen, g);
+												}
                                             }
                                         }
                                     }                                   
@@ -8240,7 +8294,7 @@ namespace EGIS.ShapeFileLib
                         {
                             if (gdiplusPen != null) gdiplusPen.Dispose();
                             if (rwPen != null) rwPen.Dispose();
-                            if (selectPen != null) selectPen.Dispose();
+                            if (selectPen != null) selectPen.Dispose();														
                         }
                     }
                 }
@@ -8315,8 +8369,9 @@ namespace EGIS.ShapeFileLib
             finally
             {
                 if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
-                if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);                
-            }
+                if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
+				if (arrowPen != null) arrowPen.Dispose();
+			}
         }        
 
         private unsafe void PaintLowQuality(Graphics g, Size clientArea, RectangleD extent, Stream shapeFileStream, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation, RectangleD targetExtent)
@@ -8682,12 +8737,11 @@ namespace EGIS.ShapeFileLib
             }
 
         }
-        
-        
-        #endregion
 
-        
-        public bool ContainsPoint(int shapeIndex, PointD pt, System.IO.Stream shapeFileStream, byte[] dataBuf, double minDist)
+		#endregion
+
+
+		public bool ContainsPoint(int shapeIndex, PointD pt, System.IO.Stream shapeFileStream, byte[] dataBuf, double minDist)
         {
             unsafe
             {
@@ -9075,7 +9129,11 @@ namespace EGIS.ShapeFileLib
 
             Pen selectPen = null;
 
-            IntPtr fileMappingPtr = IntPtr.Zero;
+			Pen arrowPen = null;
+			bool drawArrows = false;
+			int arrowLength = 50;
+
+			IntPtr fileMappingPtr = IntPtr.Zero;
             if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
@@ -9150,297 +9208,306 @@ namespace EGIS.ShapeFileLib
                     renderPenWidth = Math.Min(renderPenWidth, 7f);
                 }
 
-                //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                //g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+				if (renderSettings.DrawDirectionArrows && (renderSettings.DirectionArrowMinZoomLevel < 0 || scaleX >= renderSettings.DirectionArrowMinZoomLevel))
+				{
+					int arrowWidth = Math.Max(1, Math.Min(renderSettings.DirectionArrowWidth, 50));
+					arrowPen = new Pen(renderSettings.DirectionArrowColor, arrowWidth);
+					arrowPen.CustomEndCap = new System.Drawing.Drawing2D.AdjustableArrowCap(3, 6);
+					drawArrows = true;
+					arrowLength = Math.Max(renderSettings.DirectionArrowLength, 10);
+				}
+				//g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+				//g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
-                int maxPaintCount = 2;
+				int maxPaintCount = 2;
                 if ((renderSettings.LineType == LineType.Solid) || (Math.Round(renderPenWidth) < 3))
                 {
                     maxPaintCount = 1;
                 }
-                try
+               
+                for (int paintCount = 0; paintCount < maxPaintCount; paintCount++)
                 {
-                    for (int paintCount = 0; paintCount < maxPaintCount; paintCount++)
+                    try
                     {
-                        try
+                        Color currentPenColor = renderSettings.OutlineColor;
+                        int penWidth = (int)Math.Round(renderPenWidth);
+
+                        if (paintCount == 1)
                         {
-                            Color currentPenColor = renderSettings.OutlineColor;
-                            int penWidth = (int)Math.Round(renderPenWidth);
+                            currentPenColor = renderSettings.FillColor;
+                            penWidth -= 2;
+                        }
 
-                            if (paintCount == 1)
+                        if (paintCount == 0)
+                        {
+                            Color c = renderSettings.OutlineColor;
+                            //gdiplusPenPtr  = NativeMethods.CreateGdiplusPen(c.ToArgb(), penWidth);
+                            gdiplusPen = new Pen(renderSettings.OutlineColor, penWidth);
+                            selectPen = new Pen(renderSettings.SelectOutlineColor, penWidth + 4);
+                        }
+                        else if (paintCount == 1)
+                        {
+                            gdiplusPen = new Pen(renderSettings.FillColor, penWidth);
+                            selectPen = new Pen(renderSettings.SelectFillColor, penWidth);
+                            if (penWidth > 1)
                             {
-                                currentPenColor = renderSettings.FillColor;
-                                penWidth -= 2;
-                            }
-
-                            if (paintCount == 0)
-                            {
-                                Color c = renderSettings.OutlineColor;
-                                //gdiplusPenPtr  = NativeMethods.CreateGdiplusPen(c.ToArgb(), penWidth);
-                                gdiplusPen = new Pen(renderSettings.OutlineColor, penWidth);
-                                selectPen = new Pen(renderSettings.SelectOutlineColor, penWidth + 4);
-                            }
-                            else if (paintCount == 1)
-                            {
-                                gdiplusPen = new Pen(renderSettings.FillColor, penWidth);
-                                selectPen = new Pen(renderSettings.SelectFillColor, penWidth);
-                                if (penWidth > 1)
+                                renderRailway = (renderSettings.LineType == LineType.Railway);
+                                if (renderRailway)
                                 {
-                                    renderRailway = (renderSettings.LineType == LineType.Railway);
-                                    if (renderRailway)
-                                    {
-                                        rwPen = new Pen(renderSettings.OutlineColor, 1);
-                                    }
+                                    rwPen = new Pen(renderSettings.OutlineColor, 1);
                                 }
                             }
-							gdiplusPen.EndCap = renderSettings.LineEndCap;//  System.Drawing.Drawing2D.LineCap.Round;
-							gdiplusPen.StartCap = renderSettings.LineStartCap;// System.Drawing.Drawing2D.LineCap.Round;
-							gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
-							selectPen.EndCap = renderSettings.LineEndCap;// System.Drawing.Drawing2D.LineCap.Round;
-							selectPen.StartCap = renderSettings.LineStartCap;// System.Drawing.Drawing2D.LineCap.Round;
-							selectPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
-							if (renderSettings.LineType == LineType.Solid)
-							{
-								gdiplusPen.DashStyle = renderSettings.LineDashStyle;
-								selectPen.DashStyle = renderSettings.LineDashStyle;
-							}
+                        }
+						gdiplusPen.EndCap = renderSettings.LineEndCap;//  System.Drawing.Drawing2D.LineCap.Round;
+						gdiplusPen.StartCap = renderSettings.LineStartCap;// System.Drawing.Drawing2D.LineCap.Round;
+						gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+						selectPen.EndCap = renderSettings.LineEndCap;// System.Drawing.Drawing2D.LineCap.Round;
+						selectPen.StartCap = renderSettings.LineStartCap;// System.Drawing.Drawing2D.LineCap.Round;
+						selectPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+						if (renderSettings.LineType == LineType.Solid)
+						{
+							gdiplusPen.DashStyle = renderSettings.LineDashStyle;
+							selectPen.DashStyle = renderSettings.LineDashStyle;
+						}
 
-							byte* dataPtrZero = (byte*)IntPtr.Zero.ToPointer();
-                            if (fileMapped)
-                            {
-                                dataPtrZero = (byte*)mapView.ToPointer();
-                                dataPtr = (byte*)(((byte*)mapView.ToPointer()) + ShapeFileMainHeader.MAIN_HEADER_LENGTH);
-                            }
-                            else
-                            {
-                                shapeFileStream.Seek(ShapeFileMainHeader.MAIN_HEADER_LENGTH, SeekOrigin.Begin);
-                            }
+						byte* dataPtrZero = (byte*)IntPtr.Zero.ToPointer();
+                        if (fileMapped)
+                        {
+                            dataPtrZero = (byte*)mapView.ToPointer();
+                            dataPtr = (byte*)(((byte*)mapView.ToPointer()) + ShapeFileMainHeader.MAIN_HEADER_LENGTH);
+                        }
+                        else
+                        {
+                            shapeFileStream.Seek(ShapeFileMainHeader.MAIN_HEADER_LENGTH, SeekOrigin.Begin);
+                        }
 
-                            PointF pt = new PointF(0, 0);
-                            RecordHeader[] pgRecs = this.RecordHeaders;
+                        PointF pt = new PointF(0, 0);
+                        RecordHeader[] pgRecs = this.RecordHeaders;
 
-                            int index = 0;
-                            byte[] data = SFRecordCol.SharedBuffer;
-                            float minLabelLength = (float)(6 / scaleX);
-                            fixed (byte* dataBufPtr = data)
+                        int index = 0;
+                        byte[] data = SFRecordCol.SharedBuffer;
+                        float minLabelLength = (float)(6 / scaleX);
+                        fixed (byte* dataBufPtr = data)
+                        {
+                            if (!fileMapped) dataPtr = dataBufPtr;
+                            while (index < pgRecs.Length)
                             {
-                                if (!fileMapped) dataPtr = dataBufPtr;
-                                while (index < pgRecs.Length)
+                                if (fileMapped)
                                 {
-                                    if (fileMapped)
+                                    dataPtr = dataPtrZero + pgRecs[index].Offset;
+                                }
+                                else
+                                {
+                                    if (shapeFileStream.Position != pgRecs[index].Offset)
                                     {
-                                        dataPtr = dataPtrZero + pgRecs[index].Offset;
+                                        Console.Out.WriteLine("offset wrong");
+                                        shapeFileStream.Seek(pgRecs[index].Offset, SeekOrigin.Begin);
                                     }
-                                    else
+                                    shapeFileStream.Read(data, 0, pgRecs[index].ContentLength + 8);
+                                }
+                                PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + 8);
+                                int dataOffset = nextRec->PointDataOffset;
+                                bool renderShape = recordVisible[index];
+                                //overwrite if using CustomRenderSettings
+                                if (useCustomRenderSettings) renderShape = customRenderSettings.RenderShape(index);
+
+                                if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && renderShape)
+                                {
+                                    //check if the simplifiedDataBuffer sized needs to be increased
+                                    if ((nextRec->NumPoints << 1) > simplifiedDataBuffer.Length)
                                     {
-                                        if (shapeFileStream.Position != pgRecs[index].Offset)
-                                        {
-                                            Console.Out.WriteLine("offset wrong");
-                                            shapeFileStream.Seek(pgRecs[index].Offset, SeekOrigin.Begin);
-                                        }
-                                        shapeFileStream.Read(data, 0, pgRecs[index].ContentLength + 8);
+                                        simplifiedDataBuffer = new double[nextRec->NumPoints << 1];
                                     }
-                                    PolyLineMRecordP* nextRec = (PolyLineMRecordP*)(dataPtr + 8);
-                                    int dataOffset = nextRec->PointDataOffset;
-                                    bool renderShape = recordVisible[index];
-                                    //overwrite if using CustomRenderSettings
-                                    if (useCustomRenderSettings) renderShape = customRenderSettings.RenderShape(index);
 
-                                    if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && renderShape)
+                                    fixed (double* simplifiedDataPtr = simplifiedDataBuffer)
                                     {
-                                        //check if the simplifiedDataBuffer sized needs to be increased
-                                        if ((nextRec->NumPoints << 1) > simplifiedDataBuffer.Length)
-                                        {
-                                            simplifiedDataBuffer = new double[nextRec->NumPoints << 1];
-                                        }
 
-                                        fixed (double* simplifiedDataPtr = simplifiedDataBuffer)
-                                        {
-
-                                            int numParts = nextRec->NumParts;
-                                            Point[] pts;
+                                        int numParts = nextRec->NumParts;
+                                        Point[] pts;
 
                                             
-                                            if (useCustomRenderSettings)
+                                        if (useCustomRenderSettings)
+                                        {
+                                            Color customColor = (paintCount == 0) ? customRenderSettings.GetRecordOutlineColor(index) : customRenderSettings.GetRecordFillColor(index);
+                                            if (customColor.ToArgb() != currentPenColor.ToArgb())
                                             {
-                                                Color customColor = (paintCount == 0) ? customRenderSettings.GetRecordOutlineColor(index) : customRenderSettings.GetRecordFillColor(index);
-                                                if (customColor.ToArgb() != currentPenColor.ToArgb())
+                                                gdiplusPen = new Pen(customColor, penWidth);
+                                                currentPenColor = customColor;
+												gdiplusPen.EndCap = renderSettings.LineEndCap;// System.Drawing.Drawing2D.LineCap.Round;
+												gdiplusPen.StartCap = renderSettings.LineStartCap;// System.Drawing.Drawing2D.LineCap.Round;
+                                                gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                                                if (renderSettings.LineType == LineType.Solid)
                                                 {
-                                                    gdiplusPen = new Pen(customColor, penWidth);
-                                                    currentPenColor = customColor;
-													gdiplusPen.EndCap = renderSettings.LineEndCap;// System.Drawing.Drawing2D.LineCap.Round;
-													gdiplusPen.StartCap = renderSettings.LineStartCap;// System.Drawing.Drawing2D.LineCap.Round;
-                                                    gdiplusPen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
-                                                    if (renderSettings.LineType == LineType.Solid)
-                                                    {
-                                                        gdiplusPen.DashStyle = renderSettings.LineDashStyle;
-                                                    }
+                                                    gdiplusPen.DashStyle = renderSettings.LineDashStyle;
                                                 }
                                             }
+                                        }
 
-											for (int partNum = 0; partNum < numParts; partNum++)
+										for (int partNum = 0; partNum < numParts; partNum++)
+										{
+											int numPoints;
+											if ((numParts - partNum) > 1)
 											{
-												int numPoints;
-												if ((numParts - partNum) > 1)
+												numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+											}
+											else
+											{
+												numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+											}
+											if (numPoints <= 1)
+											{
+												continue;
+											}
+
+
+											//reduce the number of points before transforming. x10 performance increase at full zoom for some shapefiles 
+											int usedPoints = ReducePoints((double*)(dataPtr + 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4)), numPoints, simplifiedDataPtr, simplificationDistance);
+
+											if (coordinateTransformation != null)
+											{
+												coordinateTransformation.Transform((double*)simplifiedDataPtr, usedPoints);
+											}
+
+											Rectangle pixelBounds = new Rectangle();
+											pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, ref pixelBounds, MercProj);
+
+											//pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, MercProj);
+
+											//add any labels to the poly-lines
+											if (labelFields && paintCount == 0 && usePolySimplificationLabeling)
+											{
+												//check what the scaled bounds of this part are
+												//if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
+												if ((nextRec->bounds.Width > 6 * simplificationDistance) || (nextRec->bounds.Height > 6 * simplificationDistance))
 												{
-													numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
-												}
-												else
-												{
-													numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
-												}
-												if (numPoints <= 1)
-												{
-													continue;
-												}
-
-
-												//reduce the number of points before transforming. x10 performance increase at full zoom for some shapefiles 
-												int usedPoints = ReducePoints((double*)(dataPtr + 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4)), numPoints, simplifiedDataPtr, simplificationDistance);
-
-												if (coordinateTransformation != null)
-												{
-													coordinateTransformation.Transform((double*)simplifiedDataPtr, usedPoints);
-												}
-
-												Rectangle pixelBounds = new Rectangle();
-												pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, ref pixelBounds, MercProj);
-
-												//pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, MercProj);
-
-												//add any labels to the poly-lines
-												if (labelFields && paintCount == 0 && usePolySimplificationLabeling)
-												{
-													//check what the scaled bounds of this part are
-													//if ((nextRec->bounds.Width * scaleX > 6) || (nextRec->bounds.Height * scaleX > 6))
-													if ((nextRec->bounds.Width > 6 * simplificationDistance) || (nextRec->bounds.Height > 6 * simplificationDistance))
+													int usedTempPoints = 0;
+													NativeMethods.SimplifyDouglasPeucker(pts, pts.Length, 2, tempPoints, ref usedTempPoints);
+													if (usedTempPoints > 0)
 													{
-														int usedTempPoints = 0;
-														NativeMethods.SimplifyDouglasPeucker(pts, pts.Length, 2, tempPoints, ref usedTempPoints);
-														if (usedTempPoints > 0)
-														{
-															RenderPtObj.AddRenderPtObjects(tempPoints, usedTempPoints, renderPtObjList, index, 6);
-														}
+														RenderPtObj.AddRenderPtObjects(tempPoints, usedTempPoints, renderPtObjList, index, 6);
 													}
-												}
-
-												List<Point[]> pointList = new List<Point[]>();
-												if (pixelBounds.Left < -1000 || pixelBounds.Top < -1000 || pixelBounds.Right > clientArea.Width + 1000 || pixelBounds.Bottom > clientArea.Height + 1000)
-												{
-													//clip the polyline to avoid overflow
-													GeometryAlgorithms.ClipBounds clipBounds = new GeometryAlgorithms.ClipBounds()
-													{
-														XMin = 0,
-														YMin = 0,
-														XMax = clientArea.Width,
-														YMax = clientArea.Height
-													};
-													List<int> clippedPoints = new List<int>();
-													List<int> clippedParts = new List<int>();
-													GeometryAlgorithms.PolyLineClip(pts, pts.Length, clipBounds, clippedPoints, clippedParts);
-													for (int clipPartIndex = 0; clipPartIndex < clippedParts.Count; ++clipPartIndex)
-													{
-														int startIndex = clippedParts[clipPartIndex];
-														int endIndex = clipPartIndex < clippedParts.Count - 1 ? clippedParts[clipPartIndex + 1] : clippedPoints.Count;
-														Point[] partPoints = new Point[(endIndex - startIndex) >> 1];
-														for (int s = startIndex, p = 0; s < endIndex; s += 2, ++p)
-														{
-															partPoints[p].X = clippedPoints[s];
-															partPoints[p].Y = clippedPoints[s + 1];
-														}
-														pointList.Add(partPoints);
-													}
-												}
-												else
-												{
-													pointList.Add(pts);
-												}
-												foreach (var partPoints in pointList)
-												{
-													pts = partPoints;
-
-													if (recordSelected[index] && selectPen != null)
-													{
-														g.DrawLines(selectPen, pts);
-													}
-													else
-													{
-														g.DrawLines(gdiplusPen, pts);
-													}
-													if (renderRailway)
-													{
-														int th = (int)Math.Ceiling((renderPenWidth + 2) / 2);
-														int tw = (int)Math.Max(Math.Round((7f * th) / 7), 5);
-														int pIndx = 0;
-														int lx = 0;
-														System.Drawing.Drawing2D.Matrix savedMatrix = g.Transform;
-														try
-														{
-															while (pIndx < pts.Length - 1)
-															{
-																//draw the next line segment
-
-																int dy = pts[pIndx + 1].Y - pts[pIndx].Y;
-																int dx = pts[pIndx + 1].X - pts[pIndx].X;
-																float a = (float)(Math.Atan2(dy, dx) * 180f / Math.PI);
-																int d = (int)Math.Round(Math.Sqrt(dy * dy + dx * dx));
-																if (d > 0)
-																{
-																	g.Transform = savedMatrix;
-																	if (Math.Abs(a) > 90f && Math.Abs(a) <= 270f)
-																	{
-																		a -= 180f;
-																		g.TranslateTransform(pts[pIndx + 1].X, pts[pIndx + 1].Y);
-																		g.RotateTransform(a);
-																		while (lx < d)
-																		{
-																			g.DrawLine(rwPen, lx, -th, lx, th);
-																			lx += tw;
-																		}
-																		lx -= d;
-																	}
-																	else
-																	{
-																		g.TranslateTransform(pts[pIndx].X, pts[pIndx].Y);
-																		g.RotateTransform(a);
-																		while (lx < d)
-																		{
-																			g.DrawLine(rwPen, lx, -th, lx, th);
-																			lx += tw;
-																		}
-																		lx -= d;
-																	}
-																}
-
-																pIndx++;
-															}
-														}
-														finally
-														{
-															g.Transform = savedMatrix;
-														}
-													}
-
 												}
 											}
-                                        }
+
+											List<Point[]> pointList = new List<Point[]>();
+											if (pixelBounds.Left < -1000 || pixelBounds.Top < -1000 || pixelBounds.Right > clientArea.Width + 1000 || pixelBounds.Bottom > clientArea.Height + 1000)
+											{
+												//clip the polyline to avoid overflow
+												GeometryAlgorithms.ClipBounds clipBounds = new GeometryAlgorithms.ClipBounds()
+												{
+													XMin = 0,
+													YMin = 0,
+													XMax = clientArea.Width,
+													YMax = clientArea.Height
+												};
+												List<int> clippedPoints = new List<int>();
+												List<int> clippedParts = new List<int>();
+												GeometryAlgorithms.PolyLineClip(pts, pts.Length, clipBounds, clippedPoints, clippedParts);
+												for (int clipPartIndex = 0; clipPartIndex < clippedParts.Count; ++clipPartIndex)
+												{
+													int startIndex = clippedParts[clipPartIndex];
+													int endIndex = clipPartIndex < clippedParts.Count - 1 ? clippedParts[clipPartIndex + 1] : clippedPoints.Count;
+													Point[] partPoints = new Point[(endIndex - startIndex) >> 1];
+													for (int s = startIndex, p = 0; s < endIndex; s += 2, ++p)
+													{
+														partPoints[p].X = clippedPoints[s];
+														partPoints[p].Y = clippedPoints[s + 1];
+													}
+													pointList.Add(partPoints);
+												}
+											}
+											else
+											{
+												pointList.Add(pts);
+											}
+											foreach (var partPoints in pointList)
+											{
+												pts = partPoints;
+
+												if (recordSelected[index] && selectPen != null)
+												{
+													g.DrawLines(selectPen, pts);
+												}
+												else
+												{
+													g.DrawLines(gdiplusPen, pts);
+												}
+												if (renderRailway)
+												{
+													int th = (int)Math.Ceiling((renderPenWidth + 2) / 2);
+													int tw = (int)Math.Max(Math.Round((7f * th) / 7), 5);
+													int pIndx = 0;
+													int lx = 0;
+													System.Drawing.Drawing2D.Matrix savedMatrix = g.Transform;
+													try
+													{
+														while (pIndx < pts.Length - 1)
+														{
+															//draw the next line segment
+
+															int dy = pts[pIndx + 1].Y - pts[pIndx].Y;
+															int dx = pts[pIndx + 1].X - pts[pIndx].X;
+															float a = (float)(Math.Atan2(dy, dx) * 180f / Math.PI);
+															int d = (int)Math.Round(Math.Sqrt(dy * dy + dx * dx));
+															if (d > 0)
+															{
+																g.Transform = savedMatrix;
+																if (Math.Abs(a) > 90f && Math.Abs(a) <= 270f)
+																{
+																	a -= 180f;
+																	g.TranslateTransform(pts[pIndx + 1].X, pts[pIndx + 1].Y);
+																	g.RotateTransform(a);
+																	while (lx < d)
+																	{
+																		g.DrawLine(rwPen, lx, -th, lx, th);
+																		lx += tw;
+																	}
+																	lx -= d;
+																}
+																else
+																{
+																	g.TranslateTransform(pts[pIndx].X, pts[pIndx].Y);
+																	g.RotateTransform(a);
+																	while (lx < d)
+																	{
+																		g.DrawLine(rwPen, lx, -th, lx, th);
+																		lx += tw;
+																	}
+																	lx -= d;
+																}
+															}
+
+															pIndx++;
+														}
+													}
+													finally
+													{
+														g.Transform = savedMatrix;
+													}
+												}
+
+											}
+
+											if (drawArrows && paintCount == (maxPaintCount - 1))
+											{
+												DrawDirectionArrows(pointList, arrowLength, arrowPen, g);
+											}
+										}
                                     }
-                                    
-                                    ++index;
                                 }
+                                    
+                                ++index;
                             }
                         }
-                        finally
-                        {
-                            if (gdiplusPen != null) gdiplusPen.Dispose();
-                            if (rwPen != null) rwPen.Dispose();
-                            if (selectPen != null) selectPen.Dispose();
-                        }
+                    }
+                    finally
+                    {
+                        if (gdiplusPen != null) gdiplusPen.Dispose();
+                        if (rwPen != null) rwPen.Dispose();
+                        if (selectPen != null) selectPen.Dispose();							
                     }
                 }
-                finally
-                {
-                }
+               
                 System.Drawing.Drawing2D.Matrix savedMatrix2 = g.Transform;                                                    
                 try
                 {
@@ -9511,7 +9578,8 @@ namespace EGIS.ShapeFileLib
                 if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
                 if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
                 tempPoints = null;
-            }
+				if (arrowPen != null) arrowPen.Dispose();
+			}
         }
         
 
@@ -11243,7 +11311,7 @@ namespace EGIS.ShapeFileLib
 				g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighSpeed;
 				g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
-				PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
+				PaintHighQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
             }
             else
             {
@@ -11264,7 +11332,11 @@ namespace EGIS.ShapeFileLib
 
             Pen selectPen = null;
 
-            IntPtr fileMappingPtr = IntPtr.Zero;
+			Pen arrowPen = null;
+			bool drawArrows = false;
+			int arrowLength = 50;
+
+			IntPtr fileMappingPtr = IntPtr.Zero;
             if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
             byte* dataPtr = null;
@@ -11347,11 +11419,19 @@ namespace EGIS.ShapeFileLib
                     renderPenWidth = Math.Min(renderPenWidth, 7f);
                 }
 
+				if (renderSettings.DrawDirectionArrows && (renderSettings.DirectionArrowMinZoomLevel < 0 || scaleX >= renderSettings.DirectionArrowMinZoomLevel))
+				{
+					int arrowWidth = Math.Max(1, Math.Min(renderSettings.DirectionArrowWidth, 50));
+					arrowPen = new Pen(renderSettings.DirectionArrowColor, arrowWidth);
+					arrowPen.CustomEndCap = new System.Drawing.Drawing2D.AdjustableArrowCap(3, 6);
+					drawArrows = true;
+					arrowLength = Math.Max(renderSettings.DirectionArrowLength, 10);
+				}
 
-                //g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                //g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+				//g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+				//g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
-                int maxPaintCount = 2;
+				int maxPaintCount = 2;
                 if ((renderSettings.LineType == LineType.Solid) || (Math.Round(renderPenWidth) < 3))
                 {
                     maxPaintCount = 1;
@@ -11619,6 +11699,12 @@ namespace EGIS.ShapeFileLib
 														}
 													}
 												}
+
+												if (drawArrows && paintCount == (maxPaintCount - 1))
+												{
+													DrawDirectionArrows(pointList, arrowLength, arrowPen, g);
+												}
+
 											}
                                         }
                                     }                                    
@@ -11710,6 +11796,7 @@ namespace EGIS.ShapeFileLib
             {
                 if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
                 if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
+				if (arrowPen != null) arrowPen.Dispose();
             }
         }
 

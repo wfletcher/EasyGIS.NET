@@ -181,20 +181,20 @@ namespace EGIS.ShapeFileLib
                     
                     if (children[TL].Bounds.Contains(pt))
                     {
-                        children[TL].Insert(recordIndex, helper, shapeFileStream);
+                        children[TL].InsertPointData(recordIndex, ref pt);
                     }
                      if (children[TR].Bounds.Contains(pt))
                     {
-                        children[TR].Insert(recordIndex, helper, shapeFileStream);
-                    }
+                        children[TR].InsertPointData(recordIndex, ref pt);
+					}
                      if (children[BL].Bounds.Contains(pt))
                     {
-                        children[BL].Insert(recordIndex, helper, shapeFileStream);
-                    }
+                        children[BL].InsertPointData(recordIndex, ref pt);
+					}
                      if (children[BR].Bounds.Contains(pt))
                     {
-                        children[BR].Insert(recordIndex, helper, shapeFileStream);
-                    }
+                        children[BR].InsertPointData(recordIndex, ref pt);
+					}
                     //else
                     //{
                     //    throw new InvalidOperationException("point " + pt + " is not contained in children bounds");
@@ -230,12 +230,46 @@ namespace EGIS.ShapeFileLib
                         children[BR].Insert(recordIndex, helper, shapeFileStream);
                     }                    
                 }
-            }
-            
-
+            }            
         }
 
-        internal void Insert(int recordIndex, QTNodeHelper helper, ref RectangleD recBounds, System.IO.Stream shapeFileStream)
+		public void InsertPointData(int recordIndex, ref PointD pt)
+		{
+			if (Level == MaxLevels)
+			{
+				indexList.Add(recordIndex);
+			}
+			else
+			{
+				
+				if (children == null)
+				{
+					CreateChildren();
+				}
+
+				if (children[TL].Bounds.Contains(pt))
+				{
+					children[TL].InsertPointData(recordIndex, ref pt);
+				}
+				if (children[TR].Bounds.Contains(pt))
+				{
+					children[TR].InsertPointData(recordIndex, ref pt);
+				}
+				if (children[BL].Bounds.Contains(pt))
+				{
+					children[BL].InsertPointData(recordIndex, ref pt);
+				}
+				if (children[BR].Bounds.Contains(pt))
+				{
+					children[BR].InsertPointData(recordIndex, ref pt);
+				}								
+			}
+
+
+		}
+
+
+		internal void Insert(int recordIndex, QTNodeHelper helper, ref RectangleD recBounds, System.IO.Stream shapeFileStream)
         {
             if (Level == MaxLevels)
             {

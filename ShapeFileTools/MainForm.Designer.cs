@@ -57,6 +57,7 @@ namespace egis
 			this.lowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.autoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.useNativeFileMappingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.loadShapeFilesInMemoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
 			this.displayShapeAttributesWindowToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.disablePanSelectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -250,6 +251,7 @@ namespace egis
             this.toolStripSeparator8,
             this.renderQualityToolStripMenuItem,
             this.useNativeFileMappingToolStripMenuItem,
+            this.loadShapeFilesInMemoryToolStripMenuItem,
             this.toolStripSeparator9,
             this.displayShapeAttributesWindowToolStripMenuItem,
             this.disablePanSelectToolStripMenuItem,
@@ -307,14 +309,14 @@ namespace egis
 			// highToolStripMenuItem
 			// 
 			this.highToolStripMenuItem.Name = "highToolStripMenuItem";
-			this.highToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.highToolStripMenuItem.Size = new System.Drawing.Size(100, 22);
 			this.highToolStripMenuItem.Text = "High";
 			this.highToolStripMenuItem.Click += new System.EventHandler(this.highToolStripMenuItem_Click);
 			// 
 			// lowToolStripMenuItem
 			// 
 			this.lowToolStripMenuItem.Name = "lowToolStripMenuItem";
-			this.lowToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.lowToolStripMenuItem.Size = new System.Drawing.Size(100, 22);
 			this.lowToolStripMenuItem.Text = "Low";
 			this.lowToolStripMenuItem.Click += new System.EventHandler(this.lowToolStripMenuItem_Click);
 			// 
@@ -323,7 +325,7 @@ namespace egis
 			this.autoToolStripMenuItem.Checked = true;
 			this.autoToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.autoToolStripMenuItem.Name = "autoToolStripMenuItem";
-			this.autoToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.autoToolStripMenuItem.Size = new System.Drawing.Size(100, 22);
 			this.autoToolStripMenuItem.Text = "Auto";
 			this.autoToolStripMenuItem.Click += new System.EventHandler(this.autoToolStripMenuItem_Click);
 			// 
@@ -333,6 +335,13 @@ namespace egis
 			this.useNativeFileMappingToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
 			this.useNativeFileMappingToolStripMenuItem.Text = "Use Native File Mapping";
 			this.useNativeFileMappingToolStripMenuItem.Click += new System.EventHandler(this.useNativeFileMappingToolStripMenuItem_Click);
+			// 
+			// loadShapeFilesInMemoryToolStripMenuItem
+			// 
+			this.loadShapeFilesInMemoryToolStripMenuItem.Name = "loadShapeFilesInMemoryToolStripMenuItem";
+			this.loadShapeFilesInMemoryToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
+			this.loadShapeFilesInMemoryToolStripMenuItem.Text = "Load ShapeFiles in Memory";
+			this.loadShapeFilesInMemoryToolStripMenuItem.Click += new System.EventHandler(this.loadShapeFilesInMemoryToolStripMenuItem_Click);
 			// 
 			// toolStripSeparator9
 			// 
@@ -750,6 +759,9 @@ namespace egis
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.sfMap1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 			this.sfMap1.CentrePoint2D = ((EGIS.ShapeFileLib.PointD)(resources.GetObject("sfMap1.CentrePoint2D")));
+			this.sfMap1.Cursor = System.Windows.Forms.Cursors.Default;
+			this.sfMap1.DefaultMapCursor = System.Windows.Forms.Cursors.Default;
+			this.sfMap1.DefaultSelectionCursor = System.Windows.Forms.Cursors.Hand;
 			this.sfMap1.Location = new System.Drawing.Point(267, 68);
 			this.sfMap1.MapBackColor = System.Drawing.SystemColors.Control;
 			this.sfMap1.MapCoordinateReferenceSystem = null;
@@ -882,6 +894,7 @@ namespace egis
         private System.Windows.Forms.ToolStripMenuItem setCRSToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel tsLblMapCRS;
         private System.Windows.Forms.ToolStripMenuItem setMapCRSFromFirstLayerToolStripMenuItem;
-    }
+		private System.Windows.Forms.ToolStripMenuItem loadShapeFilesInMemoryToolStripMenuItem;
+	}
 }
 

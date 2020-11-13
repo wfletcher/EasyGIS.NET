@@ -253,16 +253,16 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        /// <summary>
-        /// Gets / Sets the Min Zoom level before the layer is rendered.        
-        /// </summary>
-        /// <remarks>Use this property in conjunction with MaxZoomLevel to control whether
-        /// a layer is rendered as a map is zoomed in and out.
-        /// <para>
-        /// This property will be ignored if it is set to a number less than 0</para>
-        /// </remarks>
-        /// <seealso cref="RenderSettings.MaxZoomLevel"/>
-        [Category("Layer Render Settings"), Description("Min zoom level before the layer is rendered. (This property is ignored if less than zero.)")]
+		/// <summary>
+		/// Gets / Sets the Min Zoom level before the layer is rendered.        
+		/// </summary>
+		/// <remarks>Use this property in conjunction with MaxZoomLevel to control whether
+		/// a layer is rendered as a map is zoomed in and out.
+		/// <para>
+		/// This property will be ignored MinZoomLevelif it is set to a number less than 0</para>
+		/// </remarks>
+		/// <seealso cref="RenderSettings.MaxZoomLevel"/>
+		[Category("Layer Render Settings"), Description("Min zoom level before the layer is rendered. (This property is ignored if less than zero.)")]
         public float MinZoomLevel
         {
             get
@@ -447,7 +447,7 @@ namespace EGIS.ShapeFileLib
         /// This property is ignored if its value is set to zero or less.
         /// </para>
         /// </remarks>
-        [Category("Layer Render Settings"), Description("This is the width of the pen in coordinate units (PolyLines only). If using UTM coords this is the width of the lines in metres")]
+        [Category("Layer Render Settings"), Description("Maximum width of lines in pixels (PolyLines only).")]
         public int MaxPixelPenWidth
         {
             get
@@ -460,16 +460,17 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        /// <summary>
-        /// Gets / Sets the Minimum width of the pen in Pixels.
-        /// </summary>
-        /// <remarks>
-        /// This settings is only used when rendering PolyLine or PolyLineM ShapeFiles
-        /// <para>
-        /// This property is ignored if its value is set to zero or less.
-        /// </para>
-        /// </remarks>
-        public int MinPixelPenWidth
+		/// <summary>
+		/// Gets / Sets the Minimum width of the pen in Pixels.
+		/// </summary>
+		/// <remarks>
+		/// This settings is only used when rendering PolyLine or PolyLineM ShapeFiles
+		/// <para>
+		/// This property is ignored if its value is set to zero or less.
+		/// </para>
+		/// </remarks>
+		[Category("Layer Render Settings"), Description("Minimum width of lines in pixels (PolyLines only).")]
+		public int MinPixelPenWidth
         {
             get
             {
@@ -747,7 +748,94 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        private ICustomRenderSettings _customRenderSettings;
+		private bool _drawDirectionArrows = false;
+		private int _directionArrowWidth=2;
+		private int _directionArrowLength = 50;
+		private float _directionArrowMinZoomLevel = -1;
+		private Color _directionArrowColor = Color.LightGray;
+
+		/// <summary>
+		/// Whether to draw direction arrows on polylines. Only applies to PolyLine, PolyLineM and PolylineZ shapefiles. Default value is false
+		/// </summary>
+		[Category("Direction Arrows"), Description("Whether to draw direction arrows to indicate order of points (PolyLines only).")]
+		public bool DrawDirectionArrows
+		{
+			get
+			{
+				return _drawDirectionArrows;
+			}
+			set
+			{
+				_drawDirectionArrows = value;
+			}
+		}
+
+		/// <summary>
+		/// The width of direction arrows if DrawDirectionArrows is true. Only applies to PolyLine, PolyLineM and PolylineZ shapefiles
+		/// </summary>
+		[Category("Direction Arrows"), Description("Width of direction arrows in pixels (PolyLines only).")]
+		public int DirectionArrowWidth
+		{
+			get
+			{
+				return _directionArrowWidth;
+			}
+			set
+			{
+				_directionArrowWidth = Math.Max(1, value);
+			}
+		}
+
+		/// <summary>
+		/// The length of direction arrows if DrawDirectionArrows is true. Only applies to PolyLine, PolyLineM and PolylineZ shapefiles
+		/// </summary>
+		[Category("Direction Arrows"), Description("Length of direction arrows in pixels (PolyLines only).")]
+		public int DirectionArrowLength
+		{
+			get
+			{
+				return _directionArrowLength;
+			}
+			set
+			{
+				_directionArrowLength = Math.Max(1, value);
+			}
+		}
+
+		/// <summary>
+		/// The minimum zoom level before drawing direction arrows if DrawDirectionArrows is true. Only applies to PolyLine, PolyLineM and PolylineZ shapefiles
+		/// </summary>
+		[Category("Direction Arrows"), Description("Minimum zoom level before drawing direction arrows (PolyLines only).")]
+		public float DirectionArrowMinZoomLevel
+		{
+			get
+			{
+				return _directionArrowMinZoomLevel;
+			}
+			set
+			{
+				_directionArrowMinZoomLevel = value;
+			}
+		}
+
+		/// <summary>
+		/// The pen color to use when drawing direction arrows. Only applies to PolyLine, PolyLineM and PolylineZ shapefiles
+		/// </summary>
+		[Category("Direction Arrows"), Description("Direction arrow pen color (PolyLines only).")]
+		public Color DirectionArrowColor
+		{
+			get
+			{
+				return _directionArrowColor;
+			}
+			set
+			{
+				_directionArrowColor = value;
+			}
+		}
+		
+
+		private ICustomRenderSettings _customRenderSettings;
 
         /// <summary>
         /// Gets or sets a ICustomRenderSettings object that should be applied when rendering the shapefile
@@ -911,7 +999,31 @@ namespace EGIS.ShapeFileLib
             writer.WriteString(this.RenderQuality.ToString());
             writer.WriteEndElement();
 
-            writer.WriteEndElement();
+			writer.WriteStartElement("DrawDirectionArrows");
+			writer.WriteString(this.DrawDirectionArrows.ToString());
+			writer.WriteEndElement();
+
+			writer.WriteStartElement("DirectionArrowWidth");
+			writer.WriteString(this.DirectionArrowWidth.ToString(System.Globalization.CultureInfo.InvariantCulture));
+			writer.WriteEndElement();
+
+			writer.WriteStartElement("DirectionArrowLength");
+			writer.WriteString(this.DirectionArrowLength.ToString(System.Globalization.CultureInfo.InvariantCulture));
+			writer.WriteEndElement();
+
+			writer.WriteStartElement("DirectionArrowMinZoomLevel");
+			writer.WriteString(this.DirectionArrowMinZoomLevel.ToString(System.Globalization.CultureInfo.InvariantCulture));
+			writer.WriteEndElement();
+			
+			writer.WriteStartElement("DirectionArrowColor");
+			if (DirectionArrowColor.A < 255)
+			{
+				writer.WriteAttributeString("alpha", DirectionArrowColor.A.ToString(System.Globalization.CultureInfo.InvariantCulture));
+			}
+			writer.WriteString(ColorTranslator.ToHtml(DirectionArrowColor));
+			writer.WriteEndElement();
+
+			writer.WriteEndElement();
 
         }
 
@@ -1138,16 +1250,68 @@ namespace EGIS.ShapeFileLib
                 LineEndCap = (System.Drawing.Drawing2D.LineCap)Enum.Parse(typeof(System.Drawing.Drawing2D.LineCap), nl[0].InnerText, true);
             }
 
-        }
+			nl = element.GetElementsByTagName("DrawDirectionArrows");
+			if (nl != null && nl.Count > 0)
+			{
+				DrawDirectionArrows = bool.Parse(nl[0].InnerText);
+			}
 
-        #endregion
 
-        #region IDisposable Members
+			nl = element.GetElementsByTagName("DirectionArrowWidth");
+			if (nl != null && nl.Count > 0)
+			{
+				this.DirectionArrowWidth = int.Parse(nl[0].InnerText, System.Globalization.CultureInfo.InvariantCulture);
+			}
+			else
+			{
+				this.DirectionArrowWidth = 2;
+			}
 
-        /// <summary>
-        /// Dispose of the RenderSettings
-        /// </summary>
-        public void Dispose()
+			nl = element.GetElementsByTagName("DirectionArrowLength");
+			if (nl != null && nl.Count > 0)
+			{
+				this.DirectionArrowLength = int.Parse(nl[0].InnerText, System.Globalization.CultureInfo.InvariantCulture);
+			}
+			else
+			{
+				this.DirectionArrowLength = 50;
+			}
+
+			nl = element.GetElementsByTagName("DirectionArrowMinZoomLevel");
+			if (nl != null && nl.Count > 0)
+			{
+				this.DirectionArrowMinZoomLevel = int.Parse(nl[0].InnerText, System.Globalization.CultureInfo.InvariantCulture);
+			}
+			else
+			{
+				this.DirectionArrowMinZoomLevel = -1;
+			}
+
+			nl = element.GetElementsByTagName("DirectionArrowColor");
+			if (nl != null && nl.Count > 0)
+			{
+				DirectionArrowColor = ColorTranslator.FromHtml(nl[0].InnerText);
+				if (nl[0].Attributes["alpha"] != null)
+				{
+					int alpha;
+					if (int.TryParse(((XmlElement)nl[0]).GetAttribute("alpha"), out alpha))
+					{
+						DirectionArrowColor = Color.FromArgb(alpha, DirectionArrowColor);
+					}
+				}
+			}
+
+
+		}
+
+		#endregion
+
+		#region IDisposable Members
+
+		/// <summary>
+		/// Dispose of the RenderSettings
+		/// </summary>
+		public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
