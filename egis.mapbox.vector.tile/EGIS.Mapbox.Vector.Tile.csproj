@@ -7,6 +7,11 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>egis.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
+    <Version>1.2.0</Version>
+    <Authors>Winston Fletcher</Authors>
+    <Company>Easy GIS .NET</Company>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <FileVersion>1.2.0.0</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
