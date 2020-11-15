@@ -318,14 +318,28 @@ namespace EGIS.Projections
             }
         }
 
-        /// <summary>
-        /// creates a ICoordinateTransformation object used to transform coordinates
-        /// from source CRS to target CRS
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public ICoordinateTransformation CreateCoordinateTrasformation(ICRS source, ICRS target)
+		/// <summary>
+		/// Creates a ICRS CoordinateReferenceSystem from an ESRI prj file
+		/// </summary>
+		/// <param name="prjFile">path to shapefile .prj file</param>
+		/// <returns></returns>
+		public ICRS CreateCRSFromPrjFile(string prjFile)
+		{
+			using (System.IO.StreamReader reader = new StreamReader(prjFile))
+			{
+				string wkt = reader.ReadToEnd();
+				return CreateCRSFromWKT(wkt);
+			}				
+		}
+
+		/// <summary>
+		/// creates a ICoordinateTransformation object used to transform coordinates
+		/// from source CRS to target CRS
+		/// </summary>
+		/// <param name="source"></param>
+		/// <param name="target"></param>
+		/// <returns></returns>
+		public ICoordinateTransformation CreateCoordinateTrasformation(ICRS source, ICRS target)
         {
             if (source == null || target == null) throw new Exception("source and target ICRS cannot be null");
 

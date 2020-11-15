@@ -158,20 +158,30 @@ namespace egis
         /// </summary>
         /// <param name="path">path to the shapefile to be opened</param>
         public void OpenShapeFile(string path)
-        {           
-            string name = path.Substring(path.LastIndexOf("\\") + 1);
+        {
+			//set the CRS before adding the shapefile
+			if (setMapCRSFromFirstLayerToolStripMenuItem.Checked && sfMap1.ShapeFileCount == 0)
+			{
+				try
+				{
+					ICRS crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromPrjFile(System.IO.Path.ChangeExtension(path, ".prj"));
+					if (crs != null) this.sfMap1.MapCoordinateReferenceSystem = crs;
+				}
+				catch { }
+			}
+			string name = path.Substring(path.LastIndexOf("\\") + 1);
             EGIS.ShapeFileLib.ShapeFile sf = sfMap1.AddShapeFile(path, name, "NAME");
             this.shapeFileRenderPropertyGrid.SelectedObject = sf.RenderSettings;
 
-            if (setMapCRSFromFirstLayerToolStripMenuItem.Checked && sfMap1.ShapeFileCount == 1)
-            {
-                ICRS crs = sf.CoordinateReferenceSystem;
-                if (crs != null)
-                {
-                    this.sfMap1.MapCoordinateReferenceSystem = crs;
-                }
+            //if (setMapCRSFromFirstLayerToolStripMenuItem.Checked && sfMap1.ShapeFileCount == 1)
+            //{
+            //    ICRS crs = sf.CoordinateReferenceSystem;
+            //    if (crs != null)
+            //    {
+            //        this.sfMap1.MapCoordinateReferenceSystem = crs;
+            //    }
 
-            }
+            //}
             
         }
 

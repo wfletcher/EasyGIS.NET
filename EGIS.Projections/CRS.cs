@@ -177,6 +177,6 @@ namespace EGIS.Projections
 
         ICoordinateTransformation CreateCoordinateTrasformation(string sourceWKT, string targetWKT);
 
-
-    }
+		ICRS CreateCRSFromPrjFile(string prjFile);
+	}
 }
