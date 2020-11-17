@@ -10330,10 +10330,18 @@ namespace EGIS.ShapeFileLib
         {
             if (this.UseGDI(extent, renderSettings))
             {
-                paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighSpeed;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;// ClearTypeGridFit;              
+
+                paintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
+
+                //paintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
             }
             else
             {
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;// ClearTypeGridFit;              
+
                 paintHiQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
             }
         }
@@ -10406,9 +10414,7 @@ namespace EGIS.ShapeFileLib
             if (renderSettings != null) renderInterior = renderSettings.FillInterior;
             List<PartBoundsIndex> partBoundsIndexList = new List<PartBoundsIndex>(256);
 
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;// ClearTypeGridFit;              
-
+           
             try
             {
                 // setup our pen and brush                
@@ -10531,21 +10537,31 @@ namespace EGIS.ShapeFileLib
                                         ++usedPoints;
                                     }
 
-                                    if (labelfields)
+
+                                    pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
+
+                                    if (pts.Length == 3 && pts[0].X == pts[1].X && pts[0].Y == pts[1].Y && pts[0].X == pts[2].X && pts[0].Y == pts[2].Y)
                                     {
-                                        //pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
-                                        pts = GetPointsD((byte*)simplifiedDataPtr,0, usedPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
-                                        if (partBounds.Width > 5 && partBounds.Height > 5)
+                                        //ensure the polygon ponts are not all identical or GDI+ throws an outof memory exception
+                                        //if the pen dashstyle is not solid. Also makes tiny polygons visible when zoomed out
+                                        pts[1].Y = pts[1].Y + 1;
+                                        //continue;
+                                    }
+
+                                    if (partBounds.IntersectsWith(new Rectangle(0, 0, clientArea.Width, clientArea.Height)))
+                                    {
+                                        gp.AddPolygon(pts);
+
+                                        if (labelfields)
                                         {
-                                            partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
+                                            if (partBounds.Width > 5 && partBounds.Height > 5)
+                                            {
+                                                partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
+                                            }
                                         }
+
                                     }
-                                    else
-                                    {
-                                        //pts = GetPointsD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, MercProj);
-                                        pts = GetPointsD((byte*)simplifiedDataPtr,0, usedPoints, offX, offY, scaleX, scaleY, MercProj);
-                                    }
-                                    gp.AddPolygon(pts);
+                                   
                                 }
                                 if (recordSelected[index])
                                 {
