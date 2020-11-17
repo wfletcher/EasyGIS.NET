@@ -3739,7 +3739,13 @@ namespace EGIS.ShapeFileLib
 
                                     pts = GetPointsD((byte*)simplifiedDataPtr, 0, usedPoints, offX, offY, scaleX, scaleY, ref partBounds, MercProj);
 
-                                    
+                                    if (pts.Length == 3 && pts[0].X == pts[1].X && pts[0].Y == pts[1].Y && pts[0].X == pts[2].X && pts[0].Y == pts[2].Y)
+                                    {
+                                        //ensure the polygon ponts are not all identical or GDI+ throws an outof memory exception
+                                        //if the pen dashstyle is not solid. Also makes tiny polygons visible when zoomed out
+                                        pts[1].Y = pts[1].Y + 1;
+                                        //continue;
+                                    }
                                     
                                     if (partBounds.IntersectsWith(new Rectangle(0, 0, clientArea.Width, clientArea.Height)))
                                     {
