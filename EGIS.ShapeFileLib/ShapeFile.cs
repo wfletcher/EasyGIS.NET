@@ -625,7 +625,7 @@ namespace EGIS.ShapeFileLib
                     RectangleD r = intersectingExtent.Transform(wgs84Crs, this.CoordinateReferenceSystem);
                 }
 
-                extent.Transform(coordinateTransformation );
+                //extent.Transform(coordinateTransformation );
                 RectangleD shapeFileExtent = coordinateTransformation.Transform(extent, TransformDirection.Inverse);
                 if (shapeFileExtent.IsValidExtent() && this.Extent.IsValidExtent())
                 {
@@ -3582,6 +3582,9 @@ namespace EGIS.ShapeFileLib
                 //when the coordinateTransformation has been supplied the extent will already contain
                 //the actual intersecting extent in the shapefile CRS
                 testExtent = extent;
+                //set simplificationDistance to zero if we're using a trnasformation - we'll calculate it 
+                //when we render the first record
+                simplificationDistance = 0;
             }
 
 
@@ -3636,8 +3639,7 @@ namespace EGIS.ShapeFileLib
                 fixed (byte* dataBufPtr = data)
                 {
                     if (!fileMapped) dataPtr = dataBufPtr;
-
-                    int partPaintCount = 0;
+                    
                     while (index < pgRecs.Length)
                     {
 
@@ -3662,7 +3664,7 @@ namespace EGIS.ShapeFileLib
                         if (useCustomRenderSettings) renderShape = customRenderSettings.RenderShape(index);
                         RectangleD recordBounds = nextRec->bounds.ToRectangleD();
                         BoundsTestResult boundsTestResult = BoundsTestResult.Undetermined;// TestBoundsIntersect(recordBounds, testExtent);//, coordinateTransformation);
-                        if (coordinateTransformation == null && !recordBounds.IntersectsWith(testExtent)) boundsTestResult = BoundsTestResult.NoIntersection;
+                        if (!recordBounds.IntersectsWith(testExtent)) boundsTestResult = BoundsTestResult.NoIntersection;
                         if (nextRec->ShapeType != ShapeType.NullShape &&
                             boundsTestResult != BoundsTestResult.NoIntersection && renderShape)
                         {
@@ -3679,8 +3681,6 @@ namespace EGIS.ShapeFileLib
 
                             fixed (double* simplifiedDataPtr = simplifiedDataBuffer)
                             {
-
-
                                 if (useCustomRenderSettings)
                                 {
                                     Color customColor = customRenderSettings.GetRecordOutlineColor(index);
@@ -3741,22 +3741,40 @@ namespace EGIS.ShapeFileLib
 
                                     if (pts.Length == 3 && pts[0].X == pts[1].X && pts[0].Y == pts[1].Y && pts[0].X == pts[2].X && pts[0].Y == pts[2].Y)
                                     {
-                                        //ensure the polygon ponts are not all identical or GDI+ throws an outof memory exception
+                                        //ensure the polygon ponts are not all identical or GDI+ throws an OutOfMemory exception
                                         //if the pen dashstyle is not solid. Also makes tiny polygons visible when zoomed out
-                                        pts[1].Y = pts[1].Y + 1;
-                                        //continue;
+                                        pts[1].Y = pts[1].Y + 1;                                        
                                     }
                                     
-                                    if (partBounds.IntersectsWith(new Rectangle(0, 0, clientArea.Width, clientArea.Height)))
-                                    {
-                                        ++partPaintCount;
-                                        gp.AddPolygon(pts);
 
-                                        if (labelfields)
+
+                                    if (partBounds.IntersectsWith(new Rectangle(0, 0, clientArea.Width, clientArea.Height)))
+                                    {                                       
+                                        if (partBounds.Left < -1000 || partBounds.Top < -1000 || partBounds.Right > clientArea.Width + 1000 || partBounds.Bottom > clientArea.Height + 1000)
                                         {
-                                            if (partBounds.Width > 5 && partBounds.Height > 5)
+                                            //clip the polygon to avoid overflow
+                                            GeometryAlgorithms.ClipBounds clipBounds = new GeometryAlgorithms.ClipBounds()
                                             {
-                                                partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
+                                                XMin = 0,
+                                                YMin = 0,
+                                                XMax = clientArea.Width,
+                                                YMax = clientArea.Height
+                                            };
+                                            List<Point> clippedPoints = new List<Point>();
+                                            GeometryAlgorithms.PolygonClip(pts, pts.Length, clipBounds, clippedPoints);                                            
+                                            pts = clippedPoints.ToArray();
+                                        }
+
+                                        if (pts.Length > 0)
+                                        {
+                                            gp.AddPolygon(pts);
+
+                                            if (labelfields)
+                                            {
+                                                if (partBounds.Width > 5 && partBounds.Height > 5)
+                                                {
+                                                    partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
+                                                }
                                             }
                                         }
 
@@ -7973,6 +7991,9 @@ namespace EGIS.ShapeFileLib
                     //when the coordinateTransformation has been supplied the extent will already contain
                     //the actual intersecting extent in the shapefile CRS
                     actualExtent = extent;
+                    //set simplificationDistance to zero if we're using a trnasformation - we'll calculate it 
+                    //when we render the first record
+                    simplificationDistance = 0;
                 }
 
 
@@ -8113,12 +8134,17 @@ namespace EGIS.ShapeFileLib
                                     bool renderShape = recordVisible[index];
                                     //overwrite if using CustomRenderSettings
                                     if (useCustomRenderSettings) renderShape = customRenderSettings.RenderShape(index);
-                                    if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && renderShape)
+                                    RectangleD recordBounds = nextRec->bounds.ToRectangleD();
+                                    if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(recordBounds) && renderShape)
                                     {
                                         //check if the simplifiedDataBuffer sized needs to be increased
                                         if ((nextRec->NumPoints << 1) > simplifiedDataBuffer.Length)
                                         {
                                             simplifiedDataBuffer = new double[nextRec->NumPoints << 1];
+                                        }
+                                        if (simplificationDistance <= double.Epsilon)
+                                        {
+                                            simplificationDistance = CalculateSimplificationDistance(recordBounds, scaleX, coordinateTransformation);
                                         }
 
                                         fixed (double* simplifiedDataPtr = simplifiedDataBuffer)
@@ -9180,6 +9206,9 @@ namespace EGIS.ShapeFileLib
                     //when the coordinateTransformation has been supplied the extent will already contain
                     //the actual intersecting extent in the shapefile CRS
                     actualExtent = extent;
+                    //set simplificationDistance to zero if we're using a trnasformation - we'll calculate it 
+                    //when we render the first record
+                    simplificationDistance = 0;
                 }
 
 
@@ -9316,13 +9345,17 @@ namespace EGIS.ShapeFileLib
                                 bool renderShape = recordVisible[index];
                                 //overwrite if using CustomRenderSettings
                                 if (useCustomRenderSettings) renderShape = customRenderSettings.RenderShape(index);
-
-                                if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && renderShape)
+                                RectangleD recordBounds = nextRec->bounds.ToRectangleD();
+                                if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(recordBounds) && renderShape)
                                 {
                                     //check if the simplifiedDataBuffer sized needs to be increased
                                     if ((nextRec->NumPoints << 1) > simplifiedDataBuffer.Length)
                                     {
                                         simplifiedDataBuffer = new double[nextRec->NumPoints << 1];
+                                    }
+                                    if (simplificationDistance <= double.Epsilon)
+                                    {
+                                        simplificationDistance = CalculateSimplificationDistance(recordBounds, scaleX, coordinateTransformation);
                                     }
 
                                     fixed (double* simplifiedDataPtr = simplifiedDataBuffer)
@@ -10367,13 +10400,6 @@ namespace EGIS.ShapeFileLib
             }
             bool fileMapped = (mapView != IntPtr.Zero);
 
-            //double scaleX = (clientArea.Width / extent.Width);
-            //double scaleY = -scaleX;
-            //RectangleD projectedExtent = new RectangleD(extent.Left, extent.Top, clientArea.Width / scaleX, clientArea.Height / (-scaleY));
-            //double offX = -projectedExtent.Left;
-            //double offY = -projectedExtent.Bottom;
-            //RectangleD actualExtent = projectedExtent;
-
             double scaleX = (double)(clientArea.Width / extent.Width);
             double scaleY = -scaleX;
             simplificationDistance = 1 / scaleX;
@@ -10393,6 +10419,10 @@ namespace EGIS.ShapeFileLib
                 //when the coordinateTransformation has been supplied the extent will already contain
                 //the actual intersecting extent in the shapefile CRS
                 actualExtent = extent;
+
+                // set simplificationDistance to zero if we're using a trnasformation - we'll calculate it
+                // when we render the first record
+                simplificationDistance = 0;
             }
 
             ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
@@ -10470,13 +10500,18 @@ namespace EGIS.ShapeFileLib
                         bool renderShape = recordVisible[index];
                         //overwrite if using CustomRenderSettings
                         if (useCustomRenderSettings) renderShape = customRenderSettings.RenderShape(index);
+                        RectangleD recordBounds = nextRec->bounds.ToRectangleD();
 
-                        if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && renderShape)
+                        if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(recordBounds) && renderShape)
                         {
                             //check if the simplifiedDataBuffer sized needs to be increased
                             if ((nextRec->NumPoints << 1) > simplifiedDataBuffer.Length)
                             {
                                 simplifiedDataBuffer = new double[nextRec->NumPoints << 1];
+                            }
+                            if (simplificationDistance <= double.Epsilon)
+                            {
+                                simplificationDistance = CalculateSimplificationDistance(recordBounds, scaleX, coordinateTransformation);
                             }
                             fixed (double* simplifiedDataPtr = simplifiedDataBuffer)
                             {
@@ -10542,21 +10577,38 @@ namespace EGIS.ShapeFileLib
 
                                     if (pts.Length == 3 && pts[0].X == pts[1].X && pts[0].Y == pts[1].Y && pts[0].X == pts[2].X && pts[0].Y == pts[2].Y)
                                     {
-                                        //ensure the polygon ponts are not all identical or GDI+ throws an outof memory exception
+                                        //ensure the polygon points are not all identical or GDI+ throws an OutOfMemoryException
                                         //if the pen dashstyle is not solid. Also makes tiny polygons visible when zoomed out
-                                        pts[1].Y = pts[1].Y + 1;
-                                        //continue;
+                                        pts[1].Y = pts[1].Y + 1;                                        
                                     }
 
                                     if (partBounds.IntersectsWith(new Rectangle(0, 0, clientArea.Width, clientArea.Height)))
                                     {
-                                        gp.AddPolygon(pts);
-
-                                        if (labelfields)
+                                        if (partBounds.Left < -1000 || partBounds.Top < -1000 || partBounds.Right > clientArea.Width + 1000 || partBounds.Bottom > clientArea.Height + 1000)
                                         {
-                                            if (partBounds.Width > 5 && partBounds.Height > 5)
+                                            //clip the polygon to avoid overflow
+                                            GeometryAlgorithms.ClipBounds clipBounds = new GeometryAlgorithms.ClipBounds()
                                             {
-                                                partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
+                                                XMin = 0,
+                                                YMin = 0,
+                                                XMax = clientArea.Width,
+                                                YMax = clientArea.Height
+                                            };
+                                            List<Point> clippedPoints = new List<Point>();
+                                            GeometryAlgorithms.PolygonClip(pts, pts.Length, clipBounds, clippedPoints);
+                                            pts = clippedPoints.ToArray();
+                                        }
+
+                                        if (pts.Length > 0)
+                                        {
+                                            gp.AddPolygon(pts);
+
+                                            if (labelfields)
+                                            {
+                                                if (partBounds.Width > 5 && partBounds.Height > 5)
+                                                {
+                                                    partBoundsIndexList.Add(new PartBoundsIndex(index, partBounds));
+                                                }
                                             }
                                         }
 
@@ -11405,6 +11457,9 @@ namespace EGIS.ShapeFileLib
                     //when the coordinateTransformation has been supplied the extent will already contain
                     //the actual intersecting extent in the shapefile CRS
                     actualExtent = extent;
+                    //set simplificationDistance to zero if we're using a trnasformation - we'll calculate it 
+                    //when we render the first record
+                    simplificationDistance = 0;
                 }
 
                 bool MercProj = projectionType == ProjectionType.Mercator;
@@ -11545,13 +11600,19 @@ namespace EGIS.ShapeFileLib
                                     bool renderShape = recordVisible[index];
                                     //overwrite if using CustomRenderSettings
                                     if (useCustomRenderSettings) renderShape = customRenderSettings.RenderShape(index);
-                                    if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(nextRec->bounds.ToRectangleD()) && renderShape)
+                                    RectangleD recordBounds = nextRec->bounds.ToRectangleD();
+                                    if (nextRec->ShapeType != ShapeType.NullShape && actualExtent.IntersectsWith(recordBounds) && renderShape)
                                     {
                                         //check if the simplifiedDataBuffer size needs to be increased
                                         if ((nextRec->NumPoints << 1) > simplifiedDataBuffer.Length)
                                         {
                                             simplifiedDataBuffer = new double[nextRec->NumPoints << 1];
                                         }
+                                        if (simplificationDistance <= double.Epsilon)
+                                        {
+                                            simplificationDistance = CalculateSimplificationDistance(recordBounds, scaleX, coordinateTransformation);
+                                        }
+
 
                                         fixed (double* simplifiedDataPtr = simplifiedDataBuffer)
                                         {
