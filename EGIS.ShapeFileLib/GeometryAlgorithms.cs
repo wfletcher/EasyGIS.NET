@@ -1376,118 +1376,23 @@ namespace EGIS.ShapeFileLib
         /// <param name="inputPolygon">Array of System.Drawing.Point points</param>
         /// <param name="inputCount">point count</param>
         /// <param name="clipBounds">clipping bounds</param>
-        /// <param name="clippedPolygon">output list of clipped points</param>
+        /// <param name="clippedPolygon">output list of clipped points</param>        
         public static void PolygonClip(System.Drawing.Point[] inputPolygon, int inputCount, ClipBounds clipBounds, List<System.Drawing.Point> clippedPolygon)
         {
-            List<System.Drawing.Point> inputList = new List<System.Drawing.Point>(inputCount);
-            List<System.Drawing.Point> outputList = clippedPolygon;
-            bool previousInside;
+            PointD[] inputList = new PointD[inputCount];
+            List<PointD> outputList = new List<PointD>();
             for (int n = 0; n < inputCount; ++n)
             {
-                inputList.Add(new System.Drawing.Point(inputPolygon[n].X, inputPolygon[n].Y));
+                inputList[n].X = inputPolygon[n].X;
+                inputList[n].Y = inputPolygon[n].Y;
             }
-
-            bool inputPolygonIsHole = IsPolygonHole(inputList, inputCount);
-
-
-            //test left
-            previousInside = inputList[inputList.Count - 1].X >= clipBounds.XMin;
-            outputList.Clear();
-            for (int n = 0; n < inputList.Count; ++n)
+            PolygonClip(inputList, inputCount, clipBounds, outputList);
+            clippedPolygon.Clear();
+            for (int n = 0; n < outputList.Count; ++n)
             {
-                System.Drawing.Point currentPoint = inputList[n];
-                bool currentInside = currentPoint.X >= clipBounds.XMin;
-                if (currentInside != previousInside)
-                {
-                    //add intersection
-                    System.Drawing.Point prevPoint = n == 0 ? inputList[inputList.Count - 1] : inputList[n - 1];
-                    double x = clipBounds.XMin;
-                    double y = prevPoint.Y + (double)(currentPoint.Y - prevPoint.Y) * (x - prevPoint.X) / (double)(currentPoint.X - prevPoint.X);
-                    outputList.Add(new System.Drawing.Point((int)Math.Round(x), (int)Math.Round(y)));
-                }
-                if (currentInside)
-                {
-                    outputList.Add(currentPoint );
-                }
-                previousInside = currentInside;
+                clippedPolygon.Add(new System.Drawing.Point((int)Math.Round(outputList[n].X), (int)Math.Round(outputList[n].Y)));
             }
-            if (outputList.Count == 0) return;
-
-            //test top
-            inputList = outputList.ToList();
-            previousInside = inputList[inputList.Count - 1].Y <= clipBounds.YMax; ;
-            outputList.Clear();
-            for (int n = 0; n < inputList.Count; ++n)
-            {
-                System.Drawing.Point currentPoint = inputList[n];
-                bool currentInside = currentPoint.Y <= clipBounds.YMax;
-                if (currentInside != previousInside)
-                {
-                    //add intersection
-                    System.Drawing.Point prevPoint = n == 0 ? inputList[inputList.Count - 1] : inputList[n - 1];
-                    double y = clipBounds.YMax;
-                    double x = prevPoint.X + (double)(currentPoint.X - prevPoint.X) * (y - prevPoint.Y) / (double)(currentPoint.Y - prevPoint.Y);
-                    outputList.Add(new System.Drawing.Point((int)Math.Round(x), (int)Math.Round(y)));
-                }
-                if (currentInside)
-                {
-                    outputList.Add(currentPoint);
-                }
-                previousInside = currentInside;
-            }
-            if (outputList.Count == 0) return;
-
-            //test right
-            inputList = outputList.ToList();
-            previousInside = inputList[inputList.Count - 1].X <= clipBounds.XMax;
-            outputList.Clear();
-            for (int n = 0; n < inputList.Count; ++n)
-            {
-                System.Drawing.Point currentPoint = inputList[n];
-                bool currentInside = currentPoint.X <= clipBounds.XMax;
-                if (currentInside != previousInside)
-                {
-                    //add intersection
-                    System.Drawing.Point prevPoint = n == 0 ? inputList[inputList.Count - 1] : inputList[n - 1];
-                    double x = clipBounds.XMax;
-                    double y = prevPoint.Y + (double)(currentPoint.Y - prevPoint.Y) * (x - prevPoint.X) / (double)(currentPoint.X - prevPoint.X);
-                    outputList.Add(new System.Drawing.Point((int)Math.Round(x), (int)Math.Round(y)));
-                }
-                if (currentInside)
-                {
-                    outputList.Add(currentPoint);
-                }
-                previousInside = currentInside;
-            }
-            if (outputList.Count == 0) return;
-
-            //test bottom
-            inputList = outputList.ToList();
-            previousInside = inputList[inputList.Count - 1].Y >= clipBounds.YMin;
-            outputList.Clear();
-            for (int n = 0; n < inputList.Count; ++n)
-            {
-                System.Drawing.Point currentPoint = inputList[n];
-                bool currentInside = currentPoint.Y >= clipBounds.YMin;
-                if (currentInside != previousInside)
-                {
-                    //add intersection
-                    System.Drawing.Point prevPoint = n == 0 ? inputList[inputList.Count - 1] : inputList[n - 1];
-                    double y = clipBounds.YMin;
-                    double x = prevPoint.X + (double)(currentPoint.X - prevPoint.X) * (y - prevPoint.Y) / (double)(currentPoint.Y - prevPoint.Y);
-                    outputList.Add(new System.Drawing.Point((int)Math.Round(x), (int)Math.Round(y)));
-                }
-                if (currentInside)
-                {
-                    outputList.Add(currentPoint);
-                }
-                previousInside = currentInside;
-            }
-            if (outputList.Count == 0) return;
-
-            bool clippedPolygonIsHole = IsPolygonHole(outputList, outputList.Count);
-            if (clippedPolygonIsHole != inputPolygonIsHole) outputList.Reverse();
-            //clippedPolygon
+           
         }
 
 

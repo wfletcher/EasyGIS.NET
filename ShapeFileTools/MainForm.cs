@@ -923,8 +923,7 @@ namespace egis
 
         private bool IsMapFitForMercator()
         {
-            RectangleD ext = sfMap1.Extent;
-            return (ext.Top <= 90 && ext.Bottom >= -90);
+            return (sfMap1.MapCoordinateReferenceSystem as IGeographicCRS) != null;
         }
 
 

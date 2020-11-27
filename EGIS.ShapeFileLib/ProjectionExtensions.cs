@@ -11,15 +11,7 @@ namespace EGIS.ShapeFileLib
     {
         public static RectangleD Transform(this RectangleD @this, ICoordinateTransformation transformation)
         {
-            double[] pts = new double[8];
-            pts[0] = @this.Left; pts[1] = @this.Bottom;
-            pts[2] = @this.Right; pts[3] = @this.Bottom;
-            pts[4] = @this.Right; pts[5] = @this.Top;
-            pts[6] = @this.Left; pts[7] = @this.Top;
-            transformation.Transform(pts, 4);
-            return RectangleD.FromLTRB(Math.Min(pts[0], pts[6]),
-                Math.Min(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
-                Math.Max(pts[1], pts[3]));
+            return transformation.Transform(@this);
         }
 
         public static RectangleD Transform(this RectangleD @this, ICRS source, ICRS target)
@@ -27,16 +19,7 @@ namespace EGIS.ShapeFileLib
             if (source == null || target == null || source.IsEquivalent(target)) return @this;
             using (ICoordinateTransformation transformation = CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(source, target))
             {
-                double[] pts = new double[8];
-                pts[0] = @this.Left; pts[1] = @this.Bottom;
-                pts[2] = @this.Right; pts[3] = @this.Bottom;
-                pts[4] = @this.Right; pts[5] = @this.Top;
-                pts[6] = @this.Left; pts[7] = @this.Top;                
-                transformation.Transform(pts, 4);
-                
-                return RectangleD.FromLTRB(Math.Min(pts[0], pts[6]),
-                    Math.Min(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
-                    Math.Max(pts[1], pts[3]));
+                return @this.Transform(transformation);
             }
         }
 
@@ -53,15 +36,50 @@ namespace EGIS.ShapeFileLib
 
         public static RectangleD Transform(this EGIS.Projections.ICoordinateTransformation @this, RectangleD rect, Projections.TransformDirection direction = Projections.TransformDirection.Forward)
         {
-            double[] pts = new double[8];
-            pts[0] = rect.Left; pts[1] = rect.Bottom;
-            pts[2] = rect.Right; pts[3] = rect.Bottom;
-            pts[4] = rect.Right; pts[5] = rect.Top;
-            pts[6] = rect.Left; pts[7] = rect.Top;
-            @this.Transform(pts, 4, direction);
-            return RectangleD.FromLTRB(Math.Min(pts[0], pts[6]),
-                Math.Min(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
-                Math.Max(pts[1], pts[3]));
+            //following code was derived from code in QGIS TransformBoundingBox function in QgsCoordinateTransform
+            //improves calculated bounding box after transforming to a different CRS when
+            //only using the corners of the rectangle will not give an accurate result when transforming to some CRS.
+            //This method creates a grid of points over the input rectangle,
+            //transforms these points and then calculates the target bounding box from these points.
+
+            const int nPoints = 1000;
+            double t = Math.Pow(Math.Sqrt((double)nPoints) - 1, 2.0);
+            double d = Math.Sqrt((rect.Width * rect.Height) / Math.Pow(Math.Sqrt((double)nPoints) - 1, 2.0));
+            int nXPoints = (int)Math.Min(Math.Ceiling(rect.Width / d) + 1, 1000);
+            int nYPoints = (int)Math.Min(Math.Ceiling(rect.Height / d) + 1, 1000);
+
+            int totalPoints = (nXPoints * nYPoints);
+
+            PointD[] pts = new PointD[totalPoints];
+
+            double dx = rect.Width / (double)(nXPoints - 1);
+            double dy = rect.Height / (double)(nYPoints - 1);
+
+            double pointY = rect.Top;
+            int index = 0;
+            for (int i = nYPoints; i > 0; --i)
+            {
+                double pointX = rect.Left;
+                for (int j = nXPoints; j > 0; --j)
+                {
+                    pts[index].X = pointX;
+                    pts[index++].Y = pointY;
+                    pointX += dx;
+                }
+                pointY += dy;
+            }
+            @this.Transform(pts, direction);
+            double minX = double.PositiveInfinity, maxX = double.NegativeInfinity, minY = double.PositiveInfinity, maxY = double.NegativeInfinity;
+
+            for (int n = totalPoints - 1; n >= 0; --n)
+            {
+                if (double.IsInfinity(pts[n].X) || double.IsInfinity(pts[n].Y)) continue;
+                minX = Math.Min(pts[n].X, minX);
+                minY = Math.Min(pts[n].Y, minY);
+                maxX = Math.Max(pts[n].X, maxX);
+                maxY = Math.Max(pts[n].Y, maxY);
+            }
+            return RectangleD.FromLTRB(minX, minY, maxX, maxY);
         }
 
         public static unsafe PointD Transform(this EGIS.Projections.ICoordinateTransformation @this, PointD pt, Projections.TransformDirection direction = Projections.TransformDirection.Forward)
@@ -79,5 +97,6 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+       
     }
 }
