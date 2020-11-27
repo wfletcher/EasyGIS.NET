@@ -209,8 +209,9 @@ namespace EGIS.Web.Controls
             VectorTileLayer tileLayer = new VectorTileLayer();
             tileLayer.Extent = (uint)tileSize;
             tileLayer.Version = 2;
+			tileLayer.Name = !string.IsNullOrEmpty(shapeFile.Name) ? shapeFile.Name : System.IO.Path.GetFileNameWithoutExtension(shapeFile.FilePath);
 
-            if (indicies.Count > 0)
+			if (indicies.Count > 0)
             {
 
                 foreach (int index in indicies)
