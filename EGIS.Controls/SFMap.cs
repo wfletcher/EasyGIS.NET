@@ -1099,7 +1099,7 @@ namespace EGIS.Controls
 		/// After the shapefile is added to the map, the map will auto fit the entire ShapeFile in the control by adjusting the 
 		/// current ZomLevel and CentrePoint accordingly.
 		/// </remarks>
-		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName, bool useMemoryStreams=false, bool fitMapToLayerExtent=true)
+		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName, bool useMemoryStreams=false, bool fitMapToLayerExtent=true, bool refreshImmediately=true)
         {            
             EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(path, name, labelFieldName, useMemoryStreams);
 
@@ -1111,7 +1111,14 @@ namespace EGIS.Controls
 			else
 			{
 				//refresh so the layer is drawn
-				Refresh(true);
+				if (refreshImmediately)
+				{
+					Refresh(true);
+				}
+				else
+				{
+					InvalidateAndClearBackground();
+				}
 			}
 			OnShapeFilesChanged();            
             return sf;
@@ -1128,7 +1135,7 @@ namespace EGIS.Controls
 		/// <param name="labelFieldName">The name of the field in the ShapeFiles's DBF file to use when rendering the shape labels</param>
 		/// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
 		/// <returns>Returns the created ShapeFile which was added to the SFMap</returns>
-		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string labelFieldName, bool fitMapToLayerExtent = true)
+		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string labelFieldName, bool fitMapToLayerExtent = true, bool refreshImmediately = true)
 		{
 			EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(shxStream, shpStream, dbfStream, prjStream, name, labelFieldName);
 
@@ -1139,8 +1146,15 @@ namespace EGIS.Controls
 			}
 			else
 			{
-				//refrresh so the layer is drawn
-				Refresh(true);
+				//refresh so the layer is drawn
+				if (refreshImmediately)
+				{
+					Refresh(true);
+				}
+				else
+				{
+					InvalidateAndClearBackground();
+				}
 			}
 			OnShapeFilesChanged();
             return sf;
@@ -1152,7 +1166,7 @@ namespace EGIS.Controls
 		/// <param name="shapeFile">ShapeFile object to add to the map</param>
 		/// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
 		/// <returns>Returns the shapeFile which was added to the SFMap</returns>
-		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(EGIS.ShapeFileLib.ShapeFile shapeFile, bool fitMapToLayerExtent = true)
+		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(EGIS.ShapeFileLib.ShapeFile shapeFile, bool fitMapToLayerExtent = true, bool refreshImmediately = true)
 		{
 			myShapefiles.Add(shapeFile);
 
@@ -1164,7 +1178,14 @@ namespace EGIS.Controls
 			else
 			{
 				//refresh so the layer is drawn
-				Refresh(true);
+				if (refreshImmediately)
+				{
+					Refresh(true);
+				}
+				else
+				{
+					InvalidateAndClearBackground();
+				}
 			}
 			OnShapeFilesChanged();
 			return shapeFile;
