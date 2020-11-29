@@ -343,9 +343,9 @@ namespace EGIS.ShapeFileLib
         {
             if (append)
             {
-                shapeStream = new FileStream(BaseDirectory + "\\" + FileName + ".shp", FileMode.Open, FileAccess.ReadWrite);
-                indexStream = new FileStream(BaseDirectory + "\\" + FileName + ".shx", FileMode.Open, FileAccess.ReadWrite);
-                dbfStream = new FileStream(BaseDirectory + "\\" + FileName + ".dbf", FileMode.Open, FileAccess.ReadWrite);
+                shapeStream = new FileStream(BaseDirectory + Path.DirectorySeparatorChar + FileName + ".shp", FileMode.Open, FileAccess.ReadWrite);
+                indexStream = new FileStream(BaseDirectory + Path.DirectorySeparatorChar + FileName + ".shx", FileMode.Open, FileAccess.ReadWrite);
+                dbfStream = new FileStream(BaseDirectory + Path.DirectorySeparatorChar + FileName + ".dbf", FileMode.Open, FileAccess.ReadWrite);
 				//if we're appending we don't change the prj file
 				prjStream = null;
 
@@ -375,13 +375,13 @@ namespace EGIS.ShapeFileLib
             }
             else
             {
-                shapeStream = new FileStream(BaseDirectory + "\\" + FileName + ".shp", FileMode.Create);
-                indexStream = new FileStream(BaseDirectory + "\\" + FileName + ".shx", FileMode.Create);
-                dbfStream = new FileStream(BaseDirectory + "\\" + FileName + ".dbf", FileMode.Create);
-				prjStream = new FileStream(BaseDirectory + "\\" + FileName + ".prj", FileMode.Create);
+                shapeStream = new FileStream(BaseDirectory + Path.DirectorySeparatorChar + FileName + ".shp", FileMode.Create);
+                indexStream = new FileStream(BaseDirectory + Path.DirectorySeparatorChar + FileName + ".shx", FileMode.Create);
+                dbfStream = new FileStream(BaseDirectory + Path.DirectorySeparatorChar + FileName + ".dbf", FileMode.Create);
+				prjStream = new FileStream(BaseDirectory + Path.DirectorySeparatorChar + FileName + ".prj", FileMode.Create);
 
 				//write the code page file
-				string cpgFilePath = BaseDirectory + "\\" + FileName + ".cpg";
+				string cpgFilePath = BaseDirectory + Path.DirectorySeparatorChar + FileName + ".cpg";
                 using (System.IO.StreamWriter sw = new System.IO.StreamWriter(cpgFilePath, false, System.Text.Encoding.ASCII))
                 {
                     sw.Write("utf-8");
