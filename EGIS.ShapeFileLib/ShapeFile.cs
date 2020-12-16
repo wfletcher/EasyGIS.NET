@@ -991,10 +991,7 @@ namespace EGIS.ShapeFileLib
            
             if (double.IsInfinity(this.mainHeader.Xmax) || double.IsInfinity(this.mainHeader.Ymax))
             {
-                //FixHeaderRecordBounds();
-
-                
-
+                FixHeaderRecordBounds();                
             }
             
                         
@@ -3390,11 +3387,39 @@ namespace EGIS.ShapeFileLib
 		}
 
 
-		#endregion
+        /// <summary>
+        /// removes any points that have infinite x or y coordinates
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="offset"></param>
+        /// <param name="numPoints"></param>
+        /// <returns></returns>
+        protected static unsafe int RemoveInfinitePoints(byte[] data, int offset, int numPoints)
+        {                     
+            byte[] tempData = new byte[numPoints * 16];
+            int usedPoints = 0;
+            fixed (byte* ptr = data)
+            fixed (byte* tempPtr = tempData)
+            {
+                PointD* srcPoints = (PointD*)(ptr + offset);
+                PointD* destPoints = (PointD*)tempPtr;
+                for (int n = 0; n < numPoints; ++n)
+                {
+                    if (double.IsInfinity(srcPoints[n].X) || double.IsInfinity(srcPoints[n].Y)) continue;
+                    destPoints[usedPoints++] = srcPoints[n];
+                }
+            }
+            Array.Copy(tempData, 0, data, offset, usedPoints * 16);
+            return usedPoints;                    
+        }
 
-	}
 
-	internal struct IndexAnglePair
+
+        #endregion
+
+    }
+
+    internal struct IndexAnglePair
     {
         public float Angle;
         public int PointIndex;
@@ -4250,13 +4275,18 @@ namespace EGIS.ShapeFileLib
         {
             byte[] data = SFRecordCol.SharedBuffer;
             shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
-            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength+8);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength+8);           
+
             bool inPolygon = false;
             fixed (byte* dataPtr = data)
             {
                 PolygonRecordP* nextRec = (PolygonRecordP*)(dataPtr+8);
                 int dataOffset = nextRec->DataOffset;//nextRec.read(data, 8);
                 int numParts = nextRec->NumParts;
+
+                bool infiniteBounds = double.IsInfinity(nextRec->bounds.xmin) || double.IsInfinity(nextRec->bounds.ymin) |
+                    double.IsInfinity(nextRec->bounds.xmax) || double.IsInfinity(nextRec->bounds.ymax);                
+
                 for (int partNum = 0; partNum < numParts; partNum++)
                 {
                     int numPoints;
@@ -4269,6 +4299,10 @@ namespace EGIS.ShapeFileLib
                         numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
                     }                    
                     bool isHole = false;
+                    if (infiniteBounds)
+                    {
+                        numPoints = RemoveInfinitePoints(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints);
+                    }
                     bool partInPolygon = GeometryAlgorithms.PointInPolygon(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, pt.X, pt.Y, numParts == 1, ref isHole); //ignore holes if only 1 part
                     inPolygon |= partInPolygon;
                     if (isHole && partInPolygon)
@@ -4294,6 +4328,10 @@ namespace EGIS.ShapeFileLib
                 PolygonRecordP* nextRec = (PolygonRecordP*)(dataPtr + 8);
                 int dataOffset = nextRec->DataOffset;
                 int numParts = nextRec->NumParts;
+
+                bool infiniteBounds = double.IsInfinity(nextRec->bounds.xmin) || double.IsInfinity(nextRec->bounds.ymin) |
+                   double.IsInfinity(nextRec->bounds.xmax) || double.IsInfinity(nextRec->bounds.ymax);
+
                 for (int partNum = 0; partNum < numParts; partNum++)
                 {
                     int numPoints;
@@ -4306,6 +4344,10 @@ namespace EGIS.ShapeFileLib
                         numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
                     }
                     bool withinHole, isHole;
+                    if (infiniteBounds)
+                    {
+                        numPoints = RemoveInfinitePoints(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints);
+                    }
                     if (IntersectsRect(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, ref rect, out withinHole, out isHole ))
                     {
                         intersectsNonHolePolygon = true;
@@ -4357,6 +4399,10 @@ namespace EGIS.ShapeFileLib
                 PolygonRecordP* nextRec = (PolygonRecordP*)(dataPtr + 8);
                 int dataOffset = nextRec->DataOffset;
                 int numParts = nextRec->NumParts;
+
+                bool infiniteBounds = double.IsInfinity(nextRec->bounds.xmin) || double.IsInfinity(nextRec->bounds.ymin) |
+                  double.IsInfinity(nextRec->bounds.xmax) || double.IsInfinity(nextRec->bounds.ymax);
+
                 for (int partNum = 0; partNum < numParts; partNum++)
                 {
                     int numPoints;
@@ -4370,7 +4416,12 @@ namespace EGIS.ShapeFileLib
                     }
 
                     bool withinHole;
-                    
+
+                    if (infiniteBounds)
+                    {
+                        numPoints = RemoveInfinitePoints(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints);
+                    }
+
                     if (GeometryAlgorithms.PolygonCircleIntersects(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, radius, numParts==1, out withinHole))
                     {
                         intersectsNonHolePolygon = true;
