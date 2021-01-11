@@ -220,6 +220,11 @@ namespace EGIS.ShapeFileLib
             return renderSettings.GetImageSymbol();
         }
 
+        public int GetDirection(int recordNumber)
+        {
+            return 0;
+        }
+
         #endregion
 
 
@@ -298,6 +303,11 @@ namespace EGIS.ShapeFileLib
             return null;
         }
 
+        public int GetDirection(int recordNumber)
+        {
+            return 0;
+        }
+
         #endregion
     }
 
@@ -343,6 +353,11 @@ namespace EGIS.ShapeFileLib
         public Image GetRecordImageSymbol(int recordNumber)
         {
             throw new Exception("The method or operation is not implemented.");
+        }
+
+        public int GetDirection(int recordNumber)
+        {
+            return 0;
         }
 
         #endregion
@@ -394,6 +409,11 @@ namespace EGIS.ShapeFileLib
         public Image GetRecordImageSymbol(int recordNumber)
         {
             throw new Exception("The method or operation is not implemented.");
+        }
+
+        public int GetDirection(int recordNumber)
+        {
+            return 0;
         }
 
         #endregion
