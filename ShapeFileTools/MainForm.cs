@@ -171,18 +171,7 @@ namespace egis
 			}
 			string name = path.Substring(path.LastIndexOf("\\") + 1);
             EGIS.ShapeFileLib.ShapeFile sf = sfMap1.AddShapeFile(path, name, "NAME");
-            this.shapeFileRenderPropertyGrid.SelectedObject = sf.RenderSettings;
-
-            //if (setMapCRSFromFirstLayerToolStripMenuItem.Checked && sfMap1.ShapeFileCount == 1)
-            //{
-            //    ICRS crs = sf.CoordinateReferenceSystem;
-            //    if (crs != null)
-            //    {
-            //        this.sfMap1.MapCoordinateReferenceSystem = crs;
-            //    }
-
-            //}
-            
+            this.shapeFileRenderPropertyGrid.SelectedObject = sf.RenderSettings;            
         }
 
         private void SelectAndCenterRecord(int index, ShapeFile sf)

@@ -1606,6 +1606,8 @@ namespace EGIS.ShapeFileLib
                 PointD ptd = pt;// new PointD(pt.X, pt.Y);
                 for (int n = 0; n < numRecs; n++)
                 {
+                    if (!col.IsRecordVisible(n)) continue;
+
                     PointD shapePt = col.GetPointD(n, shapefileStream);
                     double x = (ptd.X - shapePt.X);
                     double y = (ptd.Y - shapePt.Y);
@@ -1631,6 +1633,8 @@ namespace EGIS.ShapeFileLib
                     byte[] buffer = SFRecordCol.SharedBuffer;
                     for (int n = 0; n < indices.Count; n++)
                     {
+                        if (!col.IsRecordVisible(indices[n])) continue;
+
                         PointD shapePt = col.GetPointD(indices[n], shapefileStream);
                         double x = (pt.X - shapePt.X);
                         double y = (pt.Y - shapePt.Y);
@@ -1654,6 +1658,8 @@ namespace EGIS.ShapeFileLib
                 PointD ptd = pt;// new PointD(pt.X, pt.Y);
                 for (int n = 0; n < numRecs; n++)
                 {
+                    if (!col.IsRecordVisible(n)) continue;
+
                     PointD shapePt = col.GetPointD(n, shapefileStream);
                     double x = (ptd.X - shapePt.X);
                     double y = (ptd.Y - shapePt.Y);
@@ -1679,6 +1685,8 @@ namespace EGIS.ShapeFileLib
                     byte[] buffer = SFRecordCol.SharedBuffer;
                     for (int n = 0; n < indices.Count; n++)
                     {
+                        if (!col.IsRecordVisible(indices[n])) continue;
+
                         PointD shapePt = col.GetPointD(indices[n], shapefileStream);
                         double x = (pt.X - shapePt.X);
                         double y = (pt.Y - shapePt.Y);
@@ -1701,6 +1709,8 @@ namespace EGIS.ShapeFileLib
                 int numRecs = col.RecordHeaders.Length;
                 for (int n = 0; n < numRecs; n++)
                 {
+                    if (!col.IsRecordVisible(n)) continue;
+
                     List<PointD[]> pts = col.GetShapeDataD(n, shapeFileStream);
                     if (pts.Count > 0)
                     {
@@ -1730,6 +1740,8 @@ namespace EGIS.ShapeFileLib
                 int numRecs = col.RecordHeaders.Length;
                 for (int n = 0; n < numRecs; n++)
                 {
+                    if (!col.IsRecordVisible(n)) continue;
+
                     List<PointD[]> pts = col.GetShapeDataD(n, shapeFileStream);
                     if (pts.Count > 0)
                     {
@@ -1763,6 +1775,8 @@ namespace EGIS.ShapeFileLib
             {
                 for (int n = 0; n < indices.Count; n++)
                 {
+                    if (!col.IsRecordVisible(indices[n])) continue;
+
                     if (col.GetRecordBoundsD(indices[n],this.shapeFileStream).Contains(pt))
                     {
                         if (col.ContainsPoint(indices[n], pt, shapeFileStream))
@@ -1787,6 +1801,8 @@ namespace EGIS.ShapeFileLib
             {
                 for (int n = 0; n < indices.Count; n++)
                 {
+                    if (!col.IsRecordVisible(indices[n])) continue;
+
                     if (col.GetRecordBoundsD(indices[n], this.shapeFileStream).Contains(pt))
                     {
                         if (col.ContainsPoint(indices[n], pt, shapeFileStream))
@@ -1813,8 +1829,9 @@ namespace EGIS.ShapeFileLib
                 RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
                 for (int n = 0; n < indices.Count; n++)
                 {
+                    if (!col.IsRecordVisible(indices[n])) continue;
+
                     if (col.GetRecordBounds(indices[n], this.shapeFileStream).IntersectsWith(r))                    
-                    //if (col.Recs[indices[n]].Bounds.IntersectsWith(r))
                     {
                         if (col.ContainsPoint(indices[n], pt, shapeFileStream, buffer, minDistance))
                         {
@@ -1840,6 +1857,8 @@ namespace EGIS.ShapeFileLib
                 RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
                 for (int n = 0; n < indices.Count; n++)
                 {
+                    if (!col.IsRecordVisible(indices[n])) continue;
+
                     if (col.GetRecordBounds(indices[n], this.shapeFileStream).IntersectsWith(r))
                     {
                         if (col.ContainsPoint(indices[n], pt, shapeFileStream, buffer, minDistance))
@@ -1866,6 +1885,8 @@ namespace EGIS.ShapeFileLib
                 RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
                 for (int n = 0; n < indices.Count; n++)
                 {
+                    if (!col.IsRecordVisible(indices[n])) continue;
+
                     if (col.GetRecordBounds(indices[n], this.shapeFileStream).IntersectsWith(r))
                     {
                         if (col.ContainsPoint(indices[n], pt, shapeFileStream, buffer, minDistance))
@@ -1919,6 +1940,8 @@ namespace EGIS.ShapeFileLib
             {
                 for (int n = shapeIndicies.Count - 1; n >= 0; --n)
                 {
+                    if (!col.IsRecordVisible(shapeIndicies[n])) continue;
+
                     if (col.IntersectRect(shapeIndicies[n], ref rect, shapeFileStream))
                     {
                         indices.Add(shapeIndicies[n]);
@@ -1927,42 +1950,7 @@ namespace EGIS.ShapeFileLib
             }            
         }
 
-        //private void GetShapeIndiciesIntersectingRect(List<int> indices, RectangleD rect, SFPointCol col)
-        //{
-
-        //    int numRecs = this.RecordCount;
-            
-        //        for (int n = 0; n<numRecs;++n)
-        //        {
-        //            if (col.IntersectRect(n, ref rect, shapeFileStream))
-        //            {
-        //                indices.Add(n);
-        //            }
-        //        }
-           
-        //}
-       
-        //private void GetShapeIndiciesIntersectingRect(List<int> indices, RectangleD rect, SFPolyLineCol col)
-        //{
-        //    if (shapeQuadTree == null)
-        //    {
-        //        CreateQuadTree(col);
-        //    }
-
-        //    List<int> shapeIndicies = shapeQuadTree.GetIndices(ref rect);
-        //    if (shapeIndicies != null)
-        //    {
-        //        //int numRecs = shapeIndicies.Count;
-        //        for (int n = shapeIndicies.Count-1; n >=0; --n)
-        //        {
-        //            if (col.IntersectRect(shapeIndicies[n], ref rect, shapeFileStream))
-        //            {
-        //                indices.Add(shapeIndicies[n]);
-        //            }
-        //        }
-        //    }                           
-        //}
-
+        
         public bool ShapeIntersectsRect(int shapeIndex, ref RectangleD rect)
         {
             switch (sfRecordCol.MainHeader.ShapeType)
@@ -2025,7 +2013,7 @@ namespace EGIS.ShapeFileLib
             {
                 for (int n = shapeIndicies.Count - 1; n >= 0; --n)
                 {
-                    if (col.IntersectCircle(shapeIndicies[n], centre, radius, shapeFileStream))
+                    if (col.IsRecordVisible(shapeIndicies[n]) && col.IntersectCircle(shapeIndicies[n], centre, radius, shapeFileStream))
                     {
                         indices.Add(shapeIndicies[n]);
                     }
@@ -2053,6 +2041,8 @@ namespace EGIS.ShapeFileLib
             {
                 for (int n = shapeIndicies.Count - 1; n >= 0; --n)
                 {
+                    if (!col.IsRecordVisible(shapeIndicies[n])) continue;
+
                     double d = col.GetDistanceToShape(shapeIndicies[n], centre, closestDistance, shapeFileStream);
                     if (d < closestDistance)
                     {
@@ -2084,6 +2074,8 @@ namespace EGIS.ShapeFileLib
             {
                 for (int n = shapeIndicies.Count - 1; n >= 0; --n)
                 {
+                    if (!col.IsRecordVisible(shapeIndicies[n])) continue;
+
                     PolylineDistanceInfo pdi;
                     double d = col.GetDistanceToShape(shapeIndicies[n], centre, closestDistance, shapeFileStream, out pdi);
                     if (d < closestDistance)
@@ -2126,6 +2118,8 @@ namespace EGIS.ShapeFileLib
             {
                 foreach(int recordIndex in recordIndices)
                 {
+                    if (!col.IsRecordVisible(recordIndex)) continue;
+
                     PolylineDistanceInfo pdi;
                     double d = col.GetDistanceToShape(recordIndex, centre, closestDistance, shapeFileStream, out pdi);
                     if (d < closestDistance)
@@ -2149,6 +2143,8 @@ namespace EGIS.ShapeFileLib
             {
                 for (int n = shapeIndices.Count - 1; n >= 0; --n)
                 {
+                    if (!col.IsRecordVisible(shapeIndices[n])) continue;
+
                     PolylineDistanceInfo pdi;
                     double d = col.GetDistanceToShape(shapeIndices[n], centre, closestDistance, shapeFileStream, out pdi);
                     if (d < closestDistance)
@@ -2193,7 +2189,7 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         /// <returns></returns>        
         /// <param name="extent">Defines the area that returned shapes must intersect with or be contained by. If this is RectangleF.Empty then no recrods will be returned</param>        
-        /// /// <param name="intersectionType">Indicates whether shapes must intersect with or be contained by extent</param>        
+        /// <param name="intersectionType">Indicates whether shapes must intersect with or be contained by extent</param>        
         public ShapeFileEnumerator GetShapeFileEnumerator(RectangleF extent, ShapeFileEnumerator.IntersectionType intersectionType)
         {
             return new ShapeFileEnumerator(this, extent, intersectionType);
