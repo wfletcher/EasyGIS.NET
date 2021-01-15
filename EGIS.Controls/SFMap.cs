@@ -280,10 +280,19 @@ namespace EGIS.Controls
 
         public class MapDoubleClickedEventArgs : EventArgs
         {
-            public MapDoubleClickedEventArgs()
+            public MapDoubleClickedEventArgs(MouseButtons button, int x, int y)
             {
+                Button = button;
+                X = x;
+                Y = y;
                 Cancel = false;
             }
+
+            public MouseButtons Button { get; set; }
+
+            public int X { get; set; }
+
+            public int Y { get; set; }
 
             /// <summary>
             /// get set whether to cancel the event. Set true to disable core zooming functinonality that occurs when
@@ -2251,7 +2260,7 @@ namespace EGIS.Controls
         {            
             base.OnDoubleClick(e);
 
-            MapDoubleClickedEventArgs mapDoubleClickEventArgs = new MapDoubleClickedEventArgs();
+            MapDoubleClickedEventArgs mapDoubleClickEventArgs = new MapDoubleClickedEventArgs(MouseDownButton, MouseDownPoint.X, MouseDownPoint.Y);
             this.OnMapDoubleClick(mapDoubleClickEventArgs);
             if(mapDoubleClickEventArgs.Cancel) return;
 
