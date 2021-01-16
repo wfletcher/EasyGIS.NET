@@ -1,0 +1,32 @@
+<sfproject version="1.0">
+  <MapBackColor>buttonface</MapBackColor>
+  <layers>
+    <shapefile>
+      <name>world_adm0.shp</name>
+      <path>world_files/world_adm0</path>
+      <renderer>
+        <MinZoomLevel>-1</MinZoomLevel>
+        <MaxZoomLevel>-1</MaxZoomLevel>
+        <MinRenderLabelZoom>-1</MinRenderLabelZoom>
+        <FieldName>NAME</FieldName>
+        <Font Size="6" Name="Microsoft Sans Serif" Style="Regular">
+        </Font>
+        <FontColor>Black</FontColor>
+        <FillColor>#FCFCFC</FillColor>
+        <OutlineColor>#969696</OutlineColor>
+        <PenWidthScale>0.0001355183</PenWidthScale>
+        <MaxPixelPenWidth>-1</MaxPixelPenWidth>
+        <MinPixelPenWidth>-1</MinPixelPenWidth>
+        <FillInterior>True</FillInterior>
+        <Selectable>False</Selectable>
+        <SelectOutlineColor>Yellow</SelectOutlineColor>
+        <SelectFillColor>SlateBlue</SelectFillColor>
+        <LineType>Outline</LineType>
+        <ShadowText>True</ShadowText>
+        <PointSize>5</PointSize>
+        <UseToolTip>False</UseToolTip>
+        <StringEncoding>1252</StringEncoding>
+      </renderer>
+    </shapefile>
+  </layers>
+</sfproject>
