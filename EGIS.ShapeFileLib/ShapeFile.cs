@@ -1588,7 +1588,16 @@ namespace EGIS.ShapeFileLib
         {
             RectangleD r = Extent;
             r.Inflate(r.Width * 0.05, r.Height * 0.05);
-            shapeQuadTree = new QuadTree(r);
+            //if (r.Width <= double.Epsilon) r.Width = double.Epsilon;
+            //if (r.Height <= double.Epsilon) r.Height = double.Epsilon;
+            int startLevel = 0;
+            if (col.RecordHeaders.Length < 10)
+            {
+                //if the shapefile has less than 10 records then set the startLevel to MaxLevels -1
+                //as it's not efficient to create a deep number of levels in this case 
+                startLevel = QTNode.MaxLevels-1;
+            }
+            shapeQuadTree = new QuadTree(r, startLevel);
             QTNodeHelper helper = (QTNodeHelper)col;
             for (int n = 0; n < col.RecordHeaders.Length; n++)
             {

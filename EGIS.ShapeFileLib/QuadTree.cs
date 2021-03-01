@@ -37,9 +37,20 @@ namespace EGIS.ShapeFileLib
     {
         private QTNode rootNode;
 
-        public QuadTree(RectangleD bounds)
+        public QuadTree(RectangleD bounds, int startLevel = 0)
         {
-            rootNode = new QTNode(bounds, 0);
+            if (bounds.Width <= double.Epsilon || bounds.Height <= double.Epsilon)
+            {
+                //special case 
+                //zero width or height casues issues and is due to a shapefile with a sinlge record
+                bounds.Width  = bounds.Width   + 0.000001;
+                bounds.Height  = bounds.Height + 0.000001;
+                rootNode = new QTNode(bounds, QTNode.MaxLevels);
+            }
+            else
+            {
+                rootNode = new QTNode(bounds, startLevel);
+            }
         }
 
         public void Insert(int recordIndex, QTNodeHelper helper, System.IO.Stream shapeFileStream)
