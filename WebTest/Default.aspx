@@ -26,9 +26,9 @@
         <asp:HyperLink ID="HyperLink9" runat="server" NavigateUrl="~/demos/TileDemo3.aspx">TiledSFMap Demo 3</asp:HyperLink> - Demo of using the TiledSFMap control in a webpage with custom render settings
     </div>
     
-    <div>
+   <%-- <div>
         <asp:HyperLink ID="HyperLink4" runat="server" NavigateUrl="~/demos/BingMapsTest.html">Bing Maps Demo</asp:HyperLink> - Demo of overlaying tiles on Bing Maps
-    </div>
+    </div>--%>
     
     <div>
         <asp:HyperLink ID="HyperLink5" runat="server" NavigateUrl="~/demos/GoogleMapsTest.html">Google Maps Demo</asp:HyperLink> - Demo of overlaying tiles on Google Maps
