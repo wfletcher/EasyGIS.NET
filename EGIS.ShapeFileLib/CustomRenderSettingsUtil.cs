@@ -161,8 +161,11 @@ namespace EGIS.ShapeFileLib
             }            
         }
 
-              
-       
+        public int GetDirection(int recordNumber)
+        {
+            return 0;
+        }
+
         #endregion
 
 
@@ -204,6 +207,11 @@ namespace EGIS.ShapeFileLib
             return colors[recordNumber];
         }
               
+
+        public int GetDirection(int recordNumber)
+        {
+            return 0;
+        }
 
         #endregion
     }
@@ -261,6 +269,12 @@ namespace EGIS.ShapeFileLib
         {
             get { throw new Exception("The method or operation is not implemented."); }
         }
+
+        public int GetDirection(int recordNumber)
+        {
+            return 0;
+        }
+
         #endregion
     }
 
@@ -320,6 +334,11 @@ namespace EGIS.ShapeFileLib
             get { throw new Exception("The method or operation is not implemented."); }
         }
 
+
+        public int GetDirection(int recordNumber)
+        {
+            return 0;
+        }
 
         #endregion
     }

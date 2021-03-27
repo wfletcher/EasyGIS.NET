@@ -132,5 +132,10 @@ namespace EGIS.ShapeFileLib
             get;
         }
 
+        
+        /// <summary>Gets the direction.</summary>
+        /// <param name="recordNumber">The record number.</param>
+        /// <returns><c>1</c> for forward direction; <c>-1</c> for reverse direction; <c>0</c> to suppress direction marker</returns>
+        int GetDirection(int recordNumber);
     }
 }
