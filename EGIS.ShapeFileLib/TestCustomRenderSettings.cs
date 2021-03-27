@@ -162,6 +162,11 @@ namespace EGIS.ShapeFileLib
             return this.renderSettings.GetImageSymbol();
         }
 
+        public int GetDirection(int recordNumber)
+        {
+            return 0;
+        }
+
         #endregion
     }
 }
