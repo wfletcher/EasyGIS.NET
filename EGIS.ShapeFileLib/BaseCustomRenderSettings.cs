@@ -117,5 +117,18 @@ namespace EGIS.ShapeFileLib
 		{
 			return true;
 		}
+
+		/// <summary>
+		/// virtual GetDirection method that returns 1 if renderSettings.DrawDirectionArrows true, otherwise 0
+		/// </summary>
+		/// <param name="recordNumber"></param>
+		/// <returns>1 or 0</returns>
+		/// <remarks>
+		/// override to change default behaviour
+		/// </remarks>
+		public virtual int GetDirection(int recordNumber)
+		{
+			return renderSettings.DrawDirectionArrows ? 1 : 0;
+		}
 	}
 }

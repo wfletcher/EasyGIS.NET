@@ -132,10 +132,15 @@ namespace EGIS.ShapeFileLib
             get;
         }
 
-        
+
         /// <summary>Gets the direction.</summary>
-        /// <param name="recordNumber">The record number.</param>
+        /// <param name="recordNumber">The zero based record number.</param>
         /// <returns><c>1</c> for forward direction; <c>-1</c> for reverse direction; <c>0</c> to suppress direction marker</returns>
+        /// <remarks>
+        /// <para>
+        /// This method can be used to control the direction of arrows drawn for individual records if RenderSettings.DrawDirectionArrows is true
+        /// </para>
+        /// </remarks>
         int GetDirection(int recordNumber);
     }
 }

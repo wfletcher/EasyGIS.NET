@@ -160,12 +160,7 @@ namespace EGIS.ShapeFileLib
                 }
             }            
         }
-
-        public int GetDirection(int recordNumber)
-        {
-            return 0;
-        }
-
+        
         #endregion
 
 
@@ -207,11 +202,6 @@ namespace EGIS.ShapeFileLib
             return colors[recordNumber];
         }
               
-
-        public int GetDirection(int recordNumber)
-        {
-            return 0;
-        }
 
         #endregion
     }
