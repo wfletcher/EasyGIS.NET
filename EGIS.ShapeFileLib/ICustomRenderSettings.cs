@@ -108,8 +108,29 @@ namespace EGIS.ShapeFileLib
         /// <param name="recordNumber">zero-based record number of the shape</param>
         /// <returns></returns>
         System.Drawing.Image GetRecordImageSymbol(int recordNumber);
-        
 
+        /// <summary>
+        /// returns the custom label text for the specified record number if UseCustomRecordLabels is true 
+        /// </summary>
+        /// <param name="recordNumber">zero based record number</param>
+        /// <returns>label to be used when rendering the shapefile record</returns>
+        /// <remarks>
+        /// <para>This method provides more control for labelling rather than the using the RenderSettings.FieldName property. 
+        /// For example, this method can be used to combine several fields into a single label</para>
+        /// <para>
+        /// If UseCustomRecordLabels if false this method is ignored
+        /// </para>
+        /// <para>Do Not return a null string if no label is required. Instead return an emtpry string "" </para>
+        /// </remarks>
+        string GetRecordLabel(int recordNumber);
+        
+        /// <summary>
+        /// Whether Custom record Labels are used. Use in conjunction with the GetRecordLabel method
+        /// </summary>
+        bool UseCustomRecordLabels
+        {
+            get;
+        }
 
     }
 }

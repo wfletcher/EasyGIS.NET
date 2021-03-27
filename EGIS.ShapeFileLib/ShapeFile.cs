@@ -3621,6 +3621,8 @@ namespace EGIS.ShapeFileLib
             ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
             bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
 
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+
             Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
             bool MercProj = projectionType == ProjectionType.Mercator;
 
@@ -3632,7 +3634,7 @@ namespace EGIS.ShapeFileLib
                 testExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
             }
 
-            bool labelfields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            bool labelfields =  (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
             if (renderSettings != null) renderInterior = renderSettings.FillInterior;
             List<PartBoundsIndex> partBoundsIndexList = new List<PartBoundsIndex>(256);
 
@@ -3862,7 +3864,9 @@ namespace EGIS.ShapeFileLib
                 for (int n = 0; n < count; n++)
                 {
                     int index = partBoundsIndexList[n].RecIndex;
-                    string strLabel = renderSettings.DbfReader.GetField(index, renderSettings.FieldIndex);
+                    string strLabel;
+                    if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(index);
+                    else strLabel = renderSettings.DbfReader.GetField(index, renderSettings.FieldIndex);
                     if (!string.IsNullOrEmpty(strLabel) && g.MeasureString(strLabel, renderSettings.Font).Width <= partBoundsIndexList[n].Bounds.Width)
                     {
                         pt.X = partBoundsIndexList[n].Bounds.Left + (partBoundsIndexList[n].Bounds.Width >> 1);
@@ -4666,7 +4670,11 @@ namespace EGIS.ShapeFileLib
                 actualExtent = extent;
             }
 
-            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+            bool useCustomRenderSettings = (customRenderSettings != null);
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+
+            bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
@@ -4702,10 +4710,7 @@ namespace EGIS.ShapeFileLib
                     }
                 }
 
-
-                ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-                bool useCustomRenderSettings = (customRenderSettings != null);
-
+                
                 Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
                 bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
 
@@ -4898,8 +4903,10 @@ namespace EGIS.ShapeFileLib
                     bool useCustomFontColor = customRenderSettings != null;
                     for (int n = 0; n < count; n++)
                     {
-                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
-                        if (strLabel.Length > 0)
+                        string strLabel;
+                        if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                        else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (!string.IsNullOrEmpty(strLabel))
                         {
                             SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
                             int x0 = renderPtObjList[n].offX;
@@ -4968,8 +4975,12 @@ namespace EGIS.ShapeFileLib
                 //the actual intersecting extent in the shapefile CRS
                 actualExtent = extent;
             }
-            
-            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+
+            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+            bool useCustomRenderSettings = (customRenderSettings != null);
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+
+            bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
@@ -4989,10 +5000,7 @@ namespace EGIS.ShapeFileLib
                 float pointSize = 6f;                
                 renderInterior = renderSettings.FillInterior;
                 pointSize = renderSettings.PointSize;                    
-                
-                ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-                bool useCustomRenderSettings = (customRenderSettings != null);
-
+                              
                 Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
                 bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
                 bool MercProj = projectionType == ProjectionType.Mercator;
@@ -5182,8 +5190,10 @@ namespace EGIS.ShapeFileLib
                     bool useCustomFontColor = customRenderSettings != null;
                     for (int n = 0; n < count; n++)
                     {
-                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
-                        if (strLabel.Length > 0)
+                        string strLabel;
+                        if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                        else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (!string.IsNullOrEmpty(strLabel))
                         {
                             SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
                             int x0 = renderPtObjList[n].offX;
@@ -5226,7 +5236,6 @@ namespace EGIS.ShapeFileLib
                 if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
             }
         }
-
         
 
         private struct RenderPtObj
@@ -5501,10 +5510,14 @@ namespace EGIS.ShapeFileLib
                 //the actual intersecting extent in the shapefile CRS
                 actualExtent = extent;
             }
-            
-            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
-            bool renderInterior = true;
 
+            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+            bool useCustomRenderSettings = (customRenderSettings != null);
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+
+            bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
+            bool renderInterior = true;
+           
             IntPtr fileMappingPtr = IntPtr.Zero;
             if (MapFilesInMemory && (shapeFileStream is FileStream)) fileMappingPtr = NativeMethods.MapFile((FileStream)shapeFileStream);
             IntPtr mapView = IntPtr.Zero;
@@ -5537,10 +5550,7 @@ namespace EGIS.ShapeFileLib
                         symbolSize = new Size((int)pointSize, (int)pointSize);
                     }
                 }
-
-                ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-                bool useCustomRenderSettings = (customRenderSettings != null);
-
+                
                 Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
                 bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
 
@@ -5732,8 +5742,10 @@ namespace EGIS.ShapeFileLib
                     bool useCustomFontColor = customRenderSettings != null;
                     for (int n = 0; n < count; n++)
                     {
-                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
-                        if (strLabel.Length > 0)
+                        string strLabel;
+                        if(useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                        else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (!string.IsNullOrEmpty(strLabel))
                         {
                             SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
                             int x0 = renderPtObjList[n].offX;
@@ -5803,7 +5815,11 @@ namespace EGIS.ShapeFileLib
                 actualExtent = extent;
             }
 
-            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+            bool useCustomRenderSettings = (customRenderSettings != null);
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+
+            bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
@@ -5819,14 +5835,10 @@ namespace EGIS.ShapeFileLib
 
             try
             {
-
                 float pointSize = 6f;
                 renderInterior = renderSettings.FillInterior;
                 pointSize = renderSettings.PointSize;
-
-                ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-                bool useCustomRenderSettings = (customRenderSettings != null);
-
+    
                 Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
                 bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
                 bool MercProj = projectionType == ProjectionType.Mercator;
@@ -6032,8 +6044,10 @@ namespace EGIS.ShapeFileLib
                     bool useCustomFontColor = customRenderSettings != null;
                     for (int n = 0; n < count; n++)
                     {
-                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
-                        if (strLabel.Length > 0)
+                        string strLabel;
+                        if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                        else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (!string.IsNullOrEmpty(strLabel))
                         {
                             SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
                             int x0 = renderPtObjList[n].offX;
@@ -6306,8 +6320,12 @@ namespace EGIS.ShapeFileLib
                 //the actual intersecting extent in the shapefile CRS
                 actualExtent = extent;
             }
-           
-            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+
+            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+            bool useCustomRenderSettings = (customRenderSettings != null);
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+
+            bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
@@ -6342,10 +6360,6 @@ namespace EGIS.ShapeFileLib
                         symbolSize = new Size((int)pointSize, (int)pointSize);
                     }
                 }
-
-
-                ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-                bool useCustomRenderSettings = (customRenderSettings != null);
 
                 Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
                 bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
@@ -6550,7 +6564,9 @@ namespace EGIS.ShapeFileLib
                     bool useCustomFontColor = customRenderSettings != null;
                     for (int n = 0; n < count; n++)
                     {
-                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        string strLabel;
+                        if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                        else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
                         if (strLabel.Length > 0)
                         {
                             SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
@@ -6619,7 +6635,11 @@ namespace EGIS.ShapeFileLib
                 actualExtent = extent;
             }
 
-            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+            bool useCustomRenderSettings = (customRenderSettings != null);
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+
+            bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
@@ -6639,9 +6659,6 @@ namespace EGIS.ShapeFileLib
                 float pointSize = 6f;
                 renderInterior = renderSettings.FillInterior;
                 pointSize = renderSettings.PointSize;
-
-                ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-                bool useCustomRenderSettings = (customRenderSettings != null);
 
                 Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
                 bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
@@ -6843,7 +6860,9 @@ namespace EGIS.ShapeFileLib
                     bool useCustomFontColor = customRenderSettings != null;
                     for (int n = 0; n < count; n++)
                     {
-                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        string strLabel;
+                        if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                        else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
                         if (strLabel.Length > 0)
                         {
                             SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
@@ -7171,8 +7190,13 @@ namespace EGIS.ShapeFileLib
                 //the actual intersecting extent in the shapefile CRS
                 actualExtent = extent;
             }
-           
-            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+
+            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+            bool useCustomRenderSettings = (customRenderSettings != null);
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+
+            bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
+
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
@@ -7207,10 +7231,6 @@ namespace EGIS.ShapeFileLib
                         symbolSize = new Size((int)pointSize, (int)pointSize);
                     }
                 }
-
-
-                ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-                bool useCustomRenderSettings = (customRenderSettings != null);
 
                 Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
                 bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
@@ -7415,8 +7435,10 @@ namespace EGIS.ShapeFileLib
                     bool useCustomFontColor = customRenderSettings != null;
                     for (int n = 0; n < count; n++)
                     {
-                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
-                        if (strLabel.Length > 0)
+                        string strLabel;
+                        if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                        else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (!string.IsNullOrEmpty(strLabel))
                         {
                             SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
                             int x0 = renderPtObjList[n].offX;
@@ -7482,8 +7504,12 @@ namespace EGIS.ShapeFileLib
                 //the actual intersecting extent in the shapefile CRS
                 actualExtent = extent;
             }
-           
-            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+
+            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+            bool useCustomRenderSettings = (customRenderSettings != null);
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+
+            bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
             bool renderInterior = true;
 
             IntPtr fileMappingPtr = IntPtr.Zero;
@@ -7499,14 +7525,10 @@ namespace EGIS.ShapeFileLib
 
             try
             {
-
                 float pointSize = 6f;
                 renderInterior = renderSettings.FillInterior;
                 pointSize = renderSettings.PointSize;
-
-                ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-                bool useCustomRenderSettings = (customRenderSettings != null);
-
+               
                 Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
                 bool useCustomImageSymbols = useCustomRenderSettings && customRenderSettings.UseCustomImageSymbols;
                 bool MercProj = projectionType == ProjectionType.Mercator;
@@ -7707,8 +7729,10 @@ namespace EGIS.ShapeFileLib
                     bool useCustomFontColor = customRenderSettings != null;
                     for (int n = 0; n < count; n++)
                     {
-                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
-                        if (strLabel.Length > 0)
+                        string strLabel;
+                        if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                        else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (!string.IsNullOrEmpty(strLabel))
                         {
                             SizeF labelSize = g.MeasureString(strLabel, renderSettings.Font);
                             int x0 = renderPtObjList[n].offX;
@@ -8061,9 +8085,9 @@ namespace EGIS.ShapeFileLib
                     actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
                 }
                 ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-                bool useCustomRenderSettings = (renderSettings != null && customRenderSettings != null);
-
-                bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));               
+                bool useCustomRenderSettings = (customRenderSettings != null);
+                bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+                bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
                 bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
                 const bool usePolySimplificationLabeling = true;
                 List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
@@ -8409,7 +8433,9 @@ namespace EGIS.ShapeFileLib
                         float ssm = shadowText ? 0.8f : 1f;
                         for (int n = 0; n < count; n++)
                         {
-                            string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                            string strLabel;
+                            if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                            else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
                             if (strLabel.Length > 0)// && string.Compare(strLabel, lastLabel) != 0)
                             {
                                 SizeF strSize = g.MeasureString(strLabel, renderSettings.Font);
@@ -8518,10 +8544,11 @@ namespace EGIS.ShapeFileLib
                 PointD br = SFRecordCol.ProjectionToLL(new PointD(actualExtent.Right, actualExtent.Bottom));
                 actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
             }
-            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-            bool useCustomRenderSettings = (renderSettings != null && customRenderSettings != null);
 
-            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+            bool useCustomRenderSettings = (customRenderSettings != null);
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+            bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);            
             bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
             bool usePolySimplificationLabeling = true;
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
@@ -8779,8 +8806,10 @@ namespace EGIS.ShapeFileLib
                     float ssm = shadowText ? 0.8f : 1f;
                     for (int n = 0; n < count; n++)
                     {
-                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
-                        if (strLabel.Length > 0)// && string.Compare(strLabel, lastLabel) != 0)
+                        string strLabel;
+                        if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                        else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (!string.IsNullOrEmpty(strLabel))// && string.Compare(strLabel, lastLabel) != 0)
                         {
                             SizeF strSize = g.MeasureString(strLabel, renderSettings.Font);
                             strSize = new SizeF(strSize.Width * ssm, strSize.Height * ssm);
@@ -9276,9 +9305,9 @@ namespace EGIS.ShapeFileLib
                     actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
                 }
                 ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-                bool useCustomRenderSettings = (renderSettings != null && customRenderSettings != null);
-
-                bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+                bool useCustomRenderSettings = (customRenderSettings != null);
+                bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+                bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
                 bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
                 const bool usePolySimplificationLabeling = true;
                 List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
@@ -9622,8 +9651,10 @@ namespace EGIS.ShapeFileLib
                         float ssm = shadowText ? 0.8f : 1f;
                         for (int n = 0; n < count; n++)
                         {
-                            string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
-                            if (strLabel.Length > 0)// && string.Compare(strLabel, lastLabel) != 0)
+                            string strLabel;
+                            if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                            else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                            if (!string.IsNullOrEmpty(strLabel))// && string.Compare(strLabel, lastLabel) != 0)
                             {
                                 SizeF strSize = g.MeasureString(strLabel, renderSettings.Font);
                                 strSize = new SizeF(strSize.Width * ssm, strSize.Height * ssm);
@@ -9744,9 +9775,9 @@ namespace EGIS.ShapeFileLib
                 testExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
             }
             ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-            bool useCustomRenderSettings = (renderSettings != null && customRenderSettings != null);
-
-            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            bool useCustomRenderSettings = (customRenderSettings != null);
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+            bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
             bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
             const bool usePolySimplificationLabeling = true;
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
@@ -9990,8 +10021,10 @@ namespace EGIS.ShapeFileLib
                     float ssm = shadowText ? 0.8f : 1f;
                     for (int n = 0; n < count; n++)
                     {
-                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
-                        if (strLabel.Length > 0)// && string.Compare(strLabel, lastLabel) != 0)
+                        string strLabel;
+                        if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                        else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (!string.IsNullOrEmpty(strLabel))// && string.Compare(strLabel, lastLabel) != 0)
                         {
                             SizeF strSize = g.MeasureString(strLabel, renderSettings.Font);
                             strSize = new SizeF(strSize.Width * ssm, strSize.Height * ssm);
@@ -10480,10 +10513,7 @@ namespace EGIS.ShapeFileLib
                 // when we render the first record
                 simplificationDistance = 0;
             }
-
-            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-            bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
-
+           
             Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
 
             bool MercProj = projectionType == ProjectionType.Mercator;
@@ -10496,7 +10526,11 @@ namespace EGIS.ShapeFileLib
                 actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
             }
 
-            bool labelfields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+            bool useCustomRenderSettings = (customRenderSettings != null);
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+            bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
+
             if (renderSettings != null) renderInterior = renderSettings.FillInterior;
             List<PartBoundsIndex> partBoundsIndexList = new List<PartBoundsIndex>(256);
 
@@ -10659,7 +10693,7 @@ namespace EGIS.ShapeFileLib
                                         {
                                             gp.AddPolygon(pts);
 
-                                            if (labelfields)
+                                            if (labelFields)
                                             {
                                                 if (partBounds.Width > 5 && partBounds.Height > 5)
                                                 {
@@ -10703,7 +10737,7 @@ namespace EGIS.ShapeFileLib
                 if (mapView != IntPtr.Zero) NativeMethods.UnmapViewOfFile(mapView);
                 if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
             }
-            if (labelfields)
+            if (labelFields)
             {
 
                 PointF pt = new PointF(0, 0);
@@ -10720,7 +10754,10 @@ namespace EGIS.ShapeFileLib
                 for (int n = 0; n < count; n++)
                 {
                     int index = partBoundsIndexList[n].RecIndex;
-                    string strLabel = renderSettings.DbfReader.GetField(index, renderSettings.FieldIndex);
+
+                    string strLabel;
+                    if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(index);
+                    else strLabel = renderSettings.DbfReader.GetField(index, renderSettings.FieldIndex);
                     if (!string.IsNullOrEmpty(strLabel) && g.MeasureString(strLabel, renderSettings.Font).Width <= partBoundsIndexList[n].Bounds.Width)
                     {
                         pt.X = partBoundsIndexList[n].Bounds.Left + (partBoundsIndexList[n].Bounds.Width >> 1);
@@ -10806,10 +10843,7 @@ namespace EGIS.ShapeFileLib
                 //the actual intersecting extent in the shapefile CRS
                 actualExtent = extent;
             }
-
-            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-            bool useCustomRenderSettings = (renderSettings != null) && (customRenderSettings != null);
-
+            
             Color currentBrushColor = renderSettings.FillColor, currentPenColor = renderSettings.OutlineColor;
             bool MercProj = projectionType == ProjectionType.Mercator;
             if (MercProj)
@@ -10820,7 +10854,10 @@ namespace EGIS.ShapeFileLib
                 actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
             }
 
-            bool labelfields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
+            bool useCustomRenderSettings = (customRenderSettings != null);
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+            bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
             if (renderSettings != null) renderInterior = renderSettings.FillInterior;
             List<PartBoundsIndex> partBoundsIndexList = new List<PartBoundsIndex>(256);
 
@@ -10955,7 +10992,7 @@ namespace EGIS.ShapeFileLib
                                         ++usedPoints;
                                     }
 
-                                    if (labelfields)
+                                    if (labelFields)
                                     {
                                         //GetPointsRemoveDuplicatesD(dataPtr, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints, MercProj);
                                         GetPointsRemoveDuplicatesD((byte*)simplifiedDataPtr,0, usedPoints, offX, offY, scaleX, scaleY, ref partBounds, sharedPointBuffer, ref usedPoints, MercProj);
@@ -11013,9 +11050,8 @@ namespace EGIS.ShapeFileLib
                 if (fileMappingPtr != IntPtr.Zero) NativeMethods.CloseHandle(fileMappingPtr);
             }
 
-            if (labelfields)
+            if (labelFields)
             {
-
                 PointF pt = new PointF(0, 0);
                 int count = partBoundsIndexList.Count;
                 Brush fontBrush = new SolidBrush(renderSettings.FontColor);
@@ -11030,7 +11066,9 @@ namespace EGIS.ShapeFileLib
                 for (int n = 0; n < count; n++)
                 {
                     int index = partBoundsIndexList[n].RecIndex;
-                    string strLabel = renderSettings.DbfReader.GetField(index, renderSettings.FieldIndex);
+                    string strLabel;
+                    if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(index);
+                    else strLabel = renderSettings.DbfReader.GetField(index, renderSettings.FieldIndex);
                     if (!string.IsNullOrEmpty(strLabel) && g.MeasureString(strLabel, renderSettings.Font).Width <= partBoundsIndexList[n].Bounds.Width)
                     {
                         pt.X = partBoundsIndexList[n].Bounds.Left + (partBoundsIndexList[n].Bounds.Width >> 1);
@@ -11530,9 +11568,9 @@ namespace EGIS.ShapeFileLib
                     actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
                 }
                 ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-                bool useCustomRenderSettings = (renderSettings != null && customRenderSettings != null);
-
-                bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+                bool useCustomRenderSettings = (customRenderSettings != null);
+                bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+                bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
                 bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
                 List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
 
@@ -11885,8 +11923,10 @@ namespace EGIS.ShapeFileLib
                         float ssm = shadowText ? 0.8f : 1f;
                         for (int n = 0; n < count; n++)
                         {
-                            string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
-                            if (strLabel.Length > 0)// && string.Compare(strLabel, lastLabel) != 0)
+                            string strLabel;
+                            if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                            else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                            if (!string.IsNullOrEmpty(strLabel))// && string.Compare(strLabel, lastLabel) != 0)
                             {
                                 SizeF strSize = g.MeasureString(strLabel, renderSettings.Font);
                                 strSize = new SizeF(strSize.Width * ssm, strSize.Height * ssm);
@@ -12000,9 +12040,9 @@ namespace EGIS.ShapeFileLib
                 actualExtent = RectangleD.FromLTRB(tl.X, tl.Y, br.X, br.Y);
             }
             ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
-            bool useCustomRenderSettings = (renderSettings != null && customRenderSettings != null);
-
-            bool labelFields = (renderSettings != null && renderSettings.FieldIndex >= 0 && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom));
+            bool useCustomRenderSettings = (customRenderSettings != null);
+            bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
+            bool labelFields = (renderSettings.FieldIndex >= 0 || useCustomLabels) && (renderSettings.MinRenderLabelZoom < 0 || scaleX > renderSettings.MinRenderLabelZoom);
             bool renderDuplicateFields = (labelFields && renderSettings.RenderDuplicateFields);
             List<RenderPtObj> renderPtObjList = new List<RenderPtObj>(64);
 
@@ -12285,8 +12325,10 @@ namespace EGIS.ShapeFileLib
                     float ssm = shadowText ? 0.8f : 1f;
                     for (int n = 0; n < count; n++)
                     {
-                        string strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
-                        if (strLabel.Length > 0)// && string.Compare(strLabel, lastLabel) != 0)
+                        string strLabel;
+                        if (useCustomLabels) strLabel = customRenderSettings.GetRecordLabel(renderPtObjList[n].RecordIndex);
+                        else strLabel = renderSettings.DbfReader.GetField(renderPtObjList[n].RecordIndex, renderSettings.FieldIndex).Trim();
+                        if (!string.IsNullOrEmpty(strLabel))// && string.Compare(strLabel, lastLabel) != 0)
                         {
                             SizeF strSize = g.MeasureString(strLabel, renderSettings.Font);
                             strSize = new SizeF(strSize.Width * ssm, strSize.Height * ssm);
