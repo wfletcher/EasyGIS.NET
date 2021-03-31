@@ -378,7 +378,8 @@ namespace EGIS.ShapeFileLib
                 shapeStream = new FileStream(BaseDirectory + Path.DirectorySeparatorChar + FileName + ".shp", FileMode.Create);
                 indexStream = new FileStream(BaseDirectory + Path.DirectorySeparatorChar + FileName + ".shx", FileMode.Create);
                 dbfStream = new FileStream(BaseDirectory + Path.DirectorySeparatorChar + FileName + ".dbf", FileMode.Create);
-				prjStream = new FileStream(BaseDirectory + Path.DirectorySeparatorChar + FileName + ".prj", FileMode.Create);
+                //prjStream = new FileStream(BaseDirectory + Path.DirectorySeparatorChar + FileName + ".prj", FileMode.Create);
+                prjStream = null;
 
 				//write the code page file
 				string cpgFilePath = BaseDirectory + Path.DirectorySeparatorChar + FileName + ".cpg";
@@ -524,11 +525,23 @@ namespace EGIS.ShapeFileLib
 
 		private void WritePrjFile(string wkt)
 		{
-			if (this.prjStream != null)
-			{
-				byte[] data = System.Text.Encoding.UTF8.GetBytes(wkt);
-				this.prjStream.Write(data, 0, data.Length);
-			}
+            
+            if (this.prjStream != null)
+            {
+                byte[] data = System.Text.Encoding.UTF8.GetBytes(wkt);
+                this.prjStream.Write(data, 0, data.Length);
+            }
+            else
+            {
+                if (!usingMemoryStreams)
+                {
+                    using (var stream = new FileStream(BaseDirectory + Path.DirectorySeparatorChar + FileName + ".prj", FileMode.Create))
+                    {
+                        byte[] data = System.Text.Encoding.UTF8.GetBytes(wkt);
+                        stream.Write(data, 0, data.Length);
+                    }
+                }            
+            }
 		}
 
         private void CloseShapeFile()
