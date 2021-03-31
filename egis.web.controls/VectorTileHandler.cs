@@ -171,8 +171,6 @@ namespace EGIS.Web.Controls
         {
             DateTime dts = DateTime.Now;
 
-            int w = 256 * 3;
-            int h = 256 * 3;
             int tileX = 0, tileY = 0, zoomLevel = 0;
            
             bool foundCompulsoryParameters = false;

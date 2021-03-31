@@ -105,11 +105,10 @@ namespace EGIS.Web.Controls
     /// <para>The class also provides the ability to join an external DataTable on a shapefile's DBF data file</para>
     /// </remarks>
     /// <seealso cref="EGIS.ShapeFileLib.ICustomRenderSettings"/>
-    public class QuantileCustomRenderSettings : EGIS.ShapeFileLib.ICustomRenderSettings
+    public class QuantileCustomRenderSettings : EGIS.ShapeFileLib.BaseCustomRenderSettings
     {        
         private Color[] rangeColors;
         private int[] recordColorIndex;
-        private RenderSettings renderSettings;
         private System.Collections.Generic.Dictionary<int, string> toolTips;
 
         /// <summary>
@@ -123,8 +122,8 @@ namespace EGIS.Web.Controls
         /// <param name="shapeJoinKey">The column in the shapefile layer's dbf file used to join to importData</param>
         /// <param name="importJoinKey">The column in importData used to join on the shapefile layer</param>
         public QuantileCustomRenderSettings(RenderSettings renderSettings, Color[] quantileColors, double[] quantiles, string quantileKey, DataTable importData, string shapeJoinKey, string importJoinKey)
+            :base(renderSettings)
         {
-            this.renderSettings = renderSettings;
             this.rangeColors = quantileColors;
             Array.Resize<Color>(ref this.rangeColors, quantileColors.Length + 1);
             this.rangeColors[this.rangeColors.Length - 1] = renderSettings.FillColor;
@@ -143,8 +142,8 @@ namespace EGIS.Web.Controls
         /// <param name="importJoinKey">The column in importData used to join on the shapefile layer</param>
         /// <param name="tooltipHeaderFieldList">List of TooltipHeaderFieldNamePair objects used to create a custom tooltip</param>
         public QuantileCustomRenderSettings(RenderSettings renderSettings, Color[] quantileColors, double[] quantiles, string quantileKey, DataTable importData, string shapeJoinKey, string importJoinKey, System.Collections.Generic.List<TooltipHeaderFieldNamePair> tooltipHeaderFieldList)
+            :base(renderSettings)
         {
-            this.renderSettings = renderSettings;
             this.rangeColors = quantileColors;
             Array.Resize<Color>(ref this.rangeColors, quantileColors.Length + 1);
             this.rangeColors[this.rangeColors.Length - 1] = renderSettings.FillColor;
@@ -173,8 +172,8 @@ namespace EGIS.Web.Controls
         /// <param name="shapeFieldName">The name of the shapefile dbf field used to determine what color to render a shape </param>
         /// <param name="tooltipHeaderFieldList">List of TooltipHeaderFieldNamePair objects used to create a custom tooltip</param>
         public QuantileCustomRenderSettings(RenderSettings renderSettings, Color[] quantileColors, double[] quantiles, string shapeFieldName, System.Collections.Generic.List<TooltipHeaderFieldNamePair> tooltipHeaderFieldList)
+            :base(renderSettings)
         {
-            this.renderSettings = renderSettings;
             this.rangeColors = quantileColors;
             Array.Resize<Color>(ref this.rangeColors, quantileColors.Length + 1);
             this.rangeColors[this.rangeColors.Length - 1] = renderSettings.FillColor;
@@ -205,22 +204,12 @@ namespace EGIS.Web.Controls
         /// </summary>
         /// <param name="recordNumber"></param>
         /// <returns></returns>
-        public System.Drawing.Color GetRecordFillColor(int recordNumber)
+        public override System.Drawing.Color GetRecordFillColor(int recordNumber)
         {
             if (rangeColors == null || recordColorIndex == null) return renderSettings.FillColor;
             return rangeColors[recordColorIndex[recordNumber]];
         }
-
-        /// <summary>
-        /// Implementation of the ICustomRenderSettings RenderShape member
-        /// </summary>
-        /// <param name="recordNumber"></param>
-        /// <returns></returns>
-        public bool RenderShape(int recordNumber)
-        {
-            return true;
-        }
-
+       
 
         private void SetupRangeSettings(double[] ranges, string rangeKey, System.Collections.Generic.List<TooltipHeaderFieldNamePair> tooltipHeaderFieldList)
         {            
@@ -431,7 +420,7 @@ namespace EGIS.Web.Controls
         /// </summary>
         /// <param name="recordNumber"></param>
         /// <returns></returns>
-        public string GetRecordToolTip(int recordNumber)
+        public override string GetRecordToolTip(int recordNumber)
         {
             if (toolTips != null && toolTips.ContainsKey(recordNumber))
             {
@@ -444,7 +433,7 @@ namespace EGIS.Web.Controls
         /// <summary>
         /// Implementation of the ICustomRenderSettings UseCustomTooltips member
         /// </summary>
-        public bool UseCustomTooltips
+        public override bool UseCustomTooltips
         {
             get
             {
@@ -452,37 +441,7 @@ namespace EGIS.Web.Controls
             }
         }
 
-        #endregion
-
-        #region ICustomRenderSettings Members
-
-
-        public Color GetRecordOutlineColor(int recordNumber)
-        {
-            //throw new Exception("The method or operation is not implemented.");
-            return renderSettings.OutlineColor;
-        }
-
-        public Color GetRecordFontColor(int recordNumber)
-        {
-            //throw new Exception("The method or operation is not implemented.");
-            return renderSettings.FontColor;
-        }
-
-        public bool UseCustomImageSymbols
-        {
-            //get { throw new Exception("The method or operation is not implemented."); }
-            get
-            {
-                return false;
-            }
-        }
-
-        public Image GetRecordImageSymbol(int recordNumber)
-        {
-            //throw new Exception("The method or operation is not implemented.");
-            return renderSettings.GetImageSymbol();
-        }
+        
 
         #endregion
     }

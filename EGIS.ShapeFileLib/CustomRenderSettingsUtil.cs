@@ -72,12 +72,11 @@ namespace EGIS.ShapeFileLib
     /// </para>
     /// </remarks>
     /// <seealso cref="EGIS.ShapeFileLib.ICustomRenderSettings"/>
-    class QuantileRenderSettings : EGIS.ShapeFileLib.ICustomRenderSettings
+    class QuantileRenderSettings : EGIS.ShapeFileLib.BaseCustomRenderSettings
     {
         private Color[] rangeColors;
         private int[] recordColorIndex;
-        private RenderSettings renderSettings;                
-
+       
         /// <summary>
         /// Constructs a new QuantileCustomRenderSettings instance
         /// </summary>
@@ -86,8 +85,8 @@ namespace EGIS.ShapeFileLib
         /// <param name="quantiles">Array of quantile values. Each successive element must be greater than the previous element. Example - {10, 50, 75}</param>
         /// <param name="shapeFieldName">The name of the shapefile dbf field used to determine what color to render a shape </param>
         public QuantileRenderSettings(RenderSettings renderSettings, Color[] quantileColors, double[] quantiles, string shapeFieldName)
+            :base(renderSettings)
         {
-            this.renderSettings = renderSettings;
             this.rangeColors = quantileColors;
             Array.Resize<Color>(ref this.rangeColors, quantileColors.Length + 1);
             this.rangeColors[this.rangeColors.Length - 1] = renderSettings.FillColor; //default color            
@@ -116,110 +115,52 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         /// <param name="recordNumber"></param>
         /// <returns></returns>
-        public System.Drawing.Color GetRecordFillColor(int recordNumber)
+        public override System.Drawing.Color GetRecordFillColor(int recordNumber)
         {
             if (rangeColors == null || recordColorIndex == null) return renderSettings.FillColor;
             return rangeColors[recordColorIndex[recordNumber]];
         }
-
-        /// <summary>
-        /// Implementation of the ICustomRenderSettings RenderShape member
-        /// </summary>
-        /// <param name="recordNumber"></param>
-        /// <returns></returns>
-        public bool RenderShape(int recordNumber)
-        {
-            return true;
-        }
-
+        
 
         private void SetupRangeSettings(double[] ranges, string rangeKey)
         {
             
-                int fieldIndex = -1;
-                string[] fieldNames = renderSettings.DbfReader.GetFieldNames();
-                fieldIndex = FindFieldIndex(fieldNames, rangeKey);
-                if (fieldIndex < 0) return;
+            int fieldIndex = -1;
+            string[] fieldNames = renderSettings.DbfReader.GetFieldNames();
+            fieldIndex = FindFieldIndex(fieldNames, rangeKey);
+            if (fieldIndex < 0) return;
 
-                int numRecords = renderSettings.DbfReader.DbfRecordHeader.RecordCount;
-                this.recordColorIndex = new int[numRecords];
+            int numRecords = renderSettings.DbfReader.DbfRecordHeader.RecordCount;
+            this.recordColorIndex = new int[numRecords];
 
 
-                for (int n = 0; n < numRecords; n++)
+            for (int n = 0; n < numRecords; n++)
+            {
+                string s = renderSettings.DbfReader.GetField(n, fieldIndex).Trim();
+                double d;
+                if (!double.TryParse(s, out d))
                 {
-                    string s = renderSettings.DbfReader.GetField(n, fieldIndex).Trim();
-                    double d;
-                    if (!double.TryParse(s, out d))
-                    {
-                        this.recordColorIndex[n] = this.rangeColors.Length - 1;
-                    }
-                    else
-                    {
-                        bool added = false;
-                        for (int r = 0; !added && (r < ranges.Length); r++)
-                        {
-                            if (d < ranges[r])
-                            {
-                                this.recordColorIndex[n] = r;
-                                added = true;
-                            }
-                        }
-                        if (!added)
-                        {
-                            this.recordColorIndex[n] = ranges.Length;
-                        }                        
-                    }
+                    this.recordColorIndex[n] = this.rangeColors.Length - 1;
                 }
-            
+                else
+                {
+                    bool added = false;
+                    for (int r = 0; !added && (r < ranges.Length); r++)
+                    {
+                        if (d < ranges[r])
+                        {
+                            this.recordColorIndex[n] = r;
+                            added = true;
+                        }
+                    }
+                    if (!added)
+                    {
+                        this.recordColorIndex[n] = ranges.Length;
+                    }                        
+                }
+            }            
         }
-
-
         
-      
-        /// <summary>
-        /// Implementation of the ICustomRenderSettings GetRecordToolTip member
-        /// </summary>
-        /// <param name="recordNumber"></param>
-        /// <returns></returns>
-        public string GetRecordToolTip(int recordNumber)
-        {            
-            return null;
-        }
-
-        /// <summary>
-        /// Implementation of the ICustomRenderSettings UseCustomTooltips member
-        /// </summary>
-        public bool UseCustomTooltips
-        {
-            get
-            {
-                return false;
-            }
-        }        
-
-        public Color GetRecordOutlineColor(int recordNumber)
-        {
-            return renderSettings.OutlineColor;
-        }
-
-        public Color GetRecordFontColor(int recordNumber)
-        {
-            return renderSettings.FontColor;
-        }
-
-        public bool UseCustomImageSymbols
-        {
-            get
-            {
-                return false;
-            }
-        }
-
-        public Image GetRecordImageSymbol(int recordNumber)
-        {
-            return renderSettings.GetImageSymbol();
-        }
-
         #endregion
 
 
@@ -240,12 +181,12 @@ namespace EGIS.ShapeFileLib
     }
 
 
-    class RandomColorRenderSettings : ICustomRenderSettings
+    class RandomColorRenderSettings : BaseCustomRenderSettings
     {
         #region ICustomRenderSettings Members
         private Color[] colors;
-        private RenderSettings renderSettings;
         public RandomColorRenderSettings(RenderSettings renderSettings, int seed)
+            : base(renderSettings)
         {
             int numRecords = renderSettings.DbfReader.DbfRecordHeader.RecordCount;
             Random r = new Random(seed);
@@ -253,50 +194,14 @@ namespace EGIS.ShapeFileLib
             for (int n = numRecords - 1; n >= 0; --n)
             {
                 colors[n] = Color.FromArgb(r.Next(0, 255), r.Next(0, 255), r.Next(0, 255));
-            }
-            this.renderSettings = renderSettings;
-            
+            }            
         }
 
-        public Color GetRecordFillColor(int recordNumber)
+        public override Color GetRecordFillColor(int recordNumber)
         {
             return colors[recordNumber];
         }
-
-        public Color GetRecordOutlineColor(int recordNumber)
-        {
-            return renderSettings.OutlineColor;
-        }
-
-        public Color GetRecordFontColor(int recordNumber)
-        {
-            return renderSettings.FontColor;
-        }
-
-        public bool RenderShape(int recordNumber)
-        {
-            return true;
-        }
-
-        public bool UseCustomTooltips
-        {
-            get { return false; }
-        }
-
-        public string GetRecordToolTip(int recordNumber)
-        {
-            return "";
-        }
-
-        public bool UseCustomImageSymbols
-        {
-            get { return false; }
-        }
-
-        public Image GetRecordImageSymbol(int recordNumber)
-        {
-            return null;
-        }
+              
 
         #endregion
     }
@@ -343,6 +248,21 @@ namespace EGIS.ShapeFileLib
         public Image GetRecordImageSymbol(int recordNumber)
         {
             throw new Exception("The method or operation is not implemented.");
+        }
+
+        public string GetRecordLabel(int recordNumber)
+        {
+            throw new Exception("The method or operation is not implemented.");
+        }
+
+        public bool UseCustomRecordLabels
+        {
+            get { throw new Exception("The method or operation is not implemented."); }
+        }
+
+        public int GetDirection(int recordNumber)
+        {
+            return 0;
         }
 
         #endregion
@@ -394,6 +314,20 @@ namespace EGIS.ShapeFileLib
         public Image GetRecordImageSymbol(int recordNumber)
         {
             throw new Exception("The method or operation is not implemented.");
+        }
+        public string GetRecordLabel(int recordNumber)
+        {
+            throw new Exception("The method or operation is not implemented.");
+        }
+        public bool UseCustomRecordLabels
+        {
+            get { throw new Exception("The method or operation is not implemented."); }
+        }
+
+
+        public int GetDirection(int recordNumber)
+        {
+            return 0;
         }
 
         #endregion

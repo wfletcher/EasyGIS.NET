@@ -32,20 +32,19 @@ using System.Text;
 
 namespace EGIS.ShapeFileLib
 {
-    internal sealed class TestCustomRenderSettings : ICustomRenderSettings
+    internal sealed class TestCustomRenderSettings : BaseCustomRenderSettings
     {
 
         private string fieldName;
         private int fieldIndex = -1;
         private float maxValue;
-
-        private RenderSettings renderSettings;
-
+     
         private System.Drawing.Image customImage;
 
         #region ICustomRenderSettings Members
 
         public TestCustomRenderSettings(RenderSettings renderSettings, string fieldName, float maxValue)
+            :base(renderSettings)
         {
             this.maxValue = maxValue;
             this.renderSettings = renderSettings;
@@ -76,7 +75,7 @@ namespace EGIS.ShapeFileLib
             return customImg;
         }
 
-        public System.Drawing.Color GetRecordFillColor(int recordNumber)
+        public override System.Drawing.Color GetRecordFillColor(int recordNumber)
         {
             if (fieldIndex < 0) return renderSettings.FillColor; ;
             float f;
@@ -96,27 +95,13 @@ namespace EGIS.ShapeFileLib
         }
 
         private int rst = new Random().Next(2);
-        public bool RenderShape(int recordNumber)
+        public override bool RenderShape(int recordNumber)
         {
             return (recordNumber % 2) == 0;
         }
-        
-
-        public bool UseCustomTooltips
-        {
-            get
-            {
-                return false;
-            }
-        }
-
-        public string GetRecordToolTip(int recordNumber)
-        {
-            return null;
-        }
-
+                
         Random r = new Random();
-        public System.Drawing.Color GetRecordOutlineColor(int recordNumber)
+        public override System.Drawing.Color GetRecordOutlineColor(int recordNumber)
         {
             
             //if (r.Next(100) < 20)
@@ -128,7 +113,7 @@ namespace EGIS.ShapeFileLib
             return renderSettings.OutlineColor;
         }
 
-        public System.Drawing.Color GetRecordFontColor(int recordNumber)
+        public override System.Drawing.Color GetRecordFontColor(int recordNumber)
         {
             if (recordNumber % 10 == 0)
             {
@@ -137,13 +122,9 @@ namespace EGIS.ShapeFileLib
 
             return renderSettings.FontColor;
         }
+      
 
-        #endregion
-
-        #region ICustomRenderSettings Members
-
-
-        public bool UseCustomImageSymbols
+        public override bool UseCustomImageSymbols
         {
             //get { throw new Exception("The method or operation is not implemented."); }
             get
@@ -152,7 +133,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-        public System.Drawing.Image GetRecordImageSymbol(int recordNumber)
+        public override System.Drawing.Image GetRecordImageSymbol(int recordNumber)
         {
             //throw new Exception("The method or operation is not implemented.");
             if (recordNumber % 10 == 0)
@@ -161,6 +142,7 @@ namespace EGIS.ShapeFileLib
             }
             return this.renderSettings.GetImageSymbol();
         }
+       
 
         #endregion
     }
