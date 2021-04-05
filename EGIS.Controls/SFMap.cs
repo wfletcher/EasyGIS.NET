@@ -78,7 +78,19 @@ namespace EGIS.Controls
         /// </summary>
         ZoomCircle
     };
-    
+
+    /// <summary>
+    /// enumeration defining which layers should be refreshed 
+    /// </summary>
+    [Flags]
+    public enum RefreshMode
+    {
+        None = 0,
+        BackgroundLayers = 2,
+        ForegroundLayers = 4,
+        AllLayers = BackgroundLayers | ForegroundLayers
+    }
+
     /// <summary>
     /// SFMap (ShapeFile Map) is a .NET ShapeFile Control which displays shapefiles in a .NET Windows Form application
     /// </summary>
@@ -179,10 +191,12 @@ namespace EGIS.Controls
 
         #region "Instance Variables"
 
-        private List<EGIS.ShapeFileLib.ShapeFile> myShapefiles = new List<EGIS.ShapeFileLib.ShapeFile>();
+        private List<EGIS.ShapeFileLib.ShapeFile> _backgroundShapeFiles = new List<EGIS.ShapeFileLib.ShapeFile>();
+        private List<EGIS.ShapeFileLib.ShapeFile> _foregroundShapeFiles = new List<EGIS.ShapeFileLib.ShapeFile>();
         private Color _mapBackColor = Color.LightGray;
-        private Bitmap screenBuf;
+        private Bitmap screenBuf, backgroundBuffer, foregroundBuffer;
         private Boolean dirtyScreenBuf;
+        private RefreshMode refreshMode = RefreshMode.None;
         private PointD _centrePoint;
         private double _zoomLevel = 1d;
         private const bool _useHints = true;
@@ -361,7 +375,7 @@ namespace EGIS.Controls
             }
             catch
             {
-            }
+            }            
         }
 
         #region XmlMethods
@@ -387,7 +401,8 @@ namespace EGIS.Controls
 
 			writer.WriteStartElement("layers");
 
-            foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
+            var layers = ShapeFilesLayers;
+            foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
             {
                 sf.WriteXml(writer);
             }
@@ -455,7 +470,7 @@ namespace EGIS.Controls
                     sf.ReadXml((XmlElement)sfList[n], baseDirectory, this.UseMemoryStreams);
                     //sf.MapProjectionType = this.projectionType;
 
-                    myShapefiles.Add(sf);
+                    BackgroundShapeFiles.Add(sf);
 
                     if (loadingDelegate != null)
                     {
@@ -465,9 +480,9 @@ namespace EGIS.Controls
                 }
 
 				//if the project does not have the CRS set use the first layers CRS
-				if (!crsSet && myShapefiles.Count > 0)
+				if (!crsSet && BackgroundShapeFiles.Count > 0)
 				{
-					MapCoordinateReferenceSystem = myShapefiles[0].CoordinateReferenceSystem;
+					MapCoordinateReferenceSystem = BackgroundShapeFiles[0].CoordinateReferenceSystem;
 				}
 
                 //set centre point to centre of shapefile and adjust zoom level to fit entire shapefile
@@ -476,6 +491,7 @@ namespace EGIS.Controls
                 this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);                
                 if(this.ClientSize.Width > 0) this._zoomLevel = this.ClientSize.Width / r.Width;
                 dirtyScreenBuf = true;
+                refreshMode = RefreshMode.AllLayers;
                 Refresh();
                 OnShapeFilesChanged();
                 OnZoomLevelChanged();
@@ -519,6 +535,7 @@ namespace EGIS.Controls
 
                 _zoomLevel = value;
                 dirtyScreenBuf=true;
+                refreshMode = RefreshMode.AllLayers;
                 Invalidate();
                 OnZoomLevelChanged();            
             }
@@ -582,6 +599,7 @@ namespace EGIS.Controls
                 _centrePoint = value;
                 if(UseMercatorProjection) _centrePoint = ShapeFile.LatLongToProjection(_centrePoint);
                 dirtyScreenBuf = true;
+                refreshMode = RefreshMode.AllLayers;
                 Invalidate();
             }
         }
@@ -599,6 +617,7 @@ namespace EGIS.Controls
             {
                 _mapBackColor = value;
                 dirtyScreenBuf = true;
+                refreshMode = RefreshMode.AllLayers;
                 Invalidate();
                 
             }
@@ -634,6 +653,7 @@ namespace EGIS.Controls
             {
                 EGIS.ShapeFileLib.ShapeFile.RenderQuality = value;
                 dirtyScreenBuf = true;
+                refreshMode = RefreshMode.AllLayers;
                 Invalidate();
             }
         }
@@ -738,6 +758,7 @@ namespace EGIS.Controls
             if(UseMercatorProjection) _centrePoint = ShapeFile.LatLongToProjection(_centrePoint); // v2.5
             _zoomLevel = zoom;
             dirtyScreenBuf = true;
+            refreshMode = RefreshMode.AllLayers;
             Invalidate();
             OnZoomLevelChanged();
         }
@@ -767,6 +788,7 @@ namespace EGIS.Controls
             }
                 
             dirtyScreenBuf = true;
+            refreshMode = RefreshMode.AllLayers;
             Refresh();
             OnZoomLevelChanged();                
         }
@@ -804,6 +826,7 @@ namespace EGIS.Controls
             //Console.Out.WriteLine("_zoomLevel = " + _zoomLevel);
 
             dirtyScreenBuf = true;
+            refreshMode = RefreshMode.AllLayers;
             Refresh();
             OnZoomLevelChanged();           
         }
@@ -844,7 +867,8 @@ namespace EGIS.Controls
         {
             RectangleD extent = RectangleD.Empty;
             bool extentSet = false;
-            foreach (ShapeFile layer in myShapefiles)
+            var layers = ShapeFilesLayers;
+            foreach (ShapeFile layer in layers)
             {
                 System.Collections.ObjectModel.ReadOnlyCollection<int> selectedIndicies = layer.SelectedRecordIndices;
                 if (selectedIndicies.Count > 0)
@@ -973,7 +997,8 @@ namespace EGIS.Controls
         {
             get
             {
-                if (myShapefiles.Count == 0)
+                var layers = ShapeFilesLayers;
+                if (layers.Count == 0)
                 {
                     return RectangleD.Empty;
                 }
@@ -982,7 +1007,7 @@ namespace EGIS.Controls
                    // RectangleD r1 = myShapefiles[0].Extent;
                     //Console.Out.WriteLine("r1 = " + r1);
 
-                    RectangleD r = myShapefiles[0].Extent.Transform(myShapefiles[0].CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+                    RectangleD r = layers[0].Extent.Transform(layers[0].CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
 
                     if (double.IsInfinity(r.Width) || double.IsInfinity(r.Height))
                     {
@@ -990,7 +1015,7 @@ namespace EGIS.Controls
                     }
                     //RectangleD r2 = ShapeFile.ConvertExtent(r, this.MapCoordinateReferenceSystem, myShapefiles[0].CoordinateReferenceSystem);
                      
-                    foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
+                    foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
                     {
                         var extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
                         if (double.IsInfinity(extent.Width) || double.IsInfinity(extent.Height))
@@ -1067,11 +1092,12 @@ namespace EGIS.Controls
         /// <returns>The found ShapeFile or null if the ShapeFile could not be found</returns>
         public EGIS.ShapeFileLib.ShapeFile FindShapeFileBypath(string path)
         {
-            for (int index = myShapefiles.Count - 1; index >= 0; index--)
+            var layers = this.ShapeFilesLayers;
+            for (int index = layers.Count - 1; index >= 0; index--)
             {
-                if (string.Compare(myShapefiles[index].FilePath, path, StringComparison.OrdinalIgnoreCase) == 0)
+                if (string.Compare(layers[index].FilePath, path, StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    return myShapefiles[index];
+                    return layers[index];
                 }
             }
             return null;
@@ -1084,9 +1110,10 @@ namespace EGIS.Controls
         /// <returns>The found zero based ShapeFile index or -1 if the ShapeFile could not be found</returns>
         public int IndexOfShapeFileByPath(string path)
         {
-            for (int index = myShapefiles.Count - 1; index >= 0; index--)
+            var layers = this.ShapeFilesLayers;
+            for (int index = layers.Count - 1; index >= 0; index--)
             {
-                if (string.Compare(myShapefiles[index].FilePath, path, StringComparison.OrdinalIgnoreCase) == 0)
+                if (string.Compare(layers[index].FilePath, path, StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     return index;
                 }
@@ -1177,7 +1204,7 @@ namespace EGIS.Controls
 		/// <returns>Returns the shapeFile which was added to the SFMap</returns>
 		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(EGIS.ShapeFileLib.ShapeFile shapeFile, bool fitMapToLayerExtent = true, bool refreshImmediately = true)
 		{
-			myShapefiles.Add(shapeFile);
+			this.BackgroundShapeFiles.Add(shapeFile);
 
 			if (fitMapToLayerExtent)
 			{
@@ -1206,11 +1233,13 @@ namespace EGIS.Controls
 		/// </summary>
 		public void ClearShapeFiles()
         {
-            for (int n = 0; n < myShapefiles.Count; n++)
+            var layers = this.ShapeFilesLayers;
+            for (int n = 0; n < layers.Count; n++)
             {
-                myShapefiles[n].Close();
+                layers[n].Close();
             }
-            myShapefiles.Clear();
+            BackgroundShapeFiles.Clear();
+            ForegroundShapeFiles.Clear();
             this.Refresh(true);
             this.OnShapeFilesChanged();
 
@@ -1222,10 +1251,11 @@ namespace EGIS.Controls
         /// <param name="shapeFile"></param>
         public void RemoveShapeFile(EGIS.ShapeFileLib.ShapeFile shapeFile)
         {            
-            if(myShapefiles.Remove(shapeFile))
+            if(BackgroundShapeFiles.Remove(shapeFile) || ForegroundShapeFiles.Remove(shapeFile))
             {
                 OnShapeFilesChanged();
                 dirtyScreenBuf = true;
+                refreshMode = RefreshMode.AllLayers;
                 Invalidate();
             }
         }
@@ -1239,7 +1269,7 @@ namespace EGIS.Controls
         {
             get
             {                
-                return myShapefiles[index];
+                return ShapeFilesLayers[index];
             }
         }
 
@@ -1265,7 +1295,7 @@ namespace EGIS.Controls
         {
             get
             {
-                return myShapefiles.Count;
+                return BackgroundShapeFiles.Count + ForegroundShapeFiles.Count;
             }
         }
 
@@ -1283,13 +1313,31 @@ namespace EGIS.Controls
         /// <seealso cref="MoveShapeFileDown"/>
         public void MoveShapeFileUp(EGIS.ShapeFileLib.ShapeFile shapeFile)
         {
-            int index = myShapefiles.IndexOf(shapeFile);
-            if (index ==0 ) return;
-            myShapefiles.RemoveAt(index);
-            myShapefiles.Insert(index - 1, shapeFile);
-            dirtyScreenBuf = true;
-            Invalidate();
-            OnShapeFilesChanged();
+            int index = BackgroundShapeFiles.IndexOf(shapeFile);
+            if (index >= 0)
+            {
+                if (index == 0) return;
+                BackgroundShapeFiles.RemoveAt(index);
+                BackgroundShapeFiles.Insert(index - 1, shapeFile);
+                dirtyScreenBuf = true;
+                refreshMode = RefreshMode.AllLayers;
+                Invalidate();
+                OnShapeFilesChanged();
+            }
+            else
+            {
+                index = ForegroundShapeFiles.IndexOf(shapeFile);
+                if (index >= 0)
+                {
+                    if (index == 0) return;
+                    ForegroundShapeFiles.RemoveAt(index);
+                    ForegroundShapeFiles.Insert(index - 1, shapeFile);
+                    dirtyScreenBuf = true;
+                    refreshMode = RefreshMode.AllLayers;
+                    Invalidate();
+                    OnShapeFilesChanged();
+                }
+            }
         }
 
         /// <summary>
@@ -1306,13 +1354,31 @@ namespace EGIS.Controls
         /// <seealso cref="MoveShapeFileUp"/>
         public void MoveShapeFileDown(EGIS.ShapeFileLib.ShapeFile shapeFile)
         {
-            int index = myShapefiles.IndexOf(shapeFile);
-            if (index == myShapefiles.Count-1) return;
-            myShapefiles.RemoveAt(index);
-            myShapefiles.Insert(index + 1, shapeFile);
-            dirtyScreenBuf = true;
-            Invalidate();
-            OnShapeFilesChanged();            
+            int index = BackgroundShapeFiles.IndexOf(shapeFile);
+            if (index >= 0)
+            {
+                if (index == BackgroundShapeFiles.Count - 1) return;
+                BackgroundShapeFiles.RemoveAt(index);
+                BackgroundShapeFiles.Insert(index + 1, shapeFile);
+                dirtyScreenBuf = true;
+                refreshMode = RefreshMode.AllLayers;
+                Invalidate();
+                OnShapeFilesChanged();
+            }
+            else
+            {
+                index = ForegroundShapeFiles.IndexOf(shapeFile);
+                if (index >= 0)
+                {
+                    if (index == ForegroundShapeFiles.Count - 1) return;
+                    ForegroundShapeFiles.RemoveAt(index);
+                    ForegroundShapeFiles.Insert(index + 1, shapeFile);
+                    dirtyScreenBuf = true;
+                    refreshMode = RefreshMode.AllLayers;
+                    Invalidate();
+                    OnShapeFilesChanged();
+                }
+            }
         }
 
         /// <summary>
@@ -1332,7 +1398,7 @@ namespace EGIS.Controls
         /// </remarks>
         public Graphics CreateMapGraphics()
         {
-            return Graphics.FromImage(this.screenBuf);
+            return Graphics.FromImage(this.ScreenBuffer);
         }
 
         /// <summary>
@@ -1405,7 +1471,7 @@ namespace EGIS.Controls
             if (sf.RenderSettings != null) sf.RenderSettings.Dispose();
             sf.RenderSettings = new EGIS.ShapeFileLib.RenderSettings(path, renderFieldName, new Font(this.Font.FontFamily, 6f));
             LoadOptimalRenderSettings(sf);
-            myShapefiles.Add(sf);
+            BackgroundShapeFiles.Add(sf);
             return sf;
         }
 
@@ -1417,7 +1483,7 @@ namespace EGIS.Controls
             sf.RenderSettings.FieldName = renderFieldName;
 			sf.RenderSettings.Font = new Font(this.Font.FontFamily, 8f);
             LoadOptimalRenderSettings(sf);
-            myShapefiles.Add(sf);
+            BackgroundShapeFiles.Add(sf);
             return sf;
         }
 
@@ -1488,33 +1554,64 @@ namespace EGIS.Controls
                     screenBuf.Dispose();
                 }
                 screenBuf = new Bitmap(this.ClientSize.Width, this.ClientSize.Height);
+                if (backgroundBuffer != null)
+                {
+                    backgroundBuffer.Dispose();
+                }
+                backgroundBuffer = new Bitmap(this.ClientSize.Width, this.ClientSize.Height);
+                if (foregroundBuffer != null)
+                {
+                    foregroundBuffer.Dispose();
+                }
+                foregroundBuffer = new Bitmap(this.ClientSize.Width, this.ClientSize.Height);
             }
-            Graphics g = Graphics.FromImage(screenBuf);
-            
-            try
+
+            using (Graphics g = Graphics.FromImage(screenBuf))
             {
                 g.Clear(MapBackColor);
-                this.OnPaintMapBackground(new PaintEventArgs(g, new Rectangle(0,0,this.ClientSize.Width, this.ClientSize.Height)));
-                foreach (EGIS.ShapeFileLib.ShapeFile sf in myShapefiles)
+                this.OnPaintMapBackground(new PaintEventArgs(g, new Rectangle(0, 0, this.ClientSize.Width, this.ClientSize.Height)));
+                //render the background layers
+                if (this.BackgroundShapeFiles.Count > 0 && (refreshMode & RefreshMode.BackgroundLayers) != RefreshMode.None)
                 {
-                    //this is an expensive operation
-                    //using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, MapCoordinateReferenceSystem))
-                    //{
-                    //}
-                    //using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode)))
-                    //{
-                    //}
-                    
-                    sf.Render(g, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
-                }               
+                    using (Graphics g2 = Graphics.FromImage(backgroundBuffer))
+                    {
+                        g2.Clear(Color.Transparent);
+                        var layers = this.BackgroundShapeFiles;
+                        foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
+                        {
+                            //this is an expensive operation
+                            //using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, MapCoordinateReferenceSystem))
+                            //{
+                            //}
+                            //using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode)))
+                            //{
+                            //}
+
+                            sf.Render(g2, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
+                        }
+                    }
+                    g.DrawImage(backgroundBuffer, 0, 0);
+                }
                 
+                //render the foreground layers
+                if (this.ForegroundShapeFiles.Count > 0 && (refreshMode & RefreshMode.ForegroundLayers) != RefreshMode.None)
+                {
+                    using (Graphics g2 = Graphics.FromImage(foregroundBuffer))
+                    {
+                        g2.Clear(Color.Transparent);
+                        var layers = this.ForegroundShapeFiles;
+                        foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
+                        {                           
+                            sf.Render(g2, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
+                        }
+                    }
+                    g.DrawImage(foregroundBuffer, 0, 0);
+                }                
             }
-            finally
-            {
-                g.Dispose();
-            }
-            dirtyScreenBuf = false;            
+            dirtyScreenBuf = false;
+            refreshMode = RefreshMode.None;
         }
+
 
         /// <summary>
         /// Utility method that creates and returns a new Bitmap Image of the current map displayed in the SFMap Control
@@ -1527,13 +1624,13 @@ namespace EGIS.Controls
         {
             Bitmap bm = new Bitmap(this.ClientSize.Width, this.ClientSize.Height);
 
-            if (screenBuf != null)
+            if (ScreenBuffer != null)
             {
                 Graphics g = Graphics.FromImage(bm);
                 try
                 {
                     g.Clear(MapBackColor);
-                    g.DrawImage(screenBuf, 0, 0);
+                    g.DrawImage(ScreenBuffer, 0, 0);
                 }
                 finally
                 {
@@ -1543,22 +1640,52 @@ namespace EGIS.Controls
             return bm;
         }
 
+		#endregion
+
+		#region protected members
+		
+        protected List<EGIS.ShapeFileLib.ShapeFile> BackgroundShapeFiles
+        {
+            get { return _backgroundShapeFiles; }
+        }
+
+        protected List<EGIS.ShapeFileLib.ShapeFile> ForegroundShapeFiles
+        {
+            get { return _foregroundShapeFiles; }
+        }
+
+        /// <summary>
+        /// returns a list containing background and foreground layers. This method returns a new List
+        /// each time it is called and should be considered read-only
+        /// </summary>
+        protected List<EGIS.ShapeFileLib.ShapeFile> ShapeFilesLayers
+        {
+            get
+            {
+                List<ShapeFile> layers = new List<ShapeFile>();
+                layers.AddRange(BackgroundShapeFiles);
+                layers.AddRange(ForegroundShapeFiles);
+                return layers;
+            }
+        }
+
         #endregion
-        
+
+
         protected override void OnPaint(PaintEventArgs e)
         {               
-            if (dirtyScreenBuf)
+            if (dirtyScreenBuf || refreshMode != RefreshMode.None)
             {
                 RenderShapefiles();                
             }
-            if (screenBuf != null)
+            if (ScreenBuffer != null)
             {
                // bool selecting = (InternalPanSelectMode != PanSelectMode.Pan);
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
                 //if (InternalPanSelectMode == PanSelectMode.SelectRectangle)
                 if ((InternalPanSelectMode == PanSelectMode.SelectRectangle) || (InternalPanSelectMode == PanSelectMode.ZoomRectangle))
                 {
-                    e.Graphics.DrawImage(screenBuf, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
+                    e.Graphics.DrawImage(ScreenBuffer, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
                     using (Pen p = new Pen(Color.Red, 1))
                     {
                         using(Brush b = new SolidBrush(Color.FromArgb(20, Color.Red)))
@@ -1593,7 +1720,7 @@ namespace EGIS.Controls
                 //else if (InternalPanSelectMode == PanSelectMode.SelectCircle)
                 else if ((InternalPanSelectMode == PanSelectMode.SelectCircle) || (InternalPanSelectMode == PanSelectMode.ZoomCircle))
                 {
-                    e.Graphics.DrawImage(screenBuf, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
+                    e.Graphics.DrawImage(ScreenBuffer, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
                     using (Pen p = new Pen(Color.Red, 1))
                     {
                         using (Brush b = new SolidBrush(Color.FromArgb(20, Color.Red)))
@@ -1627,11 +1754,11 @@ namespace EGIS.Controls
                     //change this to only draw invalid area
                     if ((MouseOffsetPoint.X == 0) && (MouseOffsetPoint.Y == 0))
                     {
-                        e.Graphics.DrawImage(screenBuf, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
+                        e.Graphics.DrawImage(ScreenBuffer, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
                     }
                     else
                     {
-                        e.Graphics.DrawImage(screenBuf, MouseOffsetPoint.X, MouseOffsetPoint.Y);
+                        e.Graphics.DrawImage(ScreenBuffer, MouseOffsetPoint.X, MouseOffsetPoint.Y);
                     }
                 }
             }
@@ -1661,6 +1788,7 @@ namespace EGIS.Controls
         {
             base.OnResize(e);
             dirtyScreenBuf = true;
+            refreshMode = RefreshMode.AllLayers;
         }
 
         /// <summary>
@@ -1675,7 +1803,11 @@ namespace EGIS.Controls
         /// </remarks>
         public void Refresh(bool fullRefresh)
         {
-            if (fullRefresh) dirtyScreenBuf = true;
+            if (fullRefresh)
+            {
+                dirtyScreenBuf = true;
+                refreshMode = RefreshMode.AllLayers;
+            }
             Refresh();
         }
 
@@ -1690,6 +1822,7 @@ namespace EGIS.Controls
         public void InvalidateAndClearBackground()
         {            
             this.dirtyScreenBuf = true;
+            refreshMode = RefreshMode.AllLayers;
             Invalidate();
         }
 
@@ -2016,26 +2149,27 @@ namespace EGIS.Controls
                         selRect.Inflate(4f / ZoomLevel, 4f / ZoomLevel);
                     }
                     bool fireEvent = false;
-                    for (int n = 0; n < this.ShapeFileCount; ++n)
+                    var layers = ShapeFilesLayers;
+                    for (int n = 0; n < layers.Count; ++n)
                     {
-                        if (!myShapefiles[n].IsSelectable) continue;
+                        if (!layers[n].IsSelectable) continue;
                         fireEvent = true;
                         List<int> ind = new List<int>();
-                        myShapefiles[n].GetShapeIndiciesIntersectingRect(ind, selRect, this.MapCoordinateReferenceSystem);
+                        layers[n].GetShapeIndiciesIntersectingRect(ind, selRect, this.MapCoordinateReferenceSystem);
 
                         if (ToggleSelect)
                         {
                             foreach (int index in ind)
                             {
-                                myShapefiles[n].SelectRecord(index, !myShapefiles[n].IsRecordSelected(index));
+                                layers[n].SelectRecord(index, !layers[n].IsRecordSelected(index));
                             }
                         }
                         else
                         {
-                            myShapefiles[n].ClearSelectedRecords();
+                            layers[n].ClearSelectedRecords();
                             foreach (int index in ind)
                             {
-                                myShapefiles[n].SelectRecord(index, true);
+                                layers[n].SelectRecord(index, true);
                             }
                         }
                     }
@@ -2059,27 +2193,28 @@ namespace EGIS.Controls
                         radius += (4f / ZoomLevel);
                     }
                     bool fireEvent = false;
-                    for (int n = 0; n < this.ShapeFileCount; ++n)
+                    var layers = this.ShapeFilesLayers;
+                    for (int n = 0; n < layers.Count; ++n)
                     {
-                        if (!myShapefiles[n].IsSelectable) continue;
+                        if (!layers[n].IsSelectable) continue;
                         fireEvent = true;
                         
                         List<int> ind = new List<int>();
-                        myShapefiles[n].GetShapeIndiciesIntersectingCircle(ind, pt1, radius, this.MapCoordinateReferenceSystem);
+                        layers[n].GetShapeIndiciesIntersectingCircle(ind, pt1, radius, this.MapCoordinateReferenceSystem);
 
                         if (ToggleSelect)
                         {
                             foreach (int index in ind)
                             {
-                                myShapefiles[n].SelectRecord(index, !myShapefiles[n].IsRecordSelected(index));
+                                layers[n].SelectRecord(index, !layers[n].IsRecordSelected(index));
                             }
                         }
                         else
                         {
-                            myShapefiles[n].ClearSelectedRecords();
+                            layers[n].ClearSelectedRecords();
                             foreach (int index in ind)
                             {
-                                myShapefiles[n].SelectRecord(index, true);
+                                layers[n].SelectRecord(index, true);
                             }
                         }
                     }

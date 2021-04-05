@@ -17,15 +17,25 @@ namespace EGIS.Controls
             {
                 if(components != null) components.Dispose();
                 if(screenBuf != null) screenBuf.Dispose();
-                if (this.myShapefiles != null)
-                {
-                    for (int n = 0; n < myShapefiles.Count; ++n)
-                    {
-                        myShapefiles[n].Dispose();
-                    }
-                    myShapefiles = null;
-                }
+                if (backgroundBuffer != null) backgroundBuffer.Dispose();
+                if (foregroundBuffer != null) foregroundBuffer.Dispose();
                 
+                if (this._backgroundShapeFiles != null)
+                {
+                    for (int n = 0; n < _backgroundShapeFiles.Count; ++n)
+                    {
+                        _backgroundShapeFiles[n].Dispose();
+                    }
+                    _backgroundShapeFiles = null;
+                }
+                if (this._foregroundShapeFiles != null)
+                {
+                    for (int n = 0; n < _foregroundShapeFiles.Count; ++n)
+                    {
+                        _foregroundShapeFiles[n].Dispose();
+                    }
+                    _foregroundShapeFiles = null;
+                }
             }
             base.Dispose(disposing);
         }
