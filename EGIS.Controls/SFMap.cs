@@ -91,6 +91,12 @@ namespace EGIS.Controls
         AllLayers = BackgroundLayers | ForegroundLayers
     }
 
+    public enum LayerPositionEnum
+    {
+        Background,
+        Foreground 
+    }
+
     /// <summary>
     /// SFMap (ShapeFile Map) is a .NET ShapeFile Control which displays shapefiles in a .NET Windows Form application
     /// </summary>
@@ -195,7 +201,7 @@ namespace EGIS.Controls
         private List<EGIS.ShapeFileLib.ShapeFile> _foregroundShapeFiles = new List<EGIS.ShapeFileLib.ShapeFile>();
         private Color _mapBackColor = Color.LightGray;
         private Bitmap screenBuf, backgroundBuffer, foregroundBuffer;
-        private Boolean dirtyScreenBuf;
+        //private Boolean dirtyScreenBuf;
         private RefreshMode refreshMode = RefreshMode.None;
         private PointD _centrePoint;
         private double _zoomLevel = 1d;
@@ -490,7 +496,7 @@ namespace EGIS.Controls
                 
                 this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);                
                 if(this.ClientSize.Width > 0) this._zoomLevel = this.ClientSize.Width / r.Width;
-                dirtyScreenBuf = true;
+                //dirtyScreenBuf = true;
                 refreshMode = RefreshMode.AllLayers;
                 Refresh();
                 OnShapeFilesChanged();
@@ -534,7 +540,7 @@ namespace EGIS.Controls
                 if (value > this._zoomLevel && this.mapCoordinateReferenceSystem is IProjectedCRS && (1/value < 0.00001)) return;
 
                 _zoomLevel = value;
-                dirtyScreenBuf=true;
+                //dirtyScreenBuf=true;
                 refreshMode = RefreshMode.AllLayers;
                 Invalidate();
                 OnZoomLevelChanged();            
@@ -598,7 +604,7 @@ namespace EGIS.Controls
             {
                 _centrePoint = value;
                 if(UseMercatorProjection) _centrePoint = ShapeFile.LatLongToProjection(_centrePoint);
-                dirtyScreenBuf = true;
+                //dirtyScreenBuf = true;
                 refreshMode = RefreshMode.AllLayers;
                 Invalidate();
             }
@@ -616,7 +622,7 @@ namespace EGIS.Controls
             set
             {
                 _mapBackColor = value;
-                dirtyScreenBuf = true;
+                //dirtyScreenBuf = true;
                 refreshMode = RefreshMode.AllLayers;
                 Invalidate();
                 
@@ -652,7 +658,7 @@ namespace EGIS.Controls
             set
             {
                 EGIS.ShapeFileLib.ShapeFile.RenderQuality = value;
-                dirtyScreenBuf = true;
+                //dirtyScreenBuf = true;
                 refreshMode = RefreshMode.AllLayers;
                 Invalidate();
             }
@@ -757,7 +763,7 @@ namespace EGIS.Controls
             _centrePoint = centre;
             if(UseMercatorProjection) _centrePoint = ShapeFile.LatLongToProjection(_centrePoint); // v2.5
             _zoomLevel = zoom;
-            dirtyScreenBuf = true;
+            //dirtyScreenBuf = true;
             refreshMode = RefreshMode.AllLayers;
             Invalidate();
             OnZoomLevelChanged();
@@ -787,7 +793,7 @@ namespace EGIS.Controls
                 this._zoomLevel = cs.Height / r.Height;
             }
                 
-            dirtyScreenBuf = true;
+           // dirtyScreenBuf = true;
             refreshMode = RefreshMode.AllLayers;
             Refresh();
             OnZoomLevelChanged();                
@@ -825,7 +831,7 @@ namespace EGIS.Controls
             //Console.Out.WriteLine("r=" + r);
             //Console.Out.WriteLine("_zoomLevel = " + _zoomLevel);
 
-            dirtyScreenBuf = true;
+           // dirtyScreenBuf = true;
             refreshMode = RefreshMode.AllLayers;
             Refresh();
             OnZoomLevelChanged();           
@@ -1135,9 +1141,9 @@ namespace EGIS.Controls
 		/// After the shapefile is added to the map, the map will auto fit the entire ShapeFile in the control by adjusting the 
 		/// current ZomLevel and CentrePoint accordingly.
 		/// </remarks>
-		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName, bool useMemoryStreams=false, bool fitMapToLayerExtent=true, bool refreshImmediately=true)
+		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName, bool useMemoryStreams=false, bool fitMapToLayerExtent=true, bool refreshImmediately=true, LayerPositionEnum layerPosition= LayerPositionEnum.Background)
         {            
-            EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(path, name, labelFieldName, useMemoryStreams);
+            EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(path, name, labelFieldName, useMemoryStreams, layerPosition);
 
 			if (fitMapToLayerExtent)
 			{
@@ -1146,16 +1152,18 @@ namespace EGIS.Controls
 			}
 			else
 			{
-				//refresh so the layer is drawn
-				if (refreshImmediately)
-				{
-					Refresh(true);
-				}
-				else
-				{
-					InvalidateAndClearBackground();
-				}
-			}
+                //refresh so the layer is drawn
+                if (refreshImmediately)
+                {
+                    //Refresh(true);
+                    Refresh(layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers);
+                }
+                else
+                {
+                    //InvalidateAndClearBackground();
+                    Invalidate(layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers);
+                }
+            }
 			OnShapeFilesChanged();            
             return sf;
         }
@@ -1171,9 +1179,9 @@ namespace EGIS.Controls
 		/// <param name="labelFieldName">The name of the field in the ShapeFiles's DBF file to use when rendering the shape labels</param>
 		/// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
 		/// <returns>Returns the created ShapeFile which was added to the SFMap</returns>
-		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string labelFieldName, bool fitMapToLayerExtent = true, bool refreshImmediately = true)
+		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string labelFieldName, bool fitMapToLayerExtent = true, bool refreshImmediately = true, LayerPositionEnum layerPosition = LayerPositionEnum.Background)
 		{
-			EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(shxStream, shpStream, dbfStream, prjStream, name, labelFieldName);
+			EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(shxStream, shpStream, dbfStream, prjStream, name, labelFieldName, layerPosition);
 
 			if (fitMapToLayerExtent)
 			{ 
@@ -1185,12 +1193,14 @@ namespace EGIS.Controls
 				//refresh so the layer is drawn
 				if (refreshImmediately)
 				{
-					Refresh(true);
+                    //Refresh(true);
+                    Refresh(layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers);
 				}
 				else
 				{
-					InvalidateAndClearBackground();
-				}
+					//InvalidateAndClearBackground();
+                    Invalidate(layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers);
+                }
 			}
 			OnShapeFilesChanged();
             return sf;
@@ -1202,9 +1212,16 @@ namespace EGIS.Controls
 		/// <param name="shapeFile">ShapeFile object to add to the map</param>
 		/// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
 		/// <returns>Returns the shapeFile which was added to the SFMap</returns>
-		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(EGIS.ShapeFileLib.ShapeFile shapeFile, bool fitMapToLayerExtent = true, bool refreshImmediately = true)
+		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(EGIS.ShapeFileLib.ShapeFile shapeFile, bool fitMapToLayerExtent = true, bool refreshImmediately = true, LayerPositionEnum layerPosition = LayerPositionEnum.Background)
 		{
-			this.BackgroundShapeFiles.Add(shapeFile);
+            if (layerPosition == LayerPositionEnum.Background)
+            {
+                this.BackgroundShapeFiles.Add(shapeFile);
+            }
+            else
+            {
+                this.ForegroundShapeFiles.Add(shapeFile);
+            }
 
 			if (fitMapToLayerExtent)
 			{
@@ -1213,16 +1230,18 @@ namespace EGIS.Controls
 			}
 			else
 			{
-				//refresh so the layer is drawn
-				if (refreshImmediately)
-				{
-					Refresh(true);
-				}
-				else
-				{
-					InvalidateAndClearBackground();
-				}
-			}
+                //refresh so the layer is drawn
+                if (refreshImmediately)
+                {
+                    //Refresh(true);
+                    Refresh(layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers);
+                }
+                else
+                {
+                    //InvalidateAndClearBackground();
+                    Invalidate(layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers);
+                }
+            }
 			OnShapeFilesChanged();
 			return shapeFile;
 		}
@@ -1251,11 +1270,18 @@ namespace EGIS.Controls
         /// <param name="shapeFile"></param>
         public void RemoveShapeFile(EGIS.ShapeFileLib.ShapeFile shapeFile)
         {            
-            if(BackgroundShapeFiles.Remove(shapeFile) || ForegroundShapeFiles.Remove(shapeFile))
+            if(BackgroundShapeFiles.Remove(shapeFile))
             {
                 OnShapeFilesChanged();
-                dirtyScreenBuf = true;
-                refreshMode = RefreshMode.AllLayers;
+               // dirtyScreenBuf = true;
+                refreshMode = RefreshMode.BackgroundLayers;
+                Invalidate();
+            }
+            if (ForegroundShapeFiles.Remove(shapeFile))
+            {
+                OnShapeFilesChanged();
+                //dirtyScreenBuf = true;
+                refreshMode = RefreshMode.ForegroundLayers;
                 Invalidate();
             }
         }
@@ -1319,8 +1345,8 @@ namespace EGIS.Controls
                 if (index == 0) return;
                 BackgroundShapeFiles.RemoveAt(index);
                 BackgroundShapeFiles.Insert(index - 1, shapeFile);
-                dirtyScreenBuf = true;
-                refreshMode = RefreshMode.AllLayers;
+                //dirtyScreenBuf = true;
+                refreshMode = RefreshMode.BackgroundLayers;
                 Invalidate();
                 OnShapeFilesChanged();
             }
@@ -1332,8 +1358,8 @@ namespace EGIS.Controls
                     if (index == 0) return;
                     ForegroundShapeFiles.RemoveAt(index);
                     ForegroundShapeFiles.Insert(index - 1, shapeFile);
-                    dirtyScreenBuf = true;
-                    refreshMode = RefreshMode.AllLayers;
+                   // dirtyScreenBuf = true;
+                    refreshMode = RefreshMode.ForegroundLayers;
                     Invalidate();
                     OnShapeFilesChanged();
                 }
@@ -1360,8 +1386,8 @@ namespace EGIS.Controls
                 if (index == BackgroundShapeFiles.Count - 1) return;
                 BackgroundShapeFiles.RemoveAt(index);
                 BackgroundShapeFiles.Insert(index + 1, shapeFile);
-                dirtyScreenBuf = true;
-                refreshMode = RefreshMode.AllLayers;
+                //dirtyScreenBuf = true;
+                refreshMode = RefreshMode.BackgroundLayers;
                 Invalidate();
                 OnShapeFilesChanged();
             }
@@ -1373,8 +1399,8 @@ namespace EGIS.Controls
                     if (index == ForegroundShapeFiles.Count - 1) return;
                     ForegroundShapeFiles.RemoveAt(index);
                     ForegroundShapeFiles.Insert(index + 1, shapeFile);
-                    dirtyScreenBuf = true;
-                    refreshMode = RefreshMode.AllLayers;
+                    //dirtyScreenBuf = true;
+                    refreshMode = RefreshMode.ForegroundLayers;
                     Invalidate();
                     OnShapeFilesChanged();
                 }
@@ -1454,7 +1480,7 @@ namespace EGIS.Controls
 
 		#region "Private methods"
 
-		private EGIS.ShapeFileLib.ShapeFile OpenShapeFile(string path, string name, string renderFieldName, bool useMemoryStreams = false)
+		private EGIS.ShapeFileLib.ShapeFile OpenShapeFile(string path, string name, string renderFieldName, bool useMemoryStreams = false, LayerPositionEnum layerPosition = LayerPositionEnum.Background)
         {
             if (path.EndsWith(".shp", StringComparison.OrdinalIgnoreCase))
             {
@@ -1471,11 +1497,18 @@ namespace EGIS.Controls
             if (sf.RenderSettings != null) sf.RenderSettings.Dispose();
             sf.RenderSettings = new EGIS.ShapeFileLib.RenderSettings(path, renderFieldName, new Font(this.Font.FontFamily, 6f));
             LoadOptimalRenderSettings(sf);
-            BackgroundShapeFiles.Add(sf);
+            if (layerPosition == LayerPositionEnum.Background)
+            {
+                BackgroundShapeFiles.Add(sf);
+            }
+            else
+            {
+                ForegroundShapeFiles.Add(sf);
+            }
             return sf;
         }
 
-        private EGIS.ShapeFileLib.ShapeFile OpenShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string renderFieldName)
+        private EGIS.ShapeFileLib.ShapeFile OpenShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string renderFieldName, LayerPositionEnum layerPosition)
         {            
             EGIS.ShapeFileLib.ShapeFile sf = new EGIS.ShapeFileLib.ShapeFile();
             sf.LoadFromFile(shxStream,shpStream,dbfStream,prjStream);
@@ -1483,7 +1516,14 @@ namespace EGIS.Controls
             sf.RenderSettings.FieldName = renderFieldName;
 			sf.RenderSettings.Font = new Font(this.Font.FontFamily, 8f);
             LoadOptimalRenderSettings(sf);
-            BackgroundShapeFiles.Add(sf);
+            if (layerPosition == LayerPositionEnum.Background)
+            {
+                BackgroundShapeFiles.Add(sf);
+            }
+            else
+            {
+                ForegroundShapeFiles.Add(sf);
+            }
             return sf;
         }
 
@@ -1608,7 +1648,7 @@ namespace EGIS.Controls
                     g.DrawImage(foregroundBuffer, 0, 0);
                 }                
             }
-            dirtyScreenBuf = false;
+            //dirtyScreenBuf = false;
             refreshMode = RefreshMode.None;
         }
 
@@ -1674,7 +1714,7 @@ namespace EGIS.Controls
 
         protected override void OnPaint(PaintEventArgs e)
         {               
-            if (dirtyScreenBuf || refreshMode != RefreshMode.None)
+            if (/* dirtyScreenBuf || */ refreshMode != RefreshMode.None)
             {
                 RenderShapefiles();                
             }
@@ -1787,7 +1827,7 @@ namespace EGIS.Controls
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
-            dirtyScreenBuf = true;
+            //dirtyScreenBuf = true;
             refreshMode = RefreshMode.AllLayers;
         }
 
@@ -1805,9 +1845,15 @@ namespace EGIS.Controls
         {
             if (fullRefresh)
             {
-                dirtyScreenBuf = true;
+                //dirtyScreenBuf = true;
                 refreshMode = RefreshMode.AllLayers;
             }
+            Refresh();
+        }
+
+        public void Refresh(RefreshMode mode)
+        {
+            refreshMode = mode;
             Refresh();
         }
 
@@ -1821,8 +1867,14 @@ namespace EGIS.Controls
         /// </remarks>
         public void InvalidateAndClearBackground()
         {            
-            this.dirtyScreenBuf = true;
+            //this.dirtyScreenBuf = true;
             refreshMode = RefreshMode.AllLayers;
+            Invalidate();
+        }
+
+        public void Invalidate(RefreshMode mode)
+        {
+            refreshMode = mode;
             Invalidate();
         }
 
