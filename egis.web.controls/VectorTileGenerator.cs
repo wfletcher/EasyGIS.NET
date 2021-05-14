@@ -123,6 +123,7 @@ namespace EGIS.Web.Controls
         }
 
 
+        #region ShapeFile Generate members
 
         /// <summary>
         /// Generates a Vector Tile from ShapeFile layers
@@ -177,7 +178,7 @@ namespace EGIS.Web.Controls
 
 
 
-        #region private members
+    
 
         private VectorTileLayer ProcessLineStringTile(ShapeFile shapeFile, int tileX, int tileY, int zoom, OutputTileFeatureDelegate outputTileFeature)
         {
@@ -567,7 +568,383 @@ namespace EGIS.Web.Controls
             }
         }
 
+      
+
+
         #endregion
+
+
+        public virtual List<VectorTileLayer> Generate(int tileX, int tileY, int zoomLevel, List<ISpatialDataSource> layers)
+        {
+            List<VectorTileLayer> tileLayers = new List<VectorTileLayer>();
+            
+            foreach (ISpatialDataSource spatialLayer in layers)
+            {
+                if (spatialLayer.GeometryType == GeometryType.PolyLine)
+                {
+                    var layer = ProcessLineStringTile(spatialLayer, tileX, tileY, zoomLevel);
+                    if (layer.VectorTileFeatures != null && layer.VectorTileFeatures.Count > 0)
+                    {
+                        tileLayers.Add(layer);
+                    }
+                }
+                else if (spatialLayer.GeometryType == GeometryType.Polygon)
+                {
+                    var layer = ProcessPolygonTile(spatialLayer, tileX, tileY, zoomLevel);
+                    if (layer.VectorTileFeatures != null && layer.VectorTileFeatures.Count > 0)
+                    {
+                        tileLayers.Add(layer);
+                    }
+                }
+                else if (spatialLayer.GeometryType == GeometryType.Point)
+                {
+                    var layer = ProcessPointTile(spatialLayer, tileX, tileY, zoomLevel );
+                    if (layer.VectorTileFeatures != null && layer.VectorTileFeatures.Count > 0)
+                    {
+                        tileLayers.Add(layer);
+                    }
+                }
+                else throw new NotImplementedException("Shape Type " + spatialLayer.GeometryType + " not implemented yet");
+            }
+            
+
+            return tileLayers;
+        }
+
+        private VectorTileLayer ProcessLineStringTile(ISpatialDataSource spatialLayer, int tileX, int tileY, int zoom)
+        {
+            int tileSize = TileSize;
+            RectangleD tileBounds = TileUtil.GetTileLatLonBounds(tileX, tileY, zoom, tileSize);
+            //create a buffer around the tileBounds 
+            tileBounds.Inflate(tileBounds.Width * 0.05, tileBounds.Height * 0.05);
+
+            int simplificationFactor = Math.Min(10, Math.Max(1, SimplificationPixelThreshold));
+
+            System.Drawing.Point tilePixelOffset = new System.Drawing.Point((tileX * tileSize), (tileY * tileSize));
+
+            using (IEnumerator<ISpatialData> data = spatialLayer.GetData(new BoundingBox()
+            {
+                MinX = tileBounds.Left,
+                MinY = tileBounds.Top,
+                MaxX = tileBounds.Right,
+                MaxY = tileBounds.Bottom
+            }))
+            {
+
+                GeometryAlgorithms.ClipBounds clipBounds = new GeometryAlgorithms.ClipBounds()
+                {
+                    XMin = -20,
+                    YMin = -20,
+                    XMax = tileSize + 20,
+                    YMax = tileSize + 20
+                };
+                bool outputMeasureValues = this.OutputMeasureValues && spatialLayer.HasMeasures;
+                System.Drawing.Point[] pixelPoints = new System.Drawing.Point[1024];
+                System.Drawing.Point[] simplifiedPixelPoints = new System.Drawing.Point[1024];
+                double[] simplifiedMeasures = new double[1024];
+
+                PointD[] pointsBuffer = new PointD[1024];
+
+                VectorTileLayer tileLayer = new VectorTileLayer();
+                tileLayer.Extent = (uint)tileSize;
+                tileLayer.Version = 2;
+                tileLayer.Name = spatialLayer.Name;
+
+
+                //int index = 0;
+                //foreach (int index in indicies)
+                while (data.MoveNext())
+                {
+
+                    ISpatialData spatialData = data.Current;
+
+                    VectorTileFeature feature = new VectorTileFeature()
+                    {
+                        Id = spatialData.Id,
+                        Geometry = new List<List<Coordinate>>(),
+                        Attributes = new List<AttributeKeyValue>()
+                    };
+
+                    //get the point data
+                    var recordPoints = spatialData.Geometry;
+
+                    List<double[]> recordMeasures = null;
+
+                    if (outputMeasureValues) recordMeasures = spatialData.Measures;
+
+                    List<double> outputMeasures = new List<double>();
+                    int partIndex = 0;
+                    foreach (PointD[] points in recordPoints)
+                    {
+                        double[] measures = recordMeasures != null ? recordMeasures[partIndex] : null;
+                        //convert to pixel coordinates;
+                        if (pixelPoints.Length < points.Length)
+                        {
+                            pixelPoints = new System.Drawing.Point[points.Length + 10];
+                            simplifiedPixelPoints = new System.Drawing.Point[points.Length + 10];
+                            simplifiedMeasures = new double[points.Length + 10];
+                        }
+
+                        for (int n = 0; n < points.Length; ++n)
+                        {
+                            Int64 x, y;
+                            TileUtil.LLToPixel(points[n], zoom, out x, out y, tileSize);
+                            pixelPoints[n].X = (int)(x - tilePixelOffset.X);
+                            pixelPoints[n].Y = (int)(y - tilePixelOffset.Y);
+                        }
+
+                        int outputCount = 0;
+                        SimplifyPointData(pixelPoints, measures, points.Length, simplificationFactor, simplifiedPixelPoints, simplifiedMeasures, ref pointsBuffer, ref outputCount);
+
+                        //output count may be zero for short records at low zoom levels as 
+                        //the pixel coordinates wil be a single point after simplification
+                        if (outputCount > 0)
+                        {
+                            List<int> clippedPoints = new List<int>();
+                            List<int> parts = new List<int>();
+
+                            if (outputMeasureValues)
+                            {
+                                List<double> clippedMeasures = new List<double>();
+                                GeometryAlgorithms.PolyLineClip(simplifiedPixelPoints, outputCount, clipBounds, clippedPoints, parts, simplifiedMeasures, clippedMeasures);
+                                outputMeasures.AddRange(clippedMeasures);
+                            }
+                            else
+                            {
+                                GeometryAlgorithms.PolyLineClip(simplifiedPixelPoints, outputCount, clipBounds, clippedPoints, parts);
+                            }
+                            if (parts.Count > 0)
+                            {
+                                //output the clipped polyline
+                                for (int n = 0; n < parts.Count; ++n)
+                                {
+                                    int index1 = parts[n];
+                                    int index2 = n < parts.Count - 1 ? parts[n + 1] : clippedPoints.Count;
+
+                                    List<Coordinate> lineString = new List<Coordinate>();
+                                    feature.GeometryType = Tile.GeomType.LineString;
+                                    feature.Geometry.Add(lineString);
+                                    //clipped points store separate x/y pairs so there will be two values per measure
+                                    for (int i = index1; i < index2; i += 2)
+                                    {
+                                        lineString.Add(new Coordinate(clippedPoints[i], clippedPoints[i + 1]));
+                                    }
+                                }
+                            }
+                        }
+                        ++partIndex;
+                    }
+
+                    //add the record attributes
+                    foreach (var keyValue in spatialData.Attributes)
+                    {
+                        feature.Attributes.Add(new AttributeKeyValue(keyValue.Key, keyValue.Value));
+                    }
+                    if (outputMeasureValues)
+                    {
+                        string s = Newtonsoft.Json.JsonConvert.SerializeObject(outputMeasures, new DoubleFormatConverter(4));
+                        feature.Attributes.Add(new AttributeKeyValue(this.MeasuresAttributeName, s));
+                    }
+
+                    if (feature.Geometry.Count > 0)
+                    {
+                        tileLayer.VectorTileFeatures.Add(feature);
+                    }
+                }
+                return tileLayer;
+            }
+
+        }
+
+        private VectorTileLayer ProcessPolygonTile(ISpatialDataSource spatialLayer, int tileX, int tileY, int zoom)
+        {
+            int tileSize = TileSize;
+            RectangleD tileBounds = TileUtil.GetTileLatLonBounds(tileX, tileY, zoom, tileSize);
+            //create a buffer around the tileBounds 
+            tileBounds.Inflate(tileBounds.Width * 0.05, tileBounds.Height * 0.05);
+
+            int simplificationFactor = Math.Min(10, Math.Max(1, SimplificationPixelThreshold));
+
+            System.Drawing.Point tilePixelOffset = new System.Drawing.Point((tileX * tileSize), (tileY * tileSize));
+
+            using (IEnumerator<ISpatialData> data = spatialLayer.GetData(new BoundingBox()
+            {
+                MinX = tileBounds.Left,
+                MinY = tileBounds.Top,
+                MaxX = tileBounds.Right,
+                MaxY = tileBounds.Bottom
+            }))
+            {
+
+                GeometryAlgorithms.ClipBounds clipBounds = new GeometryAlgorithms.ClipBounds()
+                {
+                    XMin = -20,
+                    YMin = -20,
+                    XMax = tileSize + 20,
+                    YMax = tileSize + 20
+                };
+
+                System.Drawing.Point[] pixelPoints = new System.Drawing.Point[1024];
+                System.Drawing.Point[] simplifiedPixelPoints = new System.Drawing.Point[1024];
+                PointD[] pointsBuffer = new PointD[1024];
+
+                List<System.Drawing.Point> clippedPolygon = new List<System.Drawing.Point>();
+
+                VectorTileLayer tileLayer = new VectorTileLayer();
+                tileLayer.Extent = (uint)tileSize;
+                tileLayer.Version = 2;
+                tileLayer.Name = spatialLayer.Name;
+
+                while (data.MoveNext())
+                {
+
+                    ISpatialData spatialData = data.Current;
+
+                    VectorTileFeature feature = new VectorTileFeature()
+                    {
+                        Id = spatialData.Id,
+                        Geometry = new List<List<Coordinate>>(),
+                        Attributes = new List<AttributeKeyValue>(),
+                        GeometryType = Tile.GeomType.Polygon
+                    };
+
+                    //get the point data
+                    var recordPoints = spatialData.Geometry;
+                    int partIndex = 0;
+                    foreach (PointD[] points in recordPoints)
+                    {
+                        //convert to pixel coordinates;
+                        if (pixelPoints.Length < points.Length)
+                        {
+                            pixelPoints = new System.Drawing.Point[points.Length + 10];
+                            simplifiedPixelPoints = new System.Drawing.Point[points.Length + 10];                            
+                        }
+
+                        for (int n = 0; n < points.Length; ++n)
+                        {
+                            Int64 x, y;
+                            TileUtil.LLToPixel(points[n], zoom, out x, out y, tileSize);
+                            pixelPoints[n].X = (int)(x - tilePixelOffset.X);
+                            pixelPoints[n].Y = (int)(y - tilePixelOffset.Y);
+                        }
+
+                        int outputCount = 0;
+                        SimplifyPointData(pixelPoints, null, points.Length, simplificationFactor, simplifiedPixelPoints, null, ref pointsBuffer, ref outputCount);
+
+                        if (outputCount > 1)
+                        {
+                            GeometryAlgorithms.PolygonClip(simplifiedPixelPoints, outputCount, clipBounds, clippedPolygon);
+
+                            if (clippedPolygon.Count > 0)
+                            {
+                                //output the clipped polygon                                                                                             
+                                List<Coordinate> lineString = new List<Coordinate>();
+                                feature.Geometry.Add(lineString);
+                                for (int i = clippedPolygon.Count - 1; i >= 0; --i)
+                                {
+                                    lineString.Add(new Coordinate(clippedPolygon[i].X, clippedPolygon[i].Y));
+                                }
+                            }
+
+
+                        }
+                        ++partIndex;
+                    }
+
+                    //add the record attributes
+                    foreach (var keyValue in spatialData.Attributes)
+                    {
+                        feature.Attributes.Add(new AttributeKeyValue(keyValue.Key, keyValue.Value));
+                    }
+                    
+                    if (feature.Geometry.Count > 0)
+                    {
+                        tileLayer.VectorTileFeatures.Add(feature);
+                    }
+                }
+                return tileLayer;
+            }
+
+        }
+
+        private VectorTileLayer ProcessPointTile(ISpatialDataSource spatialLayer, int tileX, int tileY, int zoom)
+        {
+            int tileSize = TileSize;
+            RectangleD tileBounds = TileUtil.GetTileLatLonBounds(tileX, tileY, zoom, tileSize);
+            //create a buffer around the tileBounds 
+            tileBounds.Inflate(tileBounds.Width * 0.05, tileBounds.Height * 0.05);
+
+            int simplificationFactor = Math.Min(10, Math.Max(1, SimplificationPixelThreshold));
+
+            System.Drawing.Point tilePixelOffset = new System.Drawing.Point((tileX * tileSize), (tileY * tileSize));
+
+            using (IEnumerator<ISpatialData> data = spatialLayer.GetData(new BoundingBox()
+            {
+                MinX = tileBounds.Left,
+                MinY = tileBounds.Top,
+                MaxX = tileBounds.Right,
+                MaxY = tileBounds.Bottom
+            }))
+            {
+
+                GeometryAlgorithms.ClipBounds clipBounds = new GeometryAlgorithms.ClipBounds()
+                {
+                    XMin = -20,
+                    YMin = -20,
+                    XMax = tileSize + 20,
+                    YMax = tileSize + 20
+                };
+
+              
+                VectorTileLayer tileLayer = new VectorTileLayer();
+                tileLayer.Extent = (uint)tileSize;
+                tileLayer.Version = 2;
+                tileLayer.Name = spatialLayer.Name;
+
+                while (data.MoveNext())
+                {
+                    ISpatialData spatialData = data.Current;
+                    VectorTileFeature feature = new VectorTileFeature()
+                    {
+                        Id = spatialData.Id,
+                        Geometry = new List<List<Coordinate>>(),
+                        Attributes = new List<AttributeKeyValue>(),
+                        GeometryType = Tile.GeomType.Point
+                    };
+
+                    //output the pixel coordinates     
+                    List<Coordinate> coordinates = new List<Coordinate>();
+                    var recordPoints = spatialData.Geometry;
+                    foreach (PointD[] points in recordPoints)
+                    {
+                        for (int n = 0; n < points.Length; ++n)
+                        {
+                            Int64 x, y;
+                            TileUtil.LLToPixel(points[n], zoom, out x, out y, tileSize);
+                            coordinates.Add(new Coordinate((int)(x - tilePixelOffset.X), (int)(y - tilePixelOffset.Y)));
+                        }
+                    }
+                    if (coordinates.Count > 0)
+                    {
+                        feature.Geometry.Add(coordinates);
+                    }
+                      
+                    //add the record attributes
+                    foreach (var keyValue in spatialData.Attributes)
+                    {
+                        feature.Attributes.Add(new AttributeKeyValue(keyValue.Key, keyValue.Value));
+                    }
+
+                    if (feature.Geometry.Count > 0)
+                    {
+                        tileLayer.VectorTileFeatures.Add(feature);
+                    }
+                }
+                return tileLayer;
+            }
+
+        }
+
     }
 
     class DoubleFormatConverter : JsonConverter
@@ -600,4 +977,9 @@ namespace EGIS.Web.Controls
             throw new NotImplementedException();
         }
     }
+
+
+    
+
+
 }
