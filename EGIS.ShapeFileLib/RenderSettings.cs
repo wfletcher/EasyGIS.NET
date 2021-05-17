@@ -69,6 +69,7 @@ namespace EGIS.ShapeFileLib
         private Font renderFont;
         private Color fontColor = Color.Black;
         private bool _shadowText = true;
+        private Color shadowTextColor = Color.White;
 
         private Color _fillColor = Color.FromArgb(252, 252, 252);
         private Color _outlineColor = Color.FromArgb(150, 150, 150);
@@ -377,7 +378,23 @@ namespace EGIS.ShapeFileLib
                 _shadowText = value;
             }
         }
-      
+
+        /// <summary>
+        /// Gets / Sets the Font Color to use when rendering shape labels
+        /// </summary>
+        [Category("Label Render Settings"), Description("Shadow text color.")]
+        public Color ShadowTextColor
+        {
+            get
+            {
+                return shadowTextColor;
+            }
+            set
+            {
+                shadowTextColor = value;
+            }
+        }
+
         /// <summary>
         /// Gets / Sets the Fill Color to use when rendering the interior of each shape
         /// </summary>
@@ -975,6 +992,14 @@ namespace EGIS.ShapeFileLib
             writer.WriteString(this.ShadowText.ToString());
             writer.WriteEndElement();
 
+            writer.WriteStartElement("ShadowTextColor");
+            if (ShadowTextColor.A < 255)
+            {
+                writer.WriteAttributeString("alpha", ShadowTextColor.A.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+            writer.WriteString(ColorTranslator.ToHtml(ShadowTextColor));
+            writer.WriteEndElement();
+
             writer.WriteStartElement("PointSize");
             writer.WriteString(this.PointSize.ToString(System.Globalization.CultureInfo.InvariantCulture));
             writer.WriteEndElement();
@@ -1144,7 +1169,25 @@ namespace EGIS.ShapeFileLib
             if (nl != null && nl.Count > 0)
             {
                 ShadowText = bool.Parse(nl[0].InnerText);
-            }            
+            }
+
+            nl = element.GetElementsByTagName("ShadowTextColor");
+            if (nl != null && nl.Count > 0)
+            {
+                ShadowTextColor = ColorTranslator.FromHtml(nl[0].InnerText);
+                if (nl[0].Attributes["alpha"] != null)
+                {
+                    int alpha;
+                    if (int.TryParse(((XmlElement)nl[0]).GetAttribute("alpha"), out alpha))
+                    {
+                        ShadowTextColor = Color.FromArgb(alpha, ShadowTextColor);
+                    }
+                }
+            }
+            else
+            {
+                ShadowTextColor = Color.White;
+            }
 
             nl = element.GetElementsByTagName("PointSize");
             if (nl != null && nl.Count > 0)
