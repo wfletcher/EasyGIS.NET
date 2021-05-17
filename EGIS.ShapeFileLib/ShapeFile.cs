@@ -3854,7 +3854,7 @@ namespace EGIS.ShapeFileLib
                 int count = partBoundsIndexList.Count;
                 Brush fontBrush = new SolidBrush(renderSettings.FontColor);
                 bool shadowText = (renderSettings != null && renderSettings.ShadowText);
-                Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                 pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
@@ -4198,7 +4198,7 @@ namespace EGIS.ShapeFileLib
                 int count = partBoundsIndexList.Count;
                 Brush fontBrush = new SolidBrush(renderSettings.FontColor);
                 bool shadowText = (renderSettings != null && renderSettings.ShadowText);
-                Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                 pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
@@ -4896,7 +4896,7 @@ namespace EGIS.ShapeFileLib
                     g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                     g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
                     g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                     pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                     float ssm = shadowText ? 0.8f : 1f;
                     Color currentFontColor = renderSettings.FontColor;
@@ -5183,7 +5183,7 @@ namespace EGIS.ShapeFileLib
                     g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                     g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
                     g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                     pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                     float ssm = shadowText ? 0.8f : 1f;
                     Color currentFontColor = renderSettings.FontColor;
@@ -5735,7 +5735,7 @@ namespace EGIS.ShapeFileLib
                     g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                     g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
                     g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                     pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                     float ssm = shadowText ? 0.8f : 1f;
                     Color currentFontColor = renderSettings.FontColor;
@@ -6037,7 +6037,7 @@ namespace EGIS.ShapeFileLib
                     g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                     g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
                     g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                     pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                     float ssm = shadowText ? 0.8f : 1f;
                     Color currentFontColor = renderSettings.FontColor;
@@ -6557,7 +6557,7 @@ namespace EGIS.ShapeFileLib
                     g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                     g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
                     g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                     pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                     float ssm = shadowText ? 0.8f : 1f;
                     Color currentFontColor = renderSettings.FontColor;
@@ -6853,7 +6853,7 @@ namespace EGIS.ShapeFileLib
                     g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                     g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
                     g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                     pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                     float ssm = shadowText ? 0.8f : 1f;
                     Color currentFontColor = renderSettings.FontColor;
@@ -7428,7 +7428,7 @@ namespace EGIS.ShapeFileLib
                     g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                     g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
                     g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                     pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                     float ssm = shadowText ? 0.8f : 1f;
                     Color currentFontColor = renderSettings.FontColor;
@@ -7722,7 +7722,7 @@ namespace EGIS.ShapeFileLib
                     g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                     g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
                     g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                     pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                     float ssm = shadowText ? 0.8f : 1f;
                     Color currentFontColor = renderSettings.FontColor;
@@ -8432,7 +8432,7 @@ namespace EGIS.ShapeFileLib
                     {
                         bool shadowText = (renderSettings != null && renderSettings.ShadowText);
                         Brush fontBrush = new SolidBrush(renderSettings.FontColor);
-                        Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                        Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                         pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                         int count = renderPtObjList.Count;
                         Color currentFontColor = renderSettings.FontColor;
@@ -8805,7 +8805,7 @@ namespace EGIS.ShapeFileLib
                 {
                     bool shadowText = (renderSettings != null && renderSettings.ShadowText);
                     Brush fontBrush = new SolidBrush(renderSettings.FontColor);
-                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                     pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                     int count = renderPtObjList.Count;
                     Color currentFontColor = renderSettings.FontColor;
@@ -9661,7 +9661,7 @@ namespace EGIS.ShapeFileLib
                     {
                         bool shadowText = (renderSettings != null && renderSettings.ShadowText);
                         Brush fontBrush = new SolidBrush(renderSettings.FontColor);
-                        Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                        Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                         pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                         int count = renderPtObjList.Count;
                         Color currentFontColor = renderSettings.FontColor;
@@ -10031,7 +10031,7 @@ namespace EGIS.ShapeFileLib
                 {
                     bool shadowText = (renderSettings != null && renderSettings.ShadowText);
                     Brush fontBrush = new SolidBrush(renderSettings.FontColor);
-                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                     pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                     int count = renderPtObjList.Count;
                     Color currentFontColor = renderSettings.FontColor;
@@ -10766,7 +10766,7 @@ namespace EGIS.ShapeFileLib
                 int count = partBoundsIndexList.Count;
                 Brush fontBrush = new SolidBrush(renderSettings.FontColor);
                 bool shadowText = (renderSettings != null && renderSettings.ShadowText);
-                Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                 pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
@@ -11078,7 +11078,7 @@ namespace EGIS.ShapeFileLib
                 int count = partBoundsIndexList.Count;
                 Brush fontBrush = new SolidBrush(renderSettings.FontColor);
                 bool shadowText = (renderSettings != null && renderSettings.ShadowText);
-                Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                 pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
@@ -11944,7 +11944,7 @@ namespace EGIS.ShapeFileLib
                     {
                         bool shadowText = (renderSettings != null && renderSettings.ShadowText);
                         Brush fontBrush = new SolidBrush(renderSettings.FontColor);
-                        Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                        Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                         pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                         int count = renderPtObjList.Count;
                         Color currentFontColor = renderSettings.FontColor;
@@ -12346,7 +12346,7 @@ namespace EGIS.ShapeFileLib
                 {
                     bool shadowText = (renderSettings != null && renderSettings.ShadowText);
                     Brush fontBrush = new SolidBrush(renderSettings.FontColor);
-                    Pen pen = new Pen(Color.FromArgb(255, Color.White), 4f);
+                    Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                     pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                     int count = renderPtObjList.Count;
                     Color currentFontColor = renderSettings.FontColor;
