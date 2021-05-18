@@ -1155,13 +1155,13 @@ namespace EGIS.Controls
                 //refresh so the layer is drawn
                 if (refreshImmediately)
                 {
-                    //Refresh(true);
-                    Refresh(layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers);
+                    //Refresh(true);                    
+                    Refresh(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
                 }
                 else
                 {
                     //InvalidateAndClearBackground();
-                    Invalidate(layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers);
+                    Invalidate(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
                 }
             }
 			OnShapeFilesChanged();            
@@ -1194,12 +1194,12 @@ namespace EGIS.Controls
 				if (refreshImmediately)
 				{
                     //Refresh(true);
-                    Refresh(layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers);
+                    Refresh(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
 				}
 				else
 				{
 					//InvalidateAndClearBackground();
-                    Invalidate(layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers);
+                    Invalidate(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
                 }
 			}
 			OnShapeFilesChanged();
@@ -1234,12 +1234,12 @@ namespace EGIS.Controls
                 if (refreshImmediately)
                 {
                     //Refresh(true);
-                    Refresh(layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers);
+                    Refresh(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
                 }
                 else
                 {
                     //InvalidateAndClearBackground();
-                    Invalidate(layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers);
+                    Invalidate(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
                 }
             }
 			OnShapeFilesChanged();
@@ -1274,16 +1274,17 @@ namespace EGIS.Controls
             {
                 OnShapeFilesChanged();
                // dirtyScreenBuf = true;
-                refreshMode = RefreshMode.BackgroundLayers;
+                refreshMode |= RefreshMode.BackgroundLayers;
                 Invalidate();
             }
             if (ForegroundShapeFiles.Remove(shapeFile))
             {
                 OnShapeFilesChanged();
                 //dirtyScreenBuf = true;
-                refreshMode = RefreshMode.ForegroundLayers;
+                refreshMode |= RefreshMode.ForegroundLayers;
                 Invalidate();
             }
+            //Console.Out.WriteLine("RemoveShapeFile refreshMode = " + refreshMode);
         }
 
         /// <summary>
@@ -1611,43 +1612,52 @@ namespace EGIS.Controls
                 g.Clear(MapBackColor);
                 this.OnPaintMapBackground(new PaintEventArgs(g, new Rectangle(0, 0, this.ClientSize.Width, this.ClientSize.Height)));
                 //render the background layers
-                if (this.BackgroundShapeFiles.Count > 0 && (refreshMode & RefreshMode.BackgroundLayers) != RefreshMode.None)
+                if (this.BackgroundShapeFiles.Count > 0)
                 {
-                    using (Graphics g2 = Graphics.FromImage(backgroundBuffer))
+                    if ((refreshMode & RefreshMode.BackgroundLayers) != RefreshMode.None)
                     {
-                        g2.Clear(Color.Transparent);
-                        var layers = this.BackgroundShapeFiles;
-                        foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
+                        using (Graphics g2 = Graphics.FromImage(backgroundBuffer))
                         {
-                            //this is an expensive operation
-                            //using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, MapCoordinateReferenceSystem))
-                            //{
-                            //}
-                            //using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode)))
-                            //{
-                            //}
+                            g2.Clear(Color.Transparent);
+                            var layers = this.BackgroundShapeFiles;
+                            foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
+                            {
+                                //this is an expensive operation
+                                //using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, MapCoordinateReferenceSystem))
+                                //{
+                                //}
+                                //using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode)))
+                                //{
+                                //}
 
-                            sf.Render(g2, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
+                                sf.Render(g2, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
+                            }
                         }
                     }
                     g.DrawImage(backgroundBuffer, 0, 0);
                 }
                 
+
                 //render the foreground layers
-                if (this.ForegroundShapeFiles.Count > 0 && (refreshMode & RefreshMode.ForegroundLayers) != RefreshMode.None)
+                if (this.ForegroundShapeFiles.Count > 0)
                 {
-                    using (Graphics g2 = Graphics.FromImage(foregroundBuffer))
+                    if ((refreshMode & RefreshMode.ForegroundLayers) != RefreshMode.None)
                     {
-                        g2.Clear(Color.Transparent);
-                        var layers = this.ForegroundShapeFiles;
-                        foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
-                        {                           
-                            sf.Render(g2, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
+                        using (Graphics g2 = Graphics.FromImage(foregroundBuffer))
+                        {
+                            g2.Clear(Color.Transparent);
+                            var layers = this.ForegroundShapeFiles;
+                            foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
+                            {
+                                sf.Render(g2, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
+                            }
                         }
                     }
                     g.DrawImage(foregroundBuffer, 0, 0);
-                }                
+                }
+                
             }
+            
             //dirtyScreenBuf = false;
             refreshMode = RefreshMode.None;
         }
