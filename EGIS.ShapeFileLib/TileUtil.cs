@@ -128,6 +128,7 @@ namespace EGIS.ShapeFileLib
 
         private static readonly PointD MaxMerc = ShapeFile.LLToMercator(new PointD(180, 90));
 
+       
         public static void LLToPixel(PointD latLong, int zoomLevel, out long x, out long y, int tileSize=256)
         {
             //convert LL to Mercatator
@@ -135,7 +136,7 @@ namespace EGIS.ShapeFileLib
             double scale = ZoomLevelToScale(zoomLevel, tileSize);
             x = (long)Math.Round((merc.X+MaxMerc.X) * scale);
             y = (long)Math.Round((MaxMerc.Y-merc.Y) * scale);
-        }
+        }   
 
         public static PointD PixelToLL(int pixX, int pixY, int zoomLevel, int tileSize=256)
         {
@@ -148,6 +149,12 @@ namespace EGIS.ShapeFileLib
             return new PointD((d * pixX) - 180, 180 - (d * pixY));
         }
 
+        /// <summary>
+        /// normalises tile coordinates. tile coordiates wrap around to zero at max tile number
+        /// </summary>
+        /// <param name="tileX"></param>
+        /// <param name="tileY"></param>
+        /// <param name="zoomLevel"></param>
         public static void NormaliseTileCoordinates(ref int tileX, ref int tileY, int zoomLevel)
         {
             if (zoomLevel < 0) return;
@@ -157,7 +164,252 @@ namespace EGIS.ShapeFileLib
             tileY = tileY % maxTilesAtZoomLevel;
             if (tileY < 0) tileY += maxTilesAtZoomLevel;
         }
-        
+
+
+        private const double Wgs84SemiMajorAxis = 6378137;
+
+
+        public static PointD GetWebMercatorCenterPointFromTile(int tileX, int tileY, int zoomLevel, int tileSize = 256)
+        {
+            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", "zoomLevel");
+            PointD merc =  PixelToMerc((tileSize >> 1) + (tileX * tileSize), (tileSize >> 1) + (tileY * tileSize), zoomLevel, tileSize);            
+            return new PointD(merc.X * Wgs84SemiMajorAxis * Math.PI / 180, merc.Y * Wgs84SemiMajorAxis * Math.PI / 180);
+        }
+       
+        public static double ZoomLevelToWebMercatorScale(int zoomLevel, int tileSize = 256)
+        {
+            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", "zoomLevel");
+            return ((double)tileSize / (Math.PI * 2 * Wgs84SemiMajorAxis)) * (l << zoomLevel);
+        }
+
+
+        /// <summary>
+        /// returns (integer) tile-based zoom level from double precision map scale when using Wgs84PseudoMercator
+        /// </summary>
+        /// <param name="scale"></param>
+        /// <param name="tileSize"></param>
+        /// <returns></returns>
+        public static int WebMercatorScaleToZoomLevel(double scale, int tileSize = 256)
+        {
+            return (int)Math.Round(Math.Log(scale * (Math.PI * 2 * Wgs84SemiMajorAxis) / (double)tileSize, 2));
+        }        
+
+       
+
+        /// <summary>
+        /// return the maximum number of pixels at a given tile zoom level
+        /// </summary>
+        /// <param name="zoomLevel"></param>
+        /// <param name="tileSize"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// At tile level 0 max pixels will be the tileSize, at level 1 it will be 2xtilesize, doubling for each zoom level
+        /// </remarks>
+        private static long MaxPixelsAtTileZoomLevel(int zoomLevel, int tileSize = 256)
+        {
+            long maxTilesAtZoomLevel = 1 << zoomLevel;
+            return maxTilesAtZoomLevel * tileSize;
+        }
+
+                      
+        /// <summary>
+        /// returns the pixel coordinates of a web mercator coordinate at a given tile zoom level
+        /// </summary>
+        /// <param name="coord">the coordinate in Wgs84PseudoMercator coordinates</param>
+        /// <param name="zoomLevel">0 based zoom level</param>
+        /// <param name="x">the calculated pixel x coord</param>
+        /// <param name="y">the calculated pixel y coord</param>
+        /// <param name="tileSize"></param>
+        public static void WebMercatorToPixel(PointD coord, int zoomLevel, out long x, out long y, int tileSize=256)
+        {
+            //double scale = ZoomLevelToWebMercatorScale(zoomLevel, tileSize);
+            //x = (long)Math.Round((coord.X - (Math.PI * Wgs84SemiMajorAxis)) * scale);
+            //y = (long)Math.Round((coord.Y - (Math.PI * Wgs84SemiMajorAxis)) * -scale);
+            long scale = l << zoomLevel;
+            x = (long)Math.Floor(tileSize * (0.5 + coord.X / (Math.PI * 2 * Wgs84SemiMajorAxis))*scale) ;
+            y = (long)Math.Floor(tileSize * (0.5 - coord.Y / (Math.PI * 2 * Wgs84SemiMajorAxis))*scale) ;
+        }
+
+        /// <summary>
+        /// returns the Wgs84PseudoMercator coordinate from given pixel and zoomLevel
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="zoomLevel"></param>
+        /// <param name="tileSize"></param>
+        /// <returns></returns>
+        public static PointD PixelToWebMercator(long x, long y, int zoomLevel, int tileSize=256)
+        {
+            PointD coord;
+            //double scale = (1 << zoomLevel)*tileSize;
+            double scale = ((long)tileSize) << zoomLevel;
+
+            coord = new PointD(((double)x / scale - 0.5) * (Math.PI * 2 * Wgs84SemiMajorAxis), -((double)y / scale - 0.5) * Math.PI * 2 * Wgs84SemiMajorAxis);
+            return coord;
+        }
+
+
+
+
+        public static void Test()
+        {
+            PointD pt1 = new PointD(-180, 0);
+            PointD pt2 = new PointD(180, 0);
+            PointD pt3 = new PointD(0, 0);
+            Int64 x, y;
+            int zoomLevel = 0;
+            LLToPixel(pt1, zoomLevel, out x, out y);
+            Console.Out.WriteLine("LLToPixel: Zoom:{3} LL:{0}, x:{1},y:{2}", pt1, x, y, zoomLevel);
+            LLToPixel(pt2 , zoomLevel, out x, out y);
+            Console.Out.WriteLine("LLToPixel: Zoom:{3} LL:{0}, x:{1},y:{2}", pt2, x, y, zoomLevel);
+            LLToPixel(pt3, zoomLevel, out x, out y);
+            Console.Out.WriteLine("LLToPixel: Zoom:{3} LL:{0}, x:{1},y:{2}", pt3, x, y, zoomLevel);
+
+
+            zoomLevel = 1;
+            LLToPixel(pt1, zoomLevel, out x, out y);
+            Console.Out.WriteLine("LLToPixel: Zoom:{3} LL:{0}, x:{1},y:{2}", pt1, x, y, zoomLevel);
+            LLToPixel(pt2, zoomLevel, out x, out y);
+            Console.Out.WriteLine("LLToPixel: Zoom:{3} LL:{0}, x:{1},y:{2}", pt2, x, y, zoomLevel);
+            LLToPixel(pt3, zoomLevel, out x, out y);
+            Console.Out.WriteLine("LLToPixel: Zoom:{3} LL:{0}, x:{1},y:{2}", pt3, x, y, zoomLevel);
+
+            RectangleD tileBounds = GetTileLatLonBounds(0, 0, 0);
+            Console.Out.WriteLine("zoom:{0} x:{1} y:{2} bounds:{3}", 0, 0, 0, tileBounds);
+
+            tileBounds = GetTileLatLonBounds(0, 0, 1);
+            Console.Out.WriteLine("zoom:{0} x:{1} y:{2} bounds:{3}", 0, 0, 0, tileBounds);
+
+            zoomLevel=14;
+            double scale;
+
+            scale = ZoomLevelToScale(zoomLevel);
+            Console.Out.WriteLine("zoomLevel {0} ZoomLevelToScale -> scale = {1:0.00000}", zoomLevel, scale);
+            zoomLevel = ScaleToZoomLevel(scale);
+            Console.Out.WriteLine("scale {0} ScaleToZoomLevel -> zoomLevel = {1:0.00000}", scale, zoomLevel);
+
+
+            scale = ZoomLevelToWebMercatorScale(zoomLevel);
+            Console.Out.WriteLine("zoomLevel {0} ZoomLevelToWebMercatorScale -> scale = {1:0.00000}", zoomLevel, scale);
+            zoomLevel = WebMercatorScaleToZoomLevel(scale);
+            Console.Out.WriteLine("scale {0:0.00000} WebMercatorScaleToZoomLevel -> zoomLevel = {1}", scale, zoomLevel);
+
+            zoomLevel = 0;
+            scale = ZoomLevelToWebMercatorScale(zoomLevel);
+            Console.Out.WriteLine("zoomLevel {0} ZoomLevelToWebMercatorScale -> scale = {1:0.00000}", zoomLevel, scale);
+            zoomLevel = WebMercatorScaleToZoomLevel(scale);
+            Console.Out.WriteLine("scale {0:0.00000} WebMercatorScaleToZoomLevel -> zoomLevel = {1}", scale, zoomLevel);
+
+            zoomLevel = 10;
+            scale = ZoomLevelToWebMercatorScale(zoomLevel);
+            Console.Out.WriteLine("zoomLevel {0} ZoomLevelToWebMercatorScale -> scale = {1:0.00000}", zoomLevel, scale);
+            zoomLevel = WebMercatorScaleToZoomLevel(scale);
+            Console.Out.WriteLine("scale {0:0.00000} WebMercatorScaleToZoomLevel -> zoomLevel = {1}", scale, zoomLevel);
+
+            zoomLevel = 31;
+            scale = ZoomLevelToWebMercatorScale(zoomLevel);
+            Console.Out.WriteLine("zoomLevel {0} ZoomLevelToWebMercatorScale -> scale = {1:0.00000}", zoomLevel, scale);
+            zoomLevel = WebMercatorScaleToZoomLevel(scale);
+            Console.Out.WriteLine("scale {0:0.00000} WebMercatorScaleToZoomLevel -> zoomLevel = {1}", scale, zoomLevel);
+
+            zoomLevel = 0;
+
+            PointD coord = new PointD(0, 0);
+            
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            coord = new PointD(-Math.PI * Wgs84SemiMajorAxis + 0.1, -Math.PI * Wgs84SemiMajorAxis + 0.1);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            coord = new PointD(Math.PI * Wgs84SemiMajorAxis - 0.1, -Math.PI * Wgs84SemiMajorAxis + 0.1);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            coord = new PointD(Math.PI * Wgs84SemiMajorAxis - 0.1, Math.PI * Wgs84SemiMajorAxis - 0.1);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            coord = new PointD(-Math.PI * Wgs84SemiMajorAxis + 0.1, Math.PI * Wgs84SemiMajorAxis - 0.1);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+
+
+            
+            zoomLevel+=4;
+            coord = new PointD(0, 0);
+
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            coord = new PointD(-Math.PI * Wgs84SemiMajorAxis + 0.1, -Math.PI * Wgs84SemiMajorAxis + 0.1);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            coord = new PointD(Math.PI * Wgs84SemiMajorAxis - 0.1, -Math.PI * Wgs84SemiMajorAxis + 0.1);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            coord = new PointD(Math.PI * Wgs84SemiMajorAxis - 0.1, Math.PI * Wgs84SemiMajorAxis - 0.1);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            coord = new PointD(-Math.PI * Wgs84SemiMajorAxis + 0.1, Math.PI * Wgs84SemiMajorAxis - 0.1);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+
+            WebMercatorToPixel(coord, zoomLevel, out x, out y, 512);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            coord = new PointD(Math.PI * Wgs84SemiMajorAxis - 0.1, -Math.PI * Wgs84SemiMajorAxis + 0.1);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y, 512);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+
+
+            zoomLevel = 1;
+            x = y = 255;
+            coord = PixelToWebMercator(x, y, zoomLevel);
+            Console.Out.WriteLine("PixelToWebMercator: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+
+
+            x = y = 0;
+            coord = PixelToWebMercator(x, y, zoomLevel);
+            Console.Out.WriteLine("PixelToWebMercator: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+
+            x = 511;
+            coord = PixelToWebMercator(x, y, zoomLevel);
+            Console.Out.WriteLine("PixelToWebMercator: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+
+
+            zoomLevel = 10;
+            x = y = 255;
+            coord = PixelToWebMercator(x, y, zoomLevel);
+            Console.Out.WriteLine("PixelToWebMercator: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+
+
+            x = y = 0;
+            coord = PixelToWebMercator(x, y, zoomLevel);
+            Console.Out.WriteLine("PixelToWebMercator: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+
+            x = 511;
+            coord = PixelToWebMercator(x, y, zoomLevel);
+            Console.Out.WriteLine("PixelToWebMercator: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+
+            x = y = 511;
+            coord = PixelToWebMercator(x, y, zoomLevel, 512);
+            Console.Out.WriteLine("PixelToWebMercator: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+            WebMercatorToPixel(coord, zoomLevel, out x, out y, 512);
+            Console.Out.WriteLine("WebMercatorToPixel: zoom level:{0} coord:{1} -> pixX:{2}, pixY:{3}", zoomLevel, coord, x, y);
+
+
+
+
+
+        }
     }
 
 

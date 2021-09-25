@@ -151,13 +151,15 @@ namespace EGIS.Web.Controls
         private static void RenderMap(Graphics g, List<EGIS.ShapeFileLib.ShapeFile> layers, int w, int h, PointD centerPt, double zoom)
         {
             lock (EGIS.ShapeFileLib.ShapeFile.Sync)
-            {                
+            {
+                var crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode);
                 for (int n = 0; n < layers.Count; n++)
                 {
                     EGIS.ShapeFileLib.ShapeFile sf = layers[n];
                     //render layers using Mercator ProjectionType for the tiled images
-                    sf.Render(g, new Size(w, h), centerPt, zoom, ProjectionType.Mercator);
-                }            
+                    sf.Render(g, new Size(w, h), centerPt, zoom, ProjectionType.None, crs);
+                }   
+                
             }
         }
 
@@ -196,8 +198,10 @@ namespace EGIS.Web.Controls
                     if (int.TryParse(context.Request["zoom"], out zoomLevel))
                     {
                         TileUtil.NormaliseTileCoordinates(ref tileX, ref tileY, zoomLevel);
-                        centerPoint = TileUtil.GetMercatorCenterPointFromTile(tileX, tileY, zoomLevel);
-                        zoom = TileUtil.ZoomLevelToScale(zoomLevel);
+                        //centerPoint = TileUtil.GetMercatorCenterPointFromTile(tileX, tileY, zoomLevel);
+                        //zoom = TileUtil.ZoomLevelToScale(zoomLevel);
+                        centerPoint = TileUtil.GetWebMercatorCenterPointFromTile(tileX, tileY, zoomLevel);
+                        zoom = TileUtil.ZoomLevelToWebMercatorScale(zoomLevel);
                         foundCompulsoryParameters = true;
                     }
                 }
@@ -402,6 +406,10 @@ namespace EGIS.Web.Controls
             //System.Diagnostics.Debug.WriteLine(pt);
             double zoom = TileUtil.ZoomLevelToScale(zoomLevel);            
             double delta = 8.0 / zoom;
+
+            //pt is geodetic lat/lon coords
+            var crsWgs84 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+
             //PointD ptf = new PointD(pt.X, pt.Y);
             //save the existing ICustomRenderSettings and set the dynamicCustomRenderSettings
             List<SessionCustomRenderSettingsEntry> defaultcustomRenderSettingsList = new List<SessionCustomRenderSettingsEntry>();
@@ -431,7 +439,7 @@ namespace EGIS.Web.Controls
                         || layers[l].ShapeType == ShapeType.PointM || layers[l].ShapeType == ShapeType.PointZ)
                         && layers[l].IsVisibleAtZoomLevel((float)zoom) && useToolTip)
                     {
-                        int selectedIndex = layers[l].GetShapeIndexContainingPoint(pt, delta);
+                        int selectedIndex = layers[l].GetShapeIndexContainingPoint(pt, delta, crsWgs84);
                         if (selectedIndex >= 0)
                         {
                             layerIndex = l;
@@ -543,9 +551,12 @@ namespace EGIS.Web.Controls
 
         private static bool FindShape(PointD pt, List<EGIS.ShapeFileLib.ShapeFile> layers, int zoomLevel, ref int layerIndex, ref int recordIndex)
         {
-            double zoom = TileUtil.ZoomLevelToScale(zoomLevel);
-            double delta = 8.0 / zoom;
-            //PointD ptf = new PointD(pt.X, pt.Y);
+            //convert zoomLevel to map scale            
+            double scale = TileUtil.ZoomLevelToScale(zoomLevel);// ZoomLevelToWebMercatorScale(zoomLevel);
+            double delta = 8.0 / scale;
+           
+            //pt is geodetic lat/lon coords
+            var crsWgs84 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);            
 
             for (int l = layers.Count - 1; l >= 0; l--)
             {
@@ -553,9 +564,9 @@ namespace EGIS.Web.Controls
                 extent.Inflate(delta, delta);
                 if ((extent.Contains(pt) || layers[l].ShapeType == ShapeType.Point
                         || layers[l].ShapeType == ShapeType.PointM || layers[l].ShapeType == ShapeType.PointZ)
-                        && layers[l].IsVisibleAtZoomLevel((float)zoom))
+                        && layers[l].IsVisibleAtZoomLevel((float)scale))
                 {
-                    int selectedIndex = layers[l].GetShapeIndexContainingPoint(pt, delta);
+                    int selectedIndex = layers[l].GetShapeIndexContainingPoint(pt, delta,crsWgs84);
                     if (selectedIndex >= 0)
                     {
                         layerIndex = l;

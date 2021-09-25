@@ -33,6 +33,9 @@ namespace EGIS.Projections
 {
     internal class Proj6Native
     {
+
+        internal static object _sync = new object();
+
         //const string ProjDllName = "proj_5_2.dll";
         const string ProjDllName = "proj_6_1.dll";
 

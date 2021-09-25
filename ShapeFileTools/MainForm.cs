@@ -62,10 +62,7 @@ namespace egis
             LoadRecentProjects();
         
             sfMap1.MapDoubleClick += new EventHandler<EGIS.Controls.SFMap.MapDoubleClickedEventArgs>(sfMap1_MapDoubleClick);
-
-			//sfMap1.DefaultMapCursor = Cursors.Cross;
-			//sfMap1.DefaultSelectionCursor = new Cursor("pen_i.cur");
-
+            
 		}
 
         void sfMap1_MapDoubleClick(object sender, EGIS.Controls.SFMap.MapDoubleClickedEventArgs e)
@@ -528,6 +525,10 @@ namespace egis
                             {
                                 System.IO.File.Copy(shapePath + ".dbf", absSubDir + "\\" + shapeFilename + ".dbf", false);
                             }
+                            if (!System.IO.File.Exists(absSubDir + "\\" + shapeFilename + ".prj"))
+                            {
+                                System.IO.File.Copy(shapePath + ".prj", absSubDir + "\\" + shapeFilename + ".prj", false);
+                            }
                             shapeElement.GetElementsByTagName("path")[0].InnerText = subDir + "/" + shapeFilename;
                         }
                     }
@@ -626,6 +627,10 @@ namespace egis
                             if (!System.IO.File.Exists(absSubDir + "\\" + shapeFilename + ".dbf"))
                             {
                                 System.IO.File.Copy(shapePath + ".dbf", absSubDir + "\\" + shapeFilename + ".dbf", false);
+                            }
+                            if (!System.IO.File.Exists(absSubDir + "\\" + shapeFilename + ".prj"))
+                            {
+                                System.IO.File.Copy(shapePath + ".prj", absSubDir + "\\" + shapeFilename + ".prj", false);
                             }
                             shapeElement.GetElementsByTagName("path")[0].InnerText = subDir + "/" + shapeFilename;
                         }

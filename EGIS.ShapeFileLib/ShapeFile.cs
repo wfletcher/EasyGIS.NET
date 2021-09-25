@@ -1586,6 +1586,7 @@ namespace EGIS.ShapeFileLib
 
         private void CreateQuadTree(SFRecordCol col)
         {
+            DateTime tick = DateTime.Now;
             RectangleD r = Extent;
             r.Inflate(r.Width * 0.05, r.Height * 0.05);
             //if (r.Width <= double.Epsilon) r.Width = double.Epsilon;
@@ -1603,6 +1604,8 @@ namespace EGIS.ShapeFileLib
             {
                 shapeQuadTree.Insert(n, helper, this.shapeFileStream);
             }
+            DateTime tock = DateTime.Now;
+            Console.Out.WriteLine("Time to create quadtree:" + (tock.Subtract(tick).TotalSeconds) + "s");
         }
 
        
