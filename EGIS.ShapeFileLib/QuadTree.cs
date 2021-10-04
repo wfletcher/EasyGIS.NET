@@ -72,7 +72,7 @@ namespace EGIS.ShapeFileLib
                 {
                     recBounds.Height = 0.0000001;
                 }
-                rootNode.Insert(recordIndex, helper, ref recBounds, shapeFileStream);
+                rootNode.Insert(recordIndex, helper, ref recBounds);//, shapeFileStream);
             }
         }
 
@@ -280,7 +280,7 @@ namespace EGIS.ShapeFileLib
 		}
 
 
-		internal void Insert(int recordIndex, QTNodeHelper helper, ref RectangleD recBounds, System.IO.Stream shapeFileStream)
+		internal void Insert(int recordIndex, QTNodeHelper helper, ref RectangleD recBounds)//, System.IO.Stream shapeFileStream)
         {
             if (Level == MaxLevels)
             {
@@ -303,22 +303,22 @@ namespace EGIS.ShapeFileLib
                     if (children[TL].Bounds.IntersectsWith(recBounds))
                     {
                         c++;
-                        children[TL].Insert(recordIndex, helper, ref recBounds, shapeFileStream);
+                        children[TL].Insert(recordIndex, helper, ref recBounds);//, shapeFileStream);
                     }
                     if (children[TR].Bounds.IntersectsWith(recBounds))
                     {
                         c++;
-                        children[TR].Insert(recordIndex, helper,ref recBounds, shapeFileStream);
+                        children[TR].Insert(recordIndex, helper, ref recBounds);//, shapeFileStream);
                     }
                     if (children[BL].Bounds.IntersectsWith(recBounds))
                     {
                         c++;
-                        children[BL].Insert(recordIndex, helper,ref recBounds, shapeFileStream);
+                        children[BL].Insert(recordIndex, helper, ref recBounds);//, shapeFileStream);
                     }
                     if (children[BR].Bounds.IntersectsWith(recBounds))
                     {
                         c++;
-                        children[BR].Insert(recordIndex, helper,ref recBounds, shapeFileStream);
+                        children[BR].Insert(recordIndex, helper, ref recBounds);//, shapeFileStream);
                     }
                 }
             }

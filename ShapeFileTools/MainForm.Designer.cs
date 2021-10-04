@@ -102,8 +102,8 @@ namespace egis
 			this.tsLblMapCRS = new System.Windows.Forms.ToolStripStatusLabel();
 			this.tsLblSelectMessage = new System.Windows.Forms.ToolStripStatusLabel();
 			this.sfdMapImage = new System.Windows.Forms.SaveFileDialog();
-			this.shapeFileListControl1 = new EGIS.Controls.ShapeFileListControl();
 			this.sfMap1 = new EGIS.Controls.SFMap();
+			this.shapeFileListControl1 = new EGIS.Controls.ShapeFileListControl();
 			this.menuStrip1.SuspendLayout();
 			this.mainToolStrip.SuspendLayout();
 			this.statusStrip1.SuspendLayout();
@@ -146,96 +146,96 @@ namespace egis
 			// newProjectToolStripMenuItem
 			// 
 			this.newProjectToolStripMenuItem.Name = "newProjectToolStripMenuItem";
-			this.newProjectToolStripMenuItem.Size = new System.Drawing.Size(359, 22);
+			this.newProjectToolStripMenuItem.Size = new System.Drawing.Size(360, 22);
 			this.newProjectToolStripMenuItem.Text = "New Project";
 			this.newProjectToolStripMenuItem.Click += new System.EventHandler(this.newProjectToolStripMenuItem_Click);
 			// 
 			// miOpenProject
 			// 
 			this.miOpenProject.Name = "miOpenProject";
-			this.miOpenProject.Size = new System.Drawing.Size(359, 22);
+			this.miOpenProject.Size = new System.Drawing.Size(360, 22);
 			this.miOpenProject.Text = "Open Project";
 			this.miOpenProject.Click += new System.EventHandler(this.miOpenProject_Click);
 			// 
 			// recentProjectsMenuItem
 			// 
 			this.recentProjectsMenuItem.Name = "recentProjectsMenuItem";
-			this.recentProjectsMenuItem.Size = new System.Drawing.Size(359, 22);
+			this.recentProjectsMenuItem.Size = new System.Drawing.Size(360, 22);
 			this.recentProjectsMenuItem.Text = "Recent Projects";
 			// 
 			// toolStripSeparator5
 			// 
 			this.toolStripSeparator5.Name = "toolStripSeparator5";
-			this.toolStripSeparator5.Size = new System.Drawing.Size(356, 6);
+			this.toolStripSeparator5.Size = new System.Drawing.Size(357, 6);
 			// 
 			// miOpenShapeFile
 			// 
 			this.miOpenShapeFile.Name = "miOpenShapeFile";
-			this.miOpenShapeFile.Size = new System.Drawing.Size(359, 22);
+			this.miOpenShapeFile.Size = new System.Drawing.Size(360, 22);
 			this.miOpenShapeFile.Text = "Add Shape File";
 			this.miOpenShapeFile.Click += new System.EventHandler(this.miOpenShapeFile_Click);
 			// 
 			// addXYDatacsvToolStripMenuItem
 			// 
 			this.addXYDatacsvToolStripMenuItem.Name = "addXYDatacsvToolStripMenuItem";
-			this.addXYDatacsvToolStripMenuItem.Size = new System.Drawing.Size(359, 22);
+			this.addXYDatacsvToolStripMenuItem.Size = new System.Drawing.Size(360, 22);
 			this.addXYDatacsvToolStripMenuItem.Text = "Add X,Y Data (.csv)";
 			this.addXYDatacsvToolStripMenuItem.Click += new System.EventHandler(this.addXYDatacsvToolStripMenuItem_Click);
 			// 
 			// toolStripSeparator4
 			// 
 			this.toolStripSeparator4.Name = "toolStripSeparator4";
-			this.toolStripSeparator4.Size = new System.Drawing.Size(356, 6);
+			this.toolStripSeparator4.Size = new System.Drawing.Size(357, 6);
 			// 
 			// miSaveProject
 			// 
 			this.miSaveProject.Name = "miSaveProject";
-			this.miSaveProject.Size = new System.Drawing.Size(359, 22);
+			this.miSaveProject.Size = new System.Drawing.Size(360, 22);
 			this.miSaveProject.Text = "Save Project";
 			this.miSaveProject.Click += new System.EventHandler(this.miSaveProject_Click);
 			// 
 			// saveProjectAsToolStripMenuItem
 			// 
 			this.saveProjectAsToolStripMenuItem.Name = "saveProjectAsToolStripMenuItem";
-			this.saveProjectAsToolStripMenuItem.Size = new System.Drawing.Size(359, 22);
+			this.saveProjectAsToolStripMenuItem.Size = new System.Drawing.Size(360, 22);
 			this.saveProjectAsToolStripMenuItem.Text = "Save Project As";
 			this.saveProjectAsToolStripMenuItem.Click += new System.EventHandler(this.saveProjectAsToolStripMenuItem_Click);
 			// 
 			// exportProjectToolStripMenuItem
 			// 
 			this.exportProjectToolStripMenuItem.Name = "exportProjectToolStripMenuItem";
-			this.exportProjectToolStripMenuItem.Size = new System.Drawing.Size(359, 22);
+			this.exportProjectToolStripMenuItem.Size = new System.Drawing.Size(360, 22);
 			this.exportProjectToolStripMenuItem.Text = "Export Project (for use in web edition)";
 			this.exportProjectToolStripMenuItem.Click += new System.EventHandler(this.exportProjectToolStripMenuItem_Click);
 			// 
 			// exportProjectforUseInWebEditionAsSingleZIPFileToolStripMenuItem
 			// 
 			this.exportProjectforUseInWebEditionAsSingleZIPFileToolStripMenuItem.Name = "exportProjectforUseInWebEditionAsSingleZIPFileToolStripMenuItem";
-			this.exportProjectforUseInWebEditionAsSingleZIPFileToolStripMenuItem.Size = new System.Drawing.Size(359, 22);
+			this.exportProjectforUseInWebEditionAsSingleZIPFileToolStripMenuItem.Size = new System.Drawing.Size(360, 22);
 			this.exportProjectforUseInWebEditionAsSingleZIPFileToolStripMenuItem.Text = "Export Project (for use in web edition) as single ZIP file";
 			this.exportProjectforUseInWebEditionAsSingleZIPFileToolStripMenuItem.Click += new System.EventHandler(this.exportProjectforUseInWebEditionAsSingleZIPFileToolStripMenuItem_Click);
 			// 
 			// toolStripSeparator7
 			// 
 			this.toolStripSeparator7.Name = "toolStripSeparator7";
-			this.toolStripSeparator7.Size = new System.Drawing.Size(356, 6);
+			this.toolStripSeparator7.Size = new System.Drawing.Size(357, 6);
 			// 
 			// saveMapImageToolStripMenuItem
 			// 
 			this.saveMapImageToolStripMenuItem.Name = "saveMapImageToolStripMenuItem";
-			this.saveMapImageToolStripMenuItem.Size = new System.Drawing.Size(359, 22);
+			this.saveMapImageToolStripMenuItem.Size = new System.Drawing.Size(360, 22);
 			this.saveMapImageToolStripMenuItem.Text = "Save Map Image";
 			this.saveMapImageToolStripMenuItem.Click += new System.EventHandler(this.saveMapImageToolStripMenuItem_Click);
 			// 
 			// toolStripSeparator11
 			// 
 			this.toolStripSeparator11.Name = "toolStripSeparator11";
-			this.toolStripSeparator11.Size = new System.Drawing.Size(356, 6);
+			this.toolStripSeparator11.Size = new System.Drawing.Size(357, 6);
 			// 
 			// printToolStripMenuItem
 			// 
 			this.printToolStripMenuItem.Name = "printToolStripMenuItem";
-			this.printToolStripMenuItem.Size = new System.Drawing.Size(359, 22);
+			this.printToolStripMenuItem.Size = new System.Drawing.Size(360, 22);
 			this.printToolStripMenuItem.Text = "Print Map";
 			this.printToolStripMenuItem.Click += new System.EventHandler(this.printToolStripMenuItem_Click);
 			// 
@@ -264,21 +264,21 @@ namespace egis
 			// miMapBackgroundColor
 			// 
 			this.miMapBackgroundColor.Name = "miMapBackgroundColor";
-			this.miMapBackgroundColor.Size = new System.Drawing.Size(315, 22);
+			this.miMapBackgroundColor.Size = new System.Drawing.Size(316, 22);
 			this.miMapBackgroundColor.Text = "Map Background Color";
 			this.miMapBackgroundColor.Click += new System.EventHandler(this.miMapBackgroundColor_Click);
 			// 
 			// miMercatorProjection
 			// 
 			this.miMercatorProjection.Name = "miMercatorProjection";
-			this.miMercatorProjection.Size = new System.Drawing.Size(315, 22);
+			this.miMercatorProjection.Size = new System.Drawing.Size(316, 22);
 			this.miMercatorProjection.Text = "Mercator Projection";
 			this.miMercatorProjection.Click += new System.EventHandler(this.miMercatorProjection_Click);
 			// 
 			// setCRSToolStripMenuItem
 			// 
 			this.setCRSToolStripMenuItem.Name = "setCRSToolStripMenuItem";
-			this.setCRSToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
+			this.setCRSToolStripMenuItem.Size = new System.Drawing.Size(316, 22);
 			this.setCRSToolStripMenuItem.Text = "Set CRS";
 			this.setCRSToolStripMenuItem.Click += new System.EventHandler(this.setCRSToolStripMenuItem_Click);
 			// 
@@ -288,13 +288,13 @@ namespace egis
 			this.setMapCRSFromFirstLayerToolStripMenuItem.CheckOnClick = true;
 			this.setMapCRSFromFirstLayerToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.setMapCRSFromFirstLayerToolStripMenuItem.Name = "setMapCRSFromFirstLayerToolStripMenuItem";
-			this.setMapCRSFromFirstLayerToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
+			this.setMapCRSFromFirstLayerToolStripMenuItem.Size = new System.Drawing.Size(316, 22);
 			this.setMapCRSFromFirstLayerToolStripMenuItem.Text = "Use CRS From First Layer Added to Map";
 			// 
 			// toolStripSeparator8
 			// 
 			this.toolStripSeparator8.Name = "toolStripSeparator8";
-			this.toolStripSeparator8.Size = new System.Drawing.Size(312, 6);
+			this.toolStripSeparator8.Size = new System.Drawing.Size(313, 6);
 			// 
 			// renderQualityToolStripMenuItem
 			// 
@@ -303,7 +303,7 @@ namespace egis
             this.lowToolStripMenuItem,
             this.autoToolStripMenuItem});
 			this.renderQualityToolStripMenuItem.Name = "renderQualityToolStripMenuItem";
-			this.renderQualityToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
+			this.renderQualityToolStripMenuItem.Size = new System.Drawing.Size(316, 22);
 			this.renderQualityToolStripMenuItem.Text = "Render Quality";
 			// 
 			// highToolStripMenuItem
@@ -332,27 +332,27 @@ namespace egis
 			// useNativeFileMappingToolStripMenuItem
 			// 
 			this.useNativeFileMappingToolStripMenuItem.Name = "useNativeFileMappingToolStripMenuItem";
-			this.useNativeFileMappingToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
+			this.useNativeFileMappingToolStripMenuItem.Size = new System.Drawing.Size(316, 22);
 			this.useNativeFileMappingToolStripMenuItem.Text = "Use Native File Mapping";
 			this.useNativeFileMappingToolStripMenuItem.Click += new System.EventHandler(this.useNativeFileMappingToolStripMenuItem_Click);
 			// 
 			// loadShapeFilesInMemoryToolStripMenuItem
 			// 
 			this.loadShapeFilesInMemoryToolStripMenuItem.Name = "loadShapeFilesInMemoryToolStripMenuItem";
-			this.loadShapeFilesInMemoryToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
+			this.loadShapeFilesInMemoryToolStripMenuItem.Size = new System.Drawing.Size(316, 22);
 			this.loadShapeFilesInMemoryToolStripMenuItem.Text = "Load ShapeFiles in Memory";
 			this.loadShapeFilesInMemoryToolStripMenuItem.Click += new System.EventHandler(this.loadShapeFilesInMemoryToolStripMenuItem_Click);
 			// 
 			// toolStripSeparator9
 			// 
 			this.toolStripSeparator9.Name = "toolStripSeparator9";
-			this.toolStripSeparator9.Size = new System.Drawing.Size(312, 6);
+			this.toolStripSeparator9.Size = new System.Drawing.Size(313, 6);
 			// 
 			// displayShapeAttributesWindowToolStripMenuItem
 			// 
 			this.displayShapeAttributesWindowToolStripMenuItem.Enabled = false;
 			this.displayShapeAttributesWindowToolStripMenuItem.Name = "displayShapeAttributesWindowToolStripMenuItem";
-			this.displayShapeAttributesWindowToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
+			this.displayShapeAttributesWindowToolStripMenuItem.Size = new System.Drawing.Size(316, 22);
 			this.displayShapeAttributesWindowToolStripMenuItem.Text = "Display shape Attributes Window";
 			this.displayShapeAttributesWindowToolStripMenuItem.Click += new System.EventHandler(this.displayShapeAttributesWindowToolStripMenuItem_Click);
 			// 
@@ -362,7 +362,7 @@ namespace egis
 			this.disablePanSelectToolStripMenuItem.CheckOnClick = true;
 			this.disablePanSelectToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.disablePanSelectToolStripMenuItem.Name = "disablePanSelectToolStripMenuItem";
-			this.disablePanSelectToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
+			this.disablePanSelectToolStripMenuItem.Size = new System.Drawing.Size(316, 22);
 			this.disablePanSelectToolStripMenuItem.Text = "DisablePanSelect";
 			this.disablePanSelectToolStripMenuItem.Visible = false;
 			this.disablePanSelectToolStripMenuItem.Click += new System.EventHandler(this.disablePanSelectToolStripMenuItem_Click);
@@ -371,14 +371,14 @@ namespace egis
 			// 
 			this.viewAttributesToolStripMenuItem.Enabled = false;
 			this.viewAttributesToolStripMenuItem.Name = "viewAttributesToolStripMenuItem";
-			this.viewAttributesToolStripMenuItem.Size = new System.Drawing.Size(315, 22);
+			this.viewAttributesToolStripMenuItem.Size = new System.Drawing.Size(316, 22);
 			this.viewAttributesToolStripMenuItem.Text = "View Attribute List";
 			this.viewAttributesToolStripMenuItem.Click += new System.EventHandler(this.viewAttributesToolStripMenuItem_Click);
 			// 
 			// miZoomToExtentWhenCtrlkeyDown
 			// 
 			this.miZoomToExtentWhenCtrlkeyDown.Name = "miZoomToExtentWhenCtrlkeyDown";
-			this.miZoomToExtentWhenCtrlkeyDown.Size = new System.Drawing.Size(315, 22);
+			this.miZoomToExtentWhenCtrlkeyDown.Size = new System.Drawing.Size(316, 22);
 			this.miZoomToExtentWhenCtrlkeyDown.Text = "Zoom to Selected Extent When Ctrl-key Down";
 			this.miZoomToExtentWhenCtrlkeyDown.Click += new System.EventHandler(this.miZoomToExtentWhenCtrlkeyDown_Click);
 			// 
@@ -393,7 +393,7 @@ namespace egis
 			// aboutMenuItem
 			// 
 			this.aboutMenuItem.Name = "aboutMenuItem";
-			this.aboutMenuItem.Size = new System.Drawing.Size(181, 22);
+			this.aboutMenuItem.Size = new System.Drawing.Size(180, 22);
 			this.aboutMenuItem.Text = "About Easy GIS .NET";
 			this.aboutMenuItem.Click += new System.EventHandler(this.aboutMenuItem_Click);
 			// 
@@ -408,9 +408,9 @@ namespace egis
 			// 
 			this.shapeFileRenderPropertyGrid.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
-			this.shapeFileRenderPropertyGrid.Location = new System.Drawing.Point(6, 311);
+			this.shapeFileRenderPropertyGrid.Location = new System.Drawing.Point(6, 281);
 			this.shapeFileRenderPropertyGrid.Name = "shapeFileRenderPropertyGrid";
-			this.shapeFileRenderPropertyGrid.Size = new System.Drawing.Size(251, 225);
+			this.shapeFileRenderPropertyGrid.Size = new System.Drawing.Size(251, 255);
 			this.shapeFileRenderPropertyGrid.TabIndex = 15;
 			this.shapeFileRenderPropertyGrid.PropertyValueChanged += new System.Windows.Forms.PropertyValueChangedEventHandler(this.shapeFileRenderPropertyGrid_PropertyValueChanged);
 			// 
@@ -701,7 +701,7 @@ namespace egis
 			// tsLabelVisibleArea
 			// 
 			this.tsLabelVisibleArea.Name = "tsLabelVisibleArea";
-			this.tsLabelVisibleArea.Size = new System.Drawing.Size(60, 17);
+			this.tsLabelVisibleArea.Size = new System.Drawing.Size(61, 17);
 			this.tsLabelVisibleArea.Text = "[0m x 0m]";
 			// 
 			// tsLblMapMousePos
@@ -741,17 +741,6 @@ namespace egis
 			// 
 			this.sfdMapImage.Filter = "PNG|*.PNG";
 			// 
-			// shapeFileListControl1
-			// 
-			this.shapeFileListControl1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.shapeFileListControl1.Location = new System.Drawing.Point(6, 68);
-			this.shapeFileListControl1.Map = this.sfMap1;
-			this.shapeFileListControl1.Name = "shapeFileListControl1";
-			this.shapeFileListControl1.Size = new System.Drawing.Size(251, 237);
-			this.shapeFileListControl1.TabIndex = 14;
-			this.shapeFileListControl1.SelectedShapeFileChanged += new System.EventHandler<System.EventArgs>(this.shapeFileListControl1_SelectedShapeFileChanged);
-			this.shapeFileListControl1.AddLayerClicked += new System.EventHandler(this.shapeFileListControl1_AddLayerClicked);
-			// 
 			// sfMap1
 			// 
 			this.sfMap1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -764,7 +753,7 @@ namespace egis
 			this.sfMap1.DefaultSelectionCursor = System.Windows.Forms.Cursors.Hand;
 			this.sfMap1.Location = new System.Drawing.Point(267, 68);
 			this.sfMap1.MapBackColor = System.Drawing.SystemColors.Control;
-			this.sfMap1.MapCoordinateReferenceSystem = null;
+			this.sfMap1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
 			this.sfMap1.Name = "sfMap1";
 			this.sfMap1.PanSelectMode = EGIS.Controls.PanSelectMode.Pan;
 			this.sfMap1.RenderQuality = EGIS.ShapeFileLib.RenderQuality.Auto;
@@ -786,16 +775,27 @@ namespace egis
 			this.sfMap1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseMove);
 			this.sfMap1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.sfMap1_MouseUp);
 			// 
+			// shapeFileListControl1
+			// 
+			this.shapeFileListControl1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+			this.shapeFileListControl1.Location = new System.Drawing.Point(6, 68);
+			this.shapeFileListControl1.Map = this.sfMap1;
+			this.shapeFileListControl1.Name = "shapeFileListControl1";
+			this.shapeFileListControl1.Size = new System.Drawing.Size(251, 207);
+			this.shapeFileListControl1.TabIndex = 19;
+			this.shapeFileListControl1.SelectedShapeFileChanged += new System.EventHandler<System.EventArgs>(this.shapeFileListControl1_SelectedShapeFileChanged);
+			this.shapeFileListControl1.AddLayerClicked += new System.EventHandler(this.shapeFileListControl1_AddLayerClicked);
+			// 
 			// MainForm
 			// 
 			this.AllowDrop = true;
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(959, 565);
+			this.Controls.Add(this.shapeFileListControl1);
 			this.Controls.Add(this.statusStrip1);
 			this.Controls.Add(this.mainToolStrip);
 			this.Controls.Add(this.shapeFileRenderPropertyGrid);
-			this.Controls.Add(this.shapeFileListControl1);
 			this.Controls.Add(this.sfMap1);
 			this.Controls.Add(this.menuStrip1);
 			this.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -824,7 +824,6 @@ namespace egis
         private System.Windows.Forms.ToolStripMenuItem miNewProject;
         private System.Windows.Forms.OpenFileDialog ofdShapeFile;
         private EGIS.Controls.SFMap sfMap1;
-        private EGIS.Controls.ShapeFileListControl shapeFileListControl1;
         private System.Windows.Forms.PropertyGrid shapeFileRenderPropertyGrid;
         private System.Windows.Forms.OpenFileDialog ofdProject;
         private System.Windows.Forms.ToolStripMenuItem miOpenProject;
@@ -895,6 +894,7 @@ namespace egis
         private System.Windows.Forms.ToolStripStatusLabel tsLblMapCRS;
         private System.Windows.Forms.ToolStripMenuItem setMapCRSFromFirstLayerToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem loadShapeFilesInMemoryToolStripMenuItem;
+		private EGIS.Controls.ShapeFileListControl shapeFileListControl1;
 	}
 }
 

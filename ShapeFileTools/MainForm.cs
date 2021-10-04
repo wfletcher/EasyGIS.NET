@@ -62,7 +62,7 @@ namespace egis
             LoadRecentProjects();
         
             sfMap1.MapDoubleClick += new EventHandler<EGIS.Controls.SFMap.MapDoubleClickedEventArgs>(sfMap1_MapDoubleClick);
-            
+           // sfMap1.UseMemoryStreams = true;
 		}
 
         void sfMap1_MapDoubleClick(object sender, EGIS.Controls.SFMap.MapDoubleClickedEventArgs e)
@@ -1030,21 +1030,23 @@ namespace egis
 
         private void miMercatorProjection_Click(object sender, EventArgs e)
         {
-            bool useProjection = !sfMap1.UseMercatorProjection;
-            bool ok = true;
-            if (useProjection)
-            {
-                if (!IsMapFitForMercator())
-                {
-                    ok = (DialogResult.Yes == MessageBox.Show(this, "Warning: The current project does not appear to be using Lat Long Coords.\nIf you use the Mercator Projection all parts of the map may not be visibe.\nAre you sure you wish to use the Mercator Projection?", "Confirm Mercator Projection", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning));
-                }
-            }
-            if (ok)
-            {
-                sfMap1.UseMercatorProjection = useProjection;
-                miMercatorProjection.Checked = useProjection;
-                UpdateVisibleAreaLabel();
-            }
+            //bool useProjection = !sfMap1.UseMercatorProjection;
+            //bool ok = true;
+            //if (useProjection)
+            //{
+            //    if (!IsMapFitForMercator())
+            //    {
+            //        ok = (DialogResult.Yes == MessageBox.Show(this, "Warning: The current project does not appear to be using Lat Long Coords.\nIf you use the Mercator Projection all parts of the map may not be visibe.\nAre you sure you wish to use the Mercator Projection?", "Confirm Mercator Projection", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning));
+            //    }
+            //}
+            //if (ok)
+            //{
+            //    sfMap1.UseMercatorProjection = useProjection;
+            //    miMercatorProjection.Checked = useProjection;
+            //    UpdateVisibleAreaLabel();
+            //}
+            sfMap1.MapCoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode);
+            UpdateVisibleAreaLabel();
         }
 
         private void highToolStripMenuItem_Click(object sender, EventArgs e)
