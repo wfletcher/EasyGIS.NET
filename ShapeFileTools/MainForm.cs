@@ -1045,6 +1045,8 @@ namespace egis
             //    miMercatorProjection.Checked = useProjection;
             //    UpdateVisibleAreaLabel();
             //}
+            miMercatorProjection.Checked = true;
+            setMapCRSFromFirstLayerToolStripMenuItem.Checked = false;
             sfMap1.MapCoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode);
             UpdateVisibleAreaLabel();
         }
@@ -1789,6 +1791,8 @@ namespace egis
         private void sfMap1_CoordinateReferenceSystemChanged(object sender, EventArgs e)
         {
             this.tsLblMapCRS.Text = this.sfMap1.MapCoordinateReferenceSystem != null ? this.sfMap1.MapCoordinateReferenceSystem.ToString() : "Unknown CRS";
+            bool webMercator = this.sfMap1.MapCoordinateReferenceSystem != null && this.sfMap1.MapCoordinateReferenceSystem.Id == EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            this.miMercatorProjection.Checked = webMercator;
         }
 
         private void tsLblMapCRS_DoubleClick(object sender, EventArgs e)

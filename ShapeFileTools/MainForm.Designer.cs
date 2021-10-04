@@ -272,7 +272,7 @@ namespace egis
 			// 
 			this.miMercatorProjection.Name = "miMercatorProjection";
 			this.miMercatorProjection.Size = new System.Drawing.Size(316, 22);
-			this.miMercatorProjection.Text = "Mercator Projection";
+			this.miMercatorProjection.Text = "Web Mercator Projection (EPSG 3857)";
 			this.miMercatorProjection.Click += new System.EventHandler(this.miMercatorProjection_Click);
 			// 
 			// setCRSToolStripMenuItem
@@ -624,6 +624,7 @@ namespace egis
 			// 
 			this.tsTxtFind.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Suggest;
 			this.tsTxtFind.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.CustomSource;
+			this.tsTxtFind.Font = new System.Drawing.Font("Segoe UI", 9F);
 			this.tsTxtFind.Name = "tsTxtFind";
 			this.tsTxtFind.Size = new System.Drawing.Size(130, 39);
 			this.tsTxtFind.Visible = false;
@@ -753,7 +754,7 @@ namespace egis
 			this.sfMap1.DefaultSelectionCursor = System.Windows.Forms.Cursors.Hand;
 			this.sfMap1.Location = new System.Drawing.Point(267, 68);
 			this.sfMap1.MapBackColor = System.Drawing.SystemColors.Control;
-			this.sfMap1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+			this.sfMap1.Margin = new System.Windows.Forms.Padding(4);
 			this.sfMap1.Name = "sfMap1";
 			this.sfMap1.PanSelectMode = EGIS.Controls.PanSelectMode.Pan;
 			this.sfMap1.RenderQuality = EGIS.ShapeFileLib.RenderQuality.Auto;
