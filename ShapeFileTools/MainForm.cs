@@ -62,10 +62,7 @@ namespace egis
             LoadRecentProjects();
         
             sfMap1.MapDoubleClick += new EventHandler<EGIS.Controls.SFMap.MapDoubleClickedEventArgs>(sfMap1_MapDoubleClick);
-
-			//sfMap1.DefaultMapCursor = Cursors.Cross;
-			//sfMap1.DefaultSelectionCursor = new Cursor("pen_i.cur");
-
+           // sfMap1.UseMemoryStreams = true;
 		}
 
         void sfMap1_MapDoubleClick(object sender, EGIS.Controls.SFMap.MapDoubleClickedEventArgs e)
@@ -528,6 +525,10 @@ namespace egis
                             {
                                 System.IO.File.Copy(shapePath + ".dbf", absSubDir + "\\" + shapeFilename + ".dbf", false);
                             }
+                            if (!System.IO.File.Exists(absSubDir + "\\" + shapeFilename + ".prj"))
+                            {
+                                System.IO.File.Copy(shapePath + ".prj", absSubDir + "\\" + shapeFilename + ".prj", false);
+                            }
                             shapeElement.GetElementsByTagName("path")[0].InnerText = subDir + "/" + shapeFilename;
                         }
                     }
@@ -626,6 +627,10 @@ namespace egis
                             if (!System.IO.File.Exists(absSubDir + "\\" + shapeFilename + ".dbf"))
                             {
                                 System.IO.File.Copy(shapePath + ".dbf", absSubDir + "\\" + shapeFilename + ".dbf", false);
+                            }
+                            if (!System.IO.File.Exists(absSubDir + "\\" + shapeFilename + ".prj"))
+                            {
+                                System.IO.File.Copy(shapePath + ".prj", absSubDir + "\\" + shapeFilename + ".prj", false);
                             }
                             shapeElement.GetElementsByTagName("path")[0].InnerText = subDir + "/" + shapeFilename;
                         }
@@ -1025,21 +1030,25 @@ namespace egis
 
         private void miMercatorProjection_Click(object sender, EventArgs e)
         {
-            bool useProjection = !sfMap1.UseMercatorProjection;
-            bool ok = true;
-            if (useProjection)
-            {
-                if (!IsMapFitForMercator())
-                {
-                    ok = (DialogResult.Yes == MessageBox.Show(this, "Warning: The current project does not appear to be using Lat Long Coords.\nIf you use the Mercator Projection all parts of the map may not be visibe.\nAre you sure you wish to use the Mercator Projection?", "Confirm Mercator Projection", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning));
-                }
-            }
-            if (ok)
-            {
-                sfMap1.UseMercatorProjection = useProjection;
-                miMercatorProjection.Checked = useProjection;
-                UpdateVisibleAreaLabel();
-            }
+            //bool useProjection = !sfMap1.UseMercatorProjection;
+            //bool ok = true;
+            //if (useProjection)
+            //{
+            //    if (!IsMapFitForMercator())
+            //    {
+            //        ok = (DialogResult.Yes == MessageBox.Show(this, "Warning: The current project does not appear to be using Lat Long Coords.\nIf you use the Mercator Projection all parts of the map may not be visibe.\nAre you sure you wish to use the Mercator Projection?", "Confirm Mercator Projection", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning));
+            //    }
+            //}
+            //if (ok)
+            //{
+            //    sfMap1.UseMercatorProjection = useProjection;
+            //    miMercatorProjection.Checked = useProjection;
+            //    UpdateVisibleAreaLabel();
+            //}
+            miMercatorProjection.Checked = true;
+            setMapCRSFromFirstLayerToolStripMenuItem.Checked = false;
+            sfMap1.MapCoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode);
+            UpdateVisibleAreaLabel();
         }
 
         private void highToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1782,6 +1791,8 @@ namespace egis
         private void sfMap1_CoordinateReferenceSystemChanged(object sender, EventArgs e)
         {
             this.tsLblMapCRS.Text = this.sfMap1.MapCoordinateReferenceSystem != null ? this.sfMap1.MapCoordinateReferenceSystem.ToString() : "Unknown CRS";
+            bool webMercator = this.sfMap1.MapCoordinateReferenceSystem != null && this.sfMap1.MapCoordinateReferenceSystem.Id == EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            this.miMercatorProjection.Checked = webMercator;
         }
 
         private void tsLblMapCRS_DoubleClick(object sender, EventArgs e)

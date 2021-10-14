@@ -1611,6 +1611,11 @@ namespace EGIS.Controls
             {
                 g.Clear(MapBackColor);
                 this.OnPaintMapBackground(new PaintEventArgs(g, new Rectangle(0, 0, this.ClientSize.Width, this.ClientSize.Height)));
+
+                Size renderSize = screenBuf.Size;
+                //expand the renderSize by 10 pixels to hide any cropped shapes on borders
+                renderSize.Width += 10;
+                renderSize.Height += 10;
                 //render the background layers
                 if (this.BackgroundShapeFiles.Count > 0)
                 {
@@ -1630,7 +1635,7 @@ namespace EGIS.Controls
                                 //{
                                 //}
 
-                                sf.Render(g2, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
+                                sf.Render(g2, renderSize, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
                             }
                         }
                     }
@@ -1649,7 +1654,7 @@ namespace EGIS.Controls
                             var layers = this.ForegroundShapeFiles;
                             foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
                             {
-                                sf.Render(g2, screenBuf.Size, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
+                                sf.Render(g2, renderSize, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
                             }
                         }
                     }

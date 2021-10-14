@@ -277,6 +277,22 @@ namespace EGIS.ShapeFileLib
             private set;
         }
 
+        /// <summary>
+        /// Explicitly set the shapefile's CoordinateReferenceSystem 
+        /// </summary>
+        /// <param name="coordinateReferenceSystem"></param>
+        /// <remarks>
+        /// <para>In most cases it is not necessary to call this method as the prj file/stream will be read when the 
+        /// shapefile is created or loaded. Only call this method if you are absolutely sure what CRS the shapefile coordinates
+        /// are defined in</para>
+        /// </remarks>
+        public void SetCoordinateReferenceSystem(ICRS coordinateReferenceSystem)
+        {
+            this.CoordinateReferenceSystem = coordinateReferenceSystem;
+            this.projectionWkt = coordinateReferenceSystem != null ? coordinateReferenceSystem.WKT : "";
+        }
+
+
         public static RectangleD LLExtentToProjectedExtent(RectangleD rectLL, ProjectionType projectionType)
         {
             switch(projectionType)
@@ -1586,6 +1602,7 @@ namespace EGIS.ShapeFileLib
 
         private void CreateQuadTree(SFRecordCol col)
         {
+            DateTime tick = DateTime.Now;
             RectangleD r = Extent;
             r.Inflate(r.Width * 0.05, r.Height * 0.05);
             //if (r.Width <= double.Epsilon) r.Width = double.Epsilon;
@@ -1603,6 +1620,8 @@ namespace EGIS.ShapeFileLib
             {
                 shapeQuadTree.Insert(n, helper, this.shapeFileStream);
             }
+            DateTime tock = DateTime.Now;
+            Console.Out.WriteLine("Time to create quadtree:" + (tock.Subtract(tick).TotalSeconds) + "s");
         }
 
        
@@ -4514,7 +4533,7 @@ namespace EGIS.ShapeFileLib
 
         public override RectangleD GetRecordBoundsD(int recordIndex, System.IO.Stream shapeFileStream)
         {
-            if (recordIndex < 0 || recordIndex >= this.RecordHeaders.Length) return RectangleF.Empty;
+            if (recordIndex < 0 || recordIndex >= this.RecordHeaders.Length) return RectangleD.Empty;
             shapeFileStream.Seek(RecordHeaders[recordIndex].Offset, SeekOrigin.Begin);
             byte[] data = SFRecordCol.SharedBuffer;
             shapeFileStream.Read(data, 0, 32 + 12);
