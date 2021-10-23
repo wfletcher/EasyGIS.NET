@@ -1793,6 +1793,8 @@ namespace egis
             this.tsLblMapCRS.Text = this.sfMap1.MapCoordinateReferenceSystem != null ? this.sfMap1.MapCoordinateReferenceSystem.ToString() : "Unknown CRS";
             bool webMercator = this.sfMap1.MapCoordinateReferenceSystem != null && this.sfMap1.MapCoordinateReferenceSystem.Id == EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode.ToString(System.Globalization.CultureInfo.InvariantCulture);
             this.miMercatorProjection.Checked = webMercator;
+            //update the shapeFileRenderPropertyGrid as some of the RenderSettings are updated when the CRS is changed
+            this.shapeFileRenderPropertyGrid.Refresh();
         }
 
         private void tsLblMapCRS_DoubleClick(object sender, EventArgs e)

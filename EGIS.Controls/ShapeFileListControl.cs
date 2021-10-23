@@ -42,6 +42,9 @@ namespace EGIS.Controls
     /// </summary>
     public partial class ShapeFileListControl : UserControl
     {
+        /// <summary>
+        /// constructor
+        /// </summary>
         public ShapeFileListControl()
         {
             InitializeComponent();

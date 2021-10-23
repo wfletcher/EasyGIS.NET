@@ -1376,10 +1376,85 @@ namespace EGIS.ShapeFileLib
         }
 
         #endregion
+
+        #region Update RenderSettings for new CRS
+
+        public static void UpdateRenderSettings(RenderSettings renderSettings, PointD sourceCenterPoint, EGIS.Projections.ICRS sourceCRS, EGIS.Projections.ICRS targetCRS)
+        {
+            using (EGIS.Projections.ICoordinateTransformation transform = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sourceCRS, targetCRS))
+            {
+                if (renderSettings.MinZoomLevel > 0)
+                {
+                    //calculate sourceCRS extent at the zoom level for a 256x256 pixel rectangle
+                    PointD bl = PixelCoordToGisPoint(0, 256, sourceCenterPoint, renderSettings.MinZoomLevel, 256, 256);
+                    PointD tr = PixelCoordToGisPoint(256, 0, sourceCenterPoint, renderSettings.MinZoomLevel, 256, 256);
+                    RectangleD bounds = RectangleD.FromLTRB(bl.X, bl.Y, tr.X, tr.Y);
+                    //convert the bounds into the targetCRS bounds to calculate the new scale
+                    RectangleD targetBounds = transform.Transform(bounds);
+                    double scale = 256 / targetBounds.Width;
+                    if (!double.IsNaN(scale))
+                    {
+                        renderSettings.MinZoomLevel = (float)scale;
+                    }
+                }
+
+                if (renderSettings.MaxZoomLevel > 0)
+                {
+                    PointD bl = PixelCoordToGisPoint(0, 256, sourceCenterPoint, renderSettings.MaxZoomLevel, 256, 256);
+                    PointD tr = PixelCoordToGisPoint(256, 0, sourceCenterPoint, renderSettings.MaxZoomLevel, 256, 256);
+                    RectangleD bounds = RectangleD.FromLTRB(bl.X, bl.Y, tr.X, tr.Y);
+                    RectangleD targetBounds = transform.Transform(bounds);
+                    double scale = 256 / targetBounds.Width;
+                    if (!double.IsNaN(scale))
+                    {
+                        renderSettings.MaxZoomLevel = (float)scale;
+                    }
+                }
+
+                if (renderSettings.MinRenderLabelZoom > 0)
+                {
+                    PointD bl = PixelCoordToGisPoint(0, 256, sourceCenterPoint, renderSettings.MinRenderLabelZoom, 256, 256);
+                    PointD tr = PixelCoordToGisPoint(256, 0, sourceCenterPoint, renderSettings.MinRenderLabelZoom, 256, 256);
+                    RectangleD bounds = RectangleD.FromLTRB(bl.X, bl.Y, tr.X, tr.Y);
+                    RectangleD targetBounds = transform.Transform(bounds);
+                    double scale = 256 / targetBounds.Width;
+                    if (!double.IsNaN(scale))
+                    {
+                        renderSettings.MinRenderLabelZoom = (float)scale;
+                    }
+                }
+
+                if (renderSettings.PenWidthScale > 0)
+                {
+                    double scale = 1 / renderSettings.PenWidthScale;
+                    PointD bl = PixelCoordToGisPoint(0, 256, sourceCenterPoint, scale, 256, 256);
+                    PointD tr = PixelCoordToGisPoint(256, 0, sourceCenterPoint, scale, 256, 256);
+                    RectangleD bounds = RectangleD.FromLTRB(bl.X, bl.Y, tr.X, tr.Y);
+                    RectangleD targetBounds = transform.Transform(bounds);
+                    scale = targetBounds.Width/256;
+                    if (!double.IsNaN(scale))
+                    {
+                        renderSettings.PenWidthScale = (float)scale;
+                    }
+                }
+
+
+            }
+        }
+
+        private static PointD PixelCoordToGisPoint(int pixX, int pixY, PointD centerPt, double scale, int w, int h)
+        {
+            double s = 1.0 / scale;           
+            return new PointD(centerPt.X - (s * ((w >> 1) - pixX)), centerPt.Y + (s * ((h >> 1) - pixY)));
+        }
+
+
+        #endregion
+
     }
 
 
-    class FieldNameConverter : StringConverter
+	class FieldNameConverter : StringConverter
     {
         private string[] fieldNames = new string[]{"NAME", "FIELD2", "FIELD3"};
         
@@ -1466,26 +1541,7 @@ namespace EGIS.ShapeFileLib
     } 
 
     class EncodingConverter : StringConverter
-    {
-        //private string[] fieldNames = new string[] { "NAME", "FIELD2", "FIELD3" };
-
-        //public override bool GetStandardValuesSupported(ITypeDescriptorContext context)
-        //{
-        //    if (context != null)
-        //    {
-        //        RenderSettings renderer = context.Instance as RenderSettings;
-        //        if (renderer != null && renderer.DbfReader != null)
-        //        {
-        //            RenderSettings.PropertyGridInstance = renderer;
-        //            fieldNames = renderer.DbfReader.GetFieldNames();
-        //        }
-        //        else if (RenderSettings.PropertyGridInstance != null && RenderSettings.PropertyGridInstance.DbfReader != null)
-        //        {
-        //            fieldNames = RenderSettings.PropertyGridInstance.DbfReader.GetFieldNames();
-        //        }
-        //    }
-        //    return true;
-        //}
+    {       
 
         public override bool GetStandardValuesSupported(ITypeDescriptorContext context)
         {

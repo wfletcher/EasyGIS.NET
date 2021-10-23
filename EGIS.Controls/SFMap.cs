@@ -192,7 +192,7 @@ namespace EGIS.Controls
 
         }
 
-        
+
 
 
         #region "Instance Variables"
@@ -210,7 +210,7 @@ namespace EGIS.Controls
 
         #endregion
 
-#region events
+        #region events
 
         /// <summary>
         /// Event indicating that the SFMap ShapeFile Layers has changed (ShapeFile added or removed)
@@ -232,7 +232,7 @@ namespace EGIS.Controls
         /// Event indicating that the ZoomLevel of the map has changed
         /// </summary>
         public event EventHandler<EventArgs> ZoomLevelChanged;
-        
+
         /// <summary>
         /// Fires the ZoomLevelChanged event
         /// </summary>
@@ -264,7 +264,7 @@ namespace EGIS.Controls
         protected void OnTooltipDisplayed(int shapeIndex, int recordIndex, Point mousePt, PointD gisPt)
         {
             if (TooltipDisplayed != null)
-            {                
+            {
                 TooltipDisplayed(this, new TooltipEventArgs(shapeIndex, recordIndex, mousePt, gisPt));
             }
         }
@@ -294,7 +294,7 @@ namespace EGIS.Controls
         {
             if (PaintMapBackground != null)
             {
-                PaintMapBackground(this, args);               
+                PaintMapBackground(this, args);
             }
         }
 
@@ -349,7 +349,7 @@ namespace EGIS.Controls
         /// </summary>
         /// <param name="args">EventArgs object</param>
         protected void OnCoordinateReferenceSystemChanged(EventArgs args)
-        {            
+        {
             if (CoordinateReferenceSystemChanged != null)
             {
                 CoordinateReferenceSystemChanged(this, args);
@@ -381,7 +381,7 @@ namespace EGIS.Controls
             }
             catch
             {
-            }            
+            }
         }
 
         #region XmlMethods
@@ -396,16 +396,16 @@ namespace EGIS.Controls
             writer.WriteString(ColorTranslator.ToHtml(MapBackColor));
             writer.WriteEndElement();
 
-			if (MapCoordinateReferenceSystem != null)
-			{
-				writer.WriteStartElement("MapCoordinateReferenceSystem");
-				writer.WriteAttributeString("id", MapCoordinateReferenceSystem.Id);
-				writer.WriteString(this.MapCoordinateReferenceSystem.WKT);
-				writer.WriteEndElement();
-			}
+            if (MapCoordinateReferenceSystem != null)
+            {
+                writer.WriteStartElement("MapCoordinateReferenceSystem");
+                writer.WriteAttributeString("id", MapCoordinateReferenceSystem.Id);
+                writer.WriteString(this.MapCoordinateReferenceSystem.WKT);
+                writer.WriteEndElement();
+            }
 
 
-			writer.WriteStartElement("layers");
+            writer.WriteStartElement("layers");
 
             var layers = ShapeFilesLayers;
             foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
@@ -433,6 +433,7 @@ namespace EGIS.Controls
         /// </summary>
         /// <param name="projectElement"></param>
         /// <param name="loadingDelegate"></param>
+        /// <param name="baseDirectory"></param>
         public void ReadXml(XmlElement projectElement, string baseDirectory, ProgressLoadStatusHandler loadingDelegate)
         {
             XmlNodeList colorList = projectElement.GetElementsByTagName("MapBackColor");
@@ -441,27 +442,27 @@ namespace EGIS.Controls
                 MapBackColor = ColorTranslator.FromHtml(colorList[0].InnerText);
             }
 
-			bool crsSet = false;
-			XmlNodeList crsList = projectElement.GetElementsByTagName("MapCoordinateReferenceSystem");
-			if (crsList != null && crsList.Count > 0)
-			{
-				try
-				{
-					string wkt = crsList[0].InnerText;
-					if (!string.IsNullOrEmpty(wkt))
-					{
-						this.MapCoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt);
-						crsSet = true;
-					}
-				}
-				catch (Exception ex)
-				{
-					Console.Out.WriteLine("error loading CRS:" + ex.Message);
-				}
-			}
+            bool crsSet = false;
+            XmlNodeList crsList = projectElement.GetElementsByTagName("MapCoordinateReferenceSystem");
+            if (crsList != null && crsList.Count > 0)
+            {
+                try
+                {
+                    string wkt = crsList[0].InnerText;
+                    if (!string.IsNullOrEmpty(wkt))
+                    {
+                        this.MapCoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt);
+                        crsSet = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Out.WriteLine("error loading CRS:" + ex.Message);
+                }
+            }
 
 
-			ClearShapeFiles();
+            ClearShapeFiles();
 
             XmlNodeList layerNodeList = projectElement.GetElementsByTagName("layers");
             XmlNodeList sfList = ((XmlElement)layerNodeList[0]).GetElementsByTagName("shapefile");
@@ -485,17 +486,17 @@ namespace EGIS.Controls
 
                 }
 
-				//if the project does not have the CRS set use the first layers CRS
-				if (!crsSet && BackgroundShapeFiles.Count > 0)
-				{
-					MapCoordinateReferenceSystem = BackgroundShapeFiles[0].CoordinateReferenceSystem;
-				}
+                //if the project does not have the CRS set use the first layers CRS
+                if (!crsSet && BackgroundShapeFiles.Count > 0)
+                {
+                    MapCoordinateReferenceSystem = BackgroundShapeFiles[0].CoordinateReferenceSystem;
+                }
 
                 //set centre point to centre of shapefile and adjust zoom level to fit entire shapefile
                 RectangleF r = ShapeFile.LLExtentToProjectedExtent(this.Extent, this.projectionType);
-                
-                this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);                
-                if(this.ClientSize.Width > 0) this._zoomLevel = this.ClientSize.Width / r.Width;
+
+                this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
+                if (this.ClientSize.Width > 0) this._zoomLevel = this.ClientSize.Width / r.Width;
                 //dirtyScreenBuf = true;
                 refreshMode = RefreshMode.AllLayers;
                 Refresh();
@@ -525,7 +526,7 @@ namespace EGIS.Controls
         /// </remarks>
         /// <seealso cref="CentrePoint"/>
         /// <exception cref="System.ArgumentException"> if ZoomLevel less than or equal to zero</exception>        
-        [Browsable(false)] 
+        [Browsable(false)]
         public double ZoomLevel
         {
             get
@@ -537,13 +538,13 @@ namespace EGIS.Controls
                 if (value < double.Epsilon) throw new ArgumentException("ZoomLevel can not be <= Zero");
 
                 //avoid overflow if zooming to less than 1mm
-                if (value > this._zoomLevel && this.mapCoordinateReferenceSystem is IProjectedCRS && (1/value < 0.00001)) return;
+                if (value > this._zoomLevel && this.mapCoordinateReferenceSystem is IProjectedCRS && (1 / value < 0.00001)) return;
 
                 _zoomLevel = value;
                 //dirtyScreenBuf=true;
                 refreshMode = RefreshMode.AllLayers;
                 Invalidate();
-                OnZoomLevelChanged();            
+                OnZoomLevelChanged();
             }
         }
 
@@ -592,24 +593,24 @@ namespace EGIS.Controls
         /// </para>
         /// </remarks>
         /// <seealso cref="ZoomLevel"/>
-        [Browsable(false)] 
+        [Browsable(false)]
         public PointD CentrePoint2D
         {
             get
             {
-                if(UseMercatorProjection) return ShapeFile.ProjectionToLatLong(_centrePoint);
+                if (UseMercatorProjection) return ShapeFile.ProjectionToLatLong(_centrePoint);
                 return _centrePoint;
             }
             set
             {
                 _centrePoint = value;
-                if(UseMercatorProjection) _centrePoint = ShapeFile.LatLongToProjection(_centrePoint);
+                if (UseMercatorProjection) _centrePoint = ShapeFile.LatLongToProjection(_centrePoint);
                 //dirtyScreenBuf = true;
                 refreshMode = RefreshMode.AllLayers;
                 Invalidate();
             }
         }
-        
+
         /// <summary>
         /// Gets or sets the color on the map background
         /// </summary>
@@ -625,7 +626,7 @@ namespace EGIS.Controls
                 //dirtyScreenBuf = true;
                 refreshMode = RefreshMode.AllLayers;
                 Invalidate();
-                
+
             }
         }
 
@@ -674,7 +675,7 @@ namespace EGIS.Controls
         {
             get
             {
-               // return EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection;
+                // return EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection;
                 return projectionType == ProjectionType.Mercator;
             }
             set
@@ -682,7 +683,7 @@ namespace EGIS.Controls
                 //if (EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection == value) return;
                 //EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = value;
                 if (value == (projectionType == ProjectionType.Mercator)) return;
-                projectionType = value?ProjectionType.Mercator:ProjectionType.None;
+                projectionType = value ? ProjectionType.Mercator : ProjectionType.None;
                 if (projectionType == ProjectionType.Mercator)
                 {
                     _centrePoint = EGIS.ShapeFileLib.ShapeFile.LLToMercator(_centrePoint);
@@ -714,8 +715,19 @@ namespace EGIS.Controls
                 bool fireEvent = (this.mapCoordinateReferenceSystem != null && value == null) || (this.mapCoordinateReferenceSystem == null && value != null) ||
                                    (this.mapCoordinateReferenceSystem != null && value != null && !this.mapCoordinateReferenceSystem.IsEquivalent(value));
                 RectangleD currentExtent = this.VisibleExtent;
-                currentExtent = currentExtent.Transform(this.mapCoordinateReferenceSystem, value);                
+                currentExtent = currentExtent.Transform(this.mapCoordinateReferenceSystem, value);
+                ICRS oldCrs = this.mapCoordinateReferenceSystem;
+
+                RectangleD oldCrsExtent = this.Extent; 
+
                 this.mapCoordinateReferenceSystem = value;
+
+                if (fireEvent && ShapeFileCount > 0)
+                {
+                    PointD pt = new PointD((oldCrsExtent.Left + oldCrsExtent.Right) * 0.5, (oldCrsExtent.Top + oldCrsExtent.Bottom) * 0.5);
+                    UpdateRenderSettings(oldCrs, pt, this.mapCoordinateReferenceSystem);
+                }
+
                 if (currentExtent.IsValidExtent())
                 {
                     FitToExtent(currentExtent);
@@ -753,7 +765,7 @@ namespace EGIS.Controls
         /// <param name="centre">The desired CentrePoint</param>
         /// <seealso cref="ZoomLevel"/>
         /// <seealso cref="CentrePoint"/>
-        public void SetZoomAndCentre(double zoom,PointD centre)
+        public void SetZoomAndCentre(double zoom, PointD centre)
         {
             if (zoom < double.Epsilon) throw new ArgumentException("ZoomLevel can not be <= Zero");
 
@@ -761,7 +773,7 @@ namespace EGIS.Controls
             if (zoom > this._zoomLevel && this.mapCoordinateReferenceSystem is IProjectedCRS && (1 / zoom < 0.00001)) return;
 
             _centrePoint = centre;
-            if(UseMercatorProjection) _centrePoint = ShapeFile.LatLongToProjection(_centrePoint); // v2.5
+            if (UseMercatorProjection) _centrePoint = ShapeFile.LatLongToProjection(_centrePoint); // v2.5
             _zoomLevel = zoom;
             //dirtyScreenBuf = true;
             refreshMode = RefreshMode.AllLayers;
@@ -775,28 +787,28 @@ namespace EGIS.Controls
         /// <remarks>Call this method to apply a "zoom 100%"</remarks>
         public void ZoomToFullExtent()
         {
-            RectangleD r = ShapeFile.LLExtentToProjectedExtent(this.Extent,this.projectionType);
+            RectangleD r = ShapeFile.LLExtentToProjectedExtent(this.Extent, this.projectionType);
 
             this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
             Size cs = ClientSize;
             //eliminate possible div by zero
             if (cs.Width <= 0 || cs.Height <= 0) cs = new System.Drawing.Size(100, 100);
-            double r1 = cs.Width*r.Height;
+            double r1 = cs.Width * r.Height;
             double r2 = cs.Height * r.Width;
-            
+
             if (r1 < r2)
             {
-                this._zoomLevel = cs.Width / r.Width;                
+                this._zoomLevel = cs.Width / r.Width;
             }
             else
             {
                 this._zoomLevel = cs.Height / r.Height;
             }
-                
-           // dirtyScreenBuf = true;
+
+            // dirtyScreenBuf = true;
             refreshMode = RefreshMode.AllLayers;
             Refresh();
-            OnZoomLevelChanged();                
+            OnZoomLevelChanged();
         }
 
         /// <summary>
@@ -809,11 +821,11 @@ namespace EGIS.Controls
 
             extent = RestrictExtentToCRS(extent);
 
-            MouseOffsetPoint = Point.Empty;            
+            MouseOffsetPoint = Point.Empty;
             RectangleD r = ShapeFile.LLExtentToProjectedExtent(extent, this.projectionType);
             this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
 
-            if(this.mapCoordinateReferenceSystem is IProjectedCRS && (r.Width < 0.0001 || r.Height < 0.0001)) return;
+            if (this.mapCoordinateReferenceSystem is IProjectedCRS && (r.Width < 0.0001 || r.Height < 0.0001)) return;
             Size cs = ClientSize;
             //eliminate possible div by zero
             if (cs.Width <= 0 || cs.Height <= 0) cs = new System.Drawing.Size(100, 100);
@@ -831,10 +843,10 @@ namespace EGIS.Controls
             //Console.Out.WriteLine("r=" + r);
             //Console.Out.WriteLine("_zoomLevel = " + _zoomLevel);
 
-           // dirtyScreenBuf = true;
+            // dirtyScreenBuf = true;
             refreshMode = RefreshMode.AllLayers;
             Refresh();
-            OnZoomLevelChanged();           
+            OnZoomLevelChanged();
         }
 
         /// <summary>
@@ -859,7 +871,7 @@ namespace EGIS.Controls
                 RectangleD extent = layer.GetShapeBoundsD(selectedIndicies[0]);
                 for (int n = 1; n < selectedIndicies.Count; ++n)
                 {
-                    extent = RectangleD.Union(extent, layer.GetShapeBoundsD(selectedIndicies[n]));                    
+                    extent = RectangleD.Union(extent, layer.GetShapeBoundsD(selectedIndicies[n]));
                 }
                 extent = extent.Transform(layer.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
                 FitToExtent(extent);
@@ -889,11 +901,11 @@ namespace EGIS.Controls
                         {
                             extent = layer.GetShapeBoundsD(selectedIndicies[n]);
                             extentSet = true;
-                        }                        
+                        }
                     }
                 }
             }
-            if(extentSet) FitToExtent(extent);
+            if (extentSet) FitToExtent(extent);
         }
 
         /// <summary>
@@ -950,7 +962,7 @@ namespace EGIS.Controls
         public PointD PixelCoordToGisPoint(Point pt)
         {
             return PixelCoordToGisPoint(pt.X, pt.Y);
-        }        
+        }
 
 
         /// <summary>
@@ -962,7 +974,7 @@ namespace EGIS.Controls
         public Point GisPointToPixelCoord(double x, double y)
         {
             PointD p = new PointD(x, y);
-            if(UseMercatorProjection) p = ShapeFile.LatLongToProjection(p);
+            if (UseMercatorProjection) p = ShapeFile.LatLongToProjection(p);
             int mx = (ClientSize.Width >> 1) - (int)Math.Round((_centrePoint.X - p.X) * ZoomLevel);
             int my = (ClientSize.Height >> 1) + (int)Math.Round((_centrePoint.Y - p.Y) * ZoomLevel);
             return new Point(mx, my);
@@ -988,8 +1000,8 @@ namespace EGIS.Controls
         public int GetShapeIndexAtPixelCoord(int shapeIndex, Point pt, int pixelDelta)
         {
             double delta = pixelDelta / ZoomLevel;
-            PointD ptd = PixelCoordToGisPoint(pt);                               
-            return this[shapeIndex].GetShapeIndexContainingPoint(ptd, delta, this.MapCoordinateReferenceSystem);            
+            PointD ptd = PixelCoordToGisPoint(pt);
+            return this[shapeIndex].GetShapeIndexContainingPoint(ptd, delta, this.MapCoordinateReferenceSystem);
         }
 
         /// <summary>
@@ -998,7 +1010,7 @@ namespace EGIS.Controls
         /// <remarks>Extent is the rectangular extent of the ENTIRE map, regardless of the current ZoomLevel or CentrePoint.
         /// To get the extent of the current visible area of the map call VisibleExtent</remarks>
         /// <seealso cref="VisibleExtent"/>
-        [Browsable(false)] 
+        [Browsable(false)]
         public RectangleD Extent
         {
             get
@@ -1010,7 +1022,7 @@ namespace EGIS.Controls
                 }
                 else
                 {
-                   // RectangleD r1 = myShapefiles[0].Extent;
+                    // RectangleD r1 = myShapefiles[0].Extent;
                     //Console.Out.WriteLine("r1 = " + r1);
 
                     RectangleD r = layers[0].Extent.Transform(layers[0].CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
@@ -1020,7 +1032,7 @@ namespace EGIS.Controls
                         r = RestrictExtentToCRS(r);
                     }
                     //RectangleD r2 = ShapeFile.ConvertExtent(r, this.MapCoordinateReferenceSystem, myShapefiles[0].CoordinateReferenceSystem);
-                     
+
                     foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
                     {
                         var extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
@@ -1058,8 +1070,8 @@ namespace EGIS.Controls
         /// <remarks>VisibleExtent is the current visible area of the map, as determind by the current ZoomLevel, CentrePoint and ClientSize of the SFMap control.
         /// To get the extent of the ENTIRE map call Extent</remarks>
         /// <seealso cref="Extent"/>
-        [Browsable(false)] 
-        public RectangleD VisibleExtent        
+        [Browsable(false)]
+        public RectangleD VisibleExtent
         {
             get
             {
@@ -1128,30 +1140,30 @@ namespace EGIS.Controls
         }
 
 
-		/// <summary>
-		/// Adds a new ShapeFile layer to the map
-		/// </summary>
-		/// <param name="path">The file path to the ShapeFile</param>
-		/// <param name="name">The "display" name of the ShapeFile.</param>
-		/// <param name="labelFieldName">The name of the field in the ShapeFiles's DBF file to use when rendering the shape labels</param>
-		/// <param name="useMemoryStreams">Optional parameter indicating whether to open the ShapeFile using MemoryStreams. Default is false</param>
-		/// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
-		/// <returns>Returns the created ShapeFile which was added to the SFMap</returns>
-		/// <remarks>
-		/// After the shapefile is added to the map, the map will auto fit the entire ShapeFile in the control by adjusting the 
-		/// current ZomLevel and CentrePoint accordingly.
-		/// </remarks>
-		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName, bool useMemoryStreams=false, bool fitMapToLayerExtent=true, bool refreshImmediately=true, LayerPositionEnum layerPosition= LayerPositionEnum.Background)
-        {            
+        /// <summary>
+        /// Adds a new ShapeFile layer to the map
+        /// </summary>
+        /// <param name="path">The file path to the ShapeFile</param>
+        /// <param name="name">The "display" name of the ShapeFile.</param>
+        /// <param name="labelFieldName">The name of the field in the ShapeFiles's DBF file to use when rendering the shape labels</param>
+        /// <param name="useMemoryStreams">Optional parameter indicating whether to open the ShapeFile using MemoryStreams. Default is false</param>
+        /// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
+        /// <returns>Returns the created ShapeFile which was added to the SFMap</returns>
+        /// <remarks>
+        /// After the shapefile is added to the map, the map will auto fit the entire ShapeFile in the control by adjusting the 
+        /// current ZomLevel and CentrePoint accordingly.
+        /// </remarks>
+        public EGIS.ShapeFileLib.ShapeFile AddShapeFile(string path, string name, string labelFieldName, bool useMemoryStreams = false, bool fitMapToLayerExtent = true, bool refreshImmediately = true, LayerPositionEnum layerPosition = LayerPositionEnum.Background)
+        {
             EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(path, name, labelFieldName, useMemoryStreams, layerPosition);
 
-			if (fitMapToLayerExtent)
-			{
-				RectangleD extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
-				FitToExtent(extent);
-			}
-			else
-			{
+            if (fitMapToLayerExtent)
+            {
+                RectangleD extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+                FitToExtent(extent);
+            }
+            else
+            {
                 //refresh so the layer is drawn
                 if (refreshImmediately)
                 {
@@ -1164,72 +1176,32 @@ namespace EGIS.Controls
                     Invalidate(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
                 }
             }
-			OnShapeFilesChanged();            
+            OnShapeFilesChanged();
             return sf;
         }
 
-		/// <summary>
-		/// Adds a new ShapeFile layer to the map
-		/// </summary>
-		/// <param name="shxStream">stream to the ShapeFile's shx file</param>
-		/// <param name="shpStream">stream to the ShapeFile's shp file</param>
-		/// <param name="dbfStream">stream to the ShapeFile's dbf file</param>
-		/// <param name="prjStream">stream to the ShapeFile's prj file</param>
-		/// <param name="name">The "display" name of the ShapeFile. </param>
-		/// <param name="labelFieldName">The name of the field in the ShapeFiles's DBF file to use when rendering the shape labels</param>
-		/// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
-		/// <returns>Returns the created ShapeFile which was added to the SFMap</returns>
-		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string labelFieldName, bool fitMapToLayerExtent = true, bool refreshImmediately = true, LayerPositionEnum layerPosition = LayerPositionEnum.Background)
-		{
-			EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(shxStream, shpStream, dbfStream, prjStream, name, labelFieldName, layerPosition);
+        /// <summary>
+        /// Adds a new ShapeFile layer to the map
+        /// </summary>
+        /// <param name="shxStream">stream to the ShapeFile's shx file</param>
+        /// <param name="shpStream">stream to the ShapeFile's shp file</param>
+        /// <param name="dbfStream">stream to the ShapeFile's dbf file</param>
+        /// <param name="prjStream">stream to the ShapeFile's prj file</param>
+        /// <param name="name">The "display" name of the ShapeFile. </param>
+        /// <param name="labelFieldName">The name of the field in the ShapeFiles's DBF file to use when rendering the shape labels</param>
+        /// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
+        /// <returns>Returns the created ShapeFile which was added to the SFMap</returns>
+        public EGIS.ShapeFileLib.ShapeFile AddShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string labelFieldName, bool fitMapToLayerExtent = true, bool refreshImmediately = true, LayerPositionEnum layerPosition = LayerPositionEnum.Background)
+        {
+            EGIS.ShapeFileLib.ShapeFile sf = OpenShapeFile(shxStream, shpStream, dbfStream, prjStream, name, labelFieldName, layerPosition);
 
-			if (fitMapToLayerExtent)
-			{ 
-				RectangleD extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
-				FitToExtent(extent);
-			}
-			else
-			{
-				//refresh so the layer is drawn
-				if (refreshImmediately)
-				{
-                    //Refresh(true);
-                    Refresh(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
-				}
-				else
-				{
-					//InvalidateAndClearBackground();
-                    Invalidate(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
-                }
-			}
-			OnShapeFilesChanged();
-            return sf;
-        }
-
-		/// <summary>
-		/// Adds a new ShapeFile layer to the map
-		/// </summary>
-		/// <param name="shapeFile">ShapeFile object to add to the map</param>
-		/// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
-		/// <returns>Returns the shapeFile which was added to the SFMap</returns>
-		public EGIS.ShapeFileLib.ShapeFile AddShapeFile(EGIS.ShapeFileLib.ShapeFile shapeFile, bool fitMapToLayerExtent = true, bool refreshImmediately = true, LayerPositionEnum layerPosition = LayerPositionEnum.Background)
-		{
-            if (layerPosition == LayerPositionEnum.Background)
+            if (fitMapToLayerExtent)
             {
-                this.BackgroundShapeFiles.Add(shapeFile);
+                RectangleD extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+                FitToExtent(extent);
             }
             else
             {
-                this.ForegroundShapeFiles.Add(shapeFile);
-            }
-
-			if (fitMapToLayerExtent)
-			{
-				RectangleD extent = shapeFile.Extent.Transform(shapeFile.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
-				FitToExtent(extent);
-			}
-			else
-			{
                 //refresh so the layer is drawn
                 if (refreshImmediately)
                 {
@@ -1242,15 +1214,55 @@ namespace EGIS.Controls
                     Invalidate(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
                 }
             }
-			OnShapeFilesChanged();
-			return shapeFile;
-		}
+            OnShapeFilesChanged();
+            return sf;
+        }
+
+        /// <summary>
+        /// Adds a new ShapeFile layer to the map
+        /// </summary>
+        /// <param name="shapeFile">ShapeFile object to add to the map</param>
+        /// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
+        /// <returns>Returns the shapeFile which was added to the SFMap</returns>
+        public EGIS.ShapeFileLib.ShapeFile AddShapeFile(EGIS.ShapeFileLib.ShapeFile shapeFile, bool fitMapToLayerExtent = true, bool refreshImmediately = true, LayerPositionEnum layerPosition = LayerPositionEnum.Background)
+        {
+            if (layerPosition == LayerPositionEnum.Background)
+            {
+                this.BackgroundShapeFiles.Add(shapeFile);
+            }
+            else
+            {
+                this.ForegroundShapeFiles.Add(shapeFile);
+            }
+
+            if (fitMapToLayerExtent)
+            {
+                RectangleD extent = shapeFile.Extent.Transform(shapeFile.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+                FitToExtent(extent);
+            }
+            else
+            {
+                //refresh so the layer is drawn
+                if (refreshImmediately)
+                {
+                    //Refresh(true);
+                    Refresh(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
+                }
+                else
+                {
+                    //InvalidateAndClearBackground();
+                    Invalidate(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
+                }
+            }
+            OnShapeFilesChanged();
+            return shapeFile;
+        }
 
 
-		/// <summary>
-		/// Removes all ShapeFile layers from the map
-		/// </summary>
-		public void ClearShapeFiles()
+        /// <summary>
+        /// Removes all ShapeFile layers from the map
+        /// </summary>
+        public void ClearShapeFiles()
         {
             var layers = this.ShapeFilesLayers;
             for (int n = 0; n < layers.Count; n++)
@@ -1269,11 +1281,11 @@ namespace EGIS.Controls
         /// </summary>
         /// <param name="shapeFile"></param>
         public void RemoveShapeFile(EGIS.ShapeFileLib.ShapeFile shapeFile)
-        {            
-            if(BackgroundShapeFiles.Remove(shapeFile))
+        {
+            if (BackgroundShapeFiles.Remove(shapeFile))
             {
                 OnShapeFilesChanged();
-               // dirtyScreenBuf = true;
+                // dirtyScreenBuf = true;
                 refreshMode |= RefreshMode.BackgroundLayers;
                 Invalidate();
             }
@@ -1295,7 +1307,7 @@ namespace EGIS.Controls
         public EGIS.ShapeFileLib.ShapeFile this[int index]
         {
             get
-            {                
+            {
                 return ShapeFilesLayers[index];
             }
         }
@@ -1317,7 +1329,7 @@ namespace EGIS.Controls
         /// <summary>
         /// Gets the number of ShapeFile layers in the SFMap Control
         /// </summary>
-        [Browsable(false)] 
+        [Browsable(false)]
         public int ShapeFileCount
         {
             get
@@ -1359,7 +1371,7 @@ namespace EGIS.Controls
                     if (index == 0) return;
                     ForegroundShapeFiles.RemoveAt(index);
                     ForegroundShapeFiles.Insert(index - 1, shapeFile);
-                   // dirtyScreenBuf = true;
+                    // dirtyScreenBuf = true;
                     refreshMode = RefreshMode.ForegroundLayers;
                     Invalidate();
                     OnShapeFilesChanged();
@@ -1440,48 +1452,48 @@ namespace EGIS.Controls
             }
         }
 
-		private Cursor defaultCursor = Cursors.Default;
+        private Cursor defaultCursor = Cursors.Default;
 
-		/// <summary>
-		/// The default Cursor of the control
-		/// </summary>
-		public Cursor DefaultMapCursor
-		{
-			set
-			{
-				this.defaultCursor = value != null ? value : Cursors.Default;
-				this.Cursor = defaultCursor;
-			}
-			get
-			{
-				return this.defaultCursor;
-			}
-		}
+        /// <summary>
+        /// The default Cursor of the control
+        /// </summary>
+        public Cursor DefaultMapCursor
+        {
+            set
+            {
+                this.defaultCursor = value != null ? value : Cursors.Default;
+                this.Cursor = defaultCursor;
+            }
+            get
+            {
+                return this.defaultCursor;
+            }
+        }
 
-		private Cursor selectionCursor = Cursors.Hand;
+        private Cursor selectionCursor = Cursors.Hand;
 
-		/// <summary>
-		/// The default Cursor of the control when the mouse is over a shape that can be selected. Default is Cursors.Hand
-		/// </summary>
-		public Cursor DefaultSelectionCursor
-		{
-			set
-			{
-				this.selectionCursor = value != null ? value : Cursors.Hand;				
-			}
-			get
-			{
-				return this.selectionCursor;
-			}
-		}
+        /// <summary>
+        /// The default Cursor of the control when the mouse is over a shape that can be selected. Default is Cursors.Hand
+        /// </summary>
+        public Cursor DefaultSelectionCursor
+        {
+            set
+            {
+                this.selectionCursor = value != null ? value : Cursors.Hand;
+            }
+            get
+            {
+                return this.selectionCursor;
+            }
+        }
 
 
 
-		#endregion
+        #endregion
 
-		#region "Private methods"
+        #region "Private methods"
 
-		private EGIS.ShapeFileLib.ShapeFile OpenShapeFile(string path, string name, string renderFieldName, bool useMemoryStreams = false, LayerPositionEnum layerPosition = LayerPositionEnum.Background)
+        private EGIS.ShapeFileLib.ShapeFile OpenShapeFile(string path, string name, string renderFieldName, bool useMemoryStreams = false, LayerPositionEnum layerPosition = LayerPositionEnum.Background)
         {
             if (path.EndsWith(".shp", StringComparison.OrdinalIgnoreCase))
             {
@@ -1491,7 +1503,7 @@ namespace EGIS.Controls
             {
                 throw new ArgumentException("path does not end in \".shp\"");
             }
-            
+
             EGIS.ShapeFileLib.ShapeFile sf = new EGIS.ShapeFileLib.ShapeFile();
             sf.LoadFromFile(path, useMemoryStreams || this.UseMemoryStreams);
             sf.Name = name;
@@ -1510,12 +1522,12 @@ namespace EGIS.Controls
         }
 
         private EGIS.ShapeFileLib.ShapeFile OpenShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string renderFieldName, LayerPositionEnum layerPosition)
-        {            
+        {
             EGIS.ShapeFileLib.ShapeFile sf = new EGIS.ShapeFileLib.ShapeFile();
-            sf.LoadFromFile(shxStream,shpStream,dbfStream,prjStream);
+            sf.LoadFromFile(shxStream, shpStream, dbfStream, prjStream);
             sf.Name = name;
             sf.RenderSettings.FieldName = renderFieldName;
-			sf.RenderSettings.Font = new Font(this.Font.FontFamily, 8f);
+            sf.RenderSettings.Font = new Font(this.Font.FontFamily, 8f);
             LoadOptimalRenderSettings(sf);
             if (layerPosition == LayerPositionEnum.Background)
             {
@@ -1529,7 +1541,7 @@ namespace EGIS.Controls
         }
 
 
-        
+
         /// <summary>
         /// Load optimal render settings
         /// </summary>
@@ -1554,8 +1566,8 @@ namespace EGIS.Controls
                 else
                 {
                     RectangleD r = sf.Extent;
-                    double[] pt = new double[]{r.Left + r.Width / 2, r.Top + r.Height / 2};
-                    
+                    double[] pt = new double[] { r.Left + r.Width / 2, r.Top + r.Height / 2 };
+
                     using (ICoordinateTransformation coordTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem))
                     {
                         coordTransformation.Transform(pt, 1);
@@ -1574,7 +1586,7 @@ namespace EGIS.Controls
                     {
                         sf.RenderSettings.PenWidthScale = (float)penWidthScale;
                     }
-                    
+
                 }
             }
             catch
@@ -1641,7 +1653,7 @@ namespace EGIS.Controls
                     }
                     g.DrawImage(backgroundBuffer, 0, 0);
                 }
-                
+
 
                 //render the foreground layers
                 if (this.ForegroundShapeFiles.Count > 0)
@@ -1660,9 +1672,9 @@ namespace EGIS.Controls
                     }
                     g.DrawImage(foregroundBuffer, 0, 0);
                 }
-                
+
             }
-            
+
             //dirtyScreenBuf = false;
             refreshMode = RefreshMode.None;
         }
@@ -1695,10 +1707,10 @@ namespace EGIS.Controls
             return bm;
         }
 
-		#endregion
+        #endregion
 
-		#region protected members
-		
+        #region protected members
+
         protected List<EGIS.ShapeFileLib.ShapeFile> BackgroundShapeFiles
         {
             get { return _backgroundShapeFiles; }
@@ -1728,14 +1740,14 @@ namespace EGIS.Controls
 
 
         protected override void OnPaint(PaintEventArgs e)
-        {               
+        {
             if (/* dirtyScreenBuf || */ refreshMode != RefreshMode.None)
             {
-                RenderShapefiles();                
+                RenderShapefiles();
             }
             if (ScreenBuffer != null)
             {
-               // bool selecting = (InternalPanSelectMode != PanSelectMode.Pan);
+                // bool selecting = (InternalPanSelectMode != PanSelectMode.Pan);
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
                 //if (InternalPanSelectMode == PanSelectMode.SelectRectangle)
                 if ((InternalPanSelectMode == PanSelectMode.SelectRectangle) || (InternalPanSelectMode == PanSelectMode.ZoomRectangle))
@@ -1743,22 +1755,22 @@ namespace EGIS.Controls
                     e.Graphics.DrawImage(ScreenBuffer, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
                     using (Pen p = new Pen(Color.Red, 1))
                     {
-                        using(Brush b = new SolidBrush(Color.FromArgb(20, Color.Red)))
+                        using (Brush b = new SolidBrush(Color.FromArgb(20, Color.Red)))
                         {
                             p.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
-                            
-                            Rectangle selectRect = new Rectangle(MouseOffsetPoint.X>=0?MouseDownPoint.X:MouseDownPoint.X+MouseOffsetPoint.X,
-                                MouseOffsetPoint.Y>=0?MouseDownPoint.Y:MouseDownPoint.Y+MouseOffsetPoint.Y,
-                                MouseOffsetPoint.X>=0?MouseOffsetPoint.X:-MouseOffsetPoint.X,
-                                MouseOffsetPoint.Y>=0?MouseOffsetPoint.Y:-MouseOffsetPoint.Y);
-                            
+
+                            Rectangle selectRect = new Rectangle(MouseOffsetPoint.X >= 0 ? MouseDownPoint.X : MouseDownPoint.X + MouseOffsetPoint.X,
+                                MouseOffsetPoint.Y >= 0 ? MouseDownPoint.Y : MouseDownPoint.Y + MouseOffsetPoint.Y,
+                                MouseOffsetPoint.X >= 0 ? MouseOffsetPoint.X : -MouseOffsetPoint.X,
+                                MouseOffsetPoint.Y >= 0 ? MouseOffsetPoint.Y : -MouseOffsetPoint.Y);
+
                             e.Graphics.FillRectangle(b, selectRect);
                             e.Graphics.DrawRectangle(p, selectRect);
 
                             if (!MouseOffsetPoint.IsEmpty)
                             {
                                 PointD p0 = PixelCoordToGisPoint(selectRect.Location);
-                                PointD p1 = PixelCoordToGisPoint(new Point(selectRect.Right, selectRect.Top ));
+                                PointD p1 = PixelCoordToGisPoint(new Point(selectRect.Right, selectRect.Top));
                                 PointD p2 = PixelCoordToGisPoint(new Point(selectRect.Left, selectRect.Bottom));
 
                                 double dist1 = DistanceBetweenPoints(p0, p1);
@@ -1783,15 +1795,15 @@ namespace EGIS.Controls
                             p.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
 
                             int radius = (int)Math.Round(Math.Sqrt(MouseOffsetPoint.X * MouseOffsetPoint.X + MouseOffsetPoint.Y * MouseOffsetPoint.Y));
-                            Rectangle selectRect = new Rectangle(MouseDownPoint.X -radius,
-                                MouseDownPoint.Y -radius,
-                                radius*2,
-                                radius*2);
+                            Rectangle selectRect = new Rectangle(MouseDownPoint.X - radius,
+                                MouseDownPoint.Y - radius,
+                                radius * 2,
+                                radius * 2);
 
                             e.Graphics.FillEllipse(b, selectRect);
                             e.Graphics.DrawEllipse(p, selectRect);
 
-                            if(!MouseOffsetPoint.IsEmpty)
+                            if (!MouseOffsetPoint.IsEmpty)
                             {
                                 PointD p0 = PixelCoordToGisPoint(MouseDownPoint);
                                 PointD p1 = PixelCoordToGisPoint(new Point(MouseDownPoint.X + MouseOffsetPoint.X, MouseDownPoint.Y + MouseOffsetPoint.Y));
@@ -1826,7 +1838,7 @@ namespace EGIS.Controls
                     System.Drawing.Drawing2D.Matrix m2 = new System.Drawing.Drawing2D.Matrix();
                     m2.Translate(MouseOffsetPoint.X, MouseOffsetPoint.Y);
                     e.Graphics.Transform = m2;
-                }                
+                }
                 base.OnPaint(e);
             }
             finally
@@ -1881,7 +1893,7 @@ namespace EGIS.Controls
         /// than Refresh
         /// </remarks>
         public void InvalidateAndClearBackground()
-        {            
+        {
             //this.dirtyScreenBuf = true;
             refreshMode = RefreshMode.AllLayers;
             Invalidate();
@@ -1948,7 +1960,7 @@ namespace EGIS.Controls
                 case Keys.Down:
                     PanDown();
                     break;
-            }            
+            }
         }
 
         protected override void OnKeyUp(KeyEventArgs e)
@@ -1977,10 +1989,10 @@ namespace EGIS.Controls
                     return true;
                 default:
                     return base.IsInputKey(keyData);
-            }            
+            }
         }
 
-                
+
         private PanSelectMode controlPanSelectMode = PanSelectMode.Pan;
 
         /// <summary>
@@ -2119,7 +2131,7 @@ namespace EGIS.Controls
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
-               
+
             if (PanSelectMode == EGIS.Controls.PanSelectMode.None) return;
 
             MouseDownButton = e.Button;
@@ -2129,7 +2141,7 @@ namespace EGIS.Controls
             {
                 InternalPanSelectMode = PanSelectMode;
                 ToggleSelect = !ShiftKeyDown && CtrlKeyDown;
-            }            
+            }
             else
             {
                 if (ShiftKeyDown)
@@ -2168,9 +2180,9 @@ namespace EGIS.Controls
             {
                 Cursor = Cursors.WaitCursor;
                 if (InternalPanSelectMode == PanSelectMode.ZoomRectangle)
-                 {
-                     PointD pt1 = PixelCoordToGisPoint(MouseDownPoint);
-                     PointD pt2 = PixelCoordToGisPoint(e.X, e.Y);
+                {
+                    PointD pt1 = PixelCoordToGisPoint(MouseDownPoint);
+                    PointD pt2 = PixelCoordToGisPoint(e.X, e.Y);
                     RectangleD extent = RectangleD.FromLTRB(Math.Min(pt1.X, pt2.X),
                         Math.Min(pt1.Y, pt2.Y),
                         Math.Max(pt1.X, pt2.X),
@@ -2245,7 +2257,7 @@ namespace EGIS.Controls
 
                     Refresh(true);
 
-                    if(fireEvent) OnSelectedRecordChanged(new EventArgs());
+                    if (fireEvent) OnSelectedRecordChanged(new EventArgs());
                 }
                 else if (InternalPanSelectMode == PanSelectMode.SelectCircle)
                 {
@@ -2265,7 +2277,7 @@ namespace EGIS.Controls
                     {
                         if (!layers[n].IsSelectable) continue;
                         fireEvent = true;
-                        
+
                         List<int> ind = new List<int>();
                         layers[n].GetShapeIndiciesIntersectingCircle(ind, pt1, radius, this.MapCoordinateReferenceSystem);
 
@@ -2291,7 +2303,7 @@ namespace EGIS.Controls
 
                     Refresh(true);
 
-                    if(fireEvent) OnSelectedRecordChanged(new EventArgs());
+                    if (fireEvent) OnSelectedRecordChanged(new EventArgs());
 
                 }
                 else
@@ -2312,7 +2324,7 @@ namespace EGIS.Controls
                 MouseDownButton = MouseButtons.None;
                 Cursor = oldCursor;
             }
-            
+
         }
 
         /// <summary>
@@ -2331,10 +2343,10 @@ namespace EGIS.Controls
             }
             else
             {
-                if(this.ShapeFileCount > 0)
+                if (this.ShapeFileCount > 0)
                 {
                     PointD pt = PixelCoordToGisPoint(e.X, e.Y);
-                    LocateShape(pt, new Point(e.X,e.Y));                    
+                    LocateShape(pt, new Point(e.X, e.Y));
                 }
             }
         }
@@ -2351,8 +2363,8 @@ namespace EGIS.Controls
             {
                 layerTooltip.Hide(this);
                 layerTooltipVisible = false;
-                OnTooltipDisplayed(-1, -1, Point.Empty, PointD.Empty);                
-            }            
+                OnTooltipDisplayed(-1, -1, Point.Empty, PointD.Empty);
+            }
         }
 
         /// <summary>
@@ -2378,7 +2390,7 @@ namespace EGIS.Controls
                 int x = ClientSize.Width - e.X;
                 int y = ClientSize.Height - e.Y;
                 SetZoomAndCentre(z * 0.5, PixelCoordToGisPoint(x, y));
-            }            
+            }
         }
 
         private ToolTip layerTooltip = new ToolTip();
@@ -2439,11 +2451,11 @@ namespace EGIS.Controls
                         }
                         return;
                     }
-                }                
+                }
             }
-			Cursor = DefaultMapCursor;
+            Cursor = DefaultMapCursor;
             if (_useHints)
-            {                
+            {
                 if (layerTooltipVisible)
                 {
                     OnTooltipDisplayed(-1, -1, mousePos, pt);
@@ -2459,20 +2471,20 @@ namespace EGIS.Controls
         /// </summary>
         /// <param name="e"></param>
         protected override void OnDoubleClick(EventArgs e)
-        {            
+        {
             base.OnDoubleClick(e);
 
             MapDoubleClickedEventArgs mapDoubleClickEventArgs = new MapDoubleClickedEventArgs(MouseDownButton, MouseDownPoint.X, MouseDownPoint.Y);
             this.OnMapDoubleClick(mapDoubleClickEventArgs);
-            if(mapDoubleClickEventArgs.Cancel) return;
+            if (mapDoubleClickEventArgs.Cancel) return;
 
             if (MouseDownButton == MouseButtons.Left)
             {
                 //zoom in
                 double z = ZoomLevel;
-                double x = ((ClientSize.Width*0.5) + MouseDownPoint.X)*0.5;
-                double y = ((ClientSize.Height*0.5) + MouseDownPoint.Y)*0.5;
-                SetZoomAndCentre(z*2d, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));               
+                double x = ((ClientSize.Width * 0.5) + MouseDownPoint.X) * 0.5;
+                double y = ((ClientSize.Height * 0.5) + MouseDownPoint.Y) * 0.5;
+                SetZoomAndCentre(z * 2d, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));
             }
             else if (MouseDownButton == MouseButtons.Right)
             {
@@ -2495,7 +2507,7 @@ namespace EGIS.Controls
             if ((this.MapCoordinateReferenceSystem as IGeographicCRS) != null)
             {
                 distance = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
-                
+
             }
             else if ((this.MapCoordinateReferenceSystem as IProjectedCRS) != null)
             {
@@ -2503,6 +2515,21 @@ namespace EGIS.Controls
                 distance = Math.Sqrt((p1.X - p0.X) * (p1.X - p0.X) + (p1.Y - p0.Y) * (p1.Y - p0.Y));
             }
             return distance;
+        }
+
+        #endregion
+
+        #region update RenderSettings after CRS change
+
+        private void UpdateRenderSettings(ICRS oldCrs, PointD sourceCenterPt, ICRS newCrs)
+        {
+            if (oldCrs == null || newCrs == null || this.ShapeFileCount == 0) return;
+            List<ShapeFile> layers = this.ShapeFilesLayers;
+            foreach (ShapeFile layer in layers)
+            {
+                RenderSettings.UpdateRenderSettings(layer.RenderSettings, sourceCenterPt, oldCrs, newCrs);
+            }
+
         }
 
         #endregion
