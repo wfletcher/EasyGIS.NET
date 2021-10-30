@@ -30,6 +30,7 @@ namespace WebTest.demos
             string mapid = context.Request["mapid"];
             if (string.IsNullOrEmpty(mapid)) throw new InvalidOperationException("mapid parameters not set");
             MapProject project = SFMap.ReadEGPProject(context.Server.MapPath(mapid));
+            SFMap.UpdateRenderSettingsForWebMercator(project.Layers, project.MapCoordinateReferenceSystem);
             return project.Layers;
         }
 

@@ -401,6 +401,29 @@ namespace EGIS.Web.Controls
                 mapProject.BackgroundColor = mapRef.BackColor;
             }
 
+            XmlNodeList crsList = projectElement.GetElementsByTagName("MapCoordinateReferenceSystem");
+            bool crsSet = false;
+            if (crsList != null && crsList.Count > 0)
+            {
+                try
+                {
+                    string wkt = crsList[0].InnerText;
+                    if (!string.IsNullOrEmpty(wkt))
+                    {
+                        mapProject.MapCoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt);
+                        crsSet = true;
+                    }
+                }
+                catch
+                {
+                }
+            }
+            if (!crsSet)
+            {
+                //assume old project using wgs84
+                mapProject.MapCoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);                
+            }
+
             //clear layers
             List<EGIS.ShapeFileLib.ShapeFile> myShapefiles = new List<EGIS.ShapeFileLib.ShapeFile>();
 
@@ -423,6 +446,92 @@ namespace EGIS.Web.Controls
             //EGIS.ShapeFileLib.ShapeFile.UseMercatorProjection = false;
             mapProject.Layers = myShapefiles;
             return mapProject;
+        }
+
+        /// <summary>
+        /// updates RenderSettings defined in sourceCrs to their equivalent in destinationCrs
+        /// </summary>
+        /// <param name="layers"></param>
+        /// <param name="sourceCrs"></param>
+        /// <param name="destinationCrs"></param>
+        /// <remarks>Adjusts min/max zoom levels. This method should be used to update layer's rendersettings that were created using wgs84 
+        /// before rendering th elayer in Web Mercator</remarks>
+        public static void UpdateRenderSettings(List<ShapeFile> layers, EGIS.Projections.ICRS sourceCrs, EGIS.Projections.ICRS destinationCrs)
+        {
+            //first check that the shapefiles crs has been set
+            foreach (ShapeFile layer in layers)
+            {
+                if (layer.CoordinateReferenceSystem == null)
+                {
+                    //assume old shapefile missing prj file
+                    layer.SetCoordinateReferenceSystem(EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode));
+                }
+            }
+
+            //now update the rendersettings from the sourceCrs to the destinationCrs
+            RectangleD sourceExtent = GetExtent(layers, sourceCrs);
+            PointD sourceCenterPt = new PointD((sourceExtent.Left + sourceExtent.Right) * 0.5, (sourceExtent.Top + sourceExtent.Bottom) * 0.5);
+            foreach (ShapeFile layer in layers)
+            {                
+                RenderSettings.UpdateRenderSettings(layer.RenderSettings, sourceCenterPt, sourceCrs, destinationCrs);
+            }
+
+        }
+
+
+        /// <summary>
+        /// updates RenderSettings defined in sourceCrs to their equivalent in Web Mercator EPSG 3857
+        /// </summary>
+        /// <param name="layers"></param>
+        /// <param name="sourceCrs"></param>
+        public static void UpdateRenderSettingsForWebMercator(List<ShapeFile> layers, EGIS.Projections.ICRS sourceCrs)
+        {
+            UpdateRenderSettings(layers, sourceCrs, EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode));
+            
+        }
+
+        /// <summary>
+        /// gets the Extent of a given list of shapefiles in coordinates defined by crs
+        /// </summary>
+        /// <param name="layers"></param>
+        /// <param name="crs"></param>
+        /// <returns></returns>
+        public static RectangleD GetExtent(List<ShapeFile> layers, EGIS.Projections.ICRS crs )
+        {                        
+            RectangleD r = Rectangle.Empty;                                 
+            for(int n=0; n< layers.Count;++n)
+            {
+                ShapeFile sf = layers[n];
+                var extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, crs);
+                if (double.IsInfinity(extent.Width) || double.IsInfinity(extent.Height))
+                {
+                    extent = RestrictExtentToCRS(extent, crs);
+                }
+
+                r = n == 0 ? r : RectangleD.Union(r, extent);
+            }
+            return r;
+                       
+        }
+
+        private static RectangleD RestrictExtentToCRS(RectangleD extent, EGIS.Projections.ICRS crs)
+        {
+            if (crs != null && crs.AreaOfUse.IsDefined)
+            {
+                if (double.IsInfinity(extent.Width) || double.IsInfinity(extent.Height))
+                {
+                   //convert the area of use from lat/lon degrees to the shapefile CRS
+                   EGIS.Projections.ICRS wgs84 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+                    RectangleD areaOfUse = RectangleD.FromLTRB(crs.AreaOfUse.WestLongitudeDegrees,
+                        crs.AreaOfUse.SouthLatitudeDegrees,
+                        crs.AreaOfUse.EastLongitudeDegrees,
+                        crs.AreaOfUse.NorthLatitudeDegrees);
+                    areaOfUse = areaOfUse.Transform(wgs84, crs);
+
+                    return areaOfUse;
+                }
+            }
+            return extent;
         }
 
         #endregion
@@ -1263,6 +1372,7 @@ namespace EGIS.Web.Controls
     {
         public List<EGIS.ShapeFileLib.ShapeFile> Layers;
         public Color BackgroundColor;
+        public EGIS.Projections.ICRS MapCoordinateReferenceSystem;
     }
 
     internal class SFMapImageProvider : IHttpHandler, System.Web.SessionState.IRequiresSessionState

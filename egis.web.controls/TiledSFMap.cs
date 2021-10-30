@@ -301,6 +301,31 @@ namespace EGIS.Web.Controls
                 mapProject.BackgroundColor = mapRef.BackColor;
             }
 
+            XmlNodeList crsList = projectElement.GetElementsByTagName("MapCoordinateReferenceSystem");
+            bool crsSet = false;
+            if (crsList != null && crsList.Count > 0)
+            {
+                try
+                {
+                    string wkt = crsList[0].InnerText;
+                    if (!string.IsNullOrEmpty(wkt))
+                    {
+                        mapProject.MapCoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt);
+                        crsSet = true;
+                    }
+                }
+                catch
+                {
+                }
+            }
+            if (!crsSet)
+            {
+                //assume old project using wgs84
+                mapProject.MapCoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+            }
+
+
+
             //clear layers
             List<EGIS.ShapeFileLib.ShapeFile> myShapefiles = new List<EGIS.ShapeFileLib.ShapeFile>();
 

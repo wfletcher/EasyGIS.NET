@@ -7,7 +7,7 @@ using System.Resources;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("EGIS.Controls")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Easy GIS .NET Desktop Controls")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Easy GIS .NET")]
 [assembly: AssemblyProduct("EGIS.Controls")]
@@ -33,6 +33,6 @@ using System.Resources;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 [assembly: AssemblyVersion("4.7.1.0")]
-[assembly: AssemblyFileVersion("4.7.1.0")]
+[assembly: AssemblyFileVersion("4.7.1.1")]
 
 [assembly: NeutralResourcesLanguageAttribute("en-US")]

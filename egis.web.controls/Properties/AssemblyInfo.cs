@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("EGIS.Web.Controls")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("EGIS.Web.Controls Class Library")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Easy GIS .NET")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("EGIS.Web.Controls")]
 [assembly: AssemblyCopyright("Copyright © 2008-2021 Winston Fletcher")]
 [assembly: AssemblyTrademark("")]
@@ -32,7 +32,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 [assembly: AssemblyVersion("4.7.1.0")]
-[assembly: AssemblyFileVersion("4.7.1.0")]
+[assembly: AssemblyFileVersion("4.7.1.1")]
 
 
 [assembly: System.Web.UI.WebResource("EGIS.Web.Controls.panu.gif", "img/gif")]

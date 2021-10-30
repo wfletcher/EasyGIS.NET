@@ -382,6 +382,7 @@ namespace EGIS.Controls
             catch
             {
             }
+            MaxZoomLevel = double.MaxValue;
         }
 
         #region XmlMethods
@@ -514,6 +515,26 @@ namespace EGIS.Controls
         #region "public properties and methods"
 
         /// <summary>
+        /// The maximum zoom level allowed. If zoom level is set to a higher zoom level it will be restricted to MaxZoomLevel.
+        /// Default is double.MaxValue (unlimited zoom)
+        /// </summary>
+        public double MaxZoomLevel
+        {            
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// The minimum zoom level allowed. If zoom level is set to a lower zoom level it will be restricted to MinZoomLevel.
+        /// Default is 0 
+        /// </summary>
+        public double MinZomLevel
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Gets or sets the current ZoomLevel of the SFMap
         /// </summary>
         /// <remarks>
@@ -540,7 +561,7 @@ namespace EGIS.Controls
                 //avoid overflow if zooming to less than 1mm
                 if (value > this._zoomLevel && this.mapCoordinateReferenceSystem is IProjectedCRS && (1 / value < 0.00001)) return;
 
-                _zoomLevel = value;
+                _zoomLevel = Math.Max(Math.Min(value, MaxZoomLevel), MinZomLevel);
                 //dirtyScreenBuf=true;
                 refreshMode = RefreshMode.AllLayers;
                 Invalidate();
@@ -774,7 +795,7 @@ namespace EGIS.Controls
 
             _centrePoint = centre;
             if (UseMercatorProjection) _centrePoint = ShapeFile.LatLongToProjection(_centrePoint); // v2.5
-            _zoomLevel = zoom;
+            _zoomLevel = Math.Max(Math.Min(zoom, MaxZoomLevel), MinZomLevel);
             //dirtyScreenBuf = true;
             refreshMode = RefreshMode.AllLayers;
             Invalidate();
@@ -804,7 +825,7 @@ namespace EGIS.Controls
             {
                 this._zoomLevel = cs.Height / r.Height;
             }
-
+            
             // dirtyScreenBuf = true;
             refreshMode = RefreshMode.AllLayers;
             Refresh();
@@ -2381,7 +2402,11 @@ namespace EGIS.Controls
                 double z = ZoomLevel;
                 double x = ((ClientSize.Width * 0.5) + e.X) * 0.5;
                 double y = ((ClientSize.Height * 0.5) + e.Y) * 0.5;
-                SetZoomAndCentre(z * 2d, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));
+                z *= 2;
+                if (z > this.MinZomLevel && z < this.MaxZoomLevel)
+                {
+                    SetZoomAndCentre(z, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));
+                }
             }
             else if (e.Delta < 0)
             {
@@ -2389,7 +2414,11 @@ namespace EGIS.Controls
                 double z = ZoomLevel;
                 int x = ClientSize.Width - e.X;
                 int y = ClientSize.Height - e.Y;
-                SetZoomAndCentre(z * 0.5, PixelCoordToGisPoint(x, y));
+                z *= 0.5;
+                if (z > this.MinZomLevel && z < this.MaxZoomLevel)
+                {
+                    SetZoomAndCentre(z, PixelCoordToGisPoint(x, y));
+                }
             }
         }
 
@@ -2484,7 +2513,11 @@ namespace EGIS.Controls
                 double z = ZoomLevel;
                 double x = ((ClientSize.Width * 0.5) + MouseDownPoint.X) * 0.5;
                 double y = ((ClientSize.Height * 0.5) + MouseDownPoint.Y) * 0.5;
-                SetZoomAndCentre(z * 2d, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));
+                z *= 2;
+                if (z > this.MinZomLevel && z < this.MaxZoomLevel)
+                {
+                    SetZoomAndCentre(z, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));
+                }
             }
             else if (MouseDownButton == MouseButtons.Right)
             {
@@ -2492,7 +2525,11 @@ namespace EGIS.Controls
                 double z = ZoomLevel;
                 double x = ClientSize.Width - MouseDownPoint.X;
                 double y = ClientSize.Height - MouseDownPoint.Y;
-                SetZoomAndCentre(z * 0.5, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));
+                z *= 0.5;
+                if (z > this.MinZomLevel && z < this.MaxZoomLevel)
+                {
+                    SetZoomAndCentre(z, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));
+                }
             }
         }
 

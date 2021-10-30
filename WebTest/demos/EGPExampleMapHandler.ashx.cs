@@ -35,15 +35,9 @@ namespace WebTest.demos
         {
             MapProject project = SFMap.ReadEGPProject(context.Server.MapPath(EGPName));
             List<ShapeFile> layers =  project.Layers;
-            //string shapeFilePath = context.Server.MapPath("/demos/us_demo_files/counties.shp");
-            //ShapeFile sf = new ShapeFile(shapeFilePath);
-            ////set the field name used to label the shapes
-            //sf.RenderSettings.FieldName = "NAME";
-            //sf.RenderSettings.FillColor = Color.Red;
-            //sf.RenderSettings.FontColor = Color.Blue;
-            //sf.RenderSettings.Font = new Font("Arial", 16);
-            ////sf.RenderSettings.CustomRenderSettings = CreatePopulationRenderSettings(sf);
-            //layers.Add(sf);
+            //update the layer's RenderSettings as the RenderSettings may have been created in wgs84 geodetic coordinates
+            //byt we are going to render using Web Mercator 
+            SFMap.UpdateRenderSettingsForWebMercator(layers, project.MapCoordinateReferenceSystem);
             return layers;
         }
 

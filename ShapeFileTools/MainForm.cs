@@ -62,7 +62,7 @@ namespace egis
             LoadRecentProjects();
         
             sfMap1.MapDoubleClick += new EventHandler<EGIS.Controls.SFMap.MapDoubleClickedEventArgs>(sfMap1_MapDoubleClick);
-           // sfMap1.UseMemoryStreams = true;
+            // sfMap1.UseMemoryStreams = true;
 		}
 
         void sfMap1_MapDoubleClick(object sender, EGIS.Controls.SFMap.MapDoubleClickedEventArgs e)

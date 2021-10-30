@@ -9,9 +9,15 @@
     <DelaySign>false</DelaySign>
     <Version>1.2.0</Version>
     <Authors>Winston Fletcher</Authors>
-    <Company>Easy GIS .NET</Company>
+    <Company></Company>
     <AssemblyVersion>1.2.0.0</AssemblyVersion>
     <FileVersion>1.2.0.0</FileVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>LGPL-3.0-or-later</Description>
+    <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+    <Copyright>Copyright © 2008-2021 Winston Fletcher</Copyright>
+    <PackageProjectUrl>www.easygisdotnet.com</PackageProjectUrl>
+    <PackageReleaseNotes>Initial nuget package</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">

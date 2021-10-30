@@ -48,3 +48,8 @@ HIVectorTileHandler.*
 /WebTest/demos/VectorTiles
 /WebTest/demos/covid19
 packages
+EGIS.Controls.nuspec
+EGIS.ShapeFileLib.nuspec
+EGIS.Projections.nuspec
+EGIS.Web.Controls.nuspec
+EGIS.Mapbox.Vector.Tile.nuspec
