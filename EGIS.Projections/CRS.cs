@@ -70,32 +70,61 @@ namespace EGIS.Projections
     /// </remarks>
     public interface ICRS
     {
+        /// <summary>
+        /// Well Known Text representation of the Coordinate Reference System (WKT2 2018 format)
+        /// </summary>
         string WKT
         {
             get;
         }
 
+        /// <summary>
+        /// The name of the CRS
+        /// </summary>
         string Name
         {
             get;
         }
 
+        /// <summary>
+        /// The CRS ID (EPSG)
+        /// </summary>
         string Id
         {
             get;
         }
 
+        /// <summary>
+        /// CRS Authority
+        /// </summary>
         string Authority
         {
             get;
         }
 
+        /// <summary>
+        /// Tests if the CRS is equivalent to a given CRS
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
         bool IsEquivalent(ICRS other);
 
+        /// <summary>
+        /// The CRS Area of use. Area of use is defined in geodetic lat/lon coordinates regardless of the 
+        /// units used by the CRS
+        /// </summary>
         CRSBoundingBox AreaOfUse
         {
             get;
         }
+
+        /// <summary>
+        /// Gets the WKT of the CRS in given WKT format
+        /// </summary>
+        /// <param name="wktType"></param>
+        /// <param name="indentText"></param>
+        /// <returns></returns>
+        string GetWKT(PJ_WKT_TYPE wktType, bool indentText);
     }
 
     /// <summary>
@@ -177,6 +206,40 @@ namespace EGIS.Projections
 
         ICoordinateTransformation CreateCoordinateTrasformation(string sourceWKT, string targetWKT);
 
-		ICRS CreateCRSFromPrjFile(string prjFile);
-	}
+		ICRS CreateCRSFromPrjFile(string prjFile);       
+
+    }
+
+
+    /// <summary>
+    /// Enumeration defining WKT type
+    /// </summary>
+    public enum PJ_WKT_TYPE
+    {        
+        /// <summary>
+        /// WKT2 2015 format        
+        /// </summary>
+        PJ_WKT2_2015,
+        /// <summary>
+        /// WKT2 simplified 2015 format
+        /// </summary>
+        PJ_WKT2_2015_SIMPLIFIED,
+        /// <summary>
+        /// WKT2 2018 format 
+        /// </summary>
+        PJ_WKT2_2018,
+        /// <summary>
+        /// WKT2 simplified 2018 format
+        /// </summary>
+        PJ_WKT2_2018_SIMPLIFIED,
+        /// <summary>
+        /// WKT1 GDAL format
+        /// </summary>
+        PJ_WKT1_GDAL,
+       /// <summary>
+       /// WKT1 ESRI format
+       /// </summary>
+        PJ_WKT1_ESRI
+    }
+
 }

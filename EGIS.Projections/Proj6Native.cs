@@ -39,6 +39,8 @@ namespace EGIS.Projections
         //const string ProjDllName = "proj_5_2.dll";
         const string ProjDllName = "proj_6_1.dll";
 
+        //const string ProjDllName = "proj_8_1.dll";
+
 
         #region dynamically load native x86/x64 dll
 
@@ -474,23 +476,7 @@ namespace EGIS.Projections
 
             return result;
         }
-
-        public enum PJ_WKT_TYPE
-        {
-            /** cf osgeo::proj::io::WKTFormatter::Convention::WKT2 */
-            PJ_WKT2_2015,
-            /** cf osgeo::proj::io::WKTFormatter::Convention::WKT2_SIMPLIFIED */
-            PJ_WKT2_2015_SIMPLIFIED,
-            /** cf osgeo::proj::io::WKTFormatter::Convention::WKT2_2018 */
-            PJ_WKT2_2018,
-            /** cf osgeo::proj::io::WKTFormatter::Convention::WKT2_2018_SIMPLIFIED */
-            PJ_WKT2_2018_SIMPLIFIED,
-            /** cf osgeo::proj::io::WKTFormatter::Convention::WKT1_GDAL */
-            PJ_WKT1_GDAL,
-            /** cf osgeo::proj::io::WKTFormatter::Convention::WKT1_ESRI */
-            PJ_WKT1_ESRI
-        }
-
+       
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
         static unsafe extern byte* proj_as_wkt(IntPtr ctx, IntPtr pj, PJ_WKT_TYPE type, byte** options);

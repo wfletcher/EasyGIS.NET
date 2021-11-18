@@ -373,7 +373,8 @@ namespace EGIS.Projections
             public int WKID;
             /// <summary>Well-known Text</summary>
             public string WKT;
-        }
+        }        
+
     }
 
     

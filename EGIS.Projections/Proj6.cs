@@ -76,8 +76,8 @@ namespace EGIS.Projections
                             {
                                 //proj_is_equivalent_to doesn't seem to compare different WKT representations
                                 //convert both to ESRI WKT and compare
-                                string wkt1 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjThis, Proj6Native.PJ_WKT_TYPE.PJ_WKT1_ESRI);
-                                string wkt2 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjOther, Proj6Native.PJ_WKT_TYPE.PJ_WKT1_ESRI);
+                                string wkt1 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjThis, PJ_WKT_TYPE.PJ_WKT1_ESRI);
+                                string wkt2 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjOther, PJ_WKT_TYPE.PJ_WKT1_ESRI);
 
                                 same = string.Compare(wkt1, wkt2, StringComparison.OrdinalIgnoreCase) == 0;
 
@@ -129,6 +129,28 @@ namespace EGIS.Projections
                 return Name;
             }
 
+            public string GetWKT(PJ_WKT_TYPE wktType, bool indentText)
+            {
+                lock (Proj6Native._sync)
+                {
+                    IntPtr pj = Proj6Native.proj_create(IntPtr.Zero, this.WKT);
+                    try
+                    {
+                        if (pj != IntPtr.Zero)
+                        {
+                            return Proj6Native.Proj_as_wkt(IntPtr.Zero, pj, wktType, indentText);
+                        }
+                    }
+                    finally
+                    {
+                        if (pj != IntPtr.Zero) Proj6Native.proj_destroy(pj);
+                    }
+                }
+
+                return "";
+
+            }
+
             public static CRS FromWKT(string wkt, bool identify = false)
             {
                 lock (Proj6Native._sync)
@@ -141,13 +163,14 @@ namespace EGIS.Projections
 
                         IntPtr p = Proj6Native.proj_create(context, wkt);
 
-                        //this code returns null?
-                        //IntPtr p = Proj6Native.Proj_create_from_wkt(IntPtr.Zero, wkt);
-                        if (p != IntPtr.Zero && identify)
+						//this code returns null?
+						//IntPtr p = Proj6Native.Proj_create_from_wkt(IntPtr.Zero, wkt);						
+						if (p != IntPtr.Zero && identify)
                         {
                             string name = Proj6Native.GetAuthName(p);
                             int confidence = 0;
                             IntPtr p2 = Proj6Native.Proj_identify(context, p, name, out confidence);
+                            System.Diagnostics.Debug.WriteLine("confidence:" + confidence);
                             if (p2 != IntPtr.Zero && confidence > 85)
                             {
                                 Proj6Native.proj_destroy(p);
@@ -162,7 +185,12 @@ namespace EGIS.Projections
                             }
 
                         }
-
+                        if (p == IntPtr.Zero)
+                        {
+                            Console.Error.WriteLine("Could not create crs from " + wkt);
+                            return null; 
+                        }
+                        
                         try
                         {
                             Proj6Native.PJ_TYPE pType = Proj6Native.proj_get_type(p);
@@ -287,13 +315,17 @@ namespace EGIS.Projections
                         {
                             if (p != IntPtr.Zero) Proj6Native.proj_destroy(p);
                         }
+                        
+                    }
+                    catch
+                    {
+                        return null;
                     }
                     finally
                     {
                         if (context != IntPtr.Zero) Proj6Native.proj_context_destroy(context);
                     }
-                }
-
+                }                
             }
 
             
