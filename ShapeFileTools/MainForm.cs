@@ -63,9 +63,7 @@ namespace egis
         
             sfMap1.MapDoubleClick += new EventHandler<EGIS.Controls.SFMap.MapDoubleClickedEventArgs>(sfMap1_MapDoubleClick);
             // sfMap1.UseMemoryStreams = true;
-
-            TestCrsWktFormat();
-
+           
         }
 
         void sfMap1_MapDoubleClick(object sender, EGIS.Controls.SFMap.MapDoubleClickedEventArgs e)
@@ -1992,36 +1990,32 @@ namespace egis
 
         //}
 
-        private void TestCrsWktFormat()
-        {
-            ICRS wgs84Crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+        //private void TestCrsWktFormat()
+        //{
+        //    ICRS wgs84Crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
 
-            string wkt1Esri = wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT1_ESRI, false);
-            string wkt1GDAL = wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT1_GDAL, false);
-            string wkt2015 = wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT2_2015_SIMPLIFIED, false);
-            string wktQGIS = "GEOGCS[\"GCS_unknown\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]]";
+        //    string wkt1Esri = wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT1_ESRI, false);
+        //    string wkt1GDAL = wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT1_GDAL, false);
+        //    string wkt2015 = wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT2_2015_SIMPLIFIED, false);
+        //    string wktQGIS = "GEOGCS[\"GCS_unknown\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]]";
 
-            Console.Out.WriteLine("2018:" + wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED, false));
-            Console.Out.WriteLine("ESRI:" + wkt1Esri);
-            Console.Out.WriteLine("GDAL:" + wkt1GDAL);
-            Console.Out.WriteLine("2015:" + wkt2015);
-            Console.Out.WriteLine("QGIS:" + wktQGIS);
-
-
-            ICRS esriCrs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt1Esri);
-            ICRS gdalCrs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt1GDAL);
-            ICRS _2015Crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt2015);
-            ICRS qgisCrs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wktQGIS);
-
-            Console.Out.WriteLine("esri {0} is equivalent:{1}", esriCrs.Id, wgs84Crs.IsEquivalent(esriCrs));
-            Console.Out.WriteLine("gdal {0} is equivalent:{1}", gdalCrs.Id, wgs84Crs.IsEquivalent(gdalCrs));
-            Console.Out.WriteLine("esri {0} is equivalent:{1}", _2015Crs.Id, wgs84Crs.IsEquivalent(_2015Crs));
-            Console.Out.WriteLine("qgis {0} is equivalent:{1}", qgisCrs.Id, wgs84Crs.IsEquivalent(qgisCrs));
+        //    Console.Out.WriteLine("2018:" + wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED, false));
+        //    Console.Out.WriteLine("ESRI:" + wkt1Esri);
+        //    Console.Out.WriteLine("GDAL:" + wkt1GDAL);
+        //    Console.Out.WriteLine("2015:" + wkt2015);
+        //    Console.Out.WriteLine("QGIS:" + wktQGIS);
 
 
+        //    ICRS esriCrs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt1Esri);
+        //    ICRS gdalCrs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt1GDAL);
+        //    ICRS _2015Crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt2015);
+        //    ICRS qgisCrs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wktQGIS);
 
-
-        }
+        //    Console.Out.WriteLine("esri {0} is equivalent:{1}", esriCrs.Id, wgs84Crs.IsEquivalent(esriCrs));
+        //    Console.Out.WriteLine("gdal {0} is equivalent:{1}", gdalCrs.Id, wgs84Crs.IsEquivalent(gdalCrs));
+        //    Console.Out.WriteLine("esri {0} is equivalent:{1}", _2015Crs.Id, wgs84Crs.IsEquivalent(_2015Crs));
+        //    Console.Out.WriteLine("qgis {0} is equivalent:{1}", qgisCrs.Id, wgs84Crs.IsEquivalent(qgisCrs));
+        //}
     }
   
 }
