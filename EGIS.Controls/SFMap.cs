@@ -1793,12 +1793,17 @@ namespace EGIS.Controls
                                 PointD p0 = PixelCoordToGisPoint(selectRect.Location);
                                 PointD p1 = PixelCoordToGisPoint(new Point(selectRect.Right, selectRect.Top));
                                 PointD p2 = PixelCoordToGisPoint(new Point(selectRect.Left, selectRect.Bottom));
-
+                                
                                 double dist1 = DistanceBetweenPoints(p0, p1);
                                 double dist2 = DistanceBetweenPoints(p0, p2);
 
-                                e.Graphics.DrawString(string.Format("{0:0.000}m", dist1), this.Font, Brushes.Red, new PointF(0.5F * (selectRect.Left + selectRect.Right), selectRect.Top));
-                                e.Graphics.DrawString(string.Format("{0:0.000}m", dist2), this.Font, Brushes.Red, new PointF(selectRect.Left, 0.5F * (selectRect.Top + selectRect.Bottom)));
+                                System.Drawing.StringFormat drawFormat = new System.Drawing.StringFormat();                                
+                                drawFormat.Alignment = StringAlignment.Near | StringAlignment.Center;
+                                e.Graphics.DrawString(string.Format("{0:0.000}m", dist1), this.Font, Brushes.Red, selectRect, drawFormat);
+
+                                drawFormat.FormatFlags = StringFormatFlags.DirectionVertical;
+                                drawFormat.Alignment = StringAlignment.Center;                                                               
+                                e.Graphics.DrawString(string.Format("{0:0.000}m", dist2), this.Font, Brushes.Red,selectRect,drawFormat);
 
                             }
 
