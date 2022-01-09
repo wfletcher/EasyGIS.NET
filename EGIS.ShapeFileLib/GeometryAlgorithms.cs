@@ -1467,7 +1467,7 @@ namespace EGIS.ShapeFileLib
         /// </para>
         /// <para>
         /// The TVal property is useful when used with polylines containing measures. For example if Segmentindex is N then
-        /// the dervied measure at the point on the polyline closest to a given point would be measure[N] + tVal x (measure[N+1] - measure[N])
+        /// the derived measure at the point on the polyline closest to a given point would be measure[N] + tVal x (measure[N+1] - measure[N])
         /// </para>
         /// </remarks>
         public double TVal
