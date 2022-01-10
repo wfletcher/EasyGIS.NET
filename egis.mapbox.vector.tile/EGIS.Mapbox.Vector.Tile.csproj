@@ -15,7 +15,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>LGPL-3.0-or-later</Description>
     <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
-    <Copyright>Copyright © 2008-2021 Winston Fletcher</Copyright>
+    <Copyright></Copyright>
     <PackageProjectUrl>www.easygisdotnet.com</PackageProjectUrl>
     <PackageReleaseNotes>Initial nuget package</PackageReleaseNotes>
   </PropertyGroup>
