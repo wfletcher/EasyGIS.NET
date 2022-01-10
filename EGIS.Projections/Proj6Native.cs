@@ -493,12 +493,19 @@ namespace EGIS.Projections
                 byte[] optionBytes = System.Text.Encoding.ASCII.GetBytes("MULTILINE=NO\0");
                 fixed (byte* ptr = optionBytes)
                 {
-                    byte** options = stackalloc byte*[1];
-                    options[0] = ptr;
-                    byte* wkt = proj_as_wkt(ctx, pj, type, options);
-                    return wkt != null ? new string((sbyte*)wkt) : null;
-                    
-                }
+                    byte*[] optionsArray = new byte*[1];
+                    optionsArray[0] = ptr;
+
+					//this fails when calling 32bit dlll
+					//byte** options = stackalloc byte*[1];
+					//options[0] = ptr;
+					fixed (byte** options = optionsArray)
+					{
+						byte* wkt = proj_as_wkt(ctx, pj, type, options);
+						return wkt != null ? new string((sbyte*)wkt) : null;
+					}
+
+				}
             }
         }
 
