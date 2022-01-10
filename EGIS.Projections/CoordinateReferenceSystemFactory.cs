@@ -117,6 +117,43 @@ namespace EGIS.Projections
         public const int Wgs84PseudoMercatorEpsgCode = 3857;
 
 
+
+        /// <summary>
+        /// Utility function to return the WGS84 UTM EPSG code for a given lat/lon coordinate
+        /// </summary>
+        /// <param name="longitude">longitude in decimal degrees</param>
+        /// <param name="latitude">latitude in decimal degrees</param>
+        /// <returns></returns>
+        public static int GetWgs84UtmEpsgCode(double longitude, double latitude)
+        {
+            //Make sure the longitude is between -180.00 .. +180
+            double longTemp = (longitude + 180) - (int)((longitude + 180) / 360) * 360 - 180; 
+           
+            int zoneNumber = (int)((longTemp + 180) / 6) + 1;
+
+            
+            //Norway exception which extends zone 32
+            if (latitude >= 56.0 && latitude < 64.0 && longTemp >= 3.0 && longTemp < 12.0)  zoneNumber = 32;
+
+            // Special zones for Svalbard
+            if (latitude >= 72.0 && latitude < 84.0)
+            {
+                if (longTemp >= 0.0 && longTemp < 9.0) zoneNumber = 31;
+                else if (longTemp >= 9.0 && longTemp < 21.0) zoneNumber = 33;
+                else if (longTemp >= 21.0 && longTemp < 33.0) zoneNumber = 35;
+                else if (longTemp >= 33.0 && longTemp < 42.0) zoneNumber = 37;
+            }
+
+
+            int epsg_code = 32600;
+            epsg_code += zoneNumber;
+            if (latitude < 0) // Southern zones
+            {
+                epsg_code += 100;
+            }
+            return epsg_code;
+        }
+
         private void LoadData()
         {
             var resourceName = "EGIS.Projections.SRID.csv.gz";

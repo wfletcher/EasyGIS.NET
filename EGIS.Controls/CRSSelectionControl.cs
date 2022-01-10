@@ -21,7 +21,7 @@ namespace EGIS.Controls
 
         public CRSSelectionControl()
         {
-            InitializeComponent();
+            InitializeComponent();                              
         }
 
 
@@ -71,16 +71,36 @@ namespace EGIS.Controls
 
         private void LoadCoordinateSystems()
         {
-            this.cbSelectedCRS.Items.Clear();
+            //this.cbSelectedCRS.Items.Clear();
+            this.cbSelectedCRS.DataSource = null;//.Clear();
             if (this.crsFactory == null) return;
 
+            
             if (this.rbGeographic.Checked)
             {
-                this.cbSelectedCRS.Items.AddRange(crsFactory.GeographicCoordinateSystems.OrderBy(o => o.Name).ToArray());
+                var dataSource = crsFactory.GeographicCoordinateSystems.OrderBy(o => o.Name).ToList();
+                string filter = this.txtFilter.Text.Trim();
+                if (!string.IsNullOrEmpty(filter))
+                {
+                    filter = filter.ToLower();
+                    dataSource = dataSource.FindAll(x => x.Name.ToLower().Contains(filter));
+
+                }
+                this.cbSelectedCRS.DataSource = dataSource;
+                //this.cbSelectedCRS.Items.AddRange(crsFactory.GeographicCoordinateSystems.OrderBy(o => o.Name).ToArray());
             }
             else if (this.rbProjected.Checked)
             {
-                this.cbSelectedCRS.Items.AddRange(crsFactory.ProjectedCoordinateSystems.OrderBy(o => o.Name).ToArray());
+                var dataSource = crsFactory.ProjectedCoordinateSystems.OrderBy(o => o.Name).ToList();
+                string filter = this.txtFilter.Text.Trim();
+                if (!string.IsNullOrEmpty(filter))
+                {
+                    filter = filter.ToLower();
+                    dataSource = dataSource.FindAll(x => x.Name.ToLower().Contains(filter));
+
+                }
+                this.cbSelectedCRS.DataSource = dataSource;
+                //this.cbSelectedCRS.Items.AddRange(crsFactory.ProjectedCoordinateSystems.OrderBy(o => o.Name).ToArray());               
             }
             if (this.cbSelectedCRS.Items.Count > 0)
             {
@@ -168,5 +188,9 @@ namespace EGIS.Controls
             }
         }
 
-    }
+		private void txtFilter_TextChanged(object sender, EventArgs e)
+		{
+            LoadCoordinateSystems();
+		}
+	}
 }
