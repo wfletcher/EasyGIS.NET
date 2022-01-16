@@ -17,6 +17,7 @@
 *.shx
 *.shpx
 *.egp
+*.prj
 #ignore build directories
 Debug
 Release
