@@ -1004,11 +1004,16 @@ namespace EGIS.ShapeFileLib
                     throw new NotSupportedException("ShapeType: " + mainHeader.ShapeType + " not supported");
                     
             }
-           
-            if (double.IsInfinity(this.mainHeader.Xmax) || double.IsInfinity(this.mainHeader.Ymax))
+
+            if (!this.Extent.IsValidExtent())
             {
-                FixHeaderRecordBounds();                
+                FixHeaderRecordBounds();
             }
+           
+            //if (double.IsInfinity(this.mainHeader.Xmax) || double.IsInfinity(this.mainHeader.Ymax))
+            //{
+            //    FixHeaderRecordBounds();                
+            //}
             
                         
             //DateTime end = DateTime.Now;
@@ -1073,6 +1078,25 @@ namespace EGIS.ShapeFileLib
         private void FixHeaderRecordBounds()
         {
 
+
+            RectangleD bounds = RectangleD.Empty;//this.GetShapeBoundsD(0);
+
+            for (int n = 0; n < this.RecordCount; ++n)
+            {
+                RectangleD r = this.GetShapeBoundsD(n);
+                if (r.IsValidExtent())
+                {
+                    if (bounds.IsEmpty) bounds = r;
+                    else bounds = RectangleD.Union(bounds, r);
+                }
+            }
+
+            this.mainHeader.Xmin = this.sfRecordCol.MainHeader.Xmin = bounds.Left;
+            this.mainHeader.Xmax = this.sfRecordCol.MainHeader.Xmax = bounds.Right;
+            this.mainHeader.Ymin = this.sfRecordCol.MainHeader.Ymin = bounds.Top;
+            this.mainHeader.Ymax = this.sfRecordCol.MainHeader.Ymax = bounds.Bottom;
+
+
             double xMin = this.mainHeader.Xmin;
             double xMax = this.mainHeader.Xmax;
             double yMin = this.mainHeader.Ymin;
@@ -1085,9 +1109,9 @@ namespace EGIS.ShapeFileLib
                     this.CoordinateReferenceSystem.AreaOfUse.SouthLatitudeDegrees,
                     this.CoordinateReferenceSystem.AreaOfUse.EastLongitudeDegrees,
                     this.CoordinateReferenceSystem.AreaOfUse.NorthLatitudeDegrees);
-                
+
                 areaOfUse = areaOfUse.Transform(wgs84, this.CoordinateReferenceSystem);
-                
+
                 //check for infinite bounds (common when geographic coords have been converted to 
                 //a world mercator projection for areas such as Antarctica
                 if (double.IsInfinity(xMin))
@@ -1107,49 +1131,7 @@ namespace EGIS.ShapeFileLib
                     yMax = areaOfUse.Bottom;
                 }                
             }
-            this.mainHeader.Xmin = this.sfRecordCol.MainHeader.Xmin = xMin;
-            this.mainHeader.Xmax = this.sfRecordCol.MainHeader.Xmax = xMax;
-            this.mainHeader.Ymin = this.sfRecordCol.MainHeader.Ymin = yMin;
-            this.mainHeader.Ymax = this.sfRecordCol.MainHeader.Ymax = yMax;
-
-            //RectangleD bounds = RectangleD.Empty;//this.GetShapeBoundsD(0);
-            //for (int n = 0; n < this.RecordCount; ++n)
-            //{
-            //    RectangleD r = this.GetShapeBoundsD(n);
-            //    if (double.IsInfinity(r.Width) || double.IsInfinity(r.Height))
-            //    {
-            //        //yikes! the shapefile has a bad record bounds
-            //        var shapeData = this.GetShapeDataD(n);
-            //        double minX, minY, maxX, maxY;
-            //        minX = minY = double.PositiveInfinity;
-            //        maxX = maxY = double.NegativeInfinity;
-            //        foreach (var part in shapeData)
-            //        {
-            //            for (int i = 0; i < part.Length; ++i)
-            //            {
-            //                if (!(double.IsInfinity(part[i].X) || double.IsInfinity(part[i].Y)))
-            //                {
-            //                    minX = Math.Min(minX, part[i].X);
-            //                    maxX = Math.Max(maxX, part[i].X);
-
-            //                    minY = Math.Min(minY, part[i].Y);
-            //                    maxY = Math.Max(maxY, part[i].Y);
-            //                }
-            //            }
-            //        }
-            //        bounds = RectangleD.Union(bounds, RectangleD.FromLTRB(minX, minY, maxX, maxY));
-
-
-            //    }
-            //    else
-            //    {
-            //        bounds = RectangleD.Union(bounds, r);
-            //    }
-            //}
-            //this.mainHeader.Xmax = bounds.Right;
-            //this.mainHeader.Ymax = bounds.Bottom;
-            //this.sfRecordCol.MainHeader.Xmax = bounds.Right;
-            //this.sfRecordCol.MainHeader.Ymax = bounds.Bottom;
+           
         }
 
         /// <summary>
