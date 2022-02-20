@@ -1636,8 +1636,10 @@ namespace EGIS.ShapeFileLib
                     CreateQuadTree(col);
                 }
                 double distSqr = minDistance * minDistance;
-                // PointF ptf = new PointF((float)pt.X, (float)pt.Y);
-                List<int> indices = shapeQuadTree.GetIndices(pt);
+               
+                RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
+                List<int> indices = shapeQuadTree.GetIndices(ref r);
+
                 if (indices != null)
                 {
                     byte[] buffer = SFRecordCol.SharedBuffer;
@@ -1688,8 +1690,9 @@ namespace EGIS.ShapeFileLib
                     CreateQuadTree(col);
                 }
                 double distSqr = minDistance * minDistance;
-                //PointF ptf = new PointF((float)pt.X, (float)pt.Y);
-                List<int> indices = shapeQuadTree.GetIndices(pt);
+                RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
+                List<int> indices = shapeQuadTree.GetIndices(ref r);
+
                 if (indices != null)
                 {
                     byte[] buffer = SFRecordCol.SharedBuffer;
@@ -1832,11 +1835,12 @@ namespace EGIS.ShapeFileLib
                 CreateQuadTree(col);
             }
 
-            List<int> indices = shapeQuadTree.GetIndices(pt);
+            RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
+            List<int> indices = shapeQuadTree.GetIndices(ref r);
+
             if (indices != null)
             {
                 byte[] buffer = SFRecordCol.SharedBuffer;
-                RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
                 for (int n = 0; n < indices.Count; n++)
                 {
                     if (!col.IsRecordVisible(indices[n])) continue;
@@ -1860,11 +1864,12 @@ namespace EGIS.ShapeFileLib
                 CreateQuadTree(col);
             }
 
-            List<int> indices = shapeQuadTree.GetIndices(pt);
+            RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
+            List<int> indices = shapeQuadTree.GetIndices(ref r);
+
             if (indices != null)
             {
                 byte[] buffer = SFRecordCol.SharedBuffer;
-                RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
                 for (int n = 0; n < indices.Count; n++)
                 {
                     if (!col.IsRecordVisible(indices[n])) continue;
@@ -1888,11 +1893,12 @@ namespace EGIS.ShapeFileLib
                 CreateQuadTree(col);
             }
 
-            List<int> indices = shapeQuadTree.GetIndices(pt);
+            RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
+            List<int> indices = shapeQuadTree.GetIndices(ref r);
+
             if (indices != null)
             {
                 byte[] buffer = SFRecordCol.SharedBuffer;
-                RectangleD r = new RectangleD(pt.X - minDistance, pt.Y - minDistance, minDistance * 2, minDistance * 2);
                 for (int n = 0; n < indices.Count; n++)
                 {
                     if (!col.IsRecordVisible(indices[n])) continue;
