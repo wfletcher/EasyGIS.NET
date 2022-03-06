@@ -750,19 +750,19 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        internal void RenderInternal(Graphics graphics, Size clientArea, PointF centre, float zoom, RenderSettings renderSetings, ProjectionType projectionType)
-        {
-            if (!IsVisibleAtZoomLevel(zoom))
-            {
-                return;
-            }
-            if (zoom <= float.Epsilon) throw new ArgumentException("zoom can not be <= zero");
-            zoom = 1f / zoom;
-            float sx = clientArea.Width * zoom;
-            float sy = clientArea.Height * zoom;
-            RectangleF r = RectangleF.FromLTRB(centre.X - (sx * 0.5f), centre.Y - (sy * 0.5f), centre.X + (sx * 0.5f), centre.Y + (sy * 0.5f));
-            Render(graphics, clientArea, r, renderSetings, projectionType);
-        }
+        //internal void RenderInternal(Graphics graphics, Size clientArea, PointF centre, float zoom, RenderSettings renderSetings, ProjectionType projectionType)
+        //{
+        //    if (!IsVisibleAtZoomLevel(zoom))
+        //    {
+        //        return;
+        //    }
+        //    if (zoom <= float.Epsilon) throw new ArgumentException("zoom can not be <= zero");
+        //    zoom = 1f / zoom;
+        //    float sx = clientArea.Width * zoom;
+        //    float sy = clientArea.Height * zoom;
+        //    RectangleF r = RectangleF.FromLTRB(centre.X - (sx * 0.5f), centre.Y - (sy * 0.5f), centre.X + (sx * 0.5f), centre.Y + (sy * 0.5f));
+        //    Render(graphics, clientArea, r, renderSetings, projectionType);
+        //}
 
         internal void RenderInternal(Graphics graphics, Size clientArea, PointD centre, double zoom, RenderSettings renderSetings, ProjectionType projectionType)
         {
@@ -774,7 +774,7 @@ namespace EGIS.ShapeFileLib
             zoom = 1d / zoom;
             double sx = clientArea.Width * zoom;
             double sy = clientArea.Height * zoom;
-            RectangleD r = RectangleD.FromLTRB((centre.X - (sx * 0.5f)), (centre.Y - (sy * 0.5f)), (centre.X + (sx * 0.5f)), (centre.Y + (sy * 0.5f)));
+            RectangleD r = RectangleD.FromLTRB((centre.X - (sx * 0.5)), (centre.Y - (sy * 0.5)), (centre.X + (sx * 0.5)), (centre.Y + (sy * 0.5)));
             Render(graphics, clientArea, r, renderSetings, projectionType);
         }
 
@@ -3861,7 +3861,8 @@ namespace EGIS.ShapeFileLib
                 int count = partBoundsIndexList.Count;
                 Brush fontBrush = new SolidBrush(renderSettings.FontColor);
                 bool shadowText = (renderSettings != null && renderSettings.ShadowText);
-                Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
+                // Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
+                Pen pen = new Pen(renderSettings.ShadowTextColor, 4f);
                 pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;

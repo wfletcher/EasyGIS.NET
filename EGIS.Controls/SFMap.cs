@@ -1619,6 +1619,8 @@ namespace EGIS.Controls
 
         private void RenderShapefiles()
         {
+            const int CropBorder = 10;
+
             if (this.ClientSize.Width <= 0 || this.ClientSize.Height <= 0) return;
 
             if (screenBuf == null || screenBuf.Size != this.ClientSize)
@@ -1647,8 +1649,8 @@ namespace EGIS.Controls
 
                 Size renderSize = screenBuf.Size;
                 //expand the renderSize by 10 pixels to hide any cropped shapes on borders
-                renderSize.Width += 10;
-                renderSize.Height += 10;
+                renderSize.Width += CropBorder;
+                renderSize.Height += CropBorder;
                 //render the background layers
                 if (this.BackgroundShapeFiles.Count > 0)
                 {
@@ -1657,6 +1659,11 @@ namespace EGIS.Controls
                         using (Graphics g2 = Graphics.FromImage(backgroundBuffer))
                         {
                             g2.Clear(Color.Transparent);
+                            //because we're adding a crop border we need to translate our drawing by half the CropBorder
+                            //or our shapes will be rendered with an offset
+                            System.Drawing.Drawing2D.Matrix m = new System.Drawing.Drawing2D.Matrix();
+                            m.Translate(-CropBorder/2, -CropBorder/2);
+                            g2.Transform = m;
                             var layers = this.BackgroundShapeFiles;
                             foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
                             {
@@ -1684,6 +1691,9 @@ namespace EGIS.Controls
                         using (Graphics g2 = Graphics.FromImage(foregroundBuffer))
                         {
                             g2.Clear(Color.Transparent);
+                            System.Drawing.Drawing2D.Matrix m = new System.Drawing.Drawing2D.Matrix();
+                            m.Translate(-CropBorder/2, -CropBorder/2);
+                            g2.Transform = m;
                             var layers = this.ForegroundShapeFiles;
                             foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
                             {
