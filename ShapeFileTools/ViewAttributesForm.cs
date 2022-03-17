@@ -270,6 +270,7 @@ namespace egis
             string filter = dataView.RowFilter;
             try
             {
+                tslblErrors.Text = "";
                 if (useVirtualMode)
                 {
                     this.dataGridView1.RowCount = 0;
@@ -295,6 +296,7 @@ namespace egis
         {
             try
             {
+                tslblErrors.Text = "";
                 dataGridView1.SelectionChanged -= dataGridView1_SelectionChanged;
                    
                 selectingRecords = true;
