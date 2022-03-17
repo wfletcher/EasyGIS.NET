@@ -104,6 +104,10 @@ namespace egis
 			this.sfdMapImage = new System.Windows.Forms.SaveFileDialog();
 			this.sfMap1 = new EGIS.Controls.SFMap();
 			this.shapeFileListControl1 = new EGIS.Controls.ShapeFileListControl();
+			this.mouseWheelZoomModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.defaultMouseWheelZoomMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.reverseMouseWheelZoomMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.disableMouseWheelZoomMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuStrip1.SuspendLayout();
 			this.mainToolStrip.SuspendLayout();
 			this.statusStrip1.SuspendLayout();
@@ -256,7 +260,8 @@ namespace egis
             this.displayShapeAttributesWindowToolStripMenuItem,
             this.disablePanSelectToolStripMenuItem,
             this.viewAttributesToolStripMenuItem,
-            this.miZoomToExtentWhenCtrlkeyDown});
+            this.miZoomToExtentWhenCtrlkeyDown,
+            this.mouseWheelZoomModeToolStripMenuItem});
 			this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
 			this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
 			this.optionsToolStripMenuItem.Text = "Options";
@@ -755,6 +760,9 @@ namespace egis
 			this.sfMap1.Location = new System.Drawing.Point(267, 68);
 			this.sfMap1.MapBackColor = System.Drawing.SystemColors.Control;
 			this.sfMap1.Margin = new System.Windows.Forms.Padding(4);
+			this.sfMap1.MaxZoomLevel = 1.7976931348623157E+308D;
+			this.sfMap1.MinZomLevel = 0D;
+			this.sfMap1.MouseWheelZoomMode = EGIS.Controls.MouseWheelZoomMode.Default;
 			this.sfMap1.Name = "sfMap1";
 			this.sfMap1.PanSelectMode = EGIS.Controls.PanSelectMode.Pan;
 			this.sfMap1.RenderQuality = EGIS.ShapeFileLib.RenderQuality.Auto;
@@ -786,6 +794,39 @@ namespace egis
 			this.shapeFileListControl1.TabIndex = 19;
 			this.shapeFileListControl1.SelectedShapeFileChanged += new System.EventHandler<System.EventArgs>(this.shapeFileListControl1_SelectedShapeFileChanged);
 			this.shapeFileListControl1.AddLayerClicked += new System.EventHandler(this.shapeFileListControl1_AddLayerClicked);
+			// 
+			// mouseWheelZoomModeToolStripMenuItem
+			// 
+			this.mouseWheelZoomModeToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.defaultMouseWheelZoomMenuItem,
+            this.reverseMouseWheelZoomMenuItem,
+            this.disableMouseWheelZoomMenuItem});
+			this.mouseWheelZoomModeToolStripMenuItem.Name = "mouseWheelZoomModeToolStripMenuItem";
+			this.mouseWheelZoomModeToolStripMenuItem.Size = new System.Drawing.Size(316, 22);
+			this.mouseWheelZoomModeToolStripMenuItem.Text = "MouseWheel Zoom Mode";
+			// 
+			// defaultMouseWheelZoomMenuItem
+			// 
+			this.defaultMouseWheelZoomMenuItem.Checked = true;
+			this.defaultMouseWheelZoomMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.defaultMouseWheelZoomMenuItem.Name = "defaultMouseWheelZoomMenuItem";
+			this.defaultMouseWheelZoomMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.defaultMouseWheelZoomMenuItem.Text = "Default";
+			this.defaultMouseWheelZoomMenuItem.Click += new System.EventHandler(this.defaultMouseWheelZoomMenuItem_Click);
+			// 
+			// reverseMouseWheelZoomMenuItem
+			// 
+			this.reverseMouseWheelZoomMenuItem.Name = "reverseMouseWheelZoomMenuItem";
+			this.reverseMouseWheelZoomMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.reverseMouseWheelZoomMenuItem.Text = "Reverse";
+			this.reverseMouseWheelZoomMenuItem.Click += new System.EventHandler(this.reverseMouseWheelZoomMenuItem_Click);
+			// 
+			// disableMouseWheelZoomMenuItem
+			// 
+			this.disableMouseWheelZoomMenuItem.Name = "disableMouseWheelZoomMenuItem";
+			this.disableMouseWheelZoomMenuItem.Size = new System.Drawing.Size(180, 22);
+			this.disableMouseWheelZoomMenuItem.Text = "Disablded";
+			this.disableMouseWheelZoomMenuItem.Click += new System.EventHandler(this.disableMouseWheelZoomMenuItem_Click);
 			// 
 			// MainForm
 			// 
@@ -896,6 +937,10 @@ namespace egis
         private System.Windows.Forms.ToolStripMenuItem setMapCRSFromFirstLayerToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem loadShapeFilesInMemoryToolStripMenuItem;
 		private EGIS.Controls.ShapeFileListControl shapeFileListControl1;
+		private System.Windows.Forms.ToolStripMenuItem mouseWheelZoomModeToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem defaultMouseWheelZoomMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem reverseMouseWheelZoomMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem disableMouseWheelZoomMenuItem;
 	}
 }
 

@@ -1937,85 +1937,109 @@ namespace egis
 
         }
 
+		private void defaultMouseWheelZoomMenuItem_Click(object sender, EventArgs e)
+		{            
+            this.sfMap1.MouseWheelZoomMode = EGIS.Controls.MouseWheelZoomMode.Default;
+            defaultMouseWheelZoomMenuItem.Checked = true;
+            reverseMouseWheelZoomMenuItem.Checked = false;
+            disableMouseWheelZoomMenuItem.Checked = false;
+		}
+
+		private void reverseMouseWheelZoomMenuItem_Click(object sender, EventArgs e)
+		{
+            this.sfMap1.MouseWheelZoomMode = EGIS.Controls.MouseWheelZoomMode.Reverse;
+            defaultMouseWheelZoomMenuItem.Checked = false;
+            reverseMouseWheelZoomMenuItem.Checked = true;
+            disableMouseWheelZoomMenuItem.Checked = false;
+        }
+
+		private void disableMouseWheelZoomMenuItem_Click(object sender, EventArgs e)
+		{
+            this.sfMap1.MouseWheelZoomMode = EGIS.Controls.MouseWheelZoomMode.Disabled;
+            defaultMouseWheelZoomMenuItem.Checked = false; ;
+            reverseMouseWheelZoomMenuItem.Checked = false;
+            disableMouseWheelZoomMenuItem.Checked = true;
+        }
 
 
-        //private void TestMemoryStreams()
-        //{
-        //	if (sfMap1.ShapeFileCount == 0) return;
 
-        //	ShapeFile srcShapeFile = sfMap1[0];
+		//private void TestMemoryStreams()
+		//{
+		//	if (sfMap1.ShapeFileCount == 0) return;
 
-        //	System.IO.MemoryStream shxStream = new System.IO.MemoryStream();
-        //	System.IO.MemoryStream shpStream = new System.IO.MemoryStream();
-        //	System.IO.MemoryStream dbfStream = new System.IO.MemoryStream();
-        //	System.IO.MemoryStream prjStream = new System.IO.MemoryStream();
+		//	ShapeFile srcShapeFile = sfMap1[0];
 
-        //	string projectionWkt = sfMap1.MapCoordinateReferenceSystem.WKT; ;
-        //	if (srcShapeFile.CoordinateReferenceSystem != null)
-        //	{
-        //		projectionWkt = srcShapeFile.CoordinateReferenceSystem.WKT;
-        //	}
+		//	System.IO.MemoryStream shxStream = new System.IO.MemoryStream();
+		//	System.IO.MemoryStream shpStream = new System.IO.MemoryStream();
+		//	System.IO.MemoryStream dbfStream = new System.IO.MemoryStream();
+		//	System.IO.MemoryStream prjStream = new System.IO.MemoryStream();
 
-
-
-        //	byte[] zBuffer = new byte[100000 * 8];
-        //	using (ShapeFileWriter writer = ShapeFileWriter.CreateWriter(shxStream, shpStream, dbfStream, prjStream, srcShapeFile.ShapeType, srcShapeFile.RenderSettings.DbfReader.DbfRecordHeader.GetFieldDescriptions(), projectionWkt))
-        //	{
-        //		for (int n = 0; n < srcShapeFile.RecordCount; n += 5)
-        //		{
-        //			if (srcShapeFile.ShapeType == ShapeType.Polygon)
-        //			{
-        //				writer.AddRecord(srcShapeFile.GetShapeDataD(n), srcShapeFile.GetAttributeFieldValues(n));
-        //			}
-        //			else if (srcShapeFile.ShapeType == ShapeType.PolyLine)
-        //			{
-        //				writer.AddRecord(srcShapeFile.GetShapeDataD(n), srcShapeFile.GetAttributeFieldValues(n));
-        //			}
-        //			else if (srcShapeFile.ShapeType == ShapeType.PolyLineM)
-        //			{
-        //				writer.AddRecord(srcShapeFile.GetShapeDataD(n), srcShapeFile.GetShapeMDataD(n), srcShapeFile.GetAttributeFieldValues(n));
-        //			}
-        //			else if (srcShapeFile.ShapeType == ShapeType.PolyLineZ)
-        //			{
-        //				writer.AddRecord(srcShapeFile.GetShapeDataD(n), srcShapeFile.GetShapeMDataD(n), srcShapeFile.GetShapeZDataD(n, zBuffer), srcShapeFile.GetAttributeFieldValues(n));
-        //			}
-
-        //		}
-        //	}
-        //	//ShapeFile sf = new ShapeFile(shxStream, shpStream, dbfStream, null);
-        //	//sf.Name = srcShapeFile.Name + "-copy";
-        //	//sf.RenderSettings.FieldName = srcShapeFile.RenderSettings.FieldName;
-        //	//sfMap1.AddShapeFile(sf);
-        //	sfMap1.AddShapeFile(shxStream, shpStream, dbfStream, null, srcShapeFile.Name + "-copy", srcShapeFile.RenderSettings.FieldName);
-
-        //}
-
-        //private void TestCrsWktFormat()
-        //{
-        //    ICRS wgs84Crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
-
-        //    string wkt1Esri = wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT1_ESRI, false);
-        //    string wkt1GDAL = wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT1_GDAL, false);
-        //    string wkt2015 = wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT2_2015_SIMPLIFIED, false);
-        //    string wktQGIS = "GEOGCS[\"GCS_unknown\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]]";
-
-        //    Console.Out.WriteLine("2018:" + wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED, false));
-        //    Console.Out.WriteLine("ESRI:" + wkt1Esri);
-        //    Console.Out.WriteLine("GDAL:" + wkt1GDAL);
-        //    Console.Out.WriteLine("2015:" + wkt2015);
-        //    Console.Out.WriteLine("QGIS:" + wktQGIS);
+		//	string projectionWkt = sfMap1.MapCoordinateReferenceSystem.WKT; ;
+		//	if (srcShapeFile.CoordinateReferenceSystem != null)
+		//	{
+		//		projectionWkt = srcShapeFile.CoordinateReferenceSystem.WKT;
+		//	}
 
 
-        //    ICRS esriCrs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt1Esri);
-        //    ICRS gdalCrs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt1GDAL);
-        //    ICRS _2015Crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt2015);
-        //    ICRS qgisCrs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wktQGIS);
 
-        //    Console.Out.WriteLine("esri {0} is equivalent:{1}", esriCrs.Id, wgs84Crs.IsEquivalent(esriCrs));
-        //    Console.Out.WriteLine("gdal {0} is equivalent:{1}", gdalCrs.Id, wgs84Crs.IsEquivalent(gdalCrs));
-        //    Console.Out.WriteLine("esri {0} is equivalent:{1}", _2015Crs.Id, wgs84Crs.IsEquivalent(_2015Crs));
-        //    Console.Out.WriteLine("qgis {0} is equivalent:{1}", qgisCrs.Id, wgs84Crs.IsEquivalent(qgisCrs));
-        //}
-    }
+		//	byte[] zBuffer = new byte[100000 * 8];
+		//	using (ShapeFileWriter writer = ShapeFileWriter.CreateWriter(shxStream, shpStream, dbfStream, prjStream, srcShapeFile.ShapeType, srcShapeFile.RenderSettings.DbfReader.DbfRecordHeader.GetFieldDescriptions(), projectionWkt))
+		//	{
+		//		for (int n = 0; n < srcShapeFile.RecordCount; n += 5)
+		//		{
+		//			if (srcShapeFile.ShapeType == ShapeType.Polygon)
+		//			{
+		//				writer.AddRecord(srcShapeFile.GetShapeDataD(n), srcShapeFile.GetAttributeFieldValues(n));
+		//			}
+		//			else if (srcShapeFile.ShapeType == ShapeType.PolyLine)
+		//			{
+		//				writer.AddRecord(srcShapeFile.GetShapeDataD(n), srcShapeFile.GetAttributeFieldValues(n));
+		//			}
+		//			else if (srcShapeFile.ShapeType == ShapeType.PolyLineM)
+		//			{
+		//				writer.AddRecord(srcShapeFile.GetShapeDataD(n), srcShapeFile.GetShapeMDataD(n), srcShapeFile.GetAttributeFieldValues(n));
+		//			}
+		//			else if (srcShapeFile.ShapeType == ShapeType.PolyLineZ)
+		//			{
+		//				writer.AddRecord(srcShapeFile.GetShapeDataD(n), srcShapeFile.GetShapeMDataD(n), srcShapeFile.GetShapeZDataD(n, zBuffer), srcShapeFile.GetAttributeFieldValues(n));
+		//			}
+
+		//		}
+		//	}
+		//	//ShapeFile sf = new ShapeFile(shxStream, shpStream, dbfStream, null);
+		//	//sf.Name = srcShapeFile.Name + "-copy";
+		//	//sf.RenderSettings.FieldName = srcShapeFile.RenderSettings.FieldName;
+		//	//sfMap1.AddShapeFile(sf);
+		//	sfMap1.AddShapeFile(shxStream, shpStream, dbfStream, null, srcShapeFile.Name + "-copy", srcShapeFile.RenderSettings.FieldName);
+
+		//}
+
+		//private void TestCrsWktFormat()
+		//{
+		//    ICRS wgs84Crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+
+		//    string wkt1Esri = wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT1_ESRI, false);
+		//    string wkt1GDAL = wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT1_GDAL, false);
+		//    string wkt2015 = wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT2_2015_SIMPLIFIED, false);
+		//    string wktQGIS = "GEOGCS[\"GCS_unknown\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137.0,298.257223563]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]]";
+
+		//    Console.Out.WriteLine("2018:" + wgs84Crs.GetWKT(PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED, false));
+		//    Console.Out.WriteLine("ESRI:" + wkt1Esri);
+		//    Console.Out.WriteLine("GDAL:" + wkt1GDAL);
+		//    Console.Out.WriteLine("2015:" + wkt2015);
+		//    Console.Out.WriteLine("QGIS:" + wktQGIS);
+
+
+		//    ICRS esriCrs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt1Esri);
+		//    ICRS gdalCrs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt1GDAL);
+		//    ICRS _2015Crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt2015);
+		//    ICRS qgisCrs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wktQGIS);
+
+		//    Console.Out.WriteLine("esri {0} is equivalent:{1}", esriCrs.Id, wgs84Crs.IsEquivalent(esriCrs));
+		//    Console.Out.WriteLine("gdal {0} is equivalent:{1}", gdalCrs.Id, wgs84Crs.IsEquivalent(gdalCrs));
+		//    Console.Out.WriteLine("esri {0} is equivalent:{1}", _2015Crs.Id, wgs84Crs.IsEquivalent(_2015Crs));
+		//    Console.Out.WriteLine("qgis {0} is equivalent:{1}", qgisCrs.Id, wgs84Crs.IsEquivalent(qgisCrs));
+		//}
+	}
   
 }

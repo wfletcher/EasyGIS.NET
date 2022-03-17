@@ -97,6 +97,27 @@ namespace EGIS.Controls
         Foreground 
     }
 
+
+    /// <summary>
+    /// MouseWheel Zoom Enumeration
+    /// </summary>
+    public enum MouseWheelZoomMode
+    {
+        /// <summary>
+        /// Default behaviour. Moving mouse wheel forward zooms in, Moving mouse wheel backward zooms out
+        /// </summary>
+        Default,
+        /// <summary>
+        /// Reverse behaviour (ESRI default). Moving mouse wheel backwards zooms in, Moving mouse wheel forward zooms out.
+        /// </summary>
+        Reverse,
+        /// <summary>
+        /// Disable zoooming with mouse wheel
+        /// </summary>
+        Disabled
+
+    }
+
     /// <summary>
     /// SFMap (ShapeFile Map) is a .NET ShapeFile Control which displays shapefiles in a .NET Windows Form application
     /// </summary>
@@ -383,6 +404,8 @@ namespace EGIS.Controls
             {
             }
             MaxZoomLevel = double.MaxValue;
+
+            MouseWheelZoomMode = MouseWheelZoomMode.Default;
         }
 
         #region XmlMethods
@@ -2055,6 +2078,13 @@ namespace EGIS.Controls
             set { _ctrlDragToZoom = value; }
         }
 
+        public MouseWheelZoomMode MouseWheelZoomMode
+        {
+            get;
+            set;
+        }
+
+
         private PanSelectMode _panSelectMode = PanSelectMode.Pan;
 
         private bool _ctrlDown = false;
@@ -2411,7 +2441,13 @@ namespace EGIS.Controls
         protected override void OnMouseWheel(MouseEventArgs e)
         {
             base.OnMouseWheel(e);
-            if (e.Delta > 0)
+
+            if (MouseWheelZoomMode == MouseWheelZoomMode.Disabled || e.Delta==0) return;
+
+            bool zoomIn = e.Delta > 0;
+            if (MouseWheelZoomMode == MouseWheelZoomMode.Reverse) zoomIn = !zoomIn;
+
+            if (zoomIn)
             {
                 //zoom in
                 double z = ZoomLevel;
@@ -2423,7 +2459,7 @@ namespace EGIS.Controls
                     SetZoomAndCentre(z, PixelCoordToGisPoint((int)Math.Round(x), (int)Math.Round(y)));
                 }
             }
-            else if (e.Delta < 0)
+            else
             {
                 //zoom out
                 double z = ZoomLevel;
