@@ -1272,8 +1272,7 @@ namespace egis
         {
             this.tsLblSelectMessage.Visible = false;
 
-            TestLinearReferencing(e.X, e.Y);
-
+            //TestLinearReferencing(e.X, e.Y);
         }
 
         private void sfMap1_SelectedRecordsChanged(object sender, EventArgs e)
@@ -1354,65 +1353,65 @@ namespace egis
         }
 
 
-        private void TestLinearReferencing(int mouseX, int mouseY)
-        {
-            PointD coords = sfMap1.PixelCoordToGisPoint(mouseX, mouseY);
-            PointD coords2 = sfMap1.PixelCoordToGisPoint(mouseX + 16, mouseY + 16);
-            double dist = Math.Sqrt((coords.X - coords2.X)*(coords.X - coords2.X) + (coords.Y - coords2.Y)*(coords.Y - coords2.Y));
-            //dist = 50;// 50m
-            for (int i = sfMap1.ShapeFileCount - 1; i >= 0; --i)
-            {
-                ShapeFile sf = sfMap1[i];                
-                PolylineDistanceInfo polylineDistanceInfo;
-                DateTime tick = DateTime.Now;
-                int index;
-                //for (int n = 0; n < 99; ++n)
-                //{
-                //    index = sf.GetClosestShape(coords, dist, out polylineDistanceInfo);                    
-                //}
-                index = sf.GetClosestShape(coords, dist, out polylineDistanceInfo);
-                Console.Out.WriteLine("closest record index:" + index);
-                Console.Out.WriteLine("pdi distance:" + polylineDistanceInfo.Distance);
-                //Console.Out.WriteLine("ClosestPointOnPolyline time: " + DateTime.Now.Subtract(tick).Milliseconds / 100.0 + "ms");
-                if (index >= 0 && (sf.ShapeType == ShapeType.PolyLine || sf.ShapeType == ShapeType.PolyLineM))
-                {     
-                    Console.Out.WriteLine("tVal: " + polylineDistanceInfo.TVal);
-                    Console.Out.WriteLine("coords:" + coords);
-                    Console.Out.WriteLine("polylinePoint:" + polylineDistanceInfo.PolylinePoint);
-                    using (Graphics g = sfMap1.CreateGraphics())
-                    {
-                        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                        Point pt = sfMap1.GisPointToPixelCoord(polylineDistanceInfo.PolylinePoint);
-                        g.FillEllipse(Brushes.Red, pt.X - 5, pt.Y - 5, 10, 10);
+        //private void TestLinearReferencing(int mouseX, int mouseY)
+        //{
+        //    PointD coords = sfMap1.PixelCoordToGisPoint(mouseX, mouseY);
+        //    PointD coords2 = sfMap1.PixelCoordToGisPoint(mouseX + 16, mouseY + 16);
+        //    double dist = Math.Sqrt((coords.X - coords2.X)*(coords.X - coords2.X) + (coords.Y - coords2.Y)*(coords.Y - coords2.Y));
+        //    //dist = 50;// 50m
+        //    for (int i = sfMap1.ShapeFileCount - 1; i >= 0; --i)
+        //    {
+        //        ShapeFile sf = sfMap1[i];                
+        //        PolylineDistanceInfo polylineDistanceInfo;
+        //        DateTime tick = DateTime.Now;
+        //        int index;
+        //        //for (int n = 0; n < 99; ++n)
+        //        //{
+        //        //    index = sf.GetClosestShape(coords, dist, out polylineDistanceInfo);                    
+        //        //}
+        //        index = sf.GetClosestShape(coords, dist, out polylineDistanceInfo);
+        //        Console.Out.WriteLine("closest record index:" + index);
+        //        Console.Out.WriteLine("pdi distance:" + polylineDistanceInfo.Distance);
+        //        //Console.Out.WriteLine("ClosestPointOnPolyline time: " + DateTime.Now.Subtract(tick).Milliseconds / 100.0 + "ms");
+        //        if (index >= 0 && (sf.ShapeType == ShapeType.PolyLine || sf.ShapeType == ShapeType.PolyLineM))
+        //        {     
+        //            Console.Out.WriteLine("tVal: " + polylineDistanceInfo.TVal);
+        //            Console.Out.WriteLine("coords:" + coords);
+        //            Console.Out.WriteLine("polylinePoint:" + polylineDistanceInfo.PolylinePoint);
+        //            using (Graphics g = sfMap1.CreateGraphics())
+        //            {
+        //                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+        //                Point pt = sfMap1.GisPointToPixelCoord(polylineDistanceInfo.PolylinePoint);
+        //                g.FillEllipse(Brushes.Red, pt.X - 5, pt.Y - 5, 10, 10);
 
-                        Point mousePoint = new Point(mouseX, mouseY);
-                        if ((mousePoint.X - pt.X) * (mousePoint.X - pt.X) + (mousePoint.Y - pt.Y) * (mousePoint.Y - pt.Y) > 50 * 50)
-                        {
-                            g.FillEllipse(Brushes.Red, mousePoint.X - 2, mousePoint.Y - 2, 4,4);
-                            g.DrawLine(Pens.Red, mousePoint, pt);
-                        }
-                    }
+        //                Point mousePoint = new Point(mouseX, mouseY);
+        //                if ((mousePoint.X - pt.X) * (mousePoint.X - pt.X) + (mousePoint.Y - pt.Y) * (mousePoint.Y - pt.Y) > 50 * 50)
+        //                {
+        //                    g.FillEllipse(Brushes.Red, mousePoint.X - 2, mousePoint.Y - 2, 4,4);
+        //                    g.DrawLine(Pens.Red, mousePoint, pt);
+        //                }
+        //            }
 
-                    if (sf.ShapeType == ShapeType.PolyLineM)
-                    {
-                        var partMeasures = sf.GetShapeMDataD(index);
-                        int pointIndex = polylineDistanceInfo.PointIndex;
-                        for(int n=0;n<partMeasures.Count;++n)
-                        {
-                            double[] measures = partMeasures[n];
-                            if (pointIndex < measures.Length - 1)
-                            {
-                                double distance = measures[pointIndex] + polylineDistanceInfo.TVal * (measures[pointIndex + 1] - measures[pointIndex]);
-                                Console.Out.WriteLine("distance from start of shape: " + distance);
-                                break;
-                            }
-                            pointIndex -= measures.Length;
-                        }
-                    }
+        //            if (sf.ShapeType == ShapeType.PolyLineM)
+        //            {
+        //                var partMeasures = sf.GetShapeMDataD(index);
+        //                int pointIndex = polylineDistanceInfo.PointIndex;
+        //                for(int n=0;n<partMeasures.Count;++n)
+        //                {
+        //                    double[] measures = partMeasures[n];
+        //                    if (pointIndex < measures.Length - 1)
+        //                    {
+        //                        double distance = measures[pointIndex] + polylineDistanceInfo.TVal * (measures[pointIndex + 1] - measures[pointIndex]);
+        //                        Console.Out.WriteLine("distance from start of shape: " + distance);
+        //                        break;
+        //                    }
+        //                    pointIndex -= measures.Length;
+        //                }
+        //            }
 
-                }                
-            }            
-        }
+        //        }                
+        //    }            
+        //}
 
 
         private void displayShapeAttributesWindowToolStripMenuItem_Click(object sender, EventArgs e)
