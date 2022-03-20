@@ -1272,7 +1272,7 @@ namespace egis
         {
             this.tsLblSelectMessage.Visible = false;
 
-            //TestLinearReferencing(e.X, e.Y);
+            TestLinearReferencing(e.X, e.Y);
 
         }
 
@@ -1357,7 +1357,7 @@ namespace egis
         private void TestLinearReferencing(int mouseX, int mouseY)
         {
             PointD coords = sfMap1.PixelCoordToGisPoint(mouseX, mouseY);
-            PointD coords2 = sfMap1.PixelCoordToGisPoint(mouseX + 8, mouseY + 8);
+            PointD coords2 = sfMap1.PixelCoordToGisPoint(mouseX + 16, mouseY + 16);
             double dist = Math.Sqrt((coords.X - coords2.X)*(coords.X - coords2.X) + (coords.Y - coords2.Y)*(coords.Y - coords2.Y));
             //dist = 50;// 50m
             for (int i = sfMap1.ShapeFileCount - 1; i >= 0; --i)
@@ -1371,8 +1371,10 @@ namespace egis
                 //    index = sf.GetClosestShape(coords, dist, out polylineDistanceInfo);                    
                 //}
                 index = sf.GetClosestShape(coords, dist, out polylineDistanceInfo);
+                Console.Out.WriteLine("closest record index:" + index);
+                Console.Out.WriteLine("pdi distance:" + polylineDistanceInfo.Distance);
                 //Console.Out.WriteLine("ClosestPointOnPolyline time: " + DateTime.Now.Subtract(tick).Milliseconds / 100.0 + "ms");
-                if (index >= 0)
+                if (index >= 0 && (sf.ShapeType == ShapeType.PolyLine || sf.ShapeType == ShapeType.PolyLineM))
                 {     
                     Console.Out.WriteLine("tVal: " + polylineDistanceInfo.TVal);
                     Console.Out.WriteLine("coords:" + coords);
@@ -1393,9 +1395,19 @@ namespace egis
 
                     if (sf.ShapeType == ShapeType.PolyLineM)
                     {
-                        double[] measures = sf.GetShapeMDataD(index)[0];
-                        double distance = measures[polylineDistanceInfo.PointIndex] + polylineDistanceInfo.TVal *(measures[polylineDistanceInfo.PointIndex+1] - measures[polylineDistanceInfo.PointIndex]);
-                        Console.Out.WriteLine("distance from start of shape: " + distance);
+                        var partMeasures = sf.GetShapeMDataD(index);
+                        int pointIndex = polylineDistanceInfo.PointIndex;
+                        for(int n=0;n<partMeasures.Count;++n)
+                        {
+                            double[] measures = partMeasures[n];
+                            if (pointIndex < measures.Length - 1)
+                            {
+                                double distance = measures[pointIndex] + polylineDistanceInfo.TVal * (measures[pointIndex + 1] - measures[pointIndex]);
+                                Console.Out.WriteLine("distance from start of shape: " + distance);
+                                break;
+                            }
+                            pointIndex -= measures.Length;
+                        }
                     }
 
                 }                

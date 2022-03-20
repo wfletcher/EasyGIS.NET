@@ -2038,6 +2038,12 @@ namespace EGIS.ShapeFileLib
         }
 
 
+        /// <summary>
+        /// gets index of closest record from a given point and search radius
+        /// </summary>
+        /// <param name="centre">the coord of the point to search from</param>
+        /// <param name="radius">search radius in the shapefile's coordinate units</param>
+        /// <returns>index of closest record within the search radius or -1 if distance to closest record is &gt; radius </returns>
         public int GetClosestShape(PointD centre, double radius)
         {
             return GetClosestShape(centre, radius, sfRecordCol);            
@@ -2070,6 +2076,14 @@ namespace EGIS.ShapeFileLib
             return closestIndex;
         }
 
+        /// <summary>
+        /// gets index of closest record from a given point and search radius with optional polyline distance info if the shapefile type is
+        /// a polyline or polylineM shapefile
+        /// </summary>
+        /// <param name="centre">the coord of the point to search from</param>
+        /// <param name="radius">search radius in the shapefile's coordinate units</param>
+        /// <param name="polylineDistanceInfo">out parameter with closest record polyline information (useful for linear referencing). Only used for polyline and polylineM ShapeType</param>
+        /// <returns>index of closest record within the search radius or -1 if distance to closest record is &gt; radius </returns>
         public int GetClosestShape(PointD centre, double radius, out PolylineDistanceInfo polylineDistanceInfo)
         {
             return GetClosestShape(centre, radius, sfRecordCol, out polylineDistanceInfo);
@@ -4481,12 +4495,15 @@ namespace EGIS.ShapeFileLib
                     else
                     {
                         numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
-                    }
-                    double partDistance = GeometryAlgorithms.DistanceToPolygon(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, numParts == 1);
-                    if(partDistance < minDistance)
+                    }                   
+                    bool partInHole;
+                    double partDistance = GeometryAlgorithms.DistanceToPolygon(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, numParts == 1, out partInHole);
+                    if (partDistance < minDistance || partInHole)
                     {
+                        //if partInHole reset (previous part would have returned a distance of zero)
                         minDistance = partDistance;
                     }
+
                 }
             }
             return minDistance;
@@ -11284,16 +11301,57 @@ namespace EGIS.ShapeFileLib
             }
             //return false;
         }
+       
 
-        public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
+        public unsafe override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
-            throw new NotImplementedException();
+            //first check if the record's bounds intersects with the circle
+            //RectangleD recBounds = GetRecordBoundsD(shapeIndex, shapeFileStream);
+            //if (!GeometryAlgorithms.RectangleCircleIntersects(ref recBounds, ref centre, radius)) return false;
+
+            //now do an accurate intersection check
+            byte[] data = SFRecordCol.SharedBuffer;
+            shapeFileStream.Seek(this.RecordHeaders[shapeIndex].Offset, SeekOrigin.Begin);
+            shapeFileStream.Read(data, 0, this.RecordHeaders[shapeIndex].ContentLength + 8);
+            double minDistance = double.PositiveInfinity;
+            fixed (byte* dataPtr = data)
+            {                
+                PolygonZRecordP* nextRec = (PolygonZRecordP*)(dataPtr + 8);
+                int dataOffset = nextRec->PointDataOffset;
+                int numParts = nextRec->NumParts;
+
+                //need to check if we are in a hole and then ignore other parts
+                for (int partNum = 0; partNum < numParts; partNum++)
+                {
+                    int numPoints;
+                    if ((numParts - partNum) > 1)
+                    {
+                        numPoints = nextRec->PartOffsets[partNum + 1] - nextRec->PartOffsets[partNum];
+                    }
+                    else
+                    {
+                        numPoints = nextRec->NumPoints - nextRec->PartOffsets[partNum];
+                    }
+                    bool partInHole;
+                    double partDistance = GeometryAlgorithms.DistanceToPolygon(data, 8 + dataOffset + (nextRec->PartOffsets[partNum] << 4), numPoints, centre, numParts == 1, out partInHole);
+                    if (partDistance < minDistance || partInHole)
+                    {
+                        //if partInHole reset (previous part would have returned a distance of zero)
+                        minDistance = partDistance;
+                    }                   
+                }
+            }
+            return minDistance;
         }
 
         public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream, out PolylineDistanceInfo polylineDistanceInfo)
         {
-            throw new NotImplementedException();
+            polylineDistanceInfo = PolylineDistanceInfo.Empty;
+            polylineDistanceInfo.Distance =  GetDistanceToShape(shapeIndex, centre, radius, shapeFileStream);
+            return polylineDistanceInfo.Distance;
         }
+
+
 
         #region QTNodeHelper Members
 

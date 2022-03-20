@@ -233,8 +233,9 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        public static unsafe double DistanceToPolygon(byte[] data, int offset, int numPoints, PointD point, bool ignoreHoles)
+        public static unsafe double DistanceToPolygon(byte[] data, int offset, int numPoints, PointD point, bool ignoreHoles, out bool isInsideHole)
         {
+            isInsideHole = false;
             //test 1A : check if the point is inside the polygon
             if (ignoreHoles)
             {
@@ -249,6 +250,7 @@ namespace EGIS.ShapeFileLib
                 bool isHole = false;
                 if (PointInPolygon(data, offset, numPoints, point.X, point.Y, false, ref isHole))
                 {
+                    isInsideHole = isHole;
                     if (!isHole) return 0;
                 }
             }
@@ -274,13 +276,14 @@ namespace EGIS.ShapeFileLib
             return minDistance;
         }
 
-        public static unsafe double DistanceToPolygon(byte[] data, int offset, int numPoints, PointD point)
+        public static unsafe double DistanceToPolygon(byte[] data, int offset, int numPoints, PointD point, out bool isInsideHole)
         {
-            return DistanceToPolygon(data, offset, numPoints, point, true);            
+            return DistanceToPolygon(data, offset, numPoints, point, true, out isInsideHole);            
         }
 
-        public static double DistanceToPolygon(PointD[] points, PointD point, bool ignoreHoles)
+        public static double DistanceToPolygon(PointD[] points, PointD point, bool ignoreHoles, out bool isInsideHole)
         {
+            isInsideHole = false;
             //test 1A : check if the point is inside the polygon
             if (ignoreHoles)
             {               
@@ -295,6 +298,7 @@ namespace EGIS.ShapeFileLib
                 bool isHole = false;
                 if (PointInPolygon(points, point.X, point.Y, false, ref isHole))
                 {
+                    isInsideHole = isHole;
                     if (!isHole) return 0;
                 }
             }
