@@ -151,8 +151,10 @@ namespace EGIS.Projections
 
             }
 
+            public static int IdentificationConfidenceThreshold = 70;
+
             public static CRS FromWKT(string wkt, bool identify = false)
-            {
+            {                
                 lock (Proj6Native._sync)
                 {
                     //although using proj_context_create will make proj6 thread safe
@@ -171,7 +173,7 @@ namespace EGIS.Projections
                             int confidence = 0;
                             IntPtr p2 = Proj6Native.Proj_identify(context, p, name, out confidence);
                             System.Diagnostics.Debug.WriteLine("confidence:" + confidence);
-                            if (p2 != IntPtr.Zero && confidence > 85)
+                            if (p2 != IntPtr.Zero && confidence >= IdentificationConfidenceThreshold)
                             {
                                 Proj6Native.proj_destroy(p);
                                 p = p2;

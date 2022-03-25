@@ -63,6 +63,10 @@ namespace egis
 			this.disablePanSelectToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.viewAttributesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.miZoomToExtentWhenCtrlkeyDown = new System.Windows.Forms.ToolStripMenuItem();
+			this.mouseWheelZoomModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.defaultMouseWheelZoomMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.reverseMouseWheelZoomMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.disableMouseWheelZoomMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.aboutMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.ofdShapeFile = new System.Windows.Forms.OpenFileDialog();
@@ -104,10 +108,6 @@ namespace egis
 			this.sfdMapImage = new System.Windows.Forms.SaveFileDialog();
 			this.sfMap1 = new EGIS.Controls.SFMap();
 			this.shapeFileListControl1 = new EGIS.Controls.ShapeFileListControl();
-			this.mouseWheelZoomModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.defaultMouseWheelZoomMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.reverseMouseWheelZoomMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.disableMouseWheelZoomMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuStrip1.SuspendLayout();
 			this.mainToolStrip.SuspendLayout();
 			this.statusStrip1.SuspendLayout();
@@ -386,6 +386,39 @@ namespace egis
 			this.miZoomToExtentWhenCtrlkeyDown.Size = new System.Drawing.Size(316, 22);
 			this.miZoomToExtentWhenCtrlkeyDown.Text = "Zoom to Selected Extent When Ctrl-key Down";
 			this.miZoomToExtentWhenCtrlkeyDown.Click += new System.EventHandler(this.miZoomToExtentWhenCtrlkeyDown_Click);
+			// 
+			// mouseWheelZoomModeToolStripMenuItem
+			// 
+			this.mouseWheelZoomModeToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.defaultMouseWheelZoomMenuItem,
+            this.reverseMouseWheelZoomMenuItem,
+            this.disableMouseWheelZoomMenuItem});
+			this.mouseWheelZoomModeToolStripMenuItem.Name = "mouseWheelZoomModeToolStripMenuItem";
+			this.mouseWheelZoomModeToolStripMenuItem.Size = new System.Drawing.Size(316, 22);
+			this.mouseWheelZoomModeToolStripMenuItem.Text = "MouseWheel Zoom Mode";
+			// 
+			// defaultMouseWheelZoomMenuItem
+			// 
+			this.defaultMouseWheelZoomMenuItem.Checked = true;
+			this.defaultMouseWheelZoomMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.defaultMouseWheelZoomMenuItem.Name = "defaultMouseWheelZoomMenuItem";
+			this.defaultMouseWheelZoomMenuItem.Size = new System.Drawing.Size(126, 22);
+			this.defaultMouseWheelZoomMenuItem.Text = "Default";
+			this.defaultMouseWheelZoomMenuItem.Click += new System.EventHandler(this.defaultMouseWheelZoomMenuItem_Click);
+			// 
+			// reverseMouseWheelZoomMenuItem
+			// 
+			this.reverseMouseWheelZoomMenuItem.Name = "reverseMouseWheelZoomMenuItem";
+			this.reverseMouseWheelZoomMenuItem.Size = new System.Drawing.Size(126, 22);
+			this.reverseMouseWheelZoomMenuItem.Text = "Reverse";
+			this.reverseMouseWheelZoomMenuItem.Click += new System.EventHandler(this.reverseMouseWheelZoomMenuItem_Click);
+			// 
+			// disableMouseWheelZoomMenuItem
+			// 
+			this.disableMouseWheelZoomMenuItem.Name = "disableMouseWheelZoomMenuItem";
+			this.disableMouseWheelZoomMenuItem.Size = new System.Drawing.Size(126, 22);
+			this.disableMouseWheelZoomMenuItem.Text = "Disablded";
+			this.disableMouseWheelZoomMenuItem.Click += new System.EventHandler(this.disableMouseWheelZoomMenuItem_Click);
 			// 
 			// helpToolStripMenuItem
 			// 
@@ -794,39 +827,6 @@ namespace egis
 			this.shapeFileListControl1.TabIndex = 19;
 			this.shapeFileListControl1.SelectedShapeFileChanged += new System.EventHandler<System.EventArgs>(this.shapeFileListControl1_SelectedShapeFileChanged);
 			this.shapeFileListControl1.AddLayerClicked += new System.EventHandler(this.shapeFileListControl1_AddLayerClicked);
-			// 
-			// mouseWheelZoomModeToolStripMenuItem
-			// 
-			this.mouseWheelZoomModeToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.defaultMouseWheelZoomMenuItem,
-            this.reverseMouseWheelZoomMenuItem,
-            this.disableMouseWheelZoomMenuItem});
-			this.mouseWheelZoomModeToolStripMenuItem.Name = "mouseWheelZoomModeToolStripMenuItem";
-			this.mouseWheelZoomModeToolStripMenuItem.Size = new System.Drawing.Size(316, 22);
-			this.mouseWheelZoomModeToolStripMenuItem.Text = "MouseWheel Zoom Mode";
-			// 
-			// defaultMouseWheelZoomMenuItem
-			// 
-			this.defaultMouseWheelZoomMenuItem.Checked = true;
-			this.defaultMouseWheelZoomMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.defaultMouseWheelZoomMenuItem.Name = "defaultMouseWheelZoomMenuItem";
-			this.defaultMouseWheelZoomMenuItem.Size = new System.Drawing.Size(180, 22);
-			this.defaultMouseWheelZoomMenuItem.Text = "Default";
-			this.defaultMouseWheelZoomMenuItem.Click += new System.EventHandler(this.defaultMouseWheelZoomMenuItem_Click);
-			// 
-			// reverseMouseWheelZoomMenuItem
-			// 
-			this.reverseMouseWheelZoomMenuItem.Name = "reverseMouseWheelZoomMenuItem";
-			this.reverseMouseWheelZoomMenuItem.Size = new System.Drawing.Size(180, 22);
-			this.reverseMouseWheelZoomMenuItem.Text = "Reverse";
-			this.reverseMouseWheelZoomMenuItem.Click += new System.EventHandler(this.reverseMouseWheelZoomMenuItem_Click);
-			// 
-			// disableMouseWheelZoomMenuItem
-			// 
-			this.disableMouseWheelZoomMenuItem.Name = "disableMouseWheelZoomMenuItem";
-			this.disableMouseWheelZoomMenuItem.Size = new System.Drawing.Size(180, 22);
-			this.disableMouseWheelZoomMenuItem.Text = "Disablded";
-			this.disableMouseWheelZoomMenuItem.Click += new System.EventHandler(this.disableMouseWheelZoomMenuItem_Click);
 			// 
 			// MainForm
 			// 

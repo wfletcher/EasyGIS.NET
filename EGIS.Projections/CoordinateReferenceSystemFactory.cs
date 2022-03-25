@@ -117,6 +117,18 @@ namespace EGIS.Projections
         public const int Wgs84PseudoMercatorEpsgCode = 3857;
 
 
+        /// <summary>
+        /// Confidence Threshold when identifying a CRS loaded from WKT. Default is 70, meaning two CRSs are equivalent but names are diferent.
+        /// </summary>
+        /// <remarks>
+        /// See proj.org proj_identify function for more detail
+        /// </remarks>
+        public int IdentificationConfidenceThreshold
+        {
+            get { return Proj6.CRS.IdentificationConfidenceThreshold; }
+            set {  Proj6.CRS.IdentificationConfidenceThreshold = value; }
+        }
+
 
         /// <summary>
         /// Utility function to return the WGS84 UTM EPSG code for a given lat/lon coordinate
