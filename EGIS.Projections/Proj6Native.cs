@@ -37,9 +37,9 @@ namespace EGIS.Projections
         internal static object _sync = new object();
 
         //const string ProjDllName = "proj_5_2.dll";
-        const string ProjDllName = "proj_6_1.dll";
+        //const string ProjDllName = "proj_6_1.dll";
 
-        //const string ProjDllName = "proj_8_1.dll";
+       const string ProjDllName = "proj_9_0.dll";
 
 
         #region dynamically load native x86/x64 dll
@@ -266,7 +266,7 @@ namespace EGIS.Projections
 
         public static unsafe string GetAuthName(IntPtr PJobj)
         {
-            byte* name = proj_get_id_auth_name(PJobj, 0);
+            byte* name = proj_get_id_auth_name(PJobj, 0);            
             if (name == null) return null;
             return new string((sbyte*)name);
         }
@@ -562,6 +562,9 @@ namespace EGIS.Projections
         internal static unsafe extern void proj_int_list_destroy(int* list);
 
 
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static unsafe extern IntPtr proj_get_source_crs(IntPtr ctx, IntPtr pjObj);
+        
 
     }
 }

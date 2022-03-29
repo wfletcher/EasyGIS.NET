@@ -170,6 +170,7 @@ namespace EGIS.Projections
 						if (p != IntPtr.Zero && identify)
                         {
                             string name = Proj6Native.GetAuthName(p);
+                           // if (string.IsNullOrEmpty(name)) name = "EPSG";
                             int confidence = 0;
                             IntPtr p2 = Proj6Native.Proj_identify(context, p, name, out confidence);
                             System.Diagnostics.Debug.WriteLine("confidence:" + confidence);
@@ -200,6 +201,23 @@ namespace EGIS.Projections
                             string name = Proj6Native.GetName(p);
                             string authName = Proj6Native.GetAuthName(p);
                             string id = Proj6Native.ProjGetIdCode(p);
+
+                            if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_BOUND_CRS && string.IsNullOrEmpty(id))
+                            {
+                                IntPtr srcCrs = Proj6Native.proj_get_source_crs(context, p);
+                                if (srcCrs != IntPtr.Zero)
+                                {
+                                    try
+                                    {
+                                        authName = Proj6Native.GetAuthName(srcCrs);
+                                        id = Proj6Native.ProjGetIdCode(srcCrs);
+                                    }
+                                    finally
+                                    {
+                                        Proj6Native.proj_destroy(srcCrs);
+                                    }
+                                }
+                            }
 
                             CRSBoundingBox areaOfUse = new CRSBoundingBox()
                             {
