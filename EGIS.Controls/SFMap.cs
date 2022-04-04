@@ -833,26 +833,40 @@ namespace EGIS.Controls
         {
             RectangleD r = ShapeFile.LLExtentToProjectedExtent(this.Extent, this.projectionType);
 
-            this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
-            Size cs = ClientSize;
-            //eliminate possible div by zero
-            if (cs.Width <= 0 || cs.Height <= 0) cs = new System.Drawing.Size(100, 100);
-            double r1 = cs.Width * r.Height;
-            double r2 = cs.Height * r.Width;
-
-            if (r1 < r2)
+            if (r.Width <= double.Epsilon && r.Height <= double.Epsilon)
             {
-                this._zoomLevel = cs.Width / r.Width;
+                //zoom to a point
+                if (!(double.IsNaN(r.X) || double.IsNaN(r.Y)) && !(double.IsInfinity(r.X) || double.IsInfinity(r.Y)))
+                {
+                    this._centrePoint = r.Location;
+                }
+                refreshMode = RefreshMode.AllLayers;
+                Refresh();
             }
             else
             {
-                this._zoomLevel = cs.Height / r.Height;
+                this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
+
+                Size cs = ClientSize;
+                //eliminate possible div by zero
+                if (cs.Width <= 0 || cs.Height <= 0) cs = new System.Drawing.Size(100, 100);
+                double r1 = cs.Width * r.Height;
+                double r2 = cs.Height * r.Width;
+
+                if (r1 < r2)
+                {
+                    this._zoomLevel = cs.Width / r.Width;
+                }
+                else
+                {
+                    this._zoomLevel = cs.Height / r.Height;
+                }
+
+                // dirtyScreenBuf = true;
+                refreshMode = RefreshMode.AllLayers;
+                Refresh();
+                OnZoomLevelChanged();
             }
-            
-            // dirtyScreenBuf = true;
-            refreshMode = RefreshMode.AllLayers;
-            Refresh();
-            OnZoomLevelChanged();
         }
 
         /// <summary>
@@ -861,36 +875,50 @@ namespace EGIS.Controls
         /// <param name="extent"></param>
         public void FitToExtent(RectangleD extent)
         {
-            if (extent.IsEmpty) return;
-
-            extent = RestrictExtentToCRS(extent);
-
-            MouseOffsetPoint = Point.Empty;
-            RectangleD r = ShapeFile.LLExtentToProjectedExtent(extent, this.projectionType);
-            this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
-
-            if (this.mapCoordinateReferenceSystem is IProjectedCRS && (r.Width < 0.0001 || r.Height < 0.0001)) return;
-            Size cs = ClientSize;
-            //eliminate possible div by zero
-            if (cs.Width <= 0 || cs.Height <= 0) cs = new System.Drawing.Size(100, 100);
-            double r1 = cs.Width * r.Height;
-            double r2 = cs.Height * r.Width;
-
-            if (r1 < r2)
+            //check for empty extent;
+            if (extent.Width <= double.Epsilon && extent.Height <= double.Epsilon)
             {
-                this._zoomLevel = cs.Width / r.Width;
+                //zoom to a point
+                if (!(double.IsNaN(extent.X) || double.IsNaN(extent.Y)) && !(double.IsInfinity(extent.X) || double.IsInfinity(extent.Y)))
+                {
+                    this._centrePoint = extent.Location;
+                }
+                refreshMode = RefreshMode.AllLayers;
+                Refresh();
             }
             else
             {
-                this._zoomLevel = cs.Height / r.Height;
-            }
-            //Console.Out.WriteLine("r=" + r);
-            //Console.Out.WriteLine("_zoomLevel = " + _zoomLevel);
 
-            // dirtyScreenBuf = true;
-            refreshMode = RefreshMode.AllLayers;
-            Refresh();
-            OnZoomLevelChanged();
+
+                extent = RestrictExtentToCRS(extent);
+
+                MouseOffsetPoint = Point.Empty;
+                RectangleD r = ShapeFile.LLExtentToProjectedExtent(extent, this.projectionType);
+                this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
+
+                if (this.mapCoordinateReferenceSystem is IProjectedCRS && (r.Width < 0.0001 && r.Height < 0.0001)) return;
+                Size cs = ClientSize;
+                //eliminate possible div by zero
+                if (cs.Width <= 0 || cs.Height <= 0) cs = new System.Drawing.Size(100, 100);
+                double r1 = cs.Width * r.Height;
+                double r2 = cs.Height * r.Width;
+
+                if (r1 < r2)
+                {
+                    this._zoomLevel = cs.Width / r.Width;
+                }
+                else
+                {
+                    this._zoomLevel = cs.Height / r.Height;
+                }
+                //Console.Out.WriteLine("r=" + r);
+                //Console.Out.WriteLine("_zoomLevel = " + _zoomLevel);
+
+                // dirtyScreenBuf = true;
+                refreshMode = RefreshMode.AllLayers;
+                Refresh();
+                OnZoomLevelChanged();
+            }
         }
 
         /// <summary>

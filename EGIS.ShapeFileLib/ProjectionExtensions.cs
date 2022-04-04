@@ -45,8 +45,8 @@ namespace EGIS.ShapeFileLib
             const int nPoints = 1000;
             double t = Math.Pow(Math.Sqrt((double)nPoints) - 1, 2.0);
             double d = Math.Sqrt((rect.Width * rect.Height) / Math.Pow(Math.Sqrt((double)nPoints) - 1, 2.0));
-            int nXPoints = (int)Math.Min(Math.Ceiling(rect.Width / d) + 1, 1000);
-            int nYPoints = (int)Math.Min(Math.Ceiling(rect.Height / d) + 1, 1000);
+            int nXPoints = rect.Width < double.Epsilon ? 1 : (int)Math.Min(Math.Ceiling(rect.Width / d) + 1, 1000);
+            int nYPoints = rect.Height < double.Epsilon ? 1 : (int)Math.Min(Math.Ceiling(rect.Height / d) + 1, 1000);
 
             int totalPoints = (nXPoints * nYPoints);
 
