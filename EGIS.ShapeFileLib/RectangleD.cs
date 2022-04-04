@@ -223,9 +223,9 @@ namespace EGIS.ShapeFileLib
         {
             get
             {
-                if (this.Width > 0f)
+                if (this.Width > 0)
                 {
-                    return (this.Height <= 0f);
+                    return (this.Height <= 0);
                 }
                 return true;
             }
@@ -372,11 +372,14 @@ namespace EGIS.ShapeFileLib
         /// <filterpriority>1</filterpriority>
         public bool IntersectsWith(RectangleD rect)
         {
-            double w = this.Width + double.Epsilon;
-            double h = this.Height + double.Epsilon;
-            double rw = rect.Width + double.Epsilon;
-            double rh = rect.Height + double.Epsilon;
-            return ((((rect.X < (this.X + w)) && (this.X < (rect.X + rw))) && (rect.Y < (this.Y + h))) && (this.Y < (rect.Y + rh)));
+            double w = this.Width;// + double.Epsilon;
+            double h = this.Height;// + double.Epsilon;
+            double rw = rect.Width;// + double.Epsilon;
+            double rh = rect.Height;// + double.Epsilon;
+            //bool result =  ((((rect.X < (this.X + w)) && (this.X < (rect.X + rw))) && (rect.Y < (this.Y + h))) && (this.Y < (rect.Y + rh)));
+            //bool result = ((((rect.X <= (this.X + w)) && (this.X <= (rect.X + rw))) && (rect.Y <= (this.Y + h))) && (this.Y <= (rect.Y + rh)));
+            //return result;
+            return ((((rect.X <= (this.X + w)) && (this.X <= (rect.X + rw))) && (rect.Y <= (this.Y + h))) && (this.Y <= (rect.Y + rh)));
         }
 
         /// <summary>Creates the smallest possible third rectangle that can contain both of two rectangles that form a union.</summary>

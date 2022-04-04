@@ -877,7 +877,7 @@ namespace EGIS.ShapeFileLib
                     recHead.readFromIndexFile(data, numRecs << 3);
                     recordHeaders[numRecs++] = recHead;
                 }
-                data = null;
+                data = null;               
             }                
             return recordHeaders;
         }
