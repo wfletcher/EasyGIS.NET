@@ -168,99 +168,114 @@ namespace EGIS.Projections
 
         private void LoadData()
         {
-            DateTime tick = DateTime.Now;
-            var resourceName = "EGIS.Projections.SRID.csv.gz";
-            var assembly = Assembly.GetExecutingAssembly();
-            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-            using (GZipStream decompressionStream = new GZipStream(stream, CompressionMode.Decompress))
-            using (StreamReader reader = new StreamReader(decompressionStream))
-            {
-                LoadData(reader);
-            }
+            DateTime tick = DateTime.Now, tock;
+            
+            //var resourceName = "EGIS.Projections.SRID.csv.gz";
+            //var assembly = Assembly.GetExecutingAssembly();
+            //using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            //using (GZipStream decompressionStream = new GZipStream(stream, CompressionMode.Decompress))
+            //using (StreamReader reader = new StreamReader(decompressionStream))
+            //{
+            //    LoadData(reader);
+            //}
 
-            DateTime tock = DateTime.Now;
+            //tock = DateTime.Now;
+            //Console.Out.WriteLine("Loaded {0} Geographic Systems", GeographicCoordinateSystems.Count);
+            //Console.Out.WriteLine("Loaded {0} Projection Systems", ProjectedCoordinateSystems.Count);
+            //Console.Out.WriteLine("Total Systems: {0}", coordinateSystems.Count);
+            //Console.Out.WriteLine("load time:" + tock.Subtract(tick).TotalSeconds + "s");
+
+            tick = DateTime.Now;
+
+            LoadDataFromDatabase();
+            tock = DateTime.Now;
             Console.Out.WriteLine("Loaded {0} Geographic Systems", GeographicCoordinateSystems.Count);
             Console.Out.WriteLine("Loaded {0} Projection Systems", ProjectedCoordinateSystems.Count);
             Console.Out.WriteLine("Total Systems: {0}", coordinateSystems.Count);
             Console.Out.WriteLine("load time:" + tock.Subtract(tick).TotalSeconds + "s");
 
-            tick = DateTime.Now;
+
+            bool networkEnabled = Proj6Native.proj_context_is_network_enabled(IntPtr.Zero) != 0;
+
+            Console.Out.WriteLine("Proj9 network enabled:" + networkEnabled);
+
+
             //Use the following code to export to csv file
-            List<string> authorites = new List<string>(new string[] { "EPSG" });// Proj6Native.Proj_get_authorities_from_database(IntPtr.Zero);
-			using (System.IO.StreamWriter writer = new StreamWriter(@"c:\temp\EPSG.csv"))
-			{
-				foreach (string authority in authorites)
-				{
-					Console.Out.WriteLine(authority);
-					List<string> codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_2D_CRS, 1);
-					Console.Out.WriteLine("PJ_TYPE_GEOGRAPHIC_2D_CRS codes.Count: " + codes.Count);
+            //         List<string> authorites = new List<string>(new string[] { "EPSG" });// Proj6Native.Proj_get_authorities_from_database(IntPtr.Zero);
+            //using (System.IO.StreamWriter writer = new StreamWriter(@"c:\temp\EPSG.csv"))
+            //{
+            //	foreach (string authority in authorites)
+            //	{
+            //		Console.Out.WriteLine(authority);
+            //		List<string> codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_2D_CRS, 1);
+            //		Console.Out.WriteLine("PJ_TYPE_GEOGRAPHIC_2D_CRS codes.Count: " + codes.Count);
 
-					for (int n = 0; n < codes.Count; ++n)
-					{
-						string code = codes[n];
-						IntPtr p = Proj6Native.proj_create_from_database(IntPtr.Zero, authority, code, Proj6Native.PJ_CATEGORY.PJ_CATEGORY_CRS, 0, null);
-						if (p != IntPtr.Zero)
-						{
-							string wkt = Proj6Native.Proj_as_wkt(IntPtr.Zero, p, PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED, false);
+            //		for (int n = 0; n < codes.Count; ++n)
+            //		{
+            //			string code = codes[n];
+            //			IntPtr p = Proj6Native.proj_create_from_database(IntPtr.Zero, authority, code, Proj6Native.PJ_CATEGORY.PJ_CATEGORY_CRS, 0, null);
+            //			if (p != IntPtr.Zero)
+            //			{
+            //				string wkt = Proj6Native.Proj_as_wkt(IntPtr.Zero, p, PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED, false);
 
-							if (wkt != null)
-							{
-								writer.Write(code);
-								writer.Write(";");
-								writer.WriteLine(wkt);
-							}
-							Proj6Native.proj_destroy(p);
-						}
-					}
+            //				if (wkt != null)
+            //				{
+            //					writer.Write(code);
+            //					writer.Write(";");
+            //					writer.WriteLine(wkt);
+            //				}
+            //				Proj6Native.proj_destroy(p);
+            //			}
+            //		}
 
-					codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_PROJECTED_CRS, 1);
-					Console.Out.WriteLine("PJ_TYPE_PROJECTED_CRS codes.Count: " + codes.Count);
+            //		codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_PROJECTED_CRS, 1);
+            //		Console.Out.WriteLine("PJ_TYPE_PROJECTED_CRS codes.Count: " + codes.Count);
 
-					for (int n = 0; n < codes.Count; ++n)
-					{
-						string code = codes[n];
-						IntPtr p = Proj6Native.proj_create_from_database(IntPtr.Zero, authority, code, Proj6Native.PJ_CATEGORY.PJ_CATEGORY_CRS, 0, null);
-						if (p != IntPtr.Zero)
-						{
-							string wkt = Proj6Native.Proj_as_wkt(IntPtr.Zero, p, PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED, false);
+            //		for (int n = 0; n < codes.Count; ++n)
+            //		{
+            //			string code = codes[n];
+            //			IntPtr p = Proj6Native.proj_create_from_database(IntPtr.Zero, authority, code, Proj6Native.PJ_CATEGORY.PJ_CATEGORY_CRS, 0, null);
+            //			if (p != IntPtr.Zero)
+            //			{
+            //				string wkt = Proj6Native.Proj_as_wkt(IntPtr.Zero, p, PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED, false);
 
-							if (!string.IsNullOrEmpty(wkt))
-							{
-								writer.Write(code);
-								writer.Write(";");
-								writer.WriteLine(wkt);
-							}
-							Proj6Native.proj_destroy(p);
-						}
-					}
+            //				if (!string.IsNullOrEmpty(wkt))
+            //				{
+            //					writer.Write(code);
+            //					writer.Write(";");
+            //					writer.WriteLine(wkt);
+            //				}
+            //				Proj6Native.proj_destroy(p);
+            //			}
+            //		}
 
-					codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_CRS, 0);
-					Console.Out.WriteLine("PJ_TYPE_CRS no depracated codes.Count: " + codes.Count);
+            //		codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_CRS, 0);
+            //		Console.Out.WriteLine("PJ_TYPE_CRS no depracated codes.Count: " + codes.Count);
 
-					codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_2D_CRS, 1);
-					Console.Out.WriteLine("PJ_TYPE_GEOGRAPHIC_2D_CRS codes.Count: " + codes.Count);
-					codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_3D_CRS, 1);
-					Console.Out.WriteLine("PJ_TYPE_GEOGRAPHIC_3D_CRS codes.Count: " + codes.Count);
+            //		codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_2D_CRS, 1);
+            //		Console.Out.WriteLine("PJ_TYPE_GEOGRAPHIC_2D_CRS codes.Count: " + codes.Count);
+            //		codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_3D_CRS, 1);
+            //		Console.Out.WriteLine("PJ_TYPE_GEOGRAPHIC_3D_CRS codes.Count: " + codes.Count);
 
-					codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_PROJECTED_CRS, 1);
-					Console.Out.WriteLine("PJ_TYPE_PROJECTED_CRS codes.Count: " + codes.Count);
+            //		codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_PROJECTED_CRS, 1);
+            //		Console.Out.WriteLine("PJ_TYPE_PROJECTED_CRS codes.Count: " + codes.Count);
 
-					codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_BOUND_CRS, 1);
-					Console.Out.WriteLine("PJ_TYPE_BOUND_CRS codes.Count: " + codes.Count);
+            //		codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_BOUND_CRS, 1);
+            //		Console.Out.WriteLine("PJ_TYPE_BOUND_CRS codes.Count: " + codes.Count);
 
-					codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_COMPOUND_CRS, 1);
-					Console.Out.WriteLine("PJ_TYPE_COMPOUND_CRS codes.Count: " + codes.Count);
-
-
+            //		codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_COMPOUND_CRS, 1);
+            //		Console.Out.WriteLine("PJ_TYPE_COMPOUND_CRS codes.Count: " + codes.Count);
 
 
-					Console.Out.WriteLine("-------");
-				}
-			}
-			Console.Out.WriteLine("authorites.Count: " + authorites.Count);
 
-            tock = DateTime.Now;
-            Console.Out.WriteLine("load time:" + tock.Subtract(tick).TotalSeconds + "s");
+
+            //		Console.Out.WriteLine("-------");
+            //	}
+            //}
+            //Console.Out.WriteLine("authorites.Count: " + authorites.Count);
+
+            //tock = DateTime.Now;
+            //Console.Out.WriteLine("load time:" + tock.Subtract(tick).TotalSeconds + "s");
 
         }
 
@@ -306,6 +321,211 @@ namespace EGIS.Projections
             }            
         }
 
+
+        private void LoadDataFromDatabase()
+        {
+            this.coordinateSystems.Clear();
+            this.projectedCoordinateSystems.Clear();
+            this.geographicCoordinateSystems.Clear();
+
+            int count = 0;
+
+            //Use the following code to export to csv file
+            List<string> authorites = new List<string>(new string[] { "EPSG" });// Proj6Native.Proj_get_authorities_from_database(IntPtr.Zero);
+            {
+                foreach (string authority in authorites)
+                {
+                    Console.Out.WriteLine(authority);
+                    List<string> codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_2D_CRS, 1);
+                    Console.Out.WriteLine("PJ_TYPE_GEOGRAPHIC_2D_CRS codes.Count: " + codes.Count);
+
+                    for (int n = 0; n < codes.Count; ++n)
+                    {
+                        string code = codes[n];
+                        LoadCRS(authority, code);                        
+                    }
+
+                    codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_PROJECTED_CRS, 1);
+                    Console.Out.WriteLine("PJ_TYPE_PROJECTED_CRS codes.Count: " + codes.Count);
+
+                    for (int n = 0; n < codes.Count; ++n)
+                    {
+                        string code = codes[n];
+                        LoadCRS(authority, code);
+                    }
+
+                    codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_CRS, 0);
+                    Console.Out.WriteLine("PJ_TYPE_CRS no depracated codes.Count: " + codes.Count);
+
+                    codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_2D_CRS, 1);
+                    Console.Out.WriteLine("PJ_TYPE_GEOGRAPHIC_2D_CRS codes.Count: " + codes.Count);
+                    codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_3D_CRS, 1);
+                    Console.Out.WriteLine("PJ_TYPE_GEOGRAPHIC_3D_CRS codes.Count: " + codes.Count);
+
+                    codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_PROJECTED_CRS, 1);
+                    Console.Out.WriteLine("PJ_TYPE_PROJECTED_CRS codes.Count: " + codes.Count);
+
+                    codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_BOUND_CRS, 1);
+                    Console.Out.WriteLine("PJ_TYPE_BOUND_CRS codes.Count: " + codes.Count);
+
+                    codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_COMPOUND_CRS, 1);
+                    Console.Out.WriteLine("PJ_TYPE_COMPOUND_CRS codes.Count: " + codes.Count);
+
+                    Console.Out.WriteLine("-------");
+                }
+            }
+            Console.Out.WriteLine("authorites.Count: " + authorites.Count);
+
+        }
+
+        private bool LoadCRS(string authority, string code)
+        {
+            IntPtr context = IntPtr.Zero;// Proj6Native.proj_context_create();
+            IntPtr p = Proj6Native.proj_create_from_database(IntPtr.Zero, authority, code, Proj6Native.PJ_CATEGORY.PJ_CATEGORY_CRS, 0, null);
+            if (p == IntPtr.Zero)
+            {
+                return false;
+            }
+            try
+            {
+                string wkt = Proj6Native.Proj_as_wkt(IntPtr.Zero, p, PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED, false);
+
+                if (wkt != null)
+                {
+                    ICRS crs = null;
+                   
+                    Proj6Native.PJ_TYPE pType = Proj6Native.proj_get_type(p);
+                    string name = Proj6Native.GetName(p);
+                    string authName = authority;// Proj6Native.GetAuthName(p);
+                    string id = Proj6Native.ProjGetIdCode(p);
+
+                    //this seems to be only needed if the crs was loaded from wkt
+                    if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_BOUND_CRS && string.IsNullOrEmpty(id))
+                    {
+                        IntPtr srcCrs = Proj6Native.proj_get_source_crs(context, p);
+                        if (srcCrs != IntPtr.Zero)
+                        {
+                            try
+                            {
+                                authName = Proj6Native.GetAuthName(srcCrs);
+                                id = Proj6Native.ProjGetIdCode(srcCrs);
+                            }
+                            finally
+                            {
+                                Proj6Native.proj_destroy(srcCrs);
+                            }
+                        }
+                    }
+
+                    CRSBoundingBox areaOfUse = new CRSBoundingBox()
+                    {
+                        WestLongitudeDegrees = -1000,
+                        NorthLatitudeDegrees = -1000,
+                        EastLongitudeDegrees = -1000,
+                        SouthLatitudeDegrees = -1000
+                    };
+
+                    Proj6Native.proj_get_area_of_use(context, p,
+                        ref areaOfUse.WestLongitudeDegrees,
+                        ref areaOfUse.SouthLatitudeDegrees,
+                        ref areaOfUse.EastLongitudeDegrees,
+                        ref areaOfUse.NorthLatitudeDegrees,
+                        IntPtr.Zero);
+
+                    if (!id.Equals(code))
+                    {
+                        Console.Out.WriteLine("id = " + id + ", code=" + code);
+                    }
+
+                    if (!authName.Equals(authority))
+                    {
+                        Console.Out.WriteLine("authName = " + authName + ", authority=" + authority);
+                    }
+
+                    if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_2D_CRS)
+                    {
+                        crs =  new Proj6.GeographicCRS()
+                        {
+                            Id = id,
+                            Name = name,
+                            Authority = authName,
+                            WKT = wkt,
+                            AreaOfUse = areaOfUse
+                        };
+                    }
+                    else if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_PROJECTED_CRS)
+                    {
+                        crs =  new Proj6.ProjectedCRS()
+                        {
+                            Id = id,
+                            Name = name,
+                            Authority = authName,
+                            WKT = wkt,
+                            UnitsToMeters = 1,
+                            AreaOfUse = areaOfUse
+                        };
+                    }
+                    else if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_BOUND_CRS)
+                    {
+                        if (wkt.IndexOf("PROJECTION", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            crs =  new Proj6.ProjectedCRS()
+                            {
+                                Id = id,
+                                Name = name,
+                                Authority = authName,
+                                WKT = wkt,
+                                UnitsToMeters = 1,
+                                AreaOfUse = areaOfUse
+                            };
+                        }
+                        else
+                        {
+                            crs =  new Proj6.GeographicCRS()
+                            {
+                                Id = id,
+                                Name = name,
+                                Authority = authName,
+                                WKT = wkt,
+                                AreaOfUse = areaOfUse
+                            };
+                        }
+                    }
+                    else
+                    {
+                        //Console.Out.WriteLine("pType = " + pType);
+                    }
+
+                    if (crs == null) return false; 
+
+                    if (string.IsNullOrEmpty(crs.Id))
+                    {
+                        ((Proj6.CRS)crs).Id = code;
+                    }
+
+                    coordinateSystems.Add(int.Parse(id, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture), wkt);
+                    if (crs as IGeographicCRS != null)
+                    {
+                        geographicCoordinateSystems.Add(crs as IGeographicCRS);
+                    }
+                    else if (crs as IProjectedCRS != null)
+                    {
+                        projectedCoordinateSystems.Add(crs as IProjectedCRS);
+                    }
+                   
+                }
+            }
+			catch (Exception ex)
+			{
+				System.Diagnostics.Debug.WriteLine("Error loading CRS from database " + ex);
+				return false;
+			}
+			finally
+            {
+                Proj6Native.proj_destroy(p);
+            }
+            return true;                        
+        }
 
         private IEnumerable<WKTString> GetSRIDs(System.IO.StreamReader sr)
         {            

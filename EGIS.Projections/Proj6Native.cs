@@ -86,6 +86,8 @@ namespace EGIS.Projections
 
             Console.Out.WriteLine("proj6 startupPath:" + startupPath);
 
+            Console.Out.WriteLine("proj dll is:" + ProjDllName);
+
             var dllPath = string.Format(@"proj6/{0}/{1}", (Environment.Is64BitProcess ? "x64" : "x86"), "sqlite3.dll");
             LoadLibrary(System.IO.Path.Combine(startupPath, dllPath));
 
@@ -564,7 +566,10 @@ namespace EGIS.Projections
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
         internal static unsafe extern IntPtr proj_get_source_crs(IntPtr ctx, IntPtr pjObj);
-        
+
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern int proj_context_is_network_enabled(IntPtr ctx);
 
     }
 }

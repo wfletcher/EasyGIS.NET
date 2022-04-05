@@ -60,22 +60,19 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="SRID.csv.gz" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="egis.snk" />
     <Content Include="Proj6\proj.db">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Proj6\x64\proj_6_1.dll">
+    <Content Include="Proj6\x64\proj_9_0.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Proj6\x64\sqlite3.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Proj6\x86\proj_6_1.dll">
+    <Content Include="Proj6\x86\proj_9_0.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Proj6\x86\sqlite3.dll">
