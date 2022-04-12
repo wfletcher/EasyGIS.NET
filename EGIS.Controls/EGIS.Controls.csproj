@@ -1,181 +1,48 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.50727</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{EB97525D-0906-4A14-A995-93667B565521}</ProjectGuid>
+    <!--<TargetFramework>net6.0-windows</TargetFramework>-->
+    <TargetFrameworks>net47;net6.0-windows</TargetFrameworks>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EGIS.Controls</RootNamespace>
-    <AssemblyName>EGIS.Controls</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>egis.snk</AssemblyOriginatorKeyFile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <OldToolsVersion>2.0</OldToolsVersion>
-    <UpgradeBackupLocation />
-    <TargetFrameworkProfile />
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+    <Version>4.8.1</Version>
+    <Authors>Winston Fletcher</Authors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Debug\EGIS.Controls.XML</DocumentationFile>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
-    <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x64\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\x64\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x86\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\x86\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="CRSSelectionForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="CRSSelectionForm.Designer.cs">
-      <DependentUpon>CRSSelectionForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="CsvToShapeFileControl.cs">
+    <Compile Update="CsvToShapeFileControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="CsvToShapeFileControl.Designer.cs">
-      <DependentUpon>CsvToShapeFileControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="CRSSelectionControl.cs">
+    <Compile Update="CRSSelectionControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="CRSSelectionControl.Designer.cs">
-      <DependentUpon>CRSSelectionControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>Settings.settings</DependentUpon>
-    </Compile>
-    <Compile Include="SFMap.cs">
+    <Compile Update="SFMap.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="SFMap.Designer.cs">
-      <DependentUpon>SFMap.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ShapeFileListControl.cs">
+    <Compile Update="ShapeFileListControl.cs">
       <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="ShapeFileListControl.Designer.cs">
-      <DependentUpon>ShapeFileListControl.cs</DependentUpon>
     </Compile>
     <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="CRSSelectionForm.resx">
-      <DependentUpon>CRSSelectionForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="CsvToShapeFileControl.resx">
-      <DependentUpon>CsvToShapeFileControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="CRSSelectionControl.resx">
-      <DependentUpon>CRSSelectionControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <SubType>Designer</SubType>
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SFMap.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>SFMap.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ShapeFileListControl.resx">
-      <SubType>Designer</SubType>
-      <DependentUpon>ShapeFileListControl.cs</DependentUpon>
-    </EmbeddedResource>
+    <ProjectReference Include="..\EGIS.Projections\EGIS.Projections.csproj" />
+    <ProjectReference Include="..\egis.ShapeFileLib\EGIS.ShapeFileLib.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\EGIS.Projections\EGIS.Projections.csproj">
-      <Project>{9b3d02d0-d57d-4e7d-a04c-9ddcb36f0ce7}</Project>
-      <Name>EGIS.Projections</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\egis.ShapeFileLib\EGIS.ShapeFileLib.csproj">
-      <Project>{C89DEB9B-4DCA-4792-B216-F00808606AF7}</Project>
-      <Name>EGIS.ShapeFileLib</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
-    <None Include="egis.snk" />
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

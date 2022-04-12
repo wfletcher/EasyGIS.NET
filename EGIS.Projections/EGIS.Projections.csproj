@@ -1,90 +1,81 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{9B3D02D0-D57D-4E7D-A04C-9DDCB36F0CE7}</ProjectGuid>
+    <!--<TargetFramework>netstandard2.0</TargetFramework>-->
+    <TargetFrameworks>net47;net6.0-windows</TargetFrameworks>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EGIS.Projections</RootNamespace>
-    <AssemblyName>EGIS.Projections</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Prefer32Bit>false</Prefer32Bit>
     <DocumentationFile>bin\Debug\EGIS.Projections.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>egis.snk</AssemblyOriginatorKeyFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net6.0-windows|AnyCPU'">
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net6.0-windows|AnyCPU'">
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.IO.Compression" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="CoordinateReferenceSystemFactory.cs" />
-    <Compile Include="CRS.cs" />
-    <Compile Include="Proj6.cs" />
-    <Compile Include="Proj6Native.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="egis.snk" />
-    <Content Include="Proj6\proj.db">
+
+    <!--<None Include="path\filename.ext">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <PackageFlatten>true</PackageFlatten>
+      <PackagePath>contentFiles\any\asset;content\any\asset</PackagePath>
+    </None>-->
+    
+    <Content Include="Proj\proj.db">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackagePath>contentFiles\any\any\Proj</PackagePath>
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Proj6\x64\proj_9_0.dll">
+    <Content Include="Proj\x64\proj_9_0.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <PackagePath>contentFiles\any\any\Proj\x64</PackagePath>
     </Content>
-    <Content Include="Proj6\x64\sqlite3.dll">
+    <Content Include="Proj\x64\sqlite3.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <PackagePath>contentFiles\any\any\Proj\x64</PackagePath>
     </Content>
-    <Content Include="Proj6\x86\proj_9_0.dll">
+    <Content Include="Proj\x86\proj_9_0.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <PackagePath>contentFiles\any\any\Proj\x86</PackagePath>
     </Content>
-    <Content Include="Proj6\x86\sqlite3.dll">
+    <Content Include="Proj\x86\sqlite3.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <PackagePath>contentFiles\any\any\Proj\x86</PackagePath>
     </Content>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+  </ItemGroup>
+ 
+  <ItemGroup>    
+    <None Include="build\net47\**" Pack="true" PackagePath="\build\net47" />    
+  </ItemGroup>
+  
+  <PropertyGroup>
+    <PackageId>$(AssemblyTitle)</PackageId>
+    <Version>4.8.1</Version>
+    <Authors>Winston Fletcher</Authors>
+    <Company>$(Company)</Company>
+    <Description>Easy GIS .NET Projections Class Library</Description>
+  </PropertyGroup>
+
 </Project>
