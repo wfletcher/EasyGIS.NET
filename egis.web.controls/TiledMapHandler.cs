@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Web;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -363,7 +362,7 @@ namespace EGIS.Web.Controls
             {
                 lock (EGIS.ShapeFileLib.ShapeFile.Sync)
                 {
-                    tooltipText = LocateShape(centerPoint, layers, zoomLevel, null, ref layerIndex, ref recordIndex);                    
+                    tooltipText = LocateShape(centerPoint, layers, zoomLevel, ref layerIndex, ref recordIndex);                    
                 }
             }
 
@@ -398,7 +397,7 @@ namespace EGIS.Web.Controls
             
         }
 
-        private static string LocateShape(PointD pt, List<EGIS.ShapeFileLib.ShapeFile> layers, int zoomLevel, List<SessionCustomRenderSettingsEntry> customRenderSettingsList, ref int layerIndex, ref int recordIndex)
+        private static string LocateShape(PointD pt, List<EGIS.ShapeFileLib.ShapeFile> layers, int zoomLevel, ref int layerIndex, ref int recordIndex)
         {
             //changed V3.3 - coords now sent in lat/long
             //convert pt to lat long from merc
@@ -409,74 +408,42 @@ namespace EGIS.Web.Controls
 
             //pt is geodetic lat/lon coords
             var crsWgs84 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
-
-            //PointD ptf = new PointD(pt.X, pt.Y);
-            //save the existing ICustomRenderSettings and set the dynamicCustomRenderSettings
-            List<SessionCustomRenderSettingsEntry> defaultcustomRenderSettingsList = new List<SessionCustomRenderSettingsEntry>();
-            if (customRenderSettingsList != null)
+                       
+            for (int l = layers.Count - 1; l >= 0; l--)
             {
-                for (int n = 0; n < customRenderSettingsList.Count; n++)
+                RectangleD extent = layers[l].Extent;
+                extent.Inflate(delta, delta);
+                bool useToolTip = (layers[l].RenderSettings != null && layers[l].RenderSettings.UseToolTip);
+                bool useCustomToolTip = (useToolTip && layers[l].RenderSettings.CustomRenderSettings != null && layers[l].RenderSettings.CustomRenderSettings.UseCustomTooltips);
+                if ((extent.Contains(pt) || layers[l].ShapeType == ShapeType.Point
+                    || layers[l].ShapeType == ShapeType.PointM || layers[l].ShapeType == ShapeType.PointZ)
+                    && layers[l].IsVisibleAtZoomLevel((float)zoom) && useToolTip)
                 {
-                    int index = customRenderSettingsList[n].LayerIndex;
-                    if (index < layers.Count)
+                    int selectedIndex = layers[l].GetShapeIndexContainingPoint(pt, delta, crsWgs84);
+                    if (selectedIndex >= 0)
                     {
-                        defaultcustomRenderSettingsList.Add(new SessionCustomRenderSettingsEntry(layerIndex, layers[layerIndex].RenderSettings.CustomRenderSettings));
-                        layers[layerIndex].RenderSettings.CustomRenderSettings = customRenderSettingsList[n].CustomRenderSettings;
-                    }
-                }
-            }
-
-            try
-            {
-
-                for (int l = layers.Count - 1; l >= 0; l--)
-                {
-                    RectangleD extent = layers[l].Extent;
-                    extent.Inflate(delta, delta);
-                    bool useToolTip = (layers[l].RenderSettings != null && layers[l].RenderSettings.UseToolTip);
-                    bool useCustomToolTip = (useToolTip && layers[l].RenderSettings.CustomRenderSettings != null && layers[l].RenderSettings.CustomRenderSettings.UseCustomTooltips);
-                    if ((extent.Contains(pt) || layers[l].ShapeType == ShapeType.Point
-                        || layers[l].ShapeType == ShapeType.PointM || layers[l].ShapeType == ShapeType.PointZ)
-                        && layers[l].IsVisibleAtZoomLevel((float)zoom) && useToolTip)
-                    {
-                        int selectedIndex = layers[l].GetShapeIndexContainingPoint(pt, delta, crsWgs84);
-                        if (selectedIndex >= 0)
+                        layerIndex = l;
+                        recordIndex = selectedIndex;
+                        if (useCustomToolTip)
                         {
-                            layerIndex = l;
-                            recordIndex = selectedIndex;
-                            if (useCustomToolTip)
+                            return layers[l].RenderSettings.CustomRenderSettings.GetRecordToolTip(selectedIndex);
+                        }
+                        else
+                        {
+                            string s = "record : " + selectedIndex.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                            if (layers[l].RenderSettings.ToolTipFieldIndex >= 0)
                             {
-                                return layers[l].RenderSettings.CustomRenderSettings.GetRecordToolTip(selectedIndex);
-                            }
-                            else
-                            {
-
-                                string s = "record : " + selectedIndex.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                                if (layers[l].RenderSettings.ToolTipFieldIndex >= 0)
+                                string temp = layers[l].RenderSettings.DbfReader.GetField(selectedIndex, layers[l].RenderSettings.ToolTipFieldIndex).Trim();
+                                if (temp.Length > 0)
                                 {
-                                    string temp = layers[l].RenderSettings.DbfReader.GetField(selectedIndex, layers[l].RenderSettings.ToolTipFieldIndex).Trim();
-                                    if (temp.Length > 0)
-                                    {
-                                        s += "<br/>" + temp;
-                                    }
+                                    s += "<br/>" + temp;
                                 }
-                                return s;
                             }
+                            return s;
                         }
                     }
                 }
-            }
-            finally
-            {
-                //restore any existing ICustomRenderSettings
-                if (customRenderSettingsList != null)
-                {
-                    for (int n = 0; n < defaultcustomRenderSettingsList.Count; n++)
-                    {
-                        layers[defaultcustomRenderSettingsList[n].LayerIndex].RenderSettings.CustomRenderSettings = defaultcustomRenderSettingsList[n].CustomRenderSettings;
-                    }
-                }
-            }
+            }            
             return null;
         }
 

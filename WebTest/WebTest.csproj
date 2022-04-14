@@ -12,7 +12,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>WebTest</RootNamespace>
     <AssemblyName>WebTest</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>4.0</OldToolsVersion>
@@ -64,11 +64,8 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="demos\Demo1.aspx" />
     <Content Include="demos\GoogleGeoJSON.htm" />
     <Content Include="demos\mappin.png" />
-    <Content Include="demos\SimpleMapMarker.aspx" />
-    <Content Include="demos\TileDemo3.aspx" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>
@@ -80,20 +77,6 @@
     </Compile>
     <Compile Include="Default.aspx.designer.cs">
       <DependentUpon>Default.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\Demo1.aspx.cs">
-      <SubType>ASPXCodeBehind</SubType>
-      <DependentUpon>Demo1.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\Demo1.aspx.designer.cs">
-      <DependentUpon>Demo1.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\Demo3.aspx.cs">
-      <SubType>ASPXCodeBehind</SubType>
-      <DependentUpon>Demo3.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\Demo3.aspx.designer.cs">
-      <DependentUpon>Demo3.aspx</DependentUpon>
     </Compile>
     <Compile Include="demos\EGPExampleMapHandler.ashx.cs">
       <DependentUpon>EGPExampleMapHandler.ashx</DependentUpon>
@@ -107,34 +90,6 @@
     <Compile Include="demos\GeoJsonHandler.ashx.cs">
       <DependentUpon>GeoJsonHandler.ashx</DependentUpon>
     </Compile>
-    <Compile Include="demos\SimpleMapMarker.aspx.cs">
-      <DependentUpon>SimpleMapMarker.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="demos\SimpleMapMarker.aspx.designer.cs">
-      <DependentUpon>SimpleMapMarker.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\TileDemo1.aspx.cs">
-      <SubType>ASPXCodeBehind</SubType>
-      <DependentUpon>TileDemo1.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\TileDemo1.aspx.designer.cs">
-      <DependentUpon>TileDemo1.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\TileDemo2.aspx.cs">
-      <SubType>ASPXCodeBehind</SubType>
-      <DependentUpon>TileDemo2.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\TileDemo2.aspx.designer.cs">
-      <DependentUpon>TileDemo2.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="demos\TileDemo3.aspx.cs">
-      <DependentUpon>TileDemo3.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="demos\TileDemo3.aspx.designer.cs">
-      <DependentUpon>TileDemo3.aspx</DependentUpon>
-    </Compile>
     <Compile Include="demos\TileDemo3Handler.ashx.cs">
       <DependentUpon>TileDemo3Handler.ashx</DependentUpon>
     </Compile>
@@ -146,8 +101,6 @@
   <ItemGroup>
     <Content Include="Default.aspx" />
     <Content Include="demos\BingMapsTest.html" />
-    <Content Include="demos\Demo3.aspx" />
-    <Content Include="demos\TileDemo1.aspx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="demos\demo2.egp" />
@@ -362,7 +315,6 @@
     <Content Include="demos\ExampleMapHandler.ashx" />
     <Content Include="demos\EGPExampleMapHandler.ashx" />
     <Content Include="demos\GoogleMapsTest.html" />
-    <Content Include="demos\TileDemo2.aspx" />
     <Content Include="demos\EGPMapTileHandler.ashx" />
     <Content Include="demos\TileDemo3Handler.ashx" />
     <Content Include="demos\GeoJsonHandler.ashx" />

@@ -12,7 +12,7 @@
     <AssemblyName>EGIS.Web.Controls</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>egis.snk</AssemblyOriginatorKeyFile>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>2.0</OldToolsVersion>
@@ -71,51 +71,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GeoJson.cs" />
-    <Compile Include="ISFMap.cs" />
-    <Compile Include="MapPanControl.cs" />
+    <Compile Include="SFMap.cs" />
     <Compile Include="SpatialDataSource.cs" />
     <Compile Include="VectorTileGenerator.cs" />
     <Compile Include="VectorTileHandler.cs" />
     <Compile Include="QuantileCustomRenderSettings.cs" />
-    <Compile Include="SFMap.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SFMapControlTypeConverter.cs" />
     <Compile Include="TiledMapHandler.cs" />
-    <Compile Include="TiledSFMap.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="zoomout.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="pand.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="panl.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="panr.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="panu.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="zoomin.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="egis_script.js" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="ajax-loader4.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="globe.gif" />
-    <EmbeddedResource Include="egis_script2.js" />
-    <EmbeddedResource Include="ajax-loader2.gif" />
-    <EmbeddedResource Include="globesfm.png" />
-    <EmbeddedResource Include="globetsfm.gif" />
-    <Content Include="grab_cursor.cur" />
-    <Content Include="grab_cursor.gif" />
-    <EmbeddedResource Include="tooltip.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\egis.mapbox.vector.tile\EGIS.Mapbox.Vector.Tile.csproj">

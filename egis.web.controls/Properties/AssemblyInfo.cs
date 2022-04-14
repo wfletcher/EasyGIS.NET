@@ -31,27 +31,6 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("4.7.3.0")]
-[assembly: AssemblyFileVersion("4.7.3.1")]
-
-
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.panu.gif", "img/gif")]
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.panl.gif", "img/gif")]
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.panr.gif", "img/gif")]
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.pand.gif", "img/gif")]
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.zoomin.gif", "img/gif")]
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.zoomout.gif", "img/gif")]
-//[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.ajax-loader2.gif", "img/gif")]
-//[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.ajax-loader3.gif", "img/gif")]
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.egis_script.js", "text/javascript")]
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.ajax-loader4.gif", "img/gif")]
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.ajax-loader2.gif", "img/gif")]
-//[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.ajax-loader5.gif", "img/gif")]
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.tooltip.png", "img/png")]
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.egis_script2.js", "text/javascript")]
-//[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.yahoo-min.js", "text/javascript")]
-//[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.event-min.js", "text/javascript")]
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.globe.gif", "img/gif")]
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.globesfm.png", "image/png")]
-[assembly: System.Web.UI.WebResource("EGIS.Web.Controls.globetsfm.gif", "img/gif")]
+[assembly: AssemblyVersion("4.8.0.0")]
+[assembly: AssemblyFileVersion("4.8.0.0")]
 
