@@ -9,15 +9,20 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
-    <Version>4.8.1</Version>
+    <Version>4.8.0</Version>
     <Authors>Winston Fletcher</Authors>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Description>Easy GIS .NET Desktop Map Controls</Description>
+    <PackageTags>C# GIS Map Control; Easy GIS .NET; C# GIS library</PackageTags>
+    <RepositoryUrl>https://github.com/wfletcher/EasyGIS.NET</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://www.easygisdotnet.com/</PackageProjectUrl>
+    <Copyright>Copyright © 2008-2022 Winston Fletcher</Copyright>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DocumentationFile>bin\Debug\EGIS.Controls.XML</DocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DocumentationFile>bin\Release\EGIS.Controls.XML</DocumentationFile>
-  </PropertyGroup>
+  </PropertyGroup>  
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <OutputPath>bin\x64\Debug\</OutputPath>
   </PropertyGroup>

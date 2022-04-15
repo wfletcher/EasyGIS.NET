@@ -10,9 +10,14 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>4.8.1</Version>
+    <Version>4.8.0</Version>
     <Authors>Winston Fletcher</Authors>
-    <Description>EasyGIS.NET ShapeFileLib</Description>
+    <Description>Official version of EasyGIS.NET ShapeFileLib</Description>
+    <RepositoryUrl>https://github.com/wfletcher/EasyGIS.NET</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://www.easygisdotnet.com</PackageProjectUrl>
+    <Copyright>Copyright © 2008-2022 Winston Fletcher</Copyright>
+    <PackageTags>C# shapefile library; Easy GIS .NET; C# GIS library</PackageTags>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

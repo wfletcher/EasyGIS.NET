@@ -15,6 +15,45 @@ namespace EGIS.Web.Controls
     public abstract class TiledMapHandler : IHttpHandler
     {
 
+        #region .net core middleware
+
+            //below code needed if migrating this handler to .net core
+
+            // ASP.NET Core middleware migrated from a handler
+            // Must have constructor with this signature, otherwise exception at run time
+            //public TiledMapHandler(RequestDelegate next)
+            //{
+            //    // This is an HTTP Handler, so no need to store next
+            //}
+
+            //public async Task Invoke(HttpContext context)
+            //{
+            //    OnBeginRequest(context);
+            //    try
+            //    {
+            //        ProcessRequestCore(context);
+            //    }
+            //    finally
+            //    {
+            //        OnEndRequest(context);
+            //    }
+            //}
+
+           
+
+        //public static class MyHandlerExtensions
+        //{
+        //    public static IApplicationBuilder UseMyHandler(this IApplicationBuilder builder)
+        //    {
+        //        return builder.UseMiddleware<MyHandlerMiddleware>();
+        //    }
+        //}
+    
+
+
+        #endregion
+
+
         #region IHttpHandler Members
 
         public virtual bool IsReusable
@@ -504,7 +543,9 @@ namespace EGIS.Web.Controls
                 lock (EGIS.ShapeFileLib.ShapeFile.Sync)
                 {
                     List<KeyValuePair<string,string>> attributes= GetRecordAttributes(context, layers[layerIndex], recordIndex);
-                    json = (new System.Web.Script.Serialization.JavaScriptSerializer()).Serialize(attributes);                    
+                    //json = (new System.Web.Script.Serialization.JavaScriptSerializer()).Serialize(attributes);
+                    json = Newtonsoft.Json.JsonConvert.SerializeObject(attributes);//, new DoubleFormatConverter(4));
+
                 }
                 context.Response.Write(json);
             }

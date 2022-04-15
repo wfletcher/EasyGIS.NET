@@ -8,16 +8,20 @@
     <AssemblyOriginatorKeyFile>egis.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
     <Version>1.2.0</Version>
-    <Authors>Winston Fletcher</Authors>
+    <Authors>Winston Fletcher, Bert Temme (original mapbox-vector-tile-cs author)</Authors>
     <Company></Company>
     <AssemblyVersion>1.2.0.0</AssemblyVersion>
     <FileVersion>1.2.0.0</FileVersion>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Description>LGPL-3.0-or-later</Description>
-    <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Description>Easy GIS .NET C# library for encoding / decoding a Mapbox vector tile.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright></Copyright>
     <PackageProjectUrl>www.easygisdotnet.com</PackageProjectUrl>
     <PackageReleaseNotes>Initial nuget package</PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/wfletcher/EasyGIS.NET</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>egis; C# mapbox tile encoder; C# mapbox tile decoder</PackageTags>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
