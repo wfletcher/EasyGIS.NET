@@ -2058,11 +2058,22 @@ namespace EGIS.Controls
         }
 
         /// <summary>
-        /// override 
+        /// handle lost focus to reset CtrlKeyDown and ShiftKeyDown
         /// </summary>
-        /// <param name="keyData"></param>
-        /// <returns></returns>
-        protected override bool IsInputKey(Keys keyData)
+        /// <param name="e"></param>
+		protected override void OnLostFocus(EventArgs e)
+		{
+			base.OnLostFocus(e);
+            CtrlKeyDown = false;
+            ShiftKeyDown = false;
+        }
+
+		/// <summary>
+		/// override 
+		/// </summary>
+		/// <param name="keyData"></param>
+		/// <returns></returns>
+		protected override bool IsInputKey(Keys keyData)
         {
             switch (keyData)
             {
