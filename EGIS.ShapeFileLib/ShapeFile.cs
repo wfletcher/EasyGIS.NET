@@ -1239,6 +1239,13 @@ namespace EGIS.ShapeFileLib
             using (System.IO.StreamReader reader = new StreamReader(prjStream))
             {
                 this.ProjectionWKT = reader.ReadToEnd().Trim();
+
+                if (string.IsNullOrEmpty(this.ProjectionWKT))
+                {
+                    prjStream.Seek(0, SeekOrigin.Begin);
+                    this.ProjectionWKT = reader.ReadToEnd().Trim();
+                }
+
             }
         }
 
@@ -2039,13 +2046,50 @@ namespace EGIS.ShapeFileLib
 
 
         /// <summary>
-        /// gets index of closest record from a given point and search radius
+        /// Gets index of closest record from a given point and search radius
         /// </summary>
         /// <param name="centre">the coord of the point to search from</param>
         /// <param name="radius">search radius in the shapefile's coordinate units</param>
+        /// <param name="sourceCRS">The CRS of the given centre and radius. If centre and radius are not in the ShapeFiles CRS then they will be 
+        /// transformed from CRS to the ShapeFiles's CoordinateReferenceSystem This parameter is ignored if it is null and
+        /// centre and radius are assumed to be using the same CRS as the ShapeFile</param>
         /// <returns>index of closest record within the search radius or -1 if distance to closest record is &gt; radius </returns>
-        public int GetClosestShape(PointD centre, double radius)
+        /// <remarks>
+        /// <para>
+        /// For backward compatibility sourceCRS is null by default. This was the behaviour prior to version 4.8
+        /// </para>
+        /// <para>
+        /// If sourceCRS is not null or equivalent to the ShapeFile CoordinateReferenceSystem and this method is called often then the caller
+        /// may get better performance by caching a ICoordinateTransformation object to transform from sourceCRS to the ShapeFile CoordinateReferenceSystem
+        /// and transform centre and radius before calling this method.
+        /// </para>
+        /// </remarks>
+        public int GetClosestShape(PointD centre, double radius, ICRS sourceCRS=null)
         {
+
+            if (sourceCRS != null && this.CoordinateReferenceSystem != null &&
+                !this.CoordinateReferenceSystem.IsEquivalent(sourceCRS))
+            {
+                //transform pt to the shapefile's coordinates and calculate the equivalent radius                        
+                using (ICoordinateTransformation transformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sourceCRS, this.CoordinateReferenceSystem))
+                {
+                    unsafe
+                    {
+                        PointD ptY = new PointD(centre.X, centre.Y + radius);
+                        PointD ptX = new PointD(centre.X + radius, centre.Y);                        
+                        transformation.Transform((double*)&centre, 1);
+
+                        if (!double.IsInfinity(radius))
+                        {
+                            transformation.Transform((double*)&ptY, 1);
+                            transformation.Transform((double*)&ptX, 1);
+                            radius = Math.Max(Math.Sqrt((ptX.X - centre.X) * (ptX.X - centre.X) + (ptX.Y - centre.Y) * (ptX.Y - centre.Y)),
+                                                   Math.Sqrt((ptY.X - centre.X) * (ptY.X - centre.X) + (ptY.Y - centre.Y) * (ptY.Y - centre.Y)));
+                        }                        
+                    }
+                }
+            }
+
             return GetClosestShape(centre, radius, sfRecordCol);            
         }
 
@@ -2083,9 +2127,44 @@ namespace EGIS.ShapeFileLib
         /// <param name="centre">the coord of the point to search from</param>
         /// <param name="radius">search radius in the shapefile's coordinate units</param>
         /// <param name="polylineDistanceInfo">out parameter with closest record polyline information (useful for linear referencing). Only used for polyline and polylineM ShapeType</param>
+        /// <param name="sourceCRS">The CRS of the given centre and radius. If centre and radius are not in the ShapeFiles CRS then they will be 
+        /// transformed from CRS to the ShapeFiles's CoordinateReferenceSystem This parameter is ignored if it is null and
+        /// centre and radius are assumed to be using the same CRS as the ShapeFile</param>
         /// <returns>index of closest record within the search radius or -1 if distance to closest record is &gt; radius </returns>
-        public int GetClosestShape(PointD centre, double radius, out PolylineDistanceInfo polylineDistanceInfo)
+        /// <remarks>
+        /// <para>
+        /// For backward compatibility sourceCRS is null by default. This was the behaviour prior to version 4.8
+        /// </para>
+        /// <para>
+        /// <para>
+        /// If sourceCRS is not null or equivalent to the ShapeFile CoordinateReferenceSystem and this method is called often then the caller
+        /// may get better performance by caching a ICoordinateTransformation object to transform from sourceCRS to the ShapeFile CoordinateReferenceSystem
+        /// and transform centre and radius before calling this method.
+        /// </para>
+        /// </remarks>
+        public int GetClosestShape(PointD centre, double radius, out PolylineDistanceInfo polylineDistanceInfo, ICRS sourceCRS = null)
         {
+            if (sourceCRS != null && this.CoordinateReferenceSystem != null &&
+                !this.CoordinateReferenceSystem.IsEquivalent(sourceCRS))
+            {
+                //transform pt to the shapefile's coordinates and calculate the equivalent radius                        
+                using (ICoordinateTransformation transformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sourceCRS, this.CoordinateReferenceSystem))
+                {
+                    unsafe
+                    {
+                        PointD ptY = new PointD(centre.X, centre.Y + radius);
+                        PointD ptX = new PointD(centre.X + radius, centre.Y);
+                        transformation.Transform((double*)&centre, 1);
+                        if (!double.IsInfinity(radius))
+                        {
+                            transformation.Transform((double*)&ptY, 1);
+                            transformation.Transform((double*)&ptX, 1);
+                            radius = Math.Max(Math.Sqrt((ptX.X - centre.X) * (ptX.X - centre.X) + (ptX.Y - centre.Y) * (ptX.Y - centre.Y)),
+                                                   Math.Sqrt((ptY.X - centre.X) * (ptY.X - centre.X) + (ptY.Y - centre.Y) * (ptY.Y - centre.Y)));
+                        }
+                    }
+                }
+            }
             return GetClosestShape(centre, radius, sfRecordCol, out polylineDistanceInfo);
         }
 
@@ -2125,11 +2204,48 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         /// <param name="centre"></param>
         /// <param name="radius"></param>
-        /// <param name="recordIndicies">list of zero-based record indices</param>
+        /// <param name="recordIndices">list of zero-based record indices</param>
         /// <param name="polylineDistanceInfo"></param>
-        /// <returns></returns>
-        public int GetClosestShape(PointD centre, double radius, List<int> recordIndices, out PolylineDistanceInfo polylineDistanceInfo)
+        /// <param name="sourceCRS">The CRS of the given centre and radius. If centre and radius are not in the ShapeFiles CRS then they will be 
+        /// transformed from CRS to the ShapeFiles's CoordinateReferenceSystem This parameter is ignored if it is null and
+        /// centre and radius are assumed to be using the same CRS as the ShapeFile</param>
+        /// <returns>index of closest record within the search radius or -1 if distance to closest record is &gt; radius </returns>
+        /// <remarks>
+        /// <para>
+        /// For backward compatibility sourceCRS is null by default. This was the behaviour prior to version 4.8
+        /// </para>
+        /// <para>
+        /// <para>
+        /// If sourceCRS is not null or equivalent to the ShapeFile CoordinateReferenceSystem and this method is called often then the caller
+        /// may get better performance by caching a ICoordinateTransformation object to transform from sourceCRS to the ShapeFile CoordinateReferenceSystem
+        /// and transform centre and radius before calling this method.
+        /// </para>
+        /// </remarks>
+        public int GetClosestShape(PointD centre, double radius, List<int> recordIndices, out PolylineDistanceInfo polylineDistanceInfo, ICRS sourceCRS = null)
         {
+
+            if (sourceCRS != null && this.CoordinateReferenceSystem != null &&
+                !this.CoordinateReferenceSystem.IsEquivalent(sourceCRS))
+            {
+                //transform pt to the shapefile's coordinates and calculate the equivalent radius                        
+                using (ICoordinateTransformation transformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sourceCRS, this.CoordinateReferenceSystem))
+                {
+                    unsafe
+                    {
+                        PointD ptY = new PointD(centre.X, centre.Y + radius);
+                        PointD ptX = new PointD(centre.X + radius, centre.Y);
+                        transformation.Transform((double*)&centre, 1);
+                        if (!double.IsInfinity(radius))
+                        {
+                            transformation.Transform((double*)&ptY, 1);
+                            transformation.Transform((double*)&ptX, 1);
+                            radius = Math.Max(Math.Sqrt((ptX.X - centre.X) * (ptX.X - centre.X) + (ptX.Y - centre.Y) * (ptX.Y - centre.Y)),
+                                                   Math.Sqrt((ptY.X - centre.X) * (ptY.X - centre.X) + (ptY.Y - centre.Y) * (ptY.Y - centre.Y)));
+                        }
+                    }
+                }
+            }
+
             return GetClosestShape(centre, radius, sfRecordCol, recordIndices, out polylineDistanceInfo);
         }
 
