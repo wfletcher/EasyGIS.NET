@@ -619,6 +619,18 @@ namespace EGIS.Projections
 
             lock (_sync)
             {
+                if (UseCache && !(string.IsNullOrEmpty(source.Id) || string.IsNullOrEmpty(target.Id)))
+                {
+                    //check if already in cache
+                    string key = string.Format("{0} -> {1}", source.Id, target.Id);
+                    Proj6.CoordinateTransformation transform;
+                    if (!coordinateTransformationDictionary.TryGetValue(key, out transform))
+                    {
+                        transform = new Proj6.CoordinateTransformation(source, target);
+                        coordinateTransformationDictionary.Add(key, transform);
+                    }
+                    return transform.Clone();                    
+                }
                 return new Proj6.CoordinateTransformation(source, target);
             }
         }
@@ -647,9 +659,19 @@ namespace EGIS.Projections
             public int WKID;
             /// <summary>Well-known Text</summary>
             public string WKT;
-        }        
+        }
+
+
+        #region cache
+
+        private const bool UseCache = true;
+
+        Dictionary<string, Proj6.CoordinateTransformation> coordinateTransformationDictionary = new Dictionary<string, Proj6.CoordinateTransformation>();
+
+
+        #endregion
 
     }
 
-    
+
 }

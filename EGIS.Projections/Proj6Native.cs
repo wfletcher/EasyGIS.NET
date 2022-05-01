@@ -108,6 +108,9 @@ namespace EGIS.Projections
         public static extern IntPtr proj_destroy(IntPtr PJ);
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr proj_clone(IntPtr ctx, IntPtr obj);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr proj_create_crs_to_crs(IntPtr ctx, string source_crs, string target_crs, IntPtr area);
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
@@ -562,6 +565,7 @@ namespace EGIS.Projections
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int proj_context_is_network_enabled(IntPtr ctx);
+        
 
     }
 }

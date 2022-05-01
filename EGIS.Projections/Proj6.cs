@@ -367,9 +367,11 @@ namespace EGIS.Projections
 
         public class CoordinateTransformation : ICoordinateTransformation
         {
-            IntPtr pjNative = IntPtr.Zero;            
+            IntPtr pjNative = IntPtr.Zero;
 
-
+            internal CoordinateTransformation()
+            {
+            }
 
             public CoordinateTransformation(ICRS source, ICRS target)
             {
@@ -462,6 +464,22 @@ namespace EGIS.Projections
                     Proj6Native.proj_destroy(pjNative);
                 }
                 pjNative = IntPtr.Zero;
+            }
+
+            /// <summary>
+            /// Clones the CoordinateTransformation. 
+            /// </summary>
+            /// <returns></returns>
+            /// <remarks>
+            /// <para>This method returns a new CoordinateTransformation which, like the source CoordinateTransformation, must be Disposed.</para>
+            /// </remarks>
+            internal CoordinateTransformation Clone()
+            {
+                CoordinateTransformation copy = new CoordinateTransformation();
+                copy.SourceCRS = this.SourceCRS;
+                copy.TargetCRS = this.TargetCRS;
+                copy.pjNative = Proj6Native.proj_clone(IntPtr.Zero, this.pjNative);
+                return copy;
             }
         }
 
