@@ -2,14 +2,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!--<TargetFramework>net6.0-windows</TargetFramework>-->
-    <TargetFrameworks>net47;net6.0-windows</TargetFrameworks>
+    <TargetFrameworks>net472;net47;net6.0-windows</TargetFrameworks>    
     <OutputType>Library</OutputType>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>egis.snk</AssemblyOriginatorKeyFile>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
-    <Version>4.8.0</Version>
+    <Version>4.8.1</Version>
     <Authors>Winston Fletcher</Authors>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Description>Easy GIS .NET Desktop Map Controls</Description>
@@ -35,6 +35,9 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\x86\Release\</OutputPath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net47|AnyCPU'">
+    <DocumentationFile>bin\Release\EGIS.Controls.xml</DocumentationFile>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Update="CsvToShapeFileControl.cs">
       <SubType>UserControl</SubType>
@@ -54,4 +57,7 @@
     <ProjectReference Include="..\EGIS.Projections\EGIS.Projections.csproj" />
     <ProjectReference Include="..\egis.ShapeFileLib\EGIS.ShapeFileLib.csproj" />
   </ItemGroup>
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>  
 </Project>

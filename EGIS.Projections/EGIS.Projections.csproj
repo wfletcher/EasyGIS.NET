@@ -69,7 +69,7 @@
   
   <PropertyGroup>
     <PackageId>$(AssemblyTitle)</PackageId>
-    <Version>4.8.0</Version>
+    <Version>4.8.1</Version>
     <Authors>Winston Fletcher</Authors>
     <Company>$(Company)</Company>
     <Description>Easy GIS .NET GIS Projections Class Library.
