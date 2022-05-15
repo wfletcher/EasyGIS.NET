@@ -263,5 +263,15 @@ namespace EGIS.Controls
             }
 
         }
-    }
+
+		private void setMapCRSFromLayerCRSToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+            EGIS.ShapeFileLib.ShapeFile selectedLayer = layerContextMenu.Tag as EGIS.ShapeFileLib.ShapeFile;
+            if (selectedLayer != null)
+            {
+                _map.MapCoordinateReferenceSystem = selectedLayer.CoordinateReferenceSystem;
+            }
+
+        }
+	}
 }

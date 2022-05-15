@@ -70,7 +70,9 @@ namespace EGIS.Controls
 		}
 
 		private void Map_ZoomLevelChanged(object sender, EventArgs e)
-		{		
+		{
+			if (!LayerIsValid()) return;
+
 			//check zoom level is ok
 			double currentZoom = mapReference.ZoomLevel;
 			int zoomLevel = TileCollection.WebMercatorScaleToZoomLevel(currentZoom);
@@ -97,8 +99,17 @@ namespace EGIS.Controls
 			get { return _tileSource; }
 			set
 			{
-				_tileSource = value;
-				mapReference.Invalidate();
+				var previousTileSource = _tileSource;
+				if (value != previousTileSource)
+				{
+					_tileSource = value;
+					if (previousTileSource == null)
+					{
+						//if TileSource changed from null set the maps CRS to Wgs84PseudoMercator
+						mapReference.MapCoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode);
+					}
+					mapReference.InvalidateAndClearBackground();
+				}
 			}
 
 		}
@@ -112,21 +123,33 @@ namespace EGIS.Controls
 			set;
 		}
 
+		/// <summary>
+		/// checks if TileSource and map refererence in validd state
+		/// </summary>
+		/// <returns></returns>
+		private bool LayerIsValid()
+		{
+			return !(this.TileSource == null ||
+				this.mapReference.MapCoordinateReferenceSystem == null ||
+				!string.Equals(this.mapReference.MapCoordinateReferenceSystem.Id, EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+		}
+
 		private void Map_PaintMapBackground(object sender, System.Windows.Forms.PaintEventArgs e)
 		{
             try
             {
-                DrawMap(e.Graphics, Math.Max(0, Math.Min(Transparency, 1.0f)), this.TileSource, this.mapReference);
+				if (!LayerIsValid()) return;
+				DrawMap(e.Graphics, Math.Max(0, Math.Min(Transparency, 1.0f)), this.TileSource, this.mapReference);
             }
             catch
             {
             }
 		}
-
+		 
 
 		private void DrawMap(Graphics g, float transparency, TileSource tileSource, EGIS.Controls.SFMap map )
 		{
-			if (tileSource == null) return;
+			
 			TileCollection tiles = new TileCollection(map.ZoomLevel, map.CentrePoint2D, map.ClientSize.Width, map.ClientSize.Height, map, tileSource.Urls, tileSource.MaxZoomLevel);
 			if (this.tileCollection != null)
 			{

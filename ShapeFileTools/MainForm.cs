@@ -80,6 +80,8 @@ namespace egis
                 var crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
                 this.sfMap1.MapCoordinateReferenceSystem = crs;
                 this.tsLblMapCRS.Text = "" + crs;
+
+                ConfigureBaseMapLayers();
             }
             catch { }
         }
@@ -1972,6 +1974,49 @@ namespace egis
             disableMouseWheelZoomMenuItem.Checked = true;
         }
 
+        #region BaseMap Layers
+
+        private EGIS.Controls.BaseMapLayer baseMapLayer = null;
+        private void ConfigureBaseMapLayers()
+        {
+            baseMapLayer = new EGIS.Controls.BaseMapLayer(this.sfMap1, null);
+            cbBaseMapLayerDataSource.Items.Clear();
+            cbBaseMapLayerDataSource.Items.Add("None");
+            cbBaseMapLayerDataSource.Items.AddRange(EGIS.Controls.TileSource.DefaultTileSources());
+            cbBaseMapLayerDataSource.SelectedIndex = 0;
+        }
+
+        private EGIS.Controls.TileSource SelectedBaseMapLayerTileSource
+        {
+            get
+            {
+                return cbBaseMapLayerDataSource.SelectedItem as EGIS.Controls.TileSource;
+            }
+        }
+
+		private void cbBaseMapLayer_SelectedIndexChanged(object sender, EventArgs e)
+		{
+            if (baseMapLayer != null)
+            {
+                baseMapLayer.TileSource = SelectedBaseMapLayerTileSource;
+               // sfMap1.Refresh();
+            }
+
+
+        }
+
+		private void cbBaseMapLayerDataSource_SelectedIndexChanged(object sender, EventArgs e)
+		{
+            if (baseMapLayer != null)
+            {
+                baseMapLayer.TileSource = SelectedBaseMapLayerTileSource;
+                // sfMap1.Refresh();
+            }
+
+        }
+
+		#endregion
+
 
 
 		//private void TestMemoryStreams()
@@ -2052,5 +2097,5 @@ namespace egis
 		//    Console.Out.WriteLine("qgis {0} is equivalent:{1}", qgisCrs.Id, wgs84Crs.IsEquivalent(qgisCrs));
 		//}
 	}
-  
+
 }
