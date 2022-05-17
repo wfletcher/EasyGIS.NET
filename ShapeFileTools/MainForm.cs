@@ -160,7 +160,7 @@ namespace egis
         public void OpenShapeFile(string path)
         {
 			//set the CRS before adding the shapefile
-			if (setMapCRSFromFirstLayerToolStripMenuItem.Checked && sfMap1.ShapeFileCount == 0)
+			if (setMapCRSFromFirstLayerToolStripMenuItem.Checked && sfMap1.ShapeFileCount == 0 && this.SelectedBaseMapLayerTileSource == null)
 			{
 				try
 				{
