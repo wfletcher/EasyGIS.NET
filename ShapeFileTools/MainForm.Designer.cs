@@ -96,9 +96,10 @@ namespace egis
 			this.toolStripLabel3 = new System.Windows.Forms.ToolStripLabel();
 			this.tscbSearchLayers = new System.Windows.Forms.ToolStripComboBox();
 			this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-			this.helpToolStripButton = new System.Windows.Forms.ToolStripButton();
 			this.toolStripDropDownButton1 = new System.Windows.Forms.ToolStripDropDownButton();
 			this.cbBaseMapLayerDataSource = new System.Windows.Forms.ToolStripComboBox();
+			this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
+			this.helpToolStripButton = new System.Windows.Forms.ToolStripButton();
 			this.statusStrip1 = new System.Windows.Forms.StatusStrip();
 			this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
 			this.tsLabelCurrentZoom = new System.Windows.Forms.ToolStripStatusLabel();
@@ -108,7 +109,6 @@ namespace egis
 			this.tsLblMapCRS = new System.Windows.Forms.ToolStripStatusLabel();
 			this.tsLblSelectMessage = new System.Windows.Forms.ToolStripStatusLabel();
 			this.sfdMapImage = new System.Windows.Forms.SaveFileDialog();
-			this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
 			this.shapeFileListControl1 = new EGIS.Controls.ShapeFileListControl();
 			this.sfMap1 = new EGIS.Controls.SFMap();
 			this.menuStrip1.SuspendLayout();
@@ -667,6 +667,7 @@ namespace egis
 			// 
 			this.tsTxtFind.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.Suggest;
 			this.tsTxtFind.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.CustomSource;
+			this.tsTxtFind.Font = new System.Drawing.Font("Segoe UI", 9F);
 			this.tsTxtFind.Name = "tsTxtFind";
 			this.tsTxtFind.Size = new System.Drawing.Size(130, 39);
 			this.tsTxtFind.Visible = false;
@@ -702,17 +703,6 @@ namespace egis
 			this.toolStripSeparator2.Size = new System.Drawing.Size(6, 39);
 			this.toolStripSeparator2.Visible = false;
 			// 
-			// helpToolStripButton
-			// 
-			this.helpToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-			this.helpToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("helpToolStripButton.Image")));
-			this.helpToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-			this.helpToolStripButton.Name = "helpToolStripButton";
-			this.helpToolStripButton.Size = new System.Drawing.Size(36, 36);
-			this.helpToolStripButton.Text = "He&lp";
-			this.helpToolStripButton.ToolTipText = "About Easy GIS .NET";
-			this.helpToolStripButton.Click += new System.EventHandler(this.helpToolStripButton_Click);
-			// 
 			// toolStripDropDownButton1
 			// 
 			this.toolStripDropDownButton1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
@@ -731,6 +721,22 @@ namespace egis
 			this.cbBaseMapLayerDataSource.Name = "cbBaseMapLayerDataSource";
 			this.cbBaseMapLayerDataSource.Size = new System.Drawing.Size(200, 23);
 			this.cbBaseMapLayerDataSource.SelectedIndexChanged += new System.EventHandler(this.cbBaseMapLayerDataSource_SelectedIndexChanged);
+			// 
+			// toolStripSeparator6
+			// 
+			this.toolStripSeparator6.Name = "toolStripSeparator6";
+			this.toolStripSeparator6.Size = new System.Drawing.Size(6, 39);
+			// 
+			// helpToolStripButton
+			// 
+			this.helpToolStripButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+			this.helpToolStripButton.Image = ((System.Drawing.Image)(resources.GetObject("helpToolStripButton.Image")));
+			this.helpToolStripButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+			this.helpToolStripButton.Name = "helpToolStripButton";
+			this.helpToolStripButton.Size = new System.Drawing.Size(36, 36);
+			this.helpToolStripButton.Text = "He&lp";
+			this.helpToolStripButton.ToolTipText = "About Easy GIS .NET";
+			this.helpToolStripButton.Click += new System.EventHandler(this.helpToolStripButton_Click);
 			// 
 			// statusStrip1
 			// 
@@ -802,11 +808,6 @@ namespace egis
 			// sfdMapImage
 			// 
 			this.sfdMapImage.Filter = "PNG|*.PNG";
-			// 
-			// toolStripSeparator6
-			// 
-			this.toolStripSeparator6.Name = "toolStripSeparator6";
-			this.toolStripSeparator6.Size = new System.Drawing.Size(6, 39);
 			// 
 			// shapeFileListControl1
 			// 

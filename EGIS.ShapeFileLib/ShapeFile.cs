@@ -5955,6 +5955,16 @@ namespace EGIS.ShapeFileLib
             double offY = -projectedExtent.Bottom;
             RectangleD actualExtent = projectedExtent;
 
+            //#65 If a translation transformation has been applied to the the Graphics object GDI does not account for this and we have to manually
+            //apply the offset
+            int transformOffsetX = 0;
+            int transformOffsetY = 0;
+            if (g.Transform != null)
+            {
+                transformOffsetX = (int)Math.Round(g.Transform.OffsetX);
+                transformOffsetY = (int)Math.Round(g.Transform.OffsetY);
+            }
+
             if (coordinateTransformation != null)
             {
                 scaleX = (double)(clientArea.Width / targetExtent.Width);
@@ -6115,23 +6125,10 @@ namespace EGIS.ShapeFileLib
                                     LLToProjection(ref recPt[0], ref recPt[1], out recPt[0], out recPt[1]);
                                 }
 
-                                pt.X = (int)Math.Round((recPt[0] + offX) * scaleX);
-                                pt.Y = (int)Math.Round((recPt[1] + offY) * scaleY);
+                                pt.X = (int)Math.Round((recPt[0] + offX) * scaleX) + transformOffsetX;
+                                pt.Y = (int)Math.Round((recPt[1] + offY) * scaleY) + transformOffsetY;
 
-
-                                //double px, py;
-                                //if (MercProj)
-                                //{
-                                //    LLToProjection(ref nextRec->X, ref nextRec->Y, out px, out py);
-                                //}
-                                //else
-                                //{
-                                //    px = nextRec->X;
-                                //    py = nextRec->Y;
-                                //}
-                                //pt.X = (int)Math.Round((px + offX) * scaleX);
-                                //pt.Y = (int)Math.Round((py + offY) * scaleY);
-
+                               
                                 if (pointSizeInt > 0)
                                 {
                                     if (recordSelected[index])
@@ -6779,6 +6776,16 @@ namespace EGIS.ShapeFileLib
             double offY = -projectedExtent.Bottom;
             RectangleD actualExtent = projectedExtent;
 
+            //#65 If a translation transformation has been applied to the the Graphics object GDI does not account for this and we have to manually
+            //apply the offset
+            int transformOffsetX = 0;
+            int transformOffsetY = 0;
+            if (g.Transform != null)
+            {
+                transformOffsetX = (int)Math.Round(g.Transform.OffsetX);
+                transformOffsetY = (int)Math.Round(g.Transform.OffsetY);
+            }
+
             if (coordinateTransformation != null)
             {
                 scaleX = (double)(clientArea.Width / targetExtent.Width);
@@ -6926,20 +6933,7 @@ namespace EGIS.ShapeFileLib
                                     }
                                 }
                                 for (int p = 0; p < nextRec->NumPoints; ++p)
-                                {
-                                    //double px, py;
-                                    //if (MercProj)
-                                    //{
-                                    //    LLToProjection(ref nextRec->Points[p<<1], ref nextRec->Points[(p<<1)+1], out px, out py);
-                                    //}
-                                    //else
-                                    //{
-                                    //    px = nextRec->Points[p << 1];
-                                    //    py = nextRec->Points[(p << 1) + 1];
-                                    //}
-                                    //pt.X = (int)Math.Round((px + offX) * scaleX);
-                                    //pt.Y = (int)Math.Round((py + offY) * scaleY);
-
+                                {                                   
                                     recPt[0] = nextRec->Points[p << 1];
                                     recPt[1] = nextRec->Points[(p << 1) + 1];
                                     if (coordinateTransformation != null)
@@ -6950,8 +6944,8 @@ namespace EGIS.ShapeFileLib
                                     {
                                         LLToProjection(ref recPt[0], ref recPt[1], out recPt[0], out recPt[1]);
                                     }
-                                    pt.X = (int)Math.Round((recPt[0] + offX) * scaleX);
-                                    pt.Y = (int)Math.Round((recPt[1] + offY) * scaleY);
+                                    pt.X = (int)Math.Round((recPt[0] + offX) * scaleX) + transformOffsetX;
+                                    pt.Y = (int)Math.Round((recPt[1] + offY) * scaleY) + transformOffsetY;
 
                                     if (pointSizeInt > 0)
                                     {
@@ -7651,6 +7645,16 @@ namespace EGIS.ShapeFileLib
             double offY = -projectedExtent.Bottom;
             RectangleD actualExtent = projectedExtent;
 
+            //#65 If a translation transformation has been applied to the the Graphics object GDI does not account for this and we have to manually
+            //apply the offset
+            int transformOffsetX = 0;
+            int transformOffsetY = 0;
+            if (g.Transform != null)
+            {
+                transformOffsetX = (int)Math.Round(g.Transform.OffsetX);
+                transformOffsetY = (int)Math.Round(g.Transform.OffsetY);
+            }
+
             if (coordinateTransformation != null)
             {
                 scaleX = (double)(clientArea.Width / targetExtent.Width);
@@ -7798,16 +7802,7 @@ namespace EGIS.ShapeFileLib
                                 }
                                 for (int p = 0; p < nextRec->NumPoints; ++p)
                                 {
-                                    //double px, py;
-                                    //if (MercProj)
-                                    //{
-                                    //    LLToProjection(ref nextRec->Points[p << 1], ref nextRec->Points[(p << 1) + 1], out px, out py);
-                                    //}
-                                    //else
-                                    //{
-                                    //    px = nextRec->Points[p << 1];
-                                    //    py = nextRec->Points[(p << 1) + 1];
-                                    //}
+                                    
                                     recPt[0] = nextRec->Points[p << 1];
                                     recPt[1] = nextRec->Points[(p << 1) + 1];
                                     if (coordinateTransformation != null)
@@ -7821,8 +7816,8 @@ namespace EGIS.ShapeFileLib
                                     }
 
 
-                                    pt.X = (int)Math.Round((recPt[0] + offX) * scaleX);
-                                    pt.Y = (int)Math.Round((recPt[1] + offY) * scaleY);
+                                    pt.X = (int)Math.Round((recPt[0] + offX) * scaleX) + transformOffsetX;
+                                    pt.Y = (int)Math.Round((recPt[1] + offY) * scaleY) + transformOffsetY;
 
                                     if (pointSizeInt > 0)
                                     {
