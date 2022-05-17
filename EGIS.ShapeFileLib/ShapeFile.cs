@@ -5041,9 +5041,11 @@ namespace EGIS.ShapeFileLib
                     //Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                     Pen pen = new Pen(renderSettings.ShadowTextColor, 4f);
                     pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
-                    float ssm = shadowText ? 0.8f : 1f;
+                    float ssm = 1;// shadowText ? 0.8f : 1f;
                     Color currentFontColor = renderSettings.FontColor;
                     bool useCustomFontColor = customRenderSettings != null;
+                    float emSize = g.DpiY * renderSettings.Font.Size / 72f;
+
                     for (int n = 0; n < count; n++)
                     {
                         string strLabel;
@@ -5070,7 +5072,7 @@ namespace EGIS.ShapeFileLib
                                 if (shadowText)
                                 {
                                     System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
-                                    gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0), new StringFormat());
+                                    gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, emSize, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0), new StringFormat());
                                     g.DrawPath(pen, gp);
                                     g.FillPath(fontBrush, gp);
                                 }
@@ -5308,7 +5310,7 @@ namespace EGIS.ShapeFileLib
                                 }
                                 if (labelFields)
                                 {
-                                    renderPtObjList.Add(new RenderPtObj(pt, index, halfPointSize + 5, -(halfPointSize + 5)));
+                                    renderPtObjList.Add(new RenderPtObj(pt, index, halfPointSize + 5 - transformOffsetX, -(halfPointSize + 5) - transformOffsetY));
                                 }
                             }
                             ++index;
@@ -5339,9 +5341,11 @@ namespace EGIS.ShapeFileLib
                     //Pen pen = new Pen(Color.FromArgb(255, renderSettings.ShadowTextColor), 4f);
                     Pen pen = new Pen(renderSettings.ShadowTextColor, 4f);
                     pen.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
-                    float ssm = shadowText ? 0.8f : 1f;
+                    float ssm = 1;// shadowText ? 0.8f : 1f;
                     Color currentFontColor = renderSettings.FontColor;
                     bool useCustomFontColor = customRenderSettings != null;
+                    float emSize = g.DpiY * renderSettings.Font.Size / 72f;
+
                     for (int n = 0; n < count; n++)
                     {
                         string strLabel;
@@ -5368,7 +5372,8 @@ namespace EGIS.ShapeFileLib
                                 if (shadowText)
                                 {
                                     System.Drawing.Drawing2D.GraphicsPath gp = new System.Drawing.Drawing2D.GraphicsPath(System.Drawing.Drawing2D.FillMode.Winding);
-                                    gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, renderSettings.Font.Size, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0), new StringFormat());
+                                    
+                                    gp.AddString(strLabel, renderSettings.Font.FontFamily, (int)renderSettings.Font.Style, emSize, new PointF(renderPtObjList[n].Pt.X + x0, renderPtObjList[n].Pt.Y + y0), new StringFormat());
                                     g.DrawPath(pen, gp);
                                     g.FillPath(fontBrush, gp);
                                 }
