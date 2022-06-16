@@ -11441,9 +11441,12 @@ namespace EGIS.ShapeFileLib
 		{
 			fixed (byte* bPtr = data)
 			{
-				//sbyte* sbptr = (sbyte*)(bPtr+dataOffset);
-				_fieldName = new String((sbyte*)(bPtr+dataOffset)); 
+                //sbyte* sbptr = (sbyte*)(bPtr+dataOffset);
+                //#68 limit to 10 characters in case of invalid dbf files with >10 characters for field name
+                _fieldName = new String((sbyte*)(bPtr+dataOffset),0,10);
+                _fieldName = _fieldName.Trim('\0');
 			}
+         
 			_fieldType = (DbfFieldType)data[dataOffset+11];
             _fieldLength = (int)data[dataOffset+16];
             _decimalCount = (int)data[dataOffset + 17];
@@ -11464,7 +11467,7 @@ namespace EGIS.ShapeFileLib
             set
             {
                 if (string.IsNullOrEmpty(value)) throw new System.ArgumentNullException("fieldName can not be null");
-                if (value.Length > 10) throw new System.ArgumentException("FielName length must be <=10");
+                if (value.Length > 10) throw new System.ArgumentException("FieldName length must be <=10");
                 _fieldName = value;
             }
         }

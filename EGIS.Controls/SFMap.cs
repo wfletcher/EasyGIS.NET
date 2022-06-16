@@ -637,7 +637,7 @@ namespace EGIS.Controls
         /// </para>
         /// </remarks>
         /// <seealso cref="ZoomLevel"/>
-        [Browsable(false)]
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public PointD CentrePoint2D
         {
             get
