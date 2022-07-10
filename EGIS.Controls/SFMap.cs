@@ -432,7 +432,7 @@ namespace EGIS.Controls
             writer.WriteStartElement("layers");
 
             var layers = ShapeFilesLayers;
-            foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
+            foreach (EGIS.ShapeFileLib.ShapeFile sf in layers.ToArray())
             {
                 sf.WriteXml(writer);
             }
@@ -958,7 +958,7 @@ namespace EGIS.Controls
             RectangleD extent = RectangleD.Empty;
             bool extentSet = false;
             var layers = ShapeFilesLayers;
-            foreach (ShapeFile layer in layers)
+            foreach (ShapeFile layer in layers.ToArray())
             {
                 System.Collections.ObjectModel.ReadOnlyCollection<int> selectedIndicies = layer.SelectedRecordIndices;
                 if (selectedIndicies.Count > 0)
@@ -1105,7 +1105,7 @@ namespace EGIS.Controls
                     }
                     //RectangleD r2 = ShapeFile.ConvertExtent(r, this.MapCoordinateReferenceSystem, myShapefiles[0].CoordinateReferenceSystem);
 
-                    foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
+                    foreach (EGIS.ShapeFileLib.ShapeFile sf in layers.ToArray())
                     {
                         var extent = sf.Extent.Transform(sf.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
                         if (double.IsInfinity(extent.Width) || double.IsInfinity(extent.Height))
@@ -1716,7 +1716,7 @@ namespace EGIS.Controls
                             m.Translate(-CropBorder/2, -CropBorder/2);
                             g2.Transform = m;
                             var layers = this.BackgroundShapeFiles;
-                            foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
+                            foreach (EGIS.ShapeFileLib.ShapeFile sf in layers.ToArray())
                             {
                                 //this is an expensive operation
                                 //using (ICoordinateTransformation coordinateTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(sf.CoordinateReferenceSystem, MapCoordinateReferenceSystem))
@@ -1746,7 +1746,7 @@ namespace EGIS.Controls
                             m.Translate(-CropBorder/2, -CropBorder/2);
                             g2.Transform = m;
                             var layers = this.ForegroundShapeFiles;
-                            foreach (EGIS.ShapeFileLib.ShapeFile sf in layers)
+                            foreach (EGIS.ShapeFileLib.ShapeFile sf in layers.ToArray())
                             {
                                 sf.Render(g2, renderSize, this._centrePoint, this._zoomLevel, this.projectionType, this.MapCoordinateReferenceSystem);
                             }
@@ -2652,7 +2652,7 @@ namespace EGIS.Controls
         {
             if (oldCrs == null || newCrs == null || this.ShapeFileCount == 0) return;
             List<ShapeFile> layers = this.ShapeFilesLayers;
-            foreach (ShapeFile layer in layers)
+            foreach (ShapeFile layer in layers.ToArray())
             {
                 RenderSettings.UpdateRenderSettings(layer.RenderSettings, sourceCenterPt, oldCrs, newCrs);
             }
