@@ -31,13 +31,33 @@ using System.Collections.Generic;
 [assembly: CLSCompliant(true)]
 namespace EGIS.Projections
 {
+
+    /// <summary>
+    /// struct defining a Coordinate Reference System's area of use bounding box
+    /// </summary>
     public struct CRSBoundingBox
     {
+        /// <summary>
+        /// The West longitude of the bounding box or -1000 if unknown
+        /// </summary>
         public double WestLongitudeDegrees;
+        /// <summary>
+        /// The North latitude of the bounding box or -1000 if unknown
+        /// </summary>
         public double NorthLatitudeDegrees;
+        /// <summary>
+        /// The East longitude of the bounding box or -1000 if unknown
+        /// </summary>
         public double EastLongitudeDegrees;
-        public double SouthLatitudeDegrees;        
+        /// <summary>
+        /// The Soouth latitude of the bounding box or -1000 if unknown
+        /// </summary>
+        public double SouthLatitudeDegrees;
 
+        /// <summary>
+        /// return whether the CRSBoundingBox is defined. If the CRSBoundingBox is undefined then 
+        /// West, North, East or South will be -1000
+        /// </summary>
         public bool IsDefined
         {
             get
@@ -50,12 +70,20 @@ namespace EGIS.Projections
             }
         }
 
+        /// <summary>
+        /// ToString override
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return string.Format("WestLongitudeDegrees:{0}, EastLongitudeDegrees:{1}, NorthLatitudeDegrees:{2}, SouthLatitudeDegrees:{3}",
                 WestLongitudeDegrees, EastLongitudeDegrees, NorthLatitudeDegrees, SouthLatitudeDegrees);
         }
 
+        /// <summary>
+        /// GetHashCode override
+        /// </summary>
+        /// <returns></returns>
         public override int GetHashCode()
         {
             return ToString().GetHashCode();
@@ -146,10 +174,22 @@ namespace EGIS.Projections
     }
 
 
+    /// <summary>
+    /// Enumeration defining the direction of a transformation
+    /// </summary>
     public enum TransformDirection
     {
+        /// <summary>
+        /// No transformation is performed
+        /// </summary>
         None,
+        /// <summary>
+        /// Transformation is performed in forward direction, from source CRS to target CRS
+        /// </summary>
         Forward,
+        /// <summary>
+        /// Transformation is performed in inverse direction, from target CRS to source CRS
+        /// </summary>
         Inverse
     }
     /// <summary>
@@ -158,54 +198,116 @@ namespace EGIS.Projections
     /// </summary>
     public interface ICoordinateTransformation : IDisposable
     {
+        /// <summary>
+        /// The source Coordinate Reference System
+        /// </summary>
         ICRS SourceCRS
         {
             get;
         }
 
+        /// <summary>
+        /// The target/destination Coordinate Reference System
+        /// </summary>
         ICRS TargetCRS
         {
             get;
         }
 
         /// <summary>
-        /// transforms coordinates in place. The values of the points array will be replaced
+        /// Transforms coordinates in place. The values of the points array will be replaced
         /// with transformed coordinates
         /// </summary>
-        /// <param name="points"></param>
-        /// <param name="pointCount"></param>
+        /// <param name="points">array of points to be transformed, with each successive x,y pair stored in the array</param>
+        /// <param name="pointCount">Number of points in points array</param>
+        /// <param name="direction">The direction of the transformation (default is Forward)</param>
         /// <returns>number of points transformed</returns>
         int Transform(double[] points, int pointCount, TransformDirection direction = TransformDirection.Forward);
 
+
+        /// <summary>
+        /// Transforms coordinates in place. The values of the points array will be replaced
+        /// with transformed coordinates
+        /// </summary>
+        /// <param name="points">array of points to be transformed, with each successive x,y pair stored in the array</param>
+        /// <param name="startIndex">Index in points of first coordinate</param>
+        /// <param name="pointCount">Number of points in points array</param>
+        /// <param name="direction">The direction of the transformation (default is Forward)</param>
+        /// <returns>number of points transformed</returns>
         int Transform(double[] points, int startIndex, int pointCount, TransformDirection direction = TransformDirection.Forward);
 
-        unsafe int Transform(double* points, int pointCount, TransformDirection direction = TransformDirection.Forward);
+		/// <summary>
+		/// Transforms coordinates in place. The values of the points array will be replaced
+		/// with transformed coordinates
+		/// </summary>
+		/// <param name="points">pointer to array of points to be transformed, with each successive x,y pair stored in the array</param>
+		/// <param name="pointCount">Number of points in points array</param>
+		/// <param name="direction">The direction of the transformation (default is Forward)</param>
+		/// <returns>number of points transformed</returns>
+#pragma warning disable CS3001 // Argument type is not CLS-compliant
+		unsafe int Transform(double* points, int pointCount, TransformDirection direction = TransformDirection.Forward);
+#pragma warning restore CS3001 // Argument type is not CLS-compliant
 
-        
-    }
+
+	}
 
 
-
+    /// <summary>
+    /// Interface defining a Coordinate Reference System Factory
+    /// </summary>
     public interface ICRSFactory
     {
+        /// <summary>
+        /// Returns a list of Geographic Coordinate Reference Systems
+        /// </summary>
         List<IGeographicCRS> GeographicCoordinateSystems
         {
             get;
         }
 
+        /// <summary>
+        /// Returns a list of Projected Coordinate Reference Systems
+        /// </summary>
         List<IProjectedCRS> ProjectedCoordinateSystems
         {
             get;
         }
 
+        /// <summary>
+        /// Gets a Coordinate Reference System by EPSG code
+        /// </summary>
+        /// <param name="id">EPSG code</param>
+        /// <returns></returns>
         ICRS GetCRSById(int id);
 
+        /// <summary>
+        /// Create a Coordinate Reference System from Well Known Text
+        /// </summary>
+        /// <param name="wkt"></param>
+        /// <returns></returns>
         ICRS CreateCRSFromWKT(string wkt);
 
+        /// <summary>
+        /// Creates a CoordinateTransformation to transform coordinates from a source CRS to a target CRS
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
         ICoordinateTransformation CreateCoordinateTrasformation(ICRS source, ICRS target);
 
+        /// <summary>
+        /// Creates a CoordinateTransformation to transform coordinates from a source CRS WKT to a target CRS WKT
+        /// </summary>
+        /// <param name="sourceWKT"></param>
+        /// <param name="targetWKT"></param>
+        /// <returns></returns>
         ICoordinateTransformation CreateCoordinateTrasformation(string sourceWKT, string targetWKT);
 
+        /// <summary>
+        /// Creates a Coordinate Reference System from an ESRI prj file
+        /// </summary>
+        /// <param name="prjFile"></param>
+        /// <returns></returns>
 		ICRS CreateCRSFromPrjFile(string prjFile);       
 
     }

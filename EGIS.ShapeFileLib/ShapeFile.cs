@@ -2134,8 +2134,7 @@ namespace EGIS.ShapeFileLib
         /// <remarks>
         /// <para>
         /// For backward compatibility sourceCRS is null by default. This was the behaviour prior to version 4.8
-        /// </para>
-        /// <para>
+        /// </para>        
         /// <para>
         /// If sourceCRS is not null or equivalent to the ShapeFile CoordinateReferenceSystem and this method is called often then the caller
         /// may get better performance by caching a ICoordinateTransformation object to transform from sourceCRS to the ShapeFile CoordinateReferenceSystem
@@ -2213,8 +2212,7 @@ namespace EGIS.ShapeFileLib
         /// <remarks>
         /// <para>
         /// For backward compatibility sourceCRS is null by default. This was the behaviour prior to version 4.8
-        /// </para>
-        /// <para>
+        /// </para>        
         /// <para>
         /// If sourceCRS is not null or equivalent to the ShapeFile CoordinateReferenceSystem and this method is called often then the caller
         /// may get better performance by caching a ICoordinateTransformation object to transform from sourceCRS to the ShapeFile CoordinateReferenceSystem

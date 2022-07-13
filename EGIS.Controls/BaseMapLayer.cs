@@ -174,6 +174,10 @@ namespace EGIS.Controls
 
 		}
 
+		/// <summary>
+		/// IDisposable method. Called from Dispose() method. If overrideing this method call base
+		/// </summary>
+		/// <param name="disposing"></param>
 		protected virtual void Dispose(bool disposing)
 		{
 			if (!disposedValue)
@@ -199,6 +203,9 @@ namespace EGIS.Controls
 		//     Dispose(disposing: false);
 		// }
 
+		/// <summary>
+		/// IDisposable Dispose method
+		/// </summary>
 		public void Dispose()
 		{
 			// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
