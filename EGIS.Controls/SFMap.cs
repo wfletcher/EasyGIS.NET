@@ -227,7 +227,7 @@ namespace EGIS.Controls
         private PointD _centrePoint;
         private double _zoomLevel = 1d;
         private const bool _useHints = true;
-        private bool _useBalloonToolTip = false;
+        private bool _useBalloonToolTip;
 
         #endregion
 
@@ -742,7 +742,7 @@ namespace EGIS.Controls
         }
 
 
-        private ICRS mapCoordinateReferenceSystem = null;
+        private ICRS mapCoordinateReferenceSystem; //=null
         /// <summary>
         /// Get/Set the map Coordinate Reference System
         /// </summary>
@@ -1185,7 +1185,7 @@ namespace EGIS.Controls
             var layers = this.ShapeFilesLayers;
             for (int index = layers.Count - 1; index >= 0; index--)
             {
-                if (string.Compare(layers[index].FilePath, path, StringComparison.OrdinalIgnoreCase) == 0)
+                if (string.Equals(layers[index].FilePath, path, StringComparison.OrdinalIgnoreCase))
                 {
                     return layers[index];
                 }
@@ -1203,7 +1203,7 @@ namespace EGIS.Controls
             var layers = this.ShapeFilesLayers;
             for (int index = layers.Count - 1; index >= 0; index--)
             {
-                if (string.Compare(layers[index].FilePath, path, StringComparison.OrdinalIgnoreCase) == 0)
+                if (string.Equals(layers[index].FilePath, path, StringComparison.OrdinalIgnoreCase))
                 {
                     return index;
                 }
@@ -1860,11 +1860,11 @@ namespace EGIS.Controls
 
                                 System.Drawing.StringFormat drawFormat = new System.Drawing.StringFormat();                                
                                 drawFormat.Alignment = StringAlignment.Near | StringAlignment.Center;
-                                e.Graphics.DrawString(string.Format("{0:0.000}m", dist1), this.Font, Brushes.Red, selectRect, drawFormat);
+                                e.Graphics.DrawString(string.Format(System.Globalization.CultureInfo.CurrentCulture,"{0:0.000}m", dist1), this.Font, Brushes.Red, selectRect, drawFormat);
 
                                 drawFormat.FormatFlags = StringFormatFlags.DirectionVertical;
                                 drawFormat.Alignment = StringAlignment.Center;                                                               
-                                e.Graphics.DrawString(string.Format("{0:0.000}m", dist2), this.Font, Brushes.Red,selectRect,drawFormat);
+                                e.Graphics.DrawString(string.Format(System.Globalization.CultureInfo.CurrentCulture,"{0:0.000}m", dist2), this.Font, Brushes.Red,selectRect,drawFormat);
 
                             }
 
@@ -1897,7 +1897,7 @@ namespace EGIS.Controls
                                 double dist = DistanceBetweenPoints(p0, p1);
 
                                 e.Graphics.DrawLine(p, MouseDownPoint, new Point(MouseDownPoint.X + MouseOffsetPoint.X, MouseDownPoint.Y + MouseOffsetPoint.Y));
-                                e.Graphics.DrawString(string.Format("{0:0.000}m", dist), this.Font, Brushes.Red, new PointF(0.5F * (MouseDownPoint.X + MouseDownPoint.X + MouseOffsetPoint.X), 0.5F * (MouseDownPoint.Y + MouseDownPoint.Y + MouseOffsetPoint.Y)));
+                                e.Graphics.DrawString(string.Format(System.Globalization.CultureInfo.CurrentCulture,"{0:0.000}m", dist), this.Font, Brushes.Red, new PointF(0.5F * (MouseDownPoint.X + MouseDownPoint.X + MouseOffsetPoint.X), 0.5F * (MouseDownPoint.Y + MouseDownPoint.Y + MouseOffsetPoint.Y)));
                             }
                         }
                     }
@@ -2108,7 +2108,7 @@ namespace EGIS.Controls
             }
         }
 
-        private bool _ctrlDragToZoom = false;
+        private bool _ctrlDragToZoom;
 
         //get/set whether to zoom to selection if control key is down. If false default behaviour is to select records
         public bool ZoomToSelectedExtentWhenCtrlKeydown
@@ -2126,9 +2126,9 @@ namespace EGIS.Controls
 
         private PanSelectMode _panSelectMode = PanSelectMode.Pan;
 
-        private bool _ctrlDown = false;
-        private bool _shiftDown = false;
-        private bool _toggleSelect = false;
+        private bool _ctrlDown;
+        private bool _shiftDown;
+        private bool _toggleSelect;
 
         private MouseButtons _mouseDownButton = MouseButtons.None;
         private Point _mouseDownPt = Point.Empty;
@@ -2513,7 +2513,7 @@ namespace EGIS.Controls
         }
 
         private ToolTip layerTooltip = new ToolTip();
-        private bool layerTooltipVisible = false;
+        private bool layerTooltipVisible;
         private Point toolTipOffset = new Point(15, 3);
         private Point lastLocateMousePos = Point.Empty;
         private void LocateShape(PointD pt, Point mousePos)

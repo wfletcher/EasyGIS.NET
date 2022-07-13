@@ -65,12 +65,12 @@ namespace EGIS.Projections
         /// <summary>
         /// key = srid, value = wkt
         /// </summary>
-        private Dictionary<int, string> coordinateSystems = new Dictionary<int, string>();
+        private readonly Dictionary<int, string> coordinateSystems = new Dictionary<int, string>();
         
-        private List<IProjectedCRS> projectedCoordinateSystems = new List<IProjectedCRS>();
-        private List<IGeographicCRS> geographicCoordinateSystems = new List<IGeographicCRS>();
+        private readonly List<IProjectedCRS> projectedCoordinateSystems = new List<IProjectedCRS>();
+        private readonly List<IGeographicCRS> geographicCoordinateSystems = new List<IGeographicCRS>();
 
-        private object _sync = new object();
+        private readonly object _sync = new object();
 
         protected CoordinateReferenceSystemFactory(string sridFilename)
         {
@@ -81,7 +81,7 @@ namespace EGIS.Projections
             LoadData();
         }
 
-        private static object instance_sync = new object();
+        private static readonly object instance_sync = new object();
         private static CoordinateReferenceSystemFactory _instance;
 
         /// <summary>
@@ -119,7 +119,7 @@ namespace EGIS.Projections
         /// <remarks>
         /// See proj.org proj_identify function for more detail
         /// </remarks>
-        public int IdentificationConfidenceThreshold
+        public static int IdentificationConfidenceThreshold
         {
             get { return Proj6.CRS.IdentificationConfidenceThreshold; }
             set {  Proj6.CRS.IdentificationConfidenceThreshold = value; }
@@ -295,7 +295,7 @@ namespace EGIS.Projections
 
                         if (string.IsNullOrEmpty(crs.Id))
                         {
-                            ((Proj6.CRS)crs).Id = wkt.WKID.ToString();
+                            ((Proj6.CRS)crs).Id = wkt.WKID.ToString(System.Globalization.CultureInfo.InvariantCulture);
                         }
                         
                         coordinateSystems.Add(wkt.WKID, wkt.WKT);
@@ -428,12 +428,12 @@ namespace EGIS.Projections
                         ref areaOfUse.NorthLatitudeDegrees,
                         IntPtr.Zero);
 
-                    if (!id.Equals(code))
+                    if (!id.Equals(code, StringComparison.Ordinal))
                     {
                         Console.Out.WriteLine("id = " + id + ", code=" + code);
                     }
 
-                    if (!authName.Equals(authority))
+                    if (!authName.Equals(authority, StringComparison.Ordinal))
                     {
                         Console.Out.WriteLine("authName = " + authName + ", authority=" + authority);
                     }
@@ -523,7 +523,7 @@ namespace EGIS.Projections
             return true;                        
         }
 
-        private IEnumerable<WKTString> GetSRIDs(System.IO.StreamReader sr)
+        private static IEnumerable<WKTString> GetSRIDs(System.IO.StreamReader sr)
         {            
             while (!sr.EndOfStream)
             {
@@ -532,7 +532,7 @@ namespace EGIS.Projections
                 if (split > -1)
                 {
                     WKTString wkt = new WKTString();
-                    wkt.WKID = int.Parse(line.Substring(0, split));
+                    wkt.WKID = int.Parse(line.Substring(0, split), System.Globalization.CultureInfo.InvariantCulture);
                     wkt.WKT = line.Substring(split + 1);
                     yield return wkt;
                 }
@@ -572,7 +572,7 @@ namespace EGIS.Projections
                 
                 if (string.IsNullOrEmpty(crs.Id))
                 {
-                    ((Proj6.CRS)crs).Id = id.ToString();
+                    ((Proj6.CRS)crs).Id = id.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 }
                 return crs;
             }
@@ -615,14 +615,14 @@ namespace EGIS.Projections
 		/// <returns></returns>
 		public ICoordinateTransformation CreateCoordinateTrasformation(ICRS source, ICRS target)
         {
-            if (source == null || target == null) throw new Exception("source and target ICRS cannot be null");
+            if (source == null || target == null) throw new ArgumentException("source and target ICRS cannot be null");
 
             lock (_sync)
             {
                 if (UseCache && !(string.IsNullOrEmpty(source.Id) || string.IsNullOrEmpty(target.Id)))
                 {
                     //check if already in cache
-                    string key = string.Format("{0} -> {1}", source.Id, target.Id);
+                    string key = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} -> {1}", source.Id, target.Id);
                     Proj6.CoordinateTransformation transform;
                     if (!coordinateTransformationDictionary.TryGetValue(key, out transform))
                     {
@@ -666,7 +666,7 @@ namespace EGIS.Projections
 
         private const bool UseCache = true;
 
-        Dictionary<string, Proj6.CoordinateTransformation> coordinateTransformationDictionary = new Dictionary<string, Proj6.CoordinateTransformation>();
+        readonly Dictionary<string, Proj6.CoordinateTransformation> coordinateTransformationDictionary = new Dictionary<string, Proj6.CoordinateTransformation>();
 
 
         #endregion

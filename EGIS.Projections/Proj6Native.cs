@@ -195,6 +195,7 @@ namespace EGIS.Projections
                 null, 0, 0);                    
         }
 
+#pragma warning disable CA1712
         public enum PJ_TYPE
         {
             PJ_TYPE_UNKNOWN,
@@ -244,6 +245,8 @@ namespace EGIS.Projections
             PJ_CATEGORY_CRS,
             PJ_CATEGORY_COORDINATE_OPERATION
         };
+
+#pragma warning restore CA1712
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern PJ_TYPE proj_get_type(IntPtr PJ);

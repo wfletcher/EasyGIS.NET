@@ -19,6 +19,8 @@
     <PackageProjectUrl>https://www.easygisdotnet.com/</PackageProjectUrl>
     <Copyright>Copyright © 2008-2022 Winston Fletcher</Copyright>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <EnableNETAnalyzers>True</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DocumentationFile>bin\Debug\EGIS.Controls.XML</DocumentationFile>

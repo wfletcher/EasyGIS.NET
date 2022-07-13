@@ -50,7 +50,7 @@ namespace EGIS.Controls
 
 		private EGIS.Controls.SFMap mapReference;
 
-		private TileCollection tileCollection = null;
+		private TileCollection tileCollection;
 
 
 		/// <summary>
@@ -131,7 +131,7 @@ namespace EGIS.Controls
 		{
 			return !(this.TileSource == null ||
 				this.mapReference.MapCoordinateReferenceSystem == null ||
-				!string.Equals(this.mapReference.MapCoordinateReferenceSystem.Id, EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+				!string.Equals(this.mapReference.MapCoordinateReferenceSystem.Id, EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal));
 		}
 
 		private void Map_PaintMapBackground(object sender, System.Windows.Forms.PaintEventArgs e)

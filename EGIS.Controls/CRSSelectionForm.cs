@@ -46,7 +46,7 @@ namespace EGIS.Controls
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-            this.crsSelectionControl1.LoadCoordinateSystems(this.crsFactory != null ? this.crsFactory : CoordinateReferenceSystemFactory.Default, this.GetRecentCRSList());
+            this.crsSelectionControl1.LoadCoordinateSystems(this.crsFactory != null ? this.crsFactory : CoordinateReferenceSystemFactory.Default, GetRecentCRSList());
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
@@ -58,7 +58,7 @@ namespace EGIS.Controls
             }
         }
 
-        private List<int> GetRecentCRSList()
+        private static List<int> GetRecentCRSList()
         {
             if (Properties.Settings.Default.RecentCRSList == null) Properties.Settings.Default.RecentCRSList = new System.Collections.Specialized.StringCollection();
 
@@ -74,7 +74,7 @@ namespace EGIS.Controls
             return resentList;
         }
 
-        private void AddToRecentCRSList(string crs)
+        private static void AddToRecentCRSList(string crs)
         {
             if (Properties.Settings.Default.RecentCRSList == null) Properties.Settings.Default.RecentCRSList = new System.Collections.Specialized.StringCollection();
 

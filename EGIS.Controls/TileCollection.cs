@@ -178,7 +178,7 @@ namespace EGIS.Controls
 		
 		public static double ZoomLevelToWebMercatorScale(int zoomLevel, int tileSize = 256)
 		{
-			if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", "zoomLevel");
+			if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", nameof(zoomLevel));
 			return ((double)tileSize / (Math.PI * 2 * Wgs84SemiMajorAxis)) * (l << zoomLevel);
 		}
 		
@@ -341,7 +341,7 @@ namespace EGIS.Controls
 		{			
 			try
 			{
-				string strUrl = string.Format(imageUrlFormat, this.zoomLevel, this.x, this.y);
+				string strUrl = string.Format(System.Globalization.CultureInfo.InvariantCulture,imageUrlFormat, this.zoomLevel, this.x, this.y);
 				System.IO.MemoryStream bitmapStream = GetFromCache(strUrl);
 				if (bitmapStream != null)
 				{
@@ -370,7 +370,7 @@ namespace EGIS.Controls
 				}
 				return blankBitmap;
 			}
-			catch (Exception ex)
+			catch// (Exception ex)
 			{				
 				Bitmap blankBitmap = new Bitmap(256, 256);
 				using (Graphics g = Graphics.FromImage(blankBitmap))
@@ -434,7 +434,7 @@ namespace EGIS.Controls
 
 		internal void Abort()
 		{
-			string strUrl = string.Format(imageUrlFormat, this.zoomLevel, this.x, this.y);
+			string strUrl = string.Format(System.Globalization.CultureInfo.InvariantCulture,imageUrlFormat, this.zoomLevel, this.x, this.y);
 			RemovePendingRequest(strUrl);
 		}
     }
@@ -446,7 +446,7 @@ namespace EGIS.Controls
 	class ImageCache<T>// where T : new()
 	{
 		private List<ImageCacheItem<T>> cachedItems = new List<ImageCacheItem<T>>();
-		private int nextFreeIndex = 0;
+		private int nextFreeIndex;
 		private int maxItems;
 		private Dictionary<string, int> cacheIndex = new Dictionary<string, int>();
 

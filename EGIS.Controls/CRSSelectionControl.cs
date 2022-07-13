@@ -17,7 +17,7 @@ namespace EGIS.Controls
     public partial class CRSSelectionControl : UserControl
     {
         private ICRSFactory crsFactory;
-        private ICRS selectedCRS = null;
+        private ICRS selectedCRS;
 
         public CRSSelectionControl()
         {

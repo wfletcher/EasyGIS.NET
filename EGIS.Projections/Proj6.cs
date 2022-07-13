@@ -79,7 +79,7 @@ namespace EGIS.Projections
                                 string wkt1 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjThis, PJ_WKT_TYPE.PJ_WKT1_ESRI);
                                 string wkt2 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjOther, PJ_WKT_TYPE.PJ_WKT1_ESRI);
 
-                                same = string.Compare(wkt1, wkt2, StringComparison.OrdinalIgnoreCase) == 0;
+                                same = string.Equals(wkt1, wkt2, StringComparison.OrdinalIgnoreCase);
 
                                 if (!same)
                                 {
@@ -124,8 +124,8 @@ namespace EGIS.Projections
 
             public override string ToString()
             {
-                if (!string.IsNullOrEmpty(Authority)) return string.Format("{0} [{1}:{2}]", Name, Authority, Id);
-                if( !string.IsNullOrEmpty(Id)) return string.Format("{0} [{1}]", Name, Id);
+                if (!string.IsNullOrEmpty(Authority)) return string.Format(System.Globalization.CultureInfo.InvariantCulture,"{0} [{1}:{2}]", Name, Authority, Id);
+                if( !string.IsNullOrEmpty(Id)) return string.Format(System.Globalization.CultureInfo.InvariantCulture,"{0} [{1}]", Name, Id);
                 return Name;
             }
 
@@ -385,14 +385,14 @@ namespace EGIS.Projections
 
                     if (pjNative == IntPtr.Zero)
                     {
-                        throw new Exception("Could not create coordinate transformation");
+                        throw new InvalidOperationException("Could not create coordinate transformation");
                     }
                     IntPtr pn = Proj6Native.proj_normalize_for_visualization(IntPtr.Zero, pjNative);
                     Proj6Native.proj_destroy(pjNative);
                     pjNative = IntPtr.Zero;
                     if (pn == IntPtr.Zero)
                     {
-                        throw new Exception("Could not create coordinate transformation - proj_normalize_for_visualization returned zero");
+                        throw new InvalidOperationException("Could not create coordinate transformation - proj_normalize_for_visualization returned zero");
                     }
                     pjNative = pn;
                 }
@@ -459,6 +459,12 @@ namespace EGIS.Projections
 
             public void Dispose()
             {
+                Dispose(true);
+                GC.SuppressFinalize(this);
+            }
+
+            protected virtual void Dispose(bool disposing)
+            {                
                 if (pjNative != IntPtr.Zero)
                 {
                     Proj6Native.proj_destroy(pjNative);
