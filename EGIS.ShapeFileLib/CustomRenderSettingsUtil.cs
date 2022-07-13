@@ -74,7 +74,7 @@ namespace EGIS.ShapeFileLib
     /// <seealso cref="EGIS.ShapeFileLib.ICustomRenderSettings"/>
     class QuantileRenderSettings : EGIS.ShapeFileLib.BaseCustomRenderSettings
     {
-        private Color[] rangeColors;
+        private readonly Color[] rangeColors;
         private int[] recordColorIndex;
        
         /// <summary>
@@ -123,11 +123,9 @@ namespace EGIS.ShapeFileLib
         
 
         private void SetupRangeSettings(double[] ranges, string rangeKey)
-        {
-            
-            int fieldIndex = -1;
+        {            
             string[] fieldNames = renderSettings.DbfReader.GetFieldNames();
-            fieldIndex = FindFieldIndex(fieldNames, rangeKey);
+            int fieldIndex = FindFieldIndex(fieldNames, rangeKey);
             if (fieldIndex < 0) return;
 
             int numRecords = renderSettings.DbfReader.DbfRecordHeader.RecordCount;
@@ -184,7 +182,7 @@ namespace EGIS.ShapeFileLib
     class RandomColorRenderSettings : BaseCustomRenderSettings
     {
         #region ICustomRenderSettings Members
-        private Color[] colors;
+        private readonly Color[] colors;
         public RandomColorRenderSettings(RenderSettings renderSettings, int seed)
             : base(renderSettings)
         {

@@ -80,6 +80,9 @@ C# wrapper of native proj_9_0 library</Description>
     <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
     <Copyright>Copyright © 2008-2022 Winston Fletcher</Copyright>
     <PackageTags>Easy GIS .NET Projection Library, native proj 9.0 C# wrapper</PackageTags>
+    <EnforceCodeStyleInBuild>False</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>True</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
   </PropertyGroup>
   
  

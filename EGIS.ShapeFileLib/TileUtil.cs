@@ -75,7 +75,7 @@ namespace EGIS.ShapeFileLib
         /// <returns>a Point containing the tiles x,y coordinates</returns>
         public static System.Drawing.Point GetTileFromGisLocation(double lon, double lat, int zoomLevel, int tileSize=256)
         {
-            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", "zoomLevel");
+            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", nameof(zoomLevel));
             long x, y;
             LLToPixel(new PointD(lon, lat), zoomLevel, out x, out y, tileSize);
             return new System.Drawing.Point((int)(x/ tileSize), (int)(y/ tileSize));
@@ -91,13 +91,13 @@ namespace EGIS.ShapeFileLib
         /// <returns></returns>
         public static PointD GetMercatorCenterPointFromTile(int tileX, int tileY, int zoomLevel, int tileSize=256)
         {
-            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", "zoomLevel");
+            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", nameof(zoomLevel));
             return PixelToMerc((tileSize>>1) + (tileX * tileSize), (tileSize>>1)+(tileY * tileSize), zoomLevel, tileSize);
         }
 
         public static RectangleD GetTileLatLonBounds(int tileX, int tileY, int zoomLevel, int tileSize=256)
         {
-            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", "zoomLevel");
+            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", nameof(zoomLevel));
             PointD topLeft = PixelToLL((tileX * tileSize), (tileY * tileSize), zoomLevel, tileSize);
             PointD bottomRight = PixelToLL(((tileX+1) * tileSize), ((tileY+1) * tileSize), zoomLevel, tileSize);
             return RectangleD.FromLTRB(topLeft.X, bottomRight.Y, bottomRight.X, topLeft.Y);
@@ -112,7 +112,7 @@ namespace EGIS.ShapeFileLib
         /// <returns></returns>
         public static double ZoomLevelToScale(int zoomLevel, int tileSize=256)
         {
-            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", "zoomLevel");
+            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", nameof(zoomLevel));
             return ((double)tileSize/360.0)*(l<<zoomLevel);
         }
 
@@ -171,14 +171,14 @@ namespace EGIS.ShapeFileLib
 
         public static PointD GetWebMercatorCenterPointFromTile(int tileX, int tileY, int zoomLevel, int tileSize = 256)
         {
-            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", "zoomLevel");
+            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", nameof(zoomLevel));
             PointD merc =  PixelToMerc((tileSize >> 1) + (tileX * tileSize), (tileSize >> 1) + (tileY * tileSize), zoomLevel, tileSize);            
             return new PointD(merc.X * Wgs84SemiMajorAxis * Math.PI / 180, merc.Y * Wgs84SemiMajorAxis * Math.PI / 180);
         }
        
         public static double ZoomLevelToWebMercatorScale(int zoomLevel, int tileSize = 256)
         {
-            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", "zoomLevel");
+            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", nameof(zoomLevel));
             return ((double)tileSize / (Math.PI * 2 * Wgs84SemiMajorAxis)) * (l << zoomLevel);
         }
 

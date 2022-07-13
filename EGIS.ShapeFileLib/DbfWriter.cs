@@ -47,8 +47,8 @@ namespace EGIS.ShapeFileLib
     /// <seealso cref="EGIS.ShapeFileLib.ShapeFileWriter"/>
     public sealed class DbfWriter : IDisposable
     {
-        private String fileName;    
-        private DbfFieldDesc[] dataFields;
+        private readonly String fileName;    
+        private readonly DbfFieldDesc[] dataFields;
         private int numRecords;
     
         private System.IO.FileStream dbfStream;
@@ -65,17 +65,17 @@ namespace EGIS.ShapeFileLib
             this.fileName = filePath;
             this.dataFields = dataFields;
             
-            setupStream();
-            writeHeader();
+            SetupStream();
+            WriteHeader();
         }
     
-        private void setupStream()
+        private void SetupStream()
         {            
             string dbfPath = System.IO.Path.ChangeExtension(fileName, "dbf");            
             dbfStream = new FileStream(dbfPath, FileMode.Create, FileAccess.ReadWrite);            
         }
 
-        private void writeHeader()
+        private void WriteHeader()
         {
             int numFields = dataFields.Length;
             int recordLength = 1; //first byte used for deletion flag
@@ -175,7 +175,7 @@ namespace EGIS.ShapeFileLib
             
         }
 
-        private static byte[] PaddingString = {0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
+        private static readonly byte[] PaddingString = {0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
             0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
             0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
             0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,

@@ -35,11 +35,11 @@ namespace EGIS.ShapeFileLib
     internal sealed class TestCustomRenderSettings : BaseCustomRenderSettings
     {
 
-        private string fieldName;
-        private int fieldIndex = -1;
-        private float maxValue;
+        private readonly string fieldName;
+        private readonly int fieldIndex = -1;
+        private readonly float maxValue;
      
-        private System.Drawing.Image customImage;
+        private readonly System.Drawing.Image customImage;
 
         #region ICustomRenderSettings Members
 
@@ -93,14 +93,12 @@ namespace EGIS.ShapeFileLib
                 return renderSettings.FillColor;           
             }
         }
-
-        private int rst = new Random().Next(2);
+        
         public override bool RenderShape(int recordNumber)
         {
             return (recordNumber % 2) == 0;
         }
-                
-        Random r = new Random();
+                        
         public override System.Drawing.Color GetRecordOutlineColor(int recordNumber)
         {
             

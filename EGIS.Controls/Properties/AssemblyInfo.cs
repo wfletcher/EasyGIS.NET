@@ -36,3 +36,8 @@ using System.Resources;
 [assembly: AssemblyFileVersion("4.8.1.0")]
 
 [assembly: NeutralResourcesLanguageAttribute("en-US")]
+
+
+#if NET6_0_OR_GREATER
+[assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("windows")]
+#endif

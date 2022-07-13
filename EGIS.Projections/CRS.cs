@@ -52,7 +52,7 @@ namespace EGIS.Projections
 
         public override string ToString()
         {
-            return string.Format("WestLongitudeDegrees:{0}, EastLongitudeDegrees:{1}, NorthLatitudeDegrees:{2}, SouthLatitudeDegrees:{3}",
+            return string.Format(System.Globalization.CultureInfo.CurrentCulture,"WestLongitudeDegrees:{0}, EastLongitudeDegrees:{1}, NorthLatitudeDegrees:{2}, SouthLatitudeDegrees:{3}",
                 WestLongitudeDegrees, EastLongitudeDegrees, NorthLatitudeDegrees, SouthLatitudeDegrees);
         }
 
@@ -211,6 +211,8 @@ namespace EGIS.Projections
     }
 
 
+#pragma warning disable CA1707
+
     /// <summary>
     /// Enumeration defining WKT type
     /// </summary>
@@ -241,5 +243,7 @@ namespace EGIS.Projections
        /// </summary>
         PJ_WKT1_ESRI
     }
+
+#pragma warning restore CA1709
 
 }

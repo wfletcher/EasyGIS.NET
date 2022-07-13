@@ -1428,7 +1428,7 @@ namespace EGIS.ShapeFileLib
             this.lineSegmentSide = lineSegmentSide;
         }
 
-        public static PolylineDistanceInfo Empty = new PolylineDistanceInfo(PointD.Empty, double.PositiveInfinity, double.NaN, -1, LineSegmentSide.None);
+        public static readonly PolylineDistanceInfo Empty = new PolylineDistanceInfo(PointD.Empty, double.PositiveInfinity, double.NaN, -1, LineSegmentSide.None);
         
 
         /// <summary>
