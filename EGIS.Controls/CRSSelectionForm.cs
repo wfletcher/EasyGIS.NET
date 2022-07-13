@@ -11,6 +11,9 @@ using EGIS.Projections;
 
 namespace EGIS.Controls
 {
+    /// <summary>
+    /// Coordinate Reference System Selection Form
+    /// </summary>
     public partial class CRSSelectionForm : Form
     {
 
@@ -18,11 +21,18 @@ namespace EGIS.Controls
 
         private ICRSFactory crsFactory;
        
+        /// <summary>
+        /// constructor
+        /// </summary>
         public CRSSelectionForm()
         {
             InitializeComponent();
         }
 
+        /// <summary>
+        /// Create a CRSSelectionForm with supplied ICRSFactory object
+        /// </summary>
+        /// <param name="crsFactory"></param>
         public CRSSelectionForm(ICRSFactory crsFactory)
             : this()
         {
@@ -31,6 +41,9 @@ namespace EGIS.Controls
 
 
 
+        /// <summary>
+        /// Get/Set the selected ICRS
+        /// </summary>
         public ICRS SelectedCRS
         {
             get
@@ -43,12 +56,20 @@ namespace EGIS.Controls
             }
         }
 
+        /// <summary>
+        /// OnLoad override
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
             this.crsSelectionControl1.LoadCoordinateSystems(this.crsFactory != null ? this.crsFactory : CoordinateReferenceSystemFactory.Default, GetRecentCRSList());
         }
 
+        /// <summary>
+        /// OnFormClosed override
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             base.OnFormClosed(e);

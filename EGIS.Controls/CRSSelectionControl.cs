@@ -19,6 +19,9 @@ namespace EGIS.Controls
         private ICRSFactory crsFactory;
         private ICRS selectedCRS;
 
+        /// <summary>
+        /// constructor
+        /// </summary>
         public CRSSelectionControl()
         {
             InitializeComponent();                              
@@ -27,6 +30,12 @@ namespace EGIS.Controls
 
         #region public properties and methods
 
+        /// <summary>
+        /// Loads the Coordinate Reference Systems in the control
+        /// </summary>
+        /// <param name="crsFactory">Factory used to load the reference systems</param>
+        /// 
+        /// <param name="recentCRSList">List of recent CRS Ids (loaded by user) </param>
         public void LoadCoordinateSystems(ICRSFactory crsFactory, List<int> recentCRSList = null)
         {
             ICRS crs = SelectedCRS;
@@ -42,6 +51,10 @@ namespace EGIS.Controls
             LoadRecentCRSList(recentCRSList);
         }
 
+        /// <summary>
+        /// Load list of recent Coordinate Reference Systems
+        /// </summary>
+        /// <param name="recentList">list of Ids for each reference system</param>
         public void LoadRecentCRSList(List<int> recentList)
         {
             this.lstRecentCRS.Items.Clear();
@@ -53,6 +66,9 @@ namespace EGIS.Controls
             }
         }
 
+        /// <summary>
+        /// Get/Set the Selected Coordinate Reference System
+        /// </summary>
         public ICRS SelectedCRS
         {
             get

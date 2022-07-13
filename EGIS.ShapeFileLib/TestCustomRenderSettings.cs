@@ -64,7 +64,7 @@ namespace EGIS.ShapeFileLib
             customImage = CreateCustomImage(renderSettings.GetImageSymbol());
         }
 
-        private System.Drawing.Image CreateCustomImage(System.Drawing.Image img)
+        private static System.Drawing.Image CreateCustomImage(System.Drawing.Image img)
         {
             if(img == null) return null;
             System.Drawing.Image customImg = new System.Drawing.Bitmap(img);

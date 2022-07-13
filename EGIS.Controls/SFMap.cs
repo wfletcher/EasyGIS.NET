@@ -80,20 +80,42 @@ namespace EGIS.Controls
     };
 
     /// <summary>
-    /// enumeration defining which layers should be refreshed 
+    /// enumeration defining which layers should be redrawn when the map is refreshed 
     /// </summary>
     [Flags]
     public enum RefreshMode
     {
+        /// <summary>
+        /// No layers are re-drawn when the map is refreshed. The SFMap control is double buffered RefreshMode.None can be used 
+        /// to clear any user painting in the Paint event, without an expensive redraw of teh layers
+        /// </summary>
         None = 0,
+        /// <summary>
+        /// Only Background layers are re-drawn when the map is refreshed
+        /// </summary>
         BackgroundLayers = 2,
+        /// <summary>
+        /// Only Foreground layers are re-drawn when the map is refreshed
+        /// </summary>
         ForegroundLayers = 4,
+        /// <summary>
+        /// Both Background and Foreground layers are re-drawn when the map is refreshed
+        /// </summary>
         AllLayers = BackgroundLayers | ForegroundLayers
     }
 
+    /// <summary>
+    /// Enumeration defining the z-index position that layers are added to the map
+    /// </summary>
     public enum LayerPositionEnum
     {
+        /// <summary>
+        /// Layer is added to the background. Background layers are drawn underneath Foreground layers
+        /// </summary>
         Background,
+        /// <summary>
+        /// Layer is added to the foreground. Foreground layers are drawn ontop of Background layers
+        /// </summary>
         Foreground 
     }
 
@@ -142,6 +164,13 @@ namespace EGIS.Controls
 
             private PointD gisLocation;
 
+            /// <summary>
+            /// Construct a TooltipEventArgs
+            /// </summary>
+            /// <param name="shapeIndex"></param>
+            /// <param name="recordIndex"></param>
+            /// <param name="mousePt"></param>
+            /// <param name="gisPoint"></param>
             public TooltipEventArgs(int shapeIndex, int recordIndex, Point mousePt, PointD gisPoint)
             {
                 this.shape = shapeIndex;
@@ -186,7 +215,9 @@ namespace EGIS.Controls
                 }
             }
 
-
+            /// <summary>
+            /// Get/Set the Mouse/Pixel position when the event was fired
+            /// </summary>
             public Point MousePosition
             {
                 get
@@ -199,6 +230,9 @@ namespace EGIS.Controls
                 }
             }
 
+            /// <summary>
+            /// Gert/Set the map GIS coordinates under the mouse when the event was fired
+            /// </summary>
             public PointD GISLocation
             {
                 get
@@ -297,6 +331,10 @@ namespace EGIS.Controls
         /// <see cref="EGIS.ShapeFileLib.ShapeFile.SelectedRecordIndices"/>        
         public event EventHandler<EventArgs> SelectedRecordsChanged;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="args"></param>
         protected void OnSelectedRecordChanged(EventArgs args)
         {
             if (SelectedRecordsChanged != null)
@@ -311,6 +349,10 @@ namespace EGIS.Controls
         /// </summary>
         public event EventHandler<PaintEventArgs> PaintMapBackground;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="args"></param>
         protected void OnPaintMapBackground(PaintEventArgs args)
         {
             if (PaintMapBackground != null)
@@ -346,10 +388,17 @@ namespace EGIS.Controls
             }
         }
 
-        //event fired when the map is double clicked. Handle this event rather than the standard DoubleClick
-        //event if you wish to cancel the default zooming on the map
+        
+        /// <summary>
+        /// Event fired when the map is double clicked. Handle this event rather than the standard DoubleClick
+        /// event if you wish to cancel the default zooming on the map
+        /// </summary>
         public event EventHandler<MapDoubleClickedEventArgs> MapDoubleClick;
 
+        /// <summary>
+        /// OnMapDoubleClick
+        /// </summary>
+        /// <param name="args"></param>
         protected void OnMapDoubleClick(MapDoubleClickedEventArgs args)
         {
             if (MapDoubleClick != null)
@@ -446,6 +495,7 @@ namespace EGIS.Controls
         /// reads and loads XML representatino of a .EGP project
         /// </summary>
         /// <param name="projectElement"></param>
+        /// <param name="baseDirectory"></param>
         public void ReadXml(XmlElement projectElement, string baseDirectory)
         {
             ReadXml(projectElement, baseDirectory, null);
@@ -985,7 +1035,7 @@ namespace EGIS.Controls
         /// </summary>
         /// <remarks>
         /// This method is being deprecated - use PixelCoordToGisPoint
-        /// <see cref="PixelCoordToGisPoint"/>
+        /// <see cref="PixelCoordToGisPoint(Point)"/>
         /// </remarks>
         /// <param name="pt"></param>
         /// <returns></returns>
@@ -999,7 +1049,7 @@ namespace EGIS.Controls
         /// </summary>
         /// <remarks>
         /// This method is being deprecated - use PixelCoordToGisPoint
-        /// <see cref="PixelCoordToGisPoint"/>
+        /// <see cref="PixelCoordToGisPoint(int,int)"/>
         /// </remarks>
         /// <param name="mouseX"></param>
         /// <param name="mouseY"></param>
@@ -1220,6 +1270,8 @@ namespace EGIS.Controls
         /// <param name="labelFieldName">The name of the field in the ShapeFiles's DBF file to use when rendering the shape labels</param>
         /// <param name="useMemoryStreams">Optional parameter indicating whether to open the ShapeFile using MemoryStreams. Default is false</param>
         /// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
+        /// <param name="layerPosition"></param>
+        /// <param name="refreshImmediately"></param>
         /// <returns>Returns the created ShapeFile which was added to the SFMap</returns>
         /// <remarks>
         /// After the shapefile is added to the map, the map will auto fit the entire ShapeFile in the control by adjusting the 
@@ -1262,6 +1314,8 @@ namespace EGIS.Controls
         /// <param name="name">The "display" name of the ShapeFile. </param>
         /// <param name="labelFieldName">The name of the field in the ShapeFiles's DBF file to use when rendering the shape labels</param>
         /// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
+        /// <param name="refreshImmediately">If true map is frefreshed immediately after the shape file is added. Default is true</param>
+        /// <param name="layerPosition">Whether to add the shapefile to foreground or background layers. Default is background</param>
         /// <returns>Returns the created ShapeFile which was added to the SFMap</returns>
         public EGIS.ShapeFileLib.ShapeFile AddShapeFile(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, string name, string labelFieldName, bool fitMapToLayerExtent = true, bool refreshImmediately = true, LayerPositionEnum layerPosition = LayerPositionEnum.Background)
         {
@@ -1295,6 +1349,8 @@ namespace EGIS.Controls
         /// </summary>
         /// <param name="shapeFile">ShapeFile object to add to the map</param>
         /// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
+        /// <param name="refreshImmediately"></param>
+        /// <param name="layerPosition"></param>
         /// <returns>Returns the shapeFile which was added to the SFMap</returns>
         public EGIS.ShapeFileLib.ShapeFile AddShapeFile(EGIS.ShapeFileLib.ShapeFile shapeFile, bool fitMapToLayerExtent = true, bool refreshImmediately = true, LayerPositionEnum layerPosition = LayerPositionEnum.Background)
         {
@@ -1793,11 +1849,17 @@ namespace EGIS.Controls
 
         #region protected members
 
+        /// <summary>
+        /// Gets the List of Background ShapeFile layers
+        /// </summary>
         protected List<EGIS.ShapeFileLib.ShapeFile> BackgroundShapeFiles
         {
             get { return _backgroundShapeFiles; }
         }
 
+        /// <summary>
+        /// Gets the List of Foreground ShapeFile layers
+        /// </summary>
         protected List<EGIS.ShapeFileLib.ShapeFile> ForegroundShapeFiles
         {
             get { return _foregroundShapeFiles; }
@@ -1820,7 +1882,10 @@ namespace EGIS.Controls
 
         #endregion
 
-
+        /// <summary>
+        /// OnPaint override
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnPaint(PaintEventArgs e)
         {
             if (/* dirtyScreenBuf || */ refreshMode != RefreshMode.None)
@@ -1965,6 +2030,16 @@ namespace EGIS.Controls
             Refresh();
         }
 
+        /// <summary>
+        /// Refreshes the Map
+        /// </summary>
+        /// <param name="mode">The refresh mode</param>
+        /// <remarks>
+        /// <para>
+        /// use mode to control whether to Redraw BackgroundLayers, ForegroundLayers, both of none when the 
+        /// map is refreshed
+        /// </para>
+        /// </remarks>
         public void Refresh(RefreshMode mode)
         {
             refreshMode = mode;
@@ -1985,6 +2060,16 @@ namespace EGIS.Controls
             refreshMode = RefreshMode.AllLayers;
             Invalidate();
         }
+
+        /// <summary>
+        /// Clears the map and calls Invalidate. 
+        /// </summary>
+        /// <param name="mode"></param>
+        /// <remarks>
+        /// This method performs the same functionality
+        /// as Refresh(mode) but can be called from background threads as it calls Invalidate rather
+        /// than Refresh
+        /// </remarks>
 
         public void Invalidate(RefreshMode mode)
         {
@@ -2050,6 +2135,10 @@ namespace EGIS.Controls
             }
         }
 
+        /// <summary>
+        /// OnKeyUp override
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnKeyUp(KeyEventArgs e)
         {
             base.OnKeyUp(e);
@@ -2110,13 +2199,19 @@ namespace EGIS.Controls
 
         private bool _ctrlDragToZoom;
 
-        //get/set whether to zoom to selection if control key is down. If false default behaviour is to select records
+        
+        /// <summary>
+        /// get/set whether to zoom to selection if control key is down. If false default behaviour is to select records
+        /// </summary>
         public bool ZoomToSelectedExtentWhenCtrlKeydown
         {
             get { return _ctrlDragToZoom; }
             set { _ctrlDragToZoom = value; }
         }
 
+        /// <summary>
+        /// Mouse Wheel Zoom mode used to control zoom behaviour 
+        /// </summary>
         public MouseWheelZoomMode MouseWheelZoomMode
         {
             get;
@@ -2148,6 +2243,9 @@ namespace EGIS.Controls
             }
         }
 
+        /// <summary>
+        /// whether Shift Key is currently down
+        /// </summary>
         protected bool ShiftKeyDown
         {
             get
@@ -2184,6 +2282,9 @@ namespace EGIS.Controls
             }
         }
 
+        /// <summary>
+        /// mouse coordinate when mouse down event fired
+        /// </summary>
         protected Point MouseDownPoint
         {
             get
@@ -2196,7 +2297,9 @@ namespace EGIS.Controls
             }
         }
 
-
+        /// <summary>
+        /// MouseOffset point
+        /// </summary>
         protected Point MouseOffsetPoint
         {
             get

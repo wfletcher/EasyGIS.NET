@@ -40,14 +40,14 @@ namespace EGIS.ShapeFileLib
     [Serializable, StructLayout(LayoutKind.Sequential)]
     public struct RectangleD
     {
-        /// <summary>Represents an instance of the <see cref="T:System.Drawing.RectangleD"></see> class with its members uninitialized.</summary>
+        /// <summary>Represents an instance of the <see cref="EGIS.ShapeFileLib.RectangleD"></see> class with its members uninitialized.</summary>
         /// <filterpriority>1</filterpriority>
         public static readonly RectangleD Empty;
         private double x;
         private double y;
         private double width;
         private double height;
-        /// <summary>Initializes a new instance of the <see cref="T:System.Drawing.RectangleD"></see> class with the specified location and size.</summary>
+        /// <summary>Initializes a new instance of the <see cref="EGIS.ShapeFileLib.RectangleD"></see> class with the specified location and size.</summary>
         /// <param name="y">The y-coordinate of the upper-left corner of the rectangle. </param>
         /// <param name="width">The width of the rectangle. </param>
         /// <param name="height">The height of the rectangle. </param>
@@ -60,9 +60,9 @@ namespace EGIS.ShapeFileLib
             this.height = height;
         }
 
-        /// <summary>Initializes a new instance of the <see cref="T:System.Drawing.RectangleD"></see> class with the specified location and size.</summary>
-        /// <param name="size">A <see cref="T:System.Drawing.SizeD"></see> that represents the width and height of the rectangular region. </param>
-        /// <param name="location">A <see cref="T:System.Drawing.PointD"></see> that represents the upper-left corner of the rectangular region. </param>
+        /// <summary>Initializes a new instance of the <see cref="EGIS.ShapeFileLib.RectangleD"></see> class with the specified location and size.</summary>
+        /// <param name="size">A <see cref="EGIS.ShapeFileLib.SizeD"></see> that represents the width and height of the rectangular region. </param>
+        /// <param name="location">A <see cref="EGIS.ShapeFileLib.PointD"></see> that represents the upper-left corner of the rectangular region. </param>
         public RectangleD(PointD location, SizeD size)
         {
             this.x = location.X;
@@ -71,8 +71,8 @@ namespace EGIS.ShapeFileLib
             this.height = size.Height;
         }
 
-        /// <summary>Creates a <see cref="T:System.Drawing.RectangleD"></see> structure with upper-left corner and lower-right corner at the specified locations.</summary>
-        /// <returns>The new <see cref="T:System.Drawing.RectangleD"></see> that this method creates.</returns>
+        /// <summary>Creates a <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure with upper-left corner and lower-right corner at the specified locations.</summary>
+        /// <returns>The new <see cref="EGIS.ShapeFileLib.RectangleD"></see> that this method creates.</returns>
         /// <param name="right">The x-coordinate of the lower-right corner of the rectangular region. </param>
         /// <param name="bottom">The y-coordinate of the lower-right corner of the rectangular region. </param>
         /// <param name="left">The x-coordinate of the upper-left corner of the rectangular region. </param>
@@ -83,8 +83,8 @@ namespace EGIS.ShapeFileLib
             return new RectangleD(left, top, right - left, bottom - top);
         }
 
-        /// <summary>Gets or sets the coordinates of the upper-left corner of this <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
-        /// <returns>A <see cref="T:System.Drawing.PointD"></see> that represents the upper-left corner of this <see cref="T:System.Drawing.RectangleD"></see> structure.</returns>
+        /// <summary>Gets or sets the coordinates of the upper-left corner of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
+        /// <returns>A <see cref="EGIS.ShapeFileLib.PointD"></see> that represents the upper-left corner of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</returns>
         /// <filterpriority>1</filterpriority>
         [Browsable(false)]
         public PointD Location
@@ -99,8 +99,8 @@ namespace EGIS.ShapeFileLib
                 this.Y = value.Y;
             }
         }
-        /// <summary>Gets or sets the size of this <see cref="T:System.Drawing.RectangleD"></see>.</summary>
-        /// <returns>A <see cref="T:System.Drawing.SizeD"></see> that represents the width and height of this <see cref="T:System.Drawing.RectangleD"></see> structure.</returns>
+        /// <summary>Gets or sets the size of this <see cref="EGIS.ShapeFileLib.RectangleD"></see>.</summary>
+        /// <returns>A <see cref="EGIS.ShapeFileLib.SizeD"></see> that represents the width and height of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</returns>
         /// <filterpriority>1</filterpriority>
         [Browsable(false)]
         public SizeD Size
@@ -115,8 +115,8 @@ namespace EGIS.ShapeFileLib
                 this.Height = value.Height;
             }
         }
-        /// <summary>Gets or sets the x-coordinate of the upper-left corner of this <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
-        /// <returns>The x-coordinate of the upper-left corner of this <see cref="T:System.Drawing.RectangleD"></see> structure.</returns>
+        /// <summary>Gets or sets the x-coordinate of the upper-left corner of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
+        /// <returns>The x-coordinate of the upper-left corner of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</returns>
         /// <filterpriority>1</filterpriority>
         public double X
         {
@@ -129,8 +129,8 @@ namespace EGIS.ShapeFileLib
                 this.x = value;
             }
         }
-        /// <summary>Gets or sets the y-coordinate of the upper-left corner of this <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
-        /// <returns>The y-coordinate of the upper-left corner of this <see cref="T:System.Drawing.RectangleD"></see> structure. </returns>
+        /// <summary>Gets or sets the y-coordinate of the upper-left corner of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
+        /// <returns>The y-coordinate of the upper-left corner of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure. </returns>
         /// <filterpriority>1</filterpriority>
         public double Y
         {
@@ -143,8 +143,8 @@ namespace EGIS.ShapeFileLib
                 this.y = value;
             }
         }
-        /// <summary>Gets or sets the width of this <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
-        /// <returns>The width of this <see cref="T:System.Drawing.RectangleD"></see> structure.</returns>
+        /// <summary>Gets or sets the width of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
+        /// <returns>The width of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</returns>
         /// <filterpriority>1</filterpriority>
         public double Width
         {
@@ -157,8 +157,8 @@ namespace EGIS.ShapeFileLib
                 this.width = value;
             }
         }
-        /// <summary>Gets or sets the height of this <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
-        /// <returns>The height of this <see cref="T:System.Drawing.RectangleD"></see> structure.</returns>
+        /// <summary>Gets or sets the height of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
+        /// <returns>The height of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</returns>
         /// <filterpriority>1</filterpriority>
         public double Height
         {
@@ -171,8 +171,8 @@ namespace EGIS.ShapeFileLib
                 this.height = value;
             }
         }
-        /// <summary>Gets the x-coordinate of the left edge of this <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
-        /// <returns>The x-coordinate of the left edge of this <see cref="T:System.Drawing.RectangleD"></see> structure.</returns>
+        /// <summary>Gets the x-coordinate of the left edge of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
+        /// <returns>The x-coordinate of the left edge of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</returns>
         /// <filterpriority>1</filterpriority>
         [Browsable(false)]
         public double Left
@@ -182,8 +182,8 @@ namespace EGIS.ShapeFileLib
                 return this.X;
             }
         }
-        /// <summary>Gets the y-coordinate of the top edge of this <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
-        /// <returns>The y-coordinate of the top edge of this <see cref="T:System.Drawing.RectangleD"></see> structure.</returns>
+        /// <summary>Gets the y-coordinate of the top edge of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
+        /// <returns>The y-coordinate of the top edge of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</returns>
         /// <filterpriority>1</filterpriority>
         [Browsable(false)]
         public double Top
@@ -193,8 +193,8 @@ namespace EGIS.ShapeFileLib
                 return this.Y;
             }
         }
-        /// <summary>Gets the x-coordinate that is the sum of <see cref="P:System.Drawing.RectangleD.X"></see> and <see cref="P:System.Drawing.RectangleD.Width"></see> of this <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
-        /// <returns>The x-coordinate that is the sum of <see cref="P:System.Drawing.RectangleD.X"></see> and <see cref="P:System.Drawing.RectangleD.Width"></see> of this <see cref="T:System.Drawing.RectangleD"></see> structure.</returns>
+        /// <summary>Gets the x-coordinate that is the sum of <see cref="EGIS.ShapeFileLib.RectangleD.X"></see> and <see cref="EGIS.ShapeFileLib.RectangleD.Width"></see> of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
+        /// <returns>The x-coordinate that is the sum of <see cref="EGIS.ShapeFileLib.RectangleD.X"></see> and <see cref="EGIS.ShapeFileLib.RectangleD.Width"></see> of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</returns>
         /// <filterpriority>1</filterpriority>
         [Browsable(false)]
         public double Right
@@ -204,8 +204,8 @@ namespace EGIS.ShapeFileLib
                 return (this.X + this.Width);
             }
         }
-        /// <summary>Gets the y-coordinate that is the sum of <see cref="P:System.Drawing.RectangleD.Y"></see> and <see cref="P:System.Drawing.RectangleD.Height"></see> of this <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
-        /// <returns>The y-coordinate that is the sum of <see cref="P:System.Drawing.RectangleD.Y"></see> and <see cref="P:System.Drawing.RectangleD.Height"></see> of this <see cref="T:System.Drawing.RectangleD"></see> structure.</returns>
+        /// <summary>Gets the y-coordinate that is the sum of <see cref="EGIS.ShapeFileLib.RectangleD.Y"></see> and <see cref="EGIS.ShapeFileLib.RectangleD.Height"></see> of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
+        /// <returns>The y-coordinate that is the sum of <see cref="EGIS.ShapeFileLib.RectangleD.Y"></see> and <see cref="EGIS.ShapeFileLib.RectangleD.Height"></see> of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</returns>
         /// <filterpriority>1</filterpriority>
         [Browsable(false)]
         public double Bottom
@@ -215,8 +215,8 @@ namespace EGIS.ShapeFileLib
                 return (this.Y + this.Height);
             }
         }
-        /// <summary>Tests whether the <see cref="P:System.Drawing.RectangleD.Width"></see> or <see cref="P:System.Drawing.RectangleD.Height"></see> property of this <see cref="T:System.Drawing.RectangleD"></see> has a value of zero.</summary>
-        /// <returns>This property returns true if the <see cref="P:System.Drawing.RectangleD.Width"></see> or <see cref="P:System.Drawing.RectangleD.Height"></see> property of this <see cref="T:System.Drawing.RectangleD"></see> has a value of zero; otherwise, false.</returns>
+        /// <summary>Tests whether the <see cref="EGIS.ShapeFileLib.RectangleD.Width"></see> or <see cref="EGIS.ShapeFileLib.RectangleD.Height"></see> property of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> has a value of zero.</summary>
+        /// <returns>This property returns true if the <see cref="EGIS.ShapeFileLib.RectangleD.Width"></see> or <see cref="EGIS.ShapeFileLib.RectangleD.Height"></see> property of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> has a value of zero; otherwise, false.</returns>
         /// <filterpriority>1</filterpriority>
         [Browsable(false)]
         public bool IsEmpty
@@ -230,9 +230,9 @@ namespace EGIS.ShapeFileLib
                 return true;
             }
         }
-        /// <summary>Tests whether obj is a <see cref="T:System.Drawing.RectangleD"></see> with the same location and size of this <see cref="T:System.Drawing.RectangleD"></see>.</summary>
-        /// <returns>This method returns true if obj is a <see cref="T:System.Drawing.RectangleD"></see> and its X, Y, Width, and Height properties are equal to the corresponding properties of this <see cref="T:System.Drawing.RectangleD"></see>; otherwise, false.</returns>
-        /// <param name="obj">The <see cref="T:System.Object"></see> to test. </param>
+        /// <summary>Tests whether obj is a <see cref="EGIS.ShapeFileLib.RectangleD"></see> with the same location and size of this <see cref="EGIS.ShapeFileLib.RectangleD"></see>.</summary>
+        /// <returns>This method returns true if obj is a <see cref="EGIS.ShapeFileLib.RectangleD"></see> and its X, Y, Width, and Height properties are equal to the corresponding properties of this <see cref="EGIS.ShapeFileLib.RectangleD"></see>; otherwise, false.</returns>
+        /// <param name="obj">The <see cref="System.Object"></see> to test. </param>
         /// <filterpriority>1</filterpriority>
         public override bool Equals(object obj)
         {
@@ -244,28 +244,29 @@ namespace EGIS.ShapeFileLib
             return ((((ef.X == this.X) && (ef.Y == this.Y)) && (ef.Width == this.Width)) && (ef.Height == this.Height));
         }
 
-        /// <summary>Tests whether two <see cref="T:System.Drawing.RectangleD"></see> structures have equal location and size.</summary>
-        /// <returns>This operator returns true if the two specified <see cref="T:System.Drawing.RectangleD"></see> structures have equal <see cref="P:System.Drawing.RectangleD.X"></see>, <see cref="P:System.Drawing.RectangleD.Y"></see>, <see cref="P:System.Drawing.RectangleD.Width"></see>, and <see cref="P:System.Drawing.RectangleD.Height"></see> properties.</returns>
-        /// <param name="right">The <see cref="T:System.Drawing.RectangleD"></see> structure that is to the right of the equality operator. </param>
-        /// <param name="left">The <see cref="T:System.Drawing.RectangleD"></see> structure that is to the left of the equality operator. </param>
+        /// <summary>Tests whether two <see cref="EGIS.ShapeFileLib.RectangleD"></see> structures have equal location and size.</summary>
+        /// <returns>This operator returns true if the two specified <see cref="EGIS.ShapeFileLib.RectangleD"></see> structures have equal <see cref="EGIS.ShapeFileLib.RectangleD.X"></see>, <see cref="EGIS.ShapeFileLib.RectangleD.Y"></see>, <see cref="EGIS.ShapeFileLib.RectangleD.Width"></see>, and <see cref="EGIS.ShapeFileLib.RectangleD.Height"></see> properties.</returns>
+        /// <param name="right">The <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure that is to the right of the equality operator. </param>
+        /// <param name="left">The <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure that is to the left of the equality operator. </param>
         /// <filterpriority>3</filterpriority>
         public static bool operator ==(RectangleD left, RectangleD right)
         {
             return ((((left.X == right.X) && (left.Y == right.Y)) && (left.Width == right.Width)) && (left.Height == right.Height));
         }
 
-        /// <summary>Tests whether two <see cref="T:System.Drawing.RectangleD"></see> structures differ in location or size.</summary>
-        /// <returns>This operator returns true if any of the <see cref="P:System.Drawing.RectangleD.X"></see> , <see cref="P:System.Drawing.RectangleD.Y"></see>, <see cref="P:System.Drawing.RectangleD.Width"></see>, or <see cref="P:System.Drawing.RectangleD.Height"></see> properties of the two <see cref="T:System.Drawing.Rectangle"></see> structures are unequal; otherwise false.</returns>
-        /// <param name="right">The <see cref="T:System.Drawing.RectangleD"></see> structure that is to the right of the inequality operator. </param>
-        /// <param name="left">The <see cref="T:System.Drawing.RectangleD"></see> structure that is to the left of the inequality operator. </param>
+        /// <summary>Tests whether two <see cref="EGIS.ShapeFileLib.RectangleD"></see> structures differ in location or size.</summary>
+        /// <returns>This operator returns true if any of the <see cref="EGIS.ShapeFileLib.RectangleD.X"></see> , <see cref="EGIS.ShapeFileLib.RectangleD.Y"></see>, <see cref="EGIS.ShapeFileLib.RectangleD.Width"></see>, or <see cref="EGIS.ShapeFileLib.RectangleD.Height"></see> 
+        /// properties of the two <see cref="EGIS.ShapeFileLib.RectangleD"></see> structures are unequal; otherwise false.</returns>
+        /// <param name="right">The <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure that is to the right of the inequality operator. </param>
+        /// <param name="left">The <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure that is to the left of the inequality operator. </param>
         /// <filterpriority>3</filterpriority>
         public static bool operator !=(RectangleD left, RectangleD right)
         {
             return !(left == right);
         }
 
-        /// <summary>Determines if the specified point is contained within this <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
-        /// <returns>This method returns true if the point defined by x and y is contained within this <see cref="T:System.Drawing.RectangleD"></see> structure; otherwise false.</returns>
+        /// <summary>Determines if the specified point is contained within this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
+        /// <returns>This method returns true if the point defined by x and y is contained within this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure; otherwise false.</returns>
         /// <param name="y">The y-coordinate of the point to test. </param>
         /// <param name="x">The x-coordinate of the point to test. </param>
         /// <filterpriority>1</filterpriority>
@@ -274,36 +275,36 @@ namespace EGIS.ShapeFileLib
             return ((((this.X <= x) && (x <= (this.X + this.Width))) && (this.Y <= y)) && (y <= (this.Y + this.Height)));
         }
 
-        /// <summary>Determines if the specified point is contained within this <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
-        /// <returns>This method returns true if the point represented by the pt parameter is contained within this <see cref="T:System.Drawing.RectangleD"></see> structure; otherwise false.</returns>
-        /// <param name="pt">The <see cref="T:System.Drawing.PointD"></see> to test. </param>
+        /// <summary>Determines if the specified point is contained within this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
+        /// <returns>This method returns true if the point represented by the pt parameter is contained within this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure; otherwise false.</returns>
+        /// <param name="pt">The <see cref="EGIS.ShapeFileLib.PointD"></see> to test. </param>
         /// <filterpriority>1</filterpriority>
         public bool Contains(PointD pt)
         {
             return this.Contains(pt.X, pt.Y);
         }
 
-        /// <summary>Determines if the rectangular region represented by rect is entirely contained within this <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
-        /// <returns>This method returns true if the rectangular region represented by rect is entirely contained within the rectangular region represented by this <see cref="T:System.Drawing.RectangleD"></see>; otherwise false.</returns>
-        /// <param name="rect">The <see cref="T:System.Drawing.RectangleD"></see> to test. </param>
+        /// <summary>Determines if the rectangular region represented by rect is entirely contained within this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
+        /// <returns>This method returns true if the rectangular region represented by rect is entirely contained within the rectangular region represented by this <see cref="EGIS.ShapeFileLib.RectangleD"></see>; otherwise false.</returns>
+        /// <param name="rect">The <see cref="EGIS.ShapeFileLib.RectangleD"></see> to test. </param>
         /// <filterpriority>1</filterpriority>
         public bool Contains(RectangleD rect)
         {
             return ((((this.X <= rect.X) && ((rect.X + rect.Width) <= (this.X + this.Width))) && (this.Y <= rect.Y)) && ((rect.Y + rect.Height) <= (this.Y + this.Height)));
         }
 
-        /// <summary>Gets the hash code for this <see cref="T:System.Drawing.RectangleD"></see> structure. For information about the use of hash codes, see Object.GetHashCode.</summary>
-        /// <returns>The hash code for this <see cref="T:System.Drawing.RectangleD"></see>.</returns>
+        /// <summary>Gets the hash code for this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure. For information about the use of hash codes, see Object.GetHashCode.</summary>
+        /// <returns>The hash code for this <see cref="EGIS.ShapeFileLib.RectangleD"></see>.</returns>
         /// <filterpriority>1</filterpriority>
         public override int GetHashCode()
         {
             return (int)(((((uint)this.X) ^ ((((uint)this.Y) << 13) | (((uint)this.Y) >> 0x13))) ^ ((((uint)this.Width) << 0x1a) | (((uint)this.Width) >> 6))) ^ ((((uint)this.Height) << 7) | (((uint)this.Height) >> 0x19)));
         }
 
-        /// <summary>Inflates this <see cref="T:System.Drawing.RectangleD"></see> structure by the specified amount.</summary>
+        /// <summary>Inflates this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure by the specified amount.</summary>
         /// <returns>This method does not return a value.</returns>
-        /// <param name="y">The amount to inflate this <see cref="T:System.Drawing.RectangleD"></see> structure vertically. </param>
-        /// <param name="x">The amount to inflate this <see cref="T:System.Drawing.RectangleD"></see> structure horizontally. </param>
+        /// <param name="y">The amount to inflate this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure vertically. </param>
+        /// <param name="x">The amount to inflate this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure horizontally. </param>
         /// <filterpriority>1</filterpriority>
         public void Inflate(double x, double y)
         {
@@ -313,7 +314,7 @@ namespace EGIS.ShapeFileLib
             this.Height += 2f * y;
         }
 
-        /// <summary>Inflates this <see cref="T:System.Drawing.RectangleD"></see> by the specified amount.</summary>
+        /// <summary>Inflates this <see cref="EGIS.ShapeFileLib.RectangleD"></see> by the specified amount.</summary>
         /// <returns>This method does not return a value.</returns>
         /// <param name="size">The amount to inflate this rectangle. </param>
         /// <filterpriority>1</filterpriority>
@@ -322,9 +323,9 @@ namespace EGIS.ShapeFileLib
             this.Inflate(size.Width, size.Height);
         }
 
-        /// <summary>Creates and returns an inflated copy of the specified <see cref="T:System.Drawing.RectangleD"></see> structure. The copy is inflated by the specified amount. The original rectangle remains unmodified.</summary>
-        /// <returns>The inflated <see cref="T:System.Drawing.RectangleD"></see>.</returns>
-        /// <param name="rect">The <see cref="T:System.Drawing.RectangleD"></see> to be copied. This rectangle is not modified. </param>
+        /// <summary>Creates and returns an inflated copy of the specified <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure. The copy is inflated by the specified amount. The original rectangle remains unmodified.</summary>
+        /// <returns>The inflated <see cref="EGIS.ShapeFileLib.RectangleD"></see>.</returns>
+        /// <param name="rect">The <see cref="EGIS.ShapeFileLib.RectangleD"></see> to be copied. This rectangle is not modified. </param>
         /// <param name="y">The amount to inflate the copy of the rectangle vertically. </param>
         /// <param name="x">The amount to inflate the copy of the rectangle horizontally. </param>
         /// <filterpriority>1</filterpriority>
@@ -335,7 +336,7 @@ namespace EGIS.ShapeFileLib
             return ef;
         }
 
-        /// <summary>Replaces this <see cref="T:System.Drawing.RectangleD"></see> structure with the intersection of itself and the specified <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
+        /// <summary>Replaces this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure with the intersection of itself and the specified <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
         /// <returns>This method does not return a value.</returns>
         /// <param name="rect">The rectangle to intersect. </param>
         /// <filterpriority>1</filterpriority>
@@ -348,8 +349,8 @@ namespace EGIS.ShapeFileLib
             this.Height = ef.Height;
         }
 
-        /// <summary>Returns a <see cref="T:System.Drawing.RectangleD"></see> structure that represents the intersection of two rectangles. If there is no intersection, and empty <see cref="T:System.Drawing.RectangleD"></see> is returned.</summary>
-        /// <returns>A third <see cref="T:System.Drawing.RectangleD"></see> structure the size of which represents the overlapped area of the two specified rectangles.</returns>
+        /// <summary>Returns a <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure that represents the intersection of two rectangles. If there is no intersection, and empty <see cref="EGIS.ShapeFileLib.RectangleD"></see> is returned.</summary>
+        /// <returns>A third <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure the size of which represents the overlapped area of the two specified rectangles.</returns>
         /// <param name="a">A rectangle to intersect. </param>
         /// <param name="b">A rectangle to intersect. </param>
         /// <filterpriority>1</filterpriority>
@@ -383,7 +384,7 @@ namespace EGIS.ShapeFileLib
         }
 
         /// <summary>Creates the smallest possible third rectangle that can contain both of two rectangles that form a union.</summary>
-        /// <returns>A third <see cref="T:System.Drawing.RectangleD"></see> structure that contains both of the two rectangles that form the union.</returns>
+        /// <returns>A third <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure that contains both of the two rectangles that form the union.</returns>
         /// <param name="a">A rectangle to union. </param>
         /// <param name="b">A rectangle to union. </param>
         /// <filterpriority>1</filterpriority>
@@ -417,15 +418,19 @@ namespace EGIS.ShapeFileLib
         }
 
         
-        /// <summary>Converts the specified <see cref="T:System.Drawing.Rectangle"></see> structure to a <see cref="T:System.Drawing.RectangleD"></see> structure.</summary>
-        /// <returns>The <see cref="T:System.Drawing.RectangleD"></see> structure that is converted from the specified <see cref="T:System.Drawing.Rectangle"></see> structure.</returns>
-        /// <param name="r">The <see cref="T:System.Drawing.Rectangle"></see> structure to convert. </param>
+        /// <summary>Converts the specified <see cref="System.Drawing.Rectangle"></see> structure to a <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure.</summary>
+        /// <returns>The <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure that is converted from the specified <see cref="System.Drawing.Rectangle"></see> structure.</returns>
+        /// <param name="r">The <see cref="System.Drawing.Rectangle"></see> structure to convert. </param>
         /// <filterpriority>3</filterpriority>
         public static implicit operator RectangleD(System.Drawing.Rectangle r)
         {
             return new RectangleD((double)r.X, (double)r.Y, (double)r.Width, (double)r.Height);
         }
 
+        /// <summary>
+        /// Converts the specified <see cref="System.Drawing.RectangleF"> </see> structure to a RectangleD/>
+        /// </summary>
+        /// <param name="r"></param>
         public static implicit operator RectangleD(System.Drawing.RectangleF r)
         {
             return new RectangleD((double)r.X, (double)r.Y, (double)r.Width, (double)r.Height);
@@ -436,8 +441,8 @@ namespace EGIS.ShapeFileLib
             return new System.Drawing.RectangleF((float)r.X, (float)r.Y, (float)r.Width, (float)r.Height);
         }
 
-        /// <summary>Converts the Location and <see cref="T:System.Drawing.Size"></see> of this <see cref="T:System.Drawing.RectangleD"></see> to a human-readable string.</summary>
-        /// <returns>A string that contains the position, width, and height of this <see cref="T:System.Drawing.RectangleD"></see> structure¾for example, "{X=20, Y=20, Width=100, Height=50}".</returns>
+        /// <summary>Converts the Location and <see cref="System.Drawing.Size"></see> of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> to a human-readable string.</summary>
+        /// <returns>A string that contains the position, width, and height of this <see cref="EGIS.ShapeFileLib.RectangleD"></see> structure¾for example, "{X=20, Y=20, Width=100, Height=50}".</returns>
         /// <filterpriority>1</filterpriority>
         /// <PermissionSet><IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" /></PermissionSet>
         public override string ToString()

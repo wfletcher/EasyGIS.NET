@@ -360,14 +360,14 @@ namespace EGIS.ShapeFileLib
             return SFRecordCol.LLToProjection(latLong);
         }
 
-        private ICRS wgs84Crs = null;
+        private ICRS wgs84Crs;// = null;
 
         /// <summary>
         /// Convert source extent to WGS84 extent
         /// </summary>
         /// <param name="sourceExtent"></param>
         /// <param name="source"></param>
-        /// <param name="ensure"></param>
+        /// <param name="ensureWidthPositive"></param>
         /// <returns></returns>
         /// <remarks>
         /// For an area of interest crossing the anti-meridian, where west_lon_degree will be greater than east_lon_degree
@@ -625,21 +625,21 @@ namespace EGIS.ShapeFileLib
             //using (ICoordinateTransformation invTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS))
             {
                 //covert the target extent and the shapefile's extent to geographic WGS84 and test if they intersect
-                if (false)
-                {
-                    if (wgs84Crs == null) wgs84Crs = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+                //if (false)
+                //{
+                //    if (wgs84Crs == null) wgs84Crs = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
 
-                    RectangleD targetWgs84 = ConvertExtentToWgs84(extent, coordinateTransformation.TargetCRS);
+                //    RectangleD targetWgs84 = ConvertExtentToWgs84(extent, coordinateTransformation.TargetCRS);
 
-                    RectangleD shapeFileExtentWgs84 = ConvertExtentToWgs84(this.Extent, this.CoordinateReferenceSystem);
+                //    RectangleD shapeFileExtentWgs84 = ConvertExtentToWgs84(this.Extent, this.CoordinateReferenceSystem);
 
-                    if (!shapeFileExtentWgs84.IntersectsWith(targetWgs84)) return;
+                //    if (!shapeFileExtentWgs84.IntersectsWith(targetWgs84)) return;
 
-                    RectangleD intersectingExtent = RectangleD.Intersect(targetWgs84, shapeFileExtentWgs84);
-                    //convert the intersecting geographic coordinates to the shapefile coordinates
+                //    RectangleD intersectingExtent = RectangleD.Intersect(targetWgs84, shapeFileExtentWgs84);
+                //    //convert the intersecting geographic coordinates to the shapefile coordinates
 
-                    RectangleD r = intersectingExtent.Transform(wgs84Crs, this.CoordinateReferenceSystem);
-                }
+                //    RectangleD r = intersectingExtent.Transform(wgs84Crs, this.CoordinateReferenceSystem);
+                //}
 
                 //extent.Transform(coordinateTransformation );
                 RectangleD shapeFileExtent = coordinateTransformation.Transform(extent, TransformDirection.Inverse);
@@ -1328,6 +1328,8 @@ namespace EGIS.ShapeFileLib
         /// Reads and and loads a ShapeFile from Xml representation of the ShapeFile (as output by WriteXml)
         /// </summary>
         /// <param name="element"></param>
+        /// <param name="baseDirectory"></param>
+        /// <param name="useMemoryStreams"></param>
         /// <seealso cref="WriteXml"/>
         public void ReadXml(XmlElement element, string baseDirectory, bool useMemoryStreams=false)
         {            
@@ -1931,6 +1933,7 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         /// <param name="indicies"></param>
         /// <param name="rect">rectangular extent in source CRS coordinates if sourcCRS not null else in the shapefile coordinates</param>
+        /// <param name="sourceCRS"></param>
         /// <remarks>For backward compatibility sourceCRS is null by default</remarks>
         public void GetShapeIndiciesIntersectingRect(List<int> indicies, RectangleD rect, ICRS sourceCRS = null)
         {
@@ -2385,10 +2388,59 @@ namespace EGIS.ShapeFileLib
     /// <summary>
     /// Enumeration representing a ShapeType. Currently supported shape types are Point, PolyLine, Polygon and PolyLineM
     /// </summary>
-    public enum ShapeType { NullShape = 0, Point = 1, PolyLine = 3, Polygon = 5, MultiPoint = 8, PointZ = 11, PolyLineZ = 13, PolygonZ = 15, MultiPointZ = 18, PointM = 21, PolyLineM = 23}
-    
-    	
-	[StructLayout(LayoutKind.Sequential, Pack=1)]
+    public enum ShapeType
+    {
+        /// <summary>
+        /// NullShape.
+        /// </summary>
+        NullShape = 0, 
+        /// <summary>
+        /// Point shapefiles contain a single 2D point for each record
+        /// </summary>
+        Point = 1,
+        /// <summary>
+        /// Polyline shapefiles contain 1 or more 2D polylines (linestrings) for each recoerd
+        /// </summary>
+        PolyLine = 3,
+        /// <summary>
+        /// Polygon shapefiles contain 1 or more 2D polygons for each record
+        /// </summary>
+        Polygon = 5, 
+        /// <summary>
+        /// MultiPoint shapefiles contain 1 or more 2D points for each record
+        /// </summary>
+        MultiPoint = 8,
+        /// <summary>
+        /// PointZ shapefiles contain a single 3D point for each record
+        /// </summary>
+        PointZ = 11,
+        /// <summary>
+        /// PolyLineZ shapefiles contain 1 or more 2D polylines with optional Z and Measure values for each polyline point
+        /// </summary>
+        PolyLineZ = 13,
+        /// <summary>
+        /// PolygonZ shapefiles contain 1 or more 3D polygons
+        /// </summary>
+        PolygonZ = 15,
+        /// <summary>
+        /// MultiPointZ shapefiles contain 1 or more 3D points for each record
+        /// </summary>
+        MultiPointZ = 18,
+        /// <summary>
+        /// PointM shapefiles contain a single 2D point and optional Measure for each record
+        /// </summary>
+        PointM = 21,
+        /// <summary>
+        /// PolyLineM shapefiles contain 1 or more 2D polylines and Measures polyline point measures for each record 
+        /// </summary>
+        PolyLineM = 23
+    }
+
+
+    /// <summary>
+    /// ShapeFileMainHeader structure
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack=1)]
 	unsafe struct ShapeFileMainHeader
 	{
         internal const int MAIN_HEADER_LENGTH = 100;
@@ -2897,7 +2949,7 @@ namespace EGIS.ShapeFileLib
         
         public SFRecordCol(ref ShapeFileMainHeader head, RecordHeader[] recordHeaders)
         {
-            if (recordHeaders == null) throw new ArgumentNullException("recordHeaders can not be null");
+            if (recordHeaders == null) throw new ArgumentNullException(nameof(recordHeaders),"recordHeaders can not be null");
             this.MainHeader = head;
             this.RecordHeaders = recordHeaders;
             recordSelected = new bool[recordHeaders.Length];
@@ -3563,7 +3615,7 @@ namespace EGIS.ShapeFileLib
         /// <param name="customRenderSettings"></param>
         /// <param name="useCustomLabels"></param>
         /// <param name="renderDuplicateFields"></param>
-        protected void DrawLabels(Graphics g, List<RenderPtAngleObj> renderPtObjList, RenderSettings renderSettings,
+        protected static void DrawLabels(Graphics g, List<RenderPtAngleObj> renderPtObjList, RenderSettings renderSettings,
             ICustomRenderSettings customRenderSettings, bool useCustomLabels, bool renderDuplicateFields)
         {
             System.Drawing.Drawing2D.Matrix savedMatrix = g.Transform;
@@ -3642,7 +3694,7 @@ namespace EGIS.ShapeFileLib
         /// <param name="renderSettings"></param>
         /// <param name="customRenderSettings"></param>
         /// <param name="useCustomLabels"></param>
-        protected void DrawLabels(Graphics g, List<PartBoundsIndex> partBoundsIndexList, RenderSettings renderSettings, ICustomRenderSettings customRenderSettings,
+        protected static void DrawLabels(Graphics g, List<PartBoundsIndex> partBoundsIndexList, RenderSettings renderSettings, ICustomRenderSettings customRenderSettings,
             bool useCustomLabels)
         {
             
@@ -3709,7 +3761,7 @@ namespace EGIS.ShapeFileLib
         /// <param name="customRenderSettings"></param>
         /// <param name="clientArea"></param>
         /// <param name="useCustomLabels"></param>
-        protected void DrawLabels(Graphics g, List<RenderPtObj> renderPtObjList, RenderSettings renderSettings, ICustomRenderSettings customRenderSettings,
+        protected static void DrawLabels(Graphics g, List<RenderPtObj> renderPtObjList, RenderSettings renderSettings, ICustomRenderSettings customRenderSettings,
             Size clientArea, bool useCustomLabels)
         {
             Brush fontBrush = new SolidBrush(renderSettings.FontColor);
@@ -4598,7 +4650,7 @@ namespace EGIS.ShapeFileLib
 
         public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
             List<PointF[]> dataList = new List<PointF[]>();
             unsafe
             {
@@ -4621,7 +4673,7 @@ namespace EGIS.ShapeFileLib
 
         public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
             List<PointD[]> dataList = new List<PointD[]>();
             unsafe
             {
@@ -4639,7 +4691,7 @@ namespace EGIS.ShapeFileLib
 
         public PointD GetPointD(int recordIndex, Stream shapeFileStream)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
             unsafe
             {
                 byte[] data = SFRecordCol.SharedBuffer;
@@ -5272,7 +5324,7 @@ namespace EGIS.ShapeFileLib
 
         public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
             List<PointF[]> dataList = new List<PointF[]>();
             unsafe
             {
@@ -5295,7 +5347,7 @@ namespace EGIS.ShapeFileLib
 
         public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
             List<PointD[]> dataList = new List<PointD[]>();
             unsafe
             {
@@ -5313,7 +5365,7 @@ namespace EGIS.ShapeFileLib
 
         public PointD GetPointD(int recordIndex, Stream shapeFileStream)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
             unsafe
             {
                 byte[] data = SFRecordCol.SharedBuffer;
@@ -5335,7 +5387,7 @@ namespace EGIS.ShapeFileLib
 
         public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
             List<float[]> dataList = new List<float[]>();
             unsafe
             {
@@ -5353,7 +5405,7 @@ namespace EGIS.ShapeFileLib
 
         public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
             List<double[]> dataList = new List<double[]>();
             unsafe
             {
@@ -5970,7 +6022,7 @@ namespace EGIS.ShapeFileLib
 
         public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
             List<PointF[]> dataList = new List<PointF[]>();
             unsafe
             {
@@ -5998,7 +6050,7 @@ namespace EGIS.ShapeFileLib
 
         public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
 
             List<PointD[]> dataList = new List<PointD[]>();
             unsafe
@@ -6672,7 +6724,7 @@ namespace EGIS.ShapeFileLib
 
         public override List<PointF[]> GetShapeData(int recordIndex, Stream shapeFileStream)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
             List<PointF[]> dataList = new List<PointF[]>();
             unsafe
             {
@@ -6700,7 +6752,7 @@ namespace EGIS.ShapeFileLib
 
         public override List<PointD[]> GetShapeDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
 
             List<PointD[]> dataList = new List<PointD[]>();
             unsafe
@@ -6724,7 +6776,7 @@ namespace EGIS.ShapeFileLib
 
         public override List<float[]> GetShapeHeightData(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
             List<float[]> dataList = new List<float[]>();
             unsafe
             {
@@ -6753,7 +6805,7 @@ namespace EGIS.ShapeFileLib
 
         public override List<double[]> GetShapeHeightDataD(int recordIndex, Stream shapeFileStream, byte[] dataBuffer)
         {
-            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException("recordIndex");
+            if (recordIndex < 0 || recordIndex >= RecordHeaders.Length) throw new ArgumentOutOfRangeException(nameof(recordIndex));
             List<double[]> dataList = new List<double[]>();
             unsafe
             {
@@ -7928,7 +7980,7 @@ namespace EGIS.ShapeFileLib
                 }
 				if (labelFields)
 				{
-					base.DrawLabels(g, renderPtObjList, renderSettings, customRenderSettings, useCustomLabels, renderDuplicateFields);
+					DrawLabels(g, renderPtObjList, renderSettings, customRenderSettings, useCustomLabels, renderDuplicateFields);
 				}
 				
 			}
@@ -10995,6 +11047,9 @@ namespace EGIS.ShapeFileLib
 
         #region IDisposable Members
 
+        /// <summary>
+        /// Dispose the DbfReader
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
@@ -11274,6 +11329,9 @@ namespace EGIS.ShapeFileLib
             //}
         }
 
+        /// <summary>
+        /// The header Year value
+        /// </summary>
         public byte Year
         {
             get
@@ -11286,6 +11344,9 @@ namespace EGIS.ShapeFileLib
             //}
         }
 
+        /// <summary>
+        /// The header Month value
+        /// </summary>
         public byte Month
         {
             get
@@ -11298,6 +11359,9 @@ namespace EGIS.ShapeFileLib
             //}
         }
 
+        /// <summary>
+        /// The header Day value
+        /// </summary>
         public byte Day
         {
             get
@@ -11325,7 +11389,7 @@ namespace EGIS.ShapeFileLib
         }
 
         /// <summary>
-        /// the number of records contained in the DBF file
+        /// The number of records contained in the DBF file
         /// </summary>
         public int RecordCount
         {
@@ -11385,7 +11449,7 @@ namespace EGIS.ShapeFileLib
         }
 
         /// <summary>
-        /// Method to return an array of DbfFieldDesc structs, describing each field in a record
+        /// Method to return an array of DbfFieldDesc structures, describing each field in a record
         /// </summary>
         /// <returns></returns>
         public DbfFieldDesc[] GetFieldDescriptions()
@@ -11394,7 +11458,7 @@ namespace EGIS.ShapeFileLib
         }
 
         /// <summary>
-        /// 
+        /// ToString override
         /// </summary>
         /// <returns></returns>
 		public override string ToString()
@@ -11464,7 +11528,7 @@ namespace EGIS.ShapeFileLib
             
             set
             {
-                if (string.IsNullOrEmpty(value)) throw new System.ArgumentNullException("fieldName can not be null");
+                if (string.IsNullOrEmpty(value)) throw new System.ArgumentNullException(nameof(FieldName),"FieldName can not be null");
                 if (value.Length > 10) throw new System.ArgumentException("FieldName length must be <=10");
                 _fieldName = value;
             }
@@ -11514,7 +11578,7 @@ namespace EGIS.ShapeFileLib
             }
             set
             {
-                if (value < 0 || value > 15) throw new ArgumentOutOfRangeException("DecimalCount must be >=0 and <=15");
+                if (value < 0 || value > 15) throw new ArgumentOutOfRangeException(nameof(DecimalCount),"DecimalCount must be >=0 and <=15");
                 _decimalCount = value;
             }
         }

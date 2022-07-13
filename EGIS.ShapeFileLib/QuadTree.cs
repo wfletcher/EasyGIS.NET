@@ -126,7 +126,7 @@ namespace EGIS.ShapeFileLib
 
         private RectangleD _bounds;
         private QTNode[] children;
-        private int _level = 0;
+        private int _level;// = 0;
         private List<int> indexList;
 
         public QTNode(RectangleD bounds, int level)

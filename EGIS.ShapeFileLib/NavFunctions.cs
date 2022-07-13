@@ -587,7 +587,7 @@ namespace EGIS.ShapeFileLib
         /// <param name="eccSquared"></param>
         /// <returns></returns>
         /// <remarks>
-        /// <para>Equations from USGS Bulletin 1532 </para>
+        /// <para>Equations from USGS Bulletin 1532
         /// </para>
         /// <para>
         /// returned latitude and longitude points are expressed in decimal degrees.                     
@@ -657,7 +657,7 @@ namespace EGIS.ShapeFileLib
         /// <param name="ellipsoid"></param>
         /// <returns></returns>
         /// <remarks>
-        /// <para>Equations from USGS Bulletin 1532 </para>
+        /// <para>Equations from USGS Bulletin 1532
         /// </para>
         /// <para>
         /// returned latitude and longitude points are expressed in decimal degrees.                     
@@ -795,6 +795,9 @@ namespace EGIS.ShapeFileLib
             return ZoneIdentifier.ToString(System.Globalization.CultureInfo.InvariantCulture) + Easting.ToString(System.Globalization.CultureInfo.InvariantCulture) + "E, " + Northing.ToString(System.Globalization.CultureInfo.InvariantCulture) + "N";
 		}
 
+        /// <summary>
+        /// The coordinate Easting value
+        /// </summary>
         public double Easting
         {
             get
@@ -806,6 +809,10 @@ namespace EGIS.ShapeFileLib
                 _easting = value;
             }
         }
+
+        /// <summary>
+        /// The coordinate Northing value
+        /// </summary>
         public double Northing
         {
             get
@@ -817,6 +824,10 @@ namespace EGIS.ShapeFileLib
                 _northing = value;
             }
         }
+
+        /// <summary>
+        /// The UTM Zone
+        /// </summary>
         public int Zone
         {
             get
@@ -828,6 +839,10 @@ namespace EGIS.ShapeFileLib
                 zone = value;
             }
         }
+
+        /// <summary>
+        /// The UTM Zone character Identifier
+        /// </summary>
         public char ZoneIdentifier
         {
             get
@@ -843,7 +858,7 @@ namespace EGIS.ShapeFileLib
 	}
 
     /// <summary>
-    /// struct used to store a Lat Long Coordinate. Used in ConversionFunctions
+    /// structure used to store a Lat Long Coordinate. Used in ConversionFunctions
     /// </summary>
     /// <seealso cref="ConversionFunctions"/>
 	public struct LatLongCoordinate
@@ -851,11 +866,18 @@ namespace EGIS.ShapeFileLib
 		private double latitude;
 		private double longitude;
 
+        /// <summary>
+        /// ToString override
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture,"{0},{1}", new object[] { Latitude, Longitude });
         }
 
+        /// <summary>
+        /// Latitude in decimal degrees
+        /// </summary>
         public double Latitude
         {
             get
@@ -868,6 +890,9 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        /// <summary>
+        /// Longitude in decimal degrees
+        /// </summary>
         public double Longitude
         {
             get

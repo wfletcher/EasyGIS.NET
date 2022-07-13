@@ -10,14 +10,21 @@ using EGIS.ShapeFileLib;
 
 namespace EGIS.Controls
 {
+    /// <summary>
+    /// UserControl to convert XY csv data to a shapefile
+    /// </summary>
     public partial class CsvToShapeFileControl : UserControl
     {
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public CsvToShapeFileControl()
         {
             InitializeComponent();
         }
 
-        private void btnBrowseSource_Click(object sender, EventArgs e)
+		#region private methods
+		private void btnBrowseSource_Click(object sender, EventArgs e)
         {
             if (ofdCsv.ShowDialog(this) == DialogResult.OK)
             {
@@ -39,7 +46,14 @@ namespace EGIS.Controls
             
         }
 
-        public string SourceDataFile
+		#endregion
+
+		#region public members
+
+        /// <summary>
+        /// Source CSV data file path
+        /// </summary>
+		public string SourceDataFile
         {
             get
             {
@@ -53,6 +67,9 @@ namespace EGIS.Controls
             }
         }
 
+        /// <summary>
+        /// Destination ShapeFile file path
+        /// </summary>
         public string DestinationShapeFile
         {
             get
@@ -67,10 +84,16 @@ namespace EGIS.Controls
 
         }
 
+        /// <summary>
+        /// ConvertShapeFileProgress event
+        /// </summary>
         public event EventHandler<ConvertShapeFileEventArgs> ConvertShapeFileProgressChanged;
 
+		#endregion
 
-        private void UpdateSourceFields()
+		#region private methods
+
+		private void UpdateSourceFields()
         {
             cbXCoordField.Items.Clear();
             cbYCoordField.Items.Clear();
@@ -152,6 +175,7 @@ namespace EGIS.Controls
             }
         }
 
+        #endregion
 
     }
 }

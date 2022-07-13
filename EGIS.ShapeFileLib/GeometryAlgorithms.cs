@@ -188,11 +188,11 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         /// <param name="data"></param>
         /// <param name="offset"></param>
-        /// <param name="numPoints"></param>6
-        /// +
+        /// <param name="numPoints"></param>       
         /// <param name="centre"></param>
         /// <param name="radius"></param>
         /// <param name="ignoreHoles"></param>
+        /// <param name="withinHole"></param>
         /// <returns></returns>
         /// <remarks>Not tested</remarks>
         public static unsafe bool PolygonCircleIntersects(byte[] data, int offset, int numPoints, PointD centre, double radius, bool ignoreHoles, out bool withinHole)
@@ -1011,9 +1011,13 @@ namespace EGIS.ShapeFileLib
             public double YMin;
             public double YMax;
 
+            /// <summary>
+            /// ToString override
+            /// </summary>
+            /// <returns></returns>
             public override string ToString()
             {
-                return string.Format("ClipBounds XMin:{0}, XMax:{1}, YMin:{2}, YMax:{3}", XMin, XMax, YMin, YMax);
+                return string.Format(System.Globalization.CultureInfo.CurrentCulture,"ClipBounds XMin:{0}, XMax:{1}, YMin:{2}, YMax:{3}", XMin, XMax, YMin, YMax);
             }
         }
 
@@ -1406,7 +1410,35 @@ namespace EGIS.ShapeFileLib
 
     }
 
-    public enum LineSegmentSide { None, OnSegment, StartOfSegment, LeftOfSegment, RightOfSegment, EndOfSegment };
+    /// <summary>
+    /// Enumeration describing where a point is relative to a line segment
+    /// </summary>
+    public enum LineSegmentSide
+    {
+        /// <summary>
+        /// None
+        /// </summary>
+        None, 
+        /// <summary>
+        /// point is on the line segment
+        /// </summary>
+        OnSegment, 
+        /// <summary>
+        /// Point is at the start(first point) of the line segment
+        /// </summary>
+        StartOfSegment,        
+        /// <summary>
+        /// Point lies to the left of the line segment
+        /// </summary>
+        LeftOfSegment, 
+        /// <summary>
+        /// Point lies to the right of the line segment
+        /// </summary>
+        RightOfSegment,
+        /// <summary>
+        /// Point is at the end(last point) of the line segment
+        /// </summary>
+        EndOfSegment };
 
     /// <summary>
     /// Encapsulates point from polyline distance information 

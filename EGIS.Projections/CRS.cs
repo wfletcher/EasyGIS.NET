@@ -167,6 +167,9 @@ namespace EGIS.Projections
     /// </summary>
     public interface IProjectedCRS : ICRS
     {
+        /// <summary>
+        /// Returns multiplier to convert the Projected CRS units to meters
+        /// </summary>
         double UnitsToMeters
         {
             get;

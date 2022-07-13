@@ -34,22 +34,22 @@ using System.Globalization;
 
 namespace EGIS.ShapeFileLib
 {
-    /// <summary>Converts <see cref="T:EGIS.ShapeFileLib.SizeD"></see> objects from one type to another.</summary>
+    /// <summary>Converts <see cref="EGIS.ShapeFileLib.SizeD"></see> objects from one type to another.</summary>
     public class SizeDConverter : TypeConverter
     {
-        /// <summary>Returns a value indicating whether the converter can convert from the type specified to the <see cref="T:EGIS.ShapeFileLib.SizeD"></see> type, using the specified context.</summary>
+        /// <summary>Returns a value indicating whether the converter can convert from the type specified to the <see cref="EGIS.ShapeFileLib.SizeD"></see> type, using the specified context.</summary>
         /// <returns>true to indicate the conversion can be performed; otherwise, false. </returns>
-        /// <param name="context">An <see cref="T:System.ComponentModel.ITypeDescriptorContext"></see> through which additional context can be supplied.</param>
-        /// <param name="sourceType">A <see cref="T:System.Type"></see> the represents the type you wish to convert from.</param>
+        /// <param name="context">An <see cref="System.ComponentModel.ITypeDescriptorContext"></see> through which additional context can be supplied.</param>
+        /// <param name="sourceType">A <see cref="System.Type"></see> the represents the type you wish to convert from.</param>
         public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
         {
             return ((sourceType == typeof(string)) || base.CanConvertFrom(context, sourceType));
         }
 
-        /// <summary>Returns a value indicating whether the <see cref="T:EGIS.ShapeFileLib.SizeDConverter"></see> can convert a <see cref="T:EGIS.ShapeFileLib.SizeD"></see> to the specified type.</summary>
+        /// <summary>Returns a value indicating whether the <see cref="EGIS.ShapeFileLib.SizeDConverter"></see> can convert a <see cref="EGIS.ShapeFileLib.SizeD"></see> to the specified type.</summary>
         /// <returns>true if this converter can perform the conversion otherwise, false.</returns>
-        /// <param name="context">An <see cref="T:System.ComponentModel.ITypeDescriptorContext"></see> through which additional context can be supplied.</param>
-        /// <param name="destinationType">A <see cref="T:System.Type"></see> that represents the type you want to convert from.</param>
+        /// <param name="context">An <see cref="System.ComponentModel.ITypeDescriptorContext"></see> through which additional context can be supplied.</param>
+        /// <param name="destinationType">A <see cref="System.Type"></see> that represents the type you want to convert from.</param>
         public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
         {
             return ((destinationType == typeof(System.ComponentModel.Design.Serialization.InstanceDescriptor)) || base.CanConvertTo(context, destinationType));
@@ -86,11 +86,20 @@ namespace EGIS.ShapeFileLib
             return new SizeD(numArray[0], numArray[1]);
         }
 
+        /// <summary>
+        /// ConvertTo override
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="culture"></param>
+        /// <param name="value"></param>
+        /// <param name="destinationType"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
         {
             if (destinationType == null)
             {
-                throw new ArgumentNullException("destinationType");
+                throw new ArgumentNullException(nameof(destinationType));
             }
             if ((destinationType == typeof(string)) && (value is SizeD))
             {
@@ -119,10 +128,10 @@ namespace EGIS.ShapeFileLib
             return base.ConvertTo(context, culture, value, destinationType);
         }
 
-        /// <summary>Creates an instance of a <see cref="T:EGIS.ShapeFileLib.SizeD"></see> with the specified property values using the specified context.</summary>
-        /// <returns>An <see cref="T:System.Object"></see> representing the new <see cref="T:EGIS.ShapeFileLib.SizeD"></see>, or null if the object cannot be created.</returns>
-        /// <param name="propertyValues">An <see cref="T:System.Collections.IDictionary"></see> containing property names and values.</param>
-        /// <param name="context">An <see cref="T:System.ComponentModel.ITypeDescriptorContext"></see> through which additional context can be supplied.</param>
+        /// <summary>Creates an instance of a <see cref="EGIS.ShapeFileLib.SizeD"></see> with the specified property values using the specified context.</summary>
+        /// <returns>An <see cref="System.Object"></see> representing the new <see cref="EGIS.ShapeFileLib.SizeD"></see>, or null if the object cannot be created.</returns>
+        /// <param name="propertyValues">An <see cref="System.Collections.IDictionary"></see> containing property names and values.</param>
+        /// <param name="context">An <see cref="System.ComponentModel.ITypeDescriptorContext"></see> through which additional context can be supplied.</param>
         public override object CreateInstance(ITypeDescriptorContext context, System.Collections.IDictionary propertyValues)
         {
             return new SizeD((double)propertyValues["Width"], (double)propertyValues["Height"]);
@@ -130,25 +139,25 @@ namespace EGIS.ShapeFileLib
 
         /// <summary>Returns a value indicating whether changing a value on this object requires a call to the <see cref="EGIS.ShapeFileLib.SizeDConverter.CreateInstance"></see> method to create a new value.</summary>
         /// <returns>Always returns true.</returns>
-        /// <param name="context">An <see cref="T:System.ComponentModel.ITypeDescriptorContext"></see> that provides a format context. This may be null.</param>
+        /// <param name="context">An <see cref="System.ComponentModel.ITypeDescriptorContext"></see> that provides a format context. This may be null.</param>
         public override bool GetCreateInstanceSupported(ITypeDescriptorContext context)
         {
             return true;
         }
 
-        /// <summary>Retrieves a set of properties for the <see cref="T:EGIS.ShapeFileLib.SizeD"></see> type using the specified context and attributes.</summary>
-        /// <returns>A <see cref="T:System.ComponentModel.PropertyDescriptorCollection"></see> containing the properties.</returns>
-        /// <param name="context">An <see cref="T:System.ComponentModel.ITypeDescriptorContext"></see> through which additional context can be supplied.</param>
-        /// <param name="attributes">An array of <see cref="T:System.Attribute"></see> objects that describe the properties.</param>
-        /// <param name="value">The <see cref="T:System.Object"></see> to return properties for.</param>
+        /// <summary>Retrieves a set of properties for the <see cref="EGIS.ShapeFileLib.SizeD"></see> type using the specified context and attributes.</summary>
+        /// <returns>A <see cref="System.ComponentModel.PropertyDescriptorCollection"></see> containing the properties.</returns>
+        /// <param name="context">An <see cref="System.ComponentModel.ITypeDescriptorContext"></see> through which additional context can be supplied.</param>
+        /// <param name="attributes">An array of <see cref="System.Attribute"></see> objects that describe the properties.</param>
+        /// <param name="value">The <see cref="System.Object"></see> to return properties for.</param>
         public override PropertyDescriptorCollection GetProperties(ITypeDescriptorContext context, object value, Attribute[] attributes)
         {
             return TypeDescriptor.GetProperties(typeof(SizeD), attributes).Sort(new string[] { "Width", "Height" });
         }
 
-        /// <summary>Returns whether the <see cref="T:EGIS.ShapeFileLib.SizeD"></see> type supports properties.</summary>
+        /// <summary>Returns whether the <see cref="EGIS.ShapeFileLib.SizeD"></see> type supports properties.</summary>
         /// <returns>Always returns true.</returns>
-        /// <param name="context">An <see cref="T:System.ComponentModel.ITypeDescriptorContext"></see> through which additional context can be supplied.</param>
+        /// <param name="context">An <see cref="System.ComponentModel.ITypeDescriptorContext"></see> through which additional context can be supplied.</param>
         public override bool GetPropertiesSupported(ITypeDescriptorContext context)
         {
             return true;

@@ -72,6 +72,7 @@ namespace EGIS.ShapeFileLib
         /// <param name="lon"></param>
         /// <param name="lat"></param>
         /// <param name="zoomLevel"></param>
+        /// <param name="tileSize"></param>
         /// <returns>a Point containing the tiles x,y coordinates</returns>
         public static System.Drawing.Point GetTileFromGisLocation(double lon, double lat, int zoomLevel, int tileSize=256)
         {
@@ -87,7 +88,8 @@ namespace EGIS.ShapeFileLib
         /// <param name="tileX">zero based tile x-coord</param>
         /// <param name="tileY">zero based tile y-ccord</param>
         /// <param name="zoomLevel"></param>
-        /// /// <exception cref="System.ArgumentException">If zoomLevel less than zero</exception>
+        /// <param name="tileSize">Size of tiles. must be power of 2. Default size is 256</param>
+        /// <exception cref="System.ArgumentException">If zoomLevel less than zero</exception>
         /// <returns></returns>
         public static PointD GetMercatorCenterPointFromTile(int tileX, int tileY, int zoomLevel, int tileSize=256)
         {
@@ -109,6 +111,7 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         /// <exception cref="System.ArgumentException">If zoomLevel less than zero</exception>
         /// <param name="zoomLevel"></param>
+        /// <param name="tileSize">Size of tiles. must be power of 2. Default size is 256</param>
         /// <returns></returns>
         public static double ZoomLevelToScale(int zoomLevel, int tileSize=256)
         {
@@ -120,6 +123,7 @@ namespace EGIS.ShapeFileLib
         /// Converts a double-precision scaling to equivalent tile zoom-level
         /// </summary>
         /// <param name="scale"></param>
+        /// <param name="tileSize">tile size. Must be power of 2. Default size is 256</param>
         /// <returns></returns>
         public static int ScaleToZoomLevel(double scale, int tileSize=256)
         {

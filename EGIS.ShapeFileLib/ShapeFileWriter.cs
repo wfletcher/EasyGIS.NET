@@ -101,11 +101,11 @@ namespace EGIS.ShapeFileLib
         private int recordCount;
         
         private Stream shapeStream, indexStream, dbfStream, prjStream;
-		private bool usingMemoryStreams = false;
+        private bool usingMemoryStreams;// = false;
         
         private RectangleD shapeBounds = RectangleD.Empty;
 
-        static byte[] ShapeFileHeaderBytes =
+        static readonly byte[] ShapeFileHeaderBytes =
         {0x00,0x00,0x27,0x0a, 0x00,0x00,0x00,0x00,
          0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,
          0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,
@@ -773,8 +773,9 @@ namespace EGIS.ShapeFileLib
 		/// <summary>
 		/// abstract method used to add a new record to the shapefile    
 		/// </summary>
-		/// <param name="parts"> collection of double arrays containing the individual points of each part in the shape record.    
+		/// <param name="parts"> collection of PointD arrays containing the individual points of each part in the shape record.    
 		/// </param>
+        /// <param name="measures">collection of double precision measure values for ech point int parts</param>
 		/// <param name="fieldData">fieldData string values of the data associated with the shape record (which is stored
 		/// in the dbf file)
 		///</param>
@@ -863,6 +864,7 @@ namespace EGIS.ShapeFileLib
 		/// <param name="shapeFileName">The name of the shapefile to create</param>
 		/// <param name="shapeFileType">The ShapeType of the shapefile</param>
 		/// <param name="dataFields">array of DbfFieldDesc objects describing the fields to be created in the shape file's DBF file</param>
+        /// <param name="projectionWkt">The projection WKT that will be written to the shapefile's .prj file</param>
 		/// <returns></returns>
 		public static ShapeFileWriter CreateWriter(string baseDir, string shapeFileName, ShapeType shapeFileType, DbfFieldDesc[] dataFields, string projectionWkt)
 		{
@@ -931,8 +933,13 @@ namespace EGIS.ShapeFileLib
 		/// To create a ShapeFileWriter to create a polyline shapefile pass in ShapeType.Polyline
 		/// </para>
 		/// </remarks>
+        /// <param name="shxStream"></param>
+        /// <param name="shpStream"></param>
+        /// <param name="dbfStream"></param>
+        /// <param name="prjStream"></param>
 		/// <param name="shapeFileType">The ShapeType of the shapefile</param>
 		/// <param name="dataFields">array of DbfFieldDesc objects describing the fields to be created in the shape file's DBF file</param>
+        /// <param name="projectionWkt"></param>
 		/// <returns></returns>
 		public static ShapeFileWriter CreateWriter(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, ShapeType shapeFileType, DbfFieldDesc[] dataFields, string projectionWkt)
 		{
@@ -996,7 +1003,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        private bool closed = false;
+        private bool closed;// = false;
      
         /// <summary>
         /// Updates the headers inside the individual shapefile files and closes any used streams.    
@@ -1054,7 +1061,7 @@ namespace EGIS.ShapeFileLib
             GC.SuppressFinalize(this);
         }
 
-        private bool disposed = false;
+        private bool disposed;// = false;
 
         private void Dispose(bool disposing)
         {
@@ -1529,8 +1536,8 @@ namespace EGIS.ShapeFileLib
     [ObfuscationAttribute(Exclude = true, ApplyToMembers = true)]
     class PolyLineShapeFileWriter : ShapeFileWriter
     {
-        bool useMeasures = false;
-		bool useZValues = false;
+        bool useMeasures;
+		bool useZValues;
 
         internal PolyLineShapeFileWriter(String baseDir, String shapeFileName, DbfFieldDesc[] datafields, bool append)
             :base(baseDir, shapeFileName, datafields, append)
@@ -2060,12 +2067,12 @@ namespace EGIS.ShapeFileLib
 
             //calculate and write the bounding box
             double minX = Double.PositiveInfinity, minY = Double.PositiveInfinity, maxX = Double.NegativeInfinity, maxY = Double.NegativeInfinity;
-            int index = 0;
+            //int index = 0;
 
             //for (int n = 0; n < numPoints; n++)
             for (int n = 0; n < parts.Count; n++)
             {
-                index = 0;
+                //index = 0;
                 PointD[] pts = parts[n];
                 for (int i = 0; i < pts.Length; i++)
                 {

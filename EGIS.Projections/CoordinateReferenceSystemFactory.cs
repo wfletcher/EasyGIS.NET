@@ -324,7 +324,7 @@ namespace EGIS.Projections
             this.projectedCoordinateSystems.Clear();
             this.geographicCoordinateSystems.Clear();
 
-            int count = 0;
+            //int count = 0;
 
             //Use the following code to export to csv file
             List<string> authorites = new List<string>(new string[] { "EPSG" });// Proj6Native.Proj_get_authorities_from_database(IntPtr.Zero);

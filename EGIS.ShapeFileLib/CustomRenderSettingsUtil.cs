@@ -98,7 +98,7 @@ namespace EGIS.ShapeFileLib
             int fieldIndex = -1;
             for (int n = 0; fieldIndex < 0 && n < fieldNames.Length; n++)
             {
-                if (string.Compare(requiredField, fieldNames[n].Trim(), StringComparison.OrdinalIgnoreCase) == 0)
+                if (string.Equals(requiredField, fieldNames[n].Trim(), StringComparison.OrdinalIgnoreCase) )
                 {
                     fieldIndex = n;
                 }
@@ -210,52 +210,52 @@ namespace EGIS.ShapeFileLib
 
         public Color GetRecordFillColor(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
 
         public Color GetRecordOutlineColor(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
 
         public Color GetRecordFontColor(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
 
         public bool RenderShape(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
 
         public bool UseCustomTooltips
         {
-            get { throw new Exception("The method or operation is not implemented."); }
+            get { throw new NotImplementedException("The method or operation is not implemented."); }
         }
 
         public string GetRecordToolTip(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
 
         public bool UseCustomImageSymbols
         {
-            get { throw new Exception("The method or operation is not implemented."); }
+            get { throw new NotImplementedException("The method or operation is not implemented."); }
         }
 
         public Image GetRecordImageSymbol(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
 
         public string GetRecordLabel(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
 
         public bool UseCustomRecordLabels
         {
-            get { throw new Exception("The method or operation is not implemented."); }
+            get { throw new NotImplementedException("The method or operation is not implemented."); }
         }
 
         public int GetDirection(int recordNumber)
@@ -276,50 +276,50 @@ namespace EGIS.ShapeFileLib
 
         public Color GetRecordFillColor(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
 
         public Color GetRecordOutlineColor(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
 
         public Color GetRecordFontColor(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
 
         public bool RenderShape(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
 
         public bool UseCustomTooltips
         {
-            get { throw new Exception("The method or operation is not implemented."); }
+            get { throw new NotImplementedException("The method or operation is not implemented."); }
         }
 
         public string GetRecordToolTip(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
 
         public bool UseCustomImageSymbols
         {
-            get { throw new Exception("The method or operation is not implemented."); }
+            get { throw new NotImplementedException("The method or operation is not implemented."); }
         }
 
         public Image GetRecordImageSymbol(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
         public string GetRecordLabel(int recordNumber)
         {
-            throw new Exception("The method or operation is not implemented.");
+            throw new NotImplementedException("The method or operation is not implemented.");
         }
         public bool UseCustomRecordLabels
         {
-            get { throw new Exception("The method or operation is not implemented."); }
+            get { throw new NotImplementedException("The method or operation is not implemented."); }
         }
 
 

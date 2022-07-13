@@ -35,7 +35,7 @@ namespace EGIS.ShapeFileLib
                         {
                             for (int n = fields.Length - 1; n >= 0; --n)
                             {
-                                if (string.IsNullOrEmpty(fields[n])) throw new Exception(string.Format("Blank field names are not allowed (column number {0})", (n + 1)));
+                                if (string.IsNullOrEmpty(fields[n])) throw new InvalidOperationException(string.Format(System.Globalization.CultureInfo.InvariantCulture,"Blank field names are not allowed (column number {0})", (n + 1)));
                             }
                         }
                     }
@@ -87,11 +87,11 @@ namespace EGIS.ShapeFileLib
             {
                 if (ignoreCase)
                 {
-                    if (string.Compare(fields[index], fieldName, StringComparison.OrdinalIgnoreCase) == 0) return index;
+                    if (string.Equals(fields[index], fieldName, StringComparison.OrdinalIgnoreCase) ) return index;
                 }
                 else
                 {
-                    if (string.Compare(fields[index], fieldName, StringComparison.Ordinal) == 0) return index;
+                    if (string.Equals(fields[index], fieldName, StringComparison.Ordinal) ) return index;
                 }
             }
             return index;
@@ -151,7 +151,7 @@ namespace EGIS.ShapeFileLib
 
             if (yCoordIndex < 0 || xCoordIndex < 0)
             {
-                throw new Exception(string.Format("Could not find '{0}' or '{1}' field", xCoordFieldName, yCoordFieldName) );                
+                throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture,"Could not find '{0}' or '{1}' field", xCoordFieldName, yCoordFieldName) );                
             }
 
             //ensure no duplicate field names after trimming to 10 characters

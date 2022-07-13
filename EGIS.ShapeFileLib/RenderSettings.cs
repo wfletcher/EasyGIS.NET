@@ -64,7 +64,7 @@ namespace EGIS.ShapeFileLib
         private bool renderDuplicateFields = true;
 
         private DbfReader dbfReader;
-		private bool dbfReaderIsOwned = false;
+        private bool dbfReaderIsOwned;// = false;
 
         private Font renderFont;
         private Color fontColor = Color.Black;
@@ -765,7 +765,7 @@ namespace EGIS.ShapeFileLib
             }
         }
 
-		private bool _drawDirectionArrows = false;
+        private bool _drawDirectionArrows;// = false;
 		private int _directionArrowWidth=2;
 		private int _directionArrowLength = 50;
 		private float _directionArrowMinZoomLevel = -1;
@@ -1548,7 +1548,7 @@ namespace EGIS.ShapeFileLib
             return true;
         }
 
-        private string[] standardValues = null;
+        private string[] standardValues;// = null;
 
         public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
         {

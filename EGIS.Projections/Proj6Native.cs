@@ -396,7 +396,7 @@ namespace EGIS.Projections
 
         }
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int proj_context_set_database_path(IntPtr ctx, string dbPath, string auxDbPaths, string options);
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
@@ -411,7 +411,7 @@ namespace EGIS.Projections
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr proj_crs_get_datum(IntPtr ctx, IntPtr crs);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern IntPtr proj_create_from_database(IntPtr ctx, string auth_name, string code, PJ_CATEGORY category, int usePROJAlternativeGridNames, string options);
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
@@ -447,7 +447,7 @@ namespace EGIS.Projections
             return result;
         }
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static unsafe extern byte** proj_get_codes_from_database(IntPtr ctx, string auth_name, PJ_TYPE type, int allow_deprecated);
 
         public static unsafe List<string> Proj_get_codes_from_database(IntPtr ctx, string auth_name, PJ_TYPE type, int allow_deprecated)
