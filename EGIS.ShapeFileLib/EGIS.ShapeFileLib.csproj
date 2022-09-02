@@ -20,7 +20,7 @@
     <EnableNETAnalyzers>True</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <TargetFramework>net472</TargetFramework>
-    <PackageIcon>egis.ico</PackageIcon>
+    <PackageIcon>egis.png</PackageIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -58,6 +58,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="..\egis.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+      <Link>egis.png</Link>
+    </None>
     <None Include="egis.pfx" />
     <None Update="egis.ico">
       <Pack>True</Pack>

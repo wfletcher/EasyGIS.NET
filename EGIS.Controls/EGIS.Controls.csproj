@@ -21,7 +21,7 @@
     <EnableNETAnalyzers>True</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <TargetFramework>net472</TargetFramework>
-    <PackageIcon>egis.ico</PackageIcon>
+    <PackageIcon>egis.png</PackageIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DocumentationFile>bin\Debug\EGIS.Controls.XML</DocumentationFile>
@@ -62,5 +62,16 @@
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Reference Include="System.Net.Http" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="egis.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\egis.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+      <Link>egis.png</Link>
+    </None>
   </ItemGroup>
 </Project>
