@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!--<TargetFramework>net6.0-windows</TargetFramework>-->
-    <TargetFrameworks>net47;net6.0-windows</TargetFrameworks>
     <OutputType>Library</OutputType>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>egis.snk</AssemblyOriginatorKeyFile>
@@ -20,6 +19,7 @@
     <PackageTags>C# shapefile library; Easy GIS .NET; C# GIS library shapefile reader writer</PackageTags>
     <EnableNETAnalyzers>True</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <TargetFramework>net472</TargetFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -77,4 +77,16 @@
     <None Include="build\net47\**" Pack="true" PackagePath="\build\net47" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="KbAis.OpenPit.Core.Geometry" Version="0.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\EGIS.ShapeFileLib\egis.ico">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+      <Link>egis.ico</Link>
+    </None>
+  </ItemGroup>
+  
 </Project>

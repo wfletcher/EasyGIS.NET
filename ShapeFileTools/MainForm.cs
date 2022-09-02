@@ -37,6 +37,7 @@ using System.Xml;
 using EGIS.ShapeFileLib;
 using System.Drawing.Printing;
 using EGIS.Projections;
+using KbAis.OpenPit.Core.Geometry.Shape.ValueObjects;
 
 namespace egis
 {

@@ -35,6 +35,7 @@ using System.Net.Cache;
 using System.Net;
 using System.Threading.Tasks;
 using System.Net.Http;
+using KbAis.OpenPit.Core.Geometry.Shape.ValueObjects;
 
 namespace EGIS.Controls
 {

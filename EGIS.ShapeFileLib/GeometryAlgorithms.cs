@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
+using KbAis.OpenPit.Core.Geometry.Shape.ValueObjects;
 
 namespace EGIS.ShapeFileLib
 {
@@ -928,7 +928,7 @@ namespace EGIS.ShapeFileLib
         /// <param name="inputPointCount">The number of points in inputPoints</param>
         /// <param name="tolerance">the tolerance before discarding points - see DP algorithm for explanation</param>
         /// <returns>number of reduced points</returns>
-        public static int SimplifyDouglasPeucker(EGIS.ShapeFileLib.PointD[] inputPoints, List<int> reducedPointIndicies, int inputPointCount, double tolerance)
+        public static int SimplifyDouglasPeucker(PointD[] inputPoints, List<int> reducedPointIndicies, int inputPointCount, double tolerance)
         {
             reducedPointIndicies.Clear();
             if (inputPointCount < 3)
@@ -971,7 +971,7 @@ namespace EGIS.ShapeFileLib
         }
 
 
-        private static void DouglasPeuckerReduction(EGIS.ShapeFileLib.PointD[] points, Int32 firstPoint, Int32 lastPoint, Double tolerance,
+        private static void DouglasPeuckerReduction(PointD[] points, Int32 firstPoint, Int32 lastPoint, Double tolerance,
             List<Int32> pointIndexsToKeep)
         {
             double maxDistance = 0;
@@ -1050,7 +1050,7 @@ namespace EGIS.ShapeFileLib
         }
 
         /// <summary>
-        /// Cohen–Sutherland clipping algorithm clips a line from P0 = (x0, y0) to P1 = (x1, y1) against a clipBounds rectangle 
+        /// Cohenï¿½Sutherland clipping algorithm clips a line from P0 = (x0, y0) to P1 = (x1, y1) against a clipBounds rectangle 
         /// </summary>
         /// <param name="x0"></param>
         /// <param name="y0"></param>

@@ -34,6 +34,7 @@ using System.Collections.Generic;
 using System.Xml;
 using System.Security.Permissions;
 using EGIS.Projections;
+using KbAis.OpenPit.Core.Geometry.Shape.ValueObjects;
 
 [assembly: CLSCompliant(true)]
 //give the EGIS.Controls access to the internal methods

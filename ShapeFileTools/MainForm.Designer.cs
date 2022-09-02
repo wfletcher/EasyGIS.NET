@@ -827,7 +827,7 @@ namespace egis
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
 			this.sfMap1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-			this.sfMap1.CentrePoint2D = ((EGIS.ShapeFileLib.PointD)(resources.GetObject("sfMap1.CentrePoint2D")));
+			this.sfMap1.CentrePoint2D = ((KbAis.OpenPit.Core.Geometry.Shape.ValueObjects.PointD)(resources.GetObject("sfMap1.CentrePoint2D")));
 			this.sfMap1.Cursor = System.Windows.Forms.Cursors.Default;
 			this.sfMap1.DefaultMapCursor = System.Windows.Forms.Cursors.Default;
 			this.sfMap1.DefaultSelectionCursor = System.Windows.Forms.Cursors.Hand;

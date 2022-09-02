@@ -1,6 +1,7 @@
 ﻿using System;
 
 using EGIS.Projections;
+using KbAis.OpenPit.Core.Geometry.Shape.ValueObjects;
 
 namespace EGIS.ShapeFileLib
 {

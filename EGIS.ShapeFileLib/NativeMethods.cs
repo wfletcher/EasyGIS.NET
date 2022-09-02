@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Drawing;
+using KbAis.OpenPit.Core.Geometry.Shape.ValueObjects;
 
 namespace EGIS.ShapeFileLib
 {

@@ -32,6 +32,7 @@ using System.Text;
 using System.IO;
 using System.Drawing;
 using System.Reflection;
+using KbAis.OpenPit.Core.Geometry.Shape.ValueObjects;
 
 namespace EGIS.ShapeFileLib
 {

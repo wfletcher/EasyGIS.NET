@@ -34,6 +34,7 @@ using System.Data;
 using System.Text;
 using System.Windows.Forms;
 using EGIS.ShapeFileLib;
+using KbAis.OpenPit.Core.Geometry.Shape.ValueObjects;
 
 namespace EGIS.Controls
 {
