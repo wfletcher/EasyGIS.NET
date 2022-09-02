@@ -20,6 +20,7 @@
     <EnableNETAnalyzers>True</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <TargetFramework>net472</TargetFramework>
+    <PackageIcon>egis.ico</PackageIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -58,6 +59,10 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="egis.pfx" />
+    <None Update="egis.ico">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="geomutil_lib.dll">
@@ -79,14 +84,6 @@
 
   <ItemGroup>
     <PackageReference Include="KbAis.OpenPit.Core.Geometry" Version="0.0.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\EGIS.ShapeFileLib\egis.ico">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-      <Link>egis.ico</Link>
-    </None>
   </ItemGroup>
   
 </Project>
