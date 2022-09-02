@@ -4,7 +4,7 @@
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <TargetFramework>net472</TargetFramework>
-    <PackageIcon>egis.ico</PackageIcon>
+    <PackageIcon>egis.png</PackageIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -65,6 +65,11 @@
   </ItemGroup>
  
   <ItemGroup>    
+    <None Include="..\egis.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+      <Link>egis.png</Link>
+    </None>    
     <None Include="build\net47\**" Pack="true" PackagePath="\build\net47" />    
     <None Update="egis.ico">
       <Pack>True</Pack>
