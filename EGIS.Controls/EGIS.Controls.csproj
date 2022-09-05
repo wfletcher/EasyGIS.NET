@@ -6,7 +6,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
-    <Version>4.8.1</Version>
+    <Version>4.8.2</Version>
     <Authors>Winston Fletcher</Authors>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Description>Easy GIS .NET Desktop Map Controls</Description>
