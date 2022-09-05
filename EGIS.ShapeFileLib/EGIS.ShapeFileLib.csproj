@@ -2,8 +2,6 @@
   <PropertyGroup>
     <!--<TargetFramework>net6.0-windows</TargetFramework>-->
     <OutputType>Library</OutputType>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>egis.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWindowsForms>true</UseWindowsForms>
@@ -20,7 +18,6 @@
     <EnableNETAnalyzers>True</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <TargetFramework>net472</TargetFramework>
-    <PackageIcon>egis.png</PackageIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -57,18 +54,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net6.0-windows|AnyCPU'">
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <ItemGroup>
-    <None Include="..\egis.png">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-      <Link>egis.png</Link>
-    </None>
-    <None Include="egis.pfx" />
-    <None Update="egis.ico">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
   <ItemGroup>
     <Content Include="geomutil_lib.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

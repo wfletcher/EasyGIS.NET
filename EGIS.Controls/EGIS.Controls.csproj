@@ -3,8 +3,6 @@
   <PropertyGroup>
     <!--<TargetFramework>net6.0-windows</TargetFramework>-->    
     <OutputType>Library</OutputType>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>egis.snk</AssemblyOriginatorKeyFile>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
@@ -21,7 +19,6 @@
     <EnableNETAnalyzers>True</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <TargetFramework>net472</TargetFramework>
-    <PackageIcon>egis.png</PackageIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DocumentationFile>bin\Debug\EGIS.Controls.XML</DocumentationFile>
@@ -62,16 +59,5 @@
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Reference Include="System.Net.Http" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Update="egis.png">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-    <None Include="..\egis.png">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-      <Link>egis.png</Link>
-    </None>
   </ItemGroup>
 </Project>
