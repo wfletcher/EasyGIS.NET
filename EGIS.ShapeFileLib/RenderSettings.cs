@@ -850,9 +850,35 @@ namespace EGIS.ShapeFileLib
 				_directionArrowColor = value;
 			}
 		}
-		
 
-		private ICustomRenderSettings _customRenderSettings;
+        private bool _visible = true;
+
+        /// <summary>
+        /// Get/Set whether the layer is visible
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This property can be used to hide/show a layer without removing it from the map
+        /// </para>
+        /// </remarks>
+        [Category("Layer Render Settings"), Description("Layer visibility"), DefaultValue(true)]
+        public bool Visible
+        {
+            get
+            {
+                return _visible;
+            }
+            set
+            {
+                _visible = value;
+            }
+        }
+
+
+
+
+
+        private ICustomRenderSettings _customRenderSettings;
 
         /// <summary>
         /// Gets or sets a ICustomRenderSettings object that should be applied when rendering the shapefile
@@ -1048,7 +1074,11 @@ namespace EGIS.ShapeFileLib
 			writer.WriteString(ColorTranslator.ToHtml(DirectionArrowColor));
 			writer.WriteEndElement();
 
-			writer.WriteEndElement();
+            writer.WriteStartElement("Visible");
+            writer.WriteString(this.Visible.ToString());
+            writer.WriteEndElement();
+
+            writer.WriteEndElement();
 
         }
 
@@ -1344,8 +1374,14 @@ namespace EGIS.ShapeFileLib
 				}
 			}
 
+            nl = element.GetElementsByTagName("Visible");
+            if (nl != null && nl.Count > 0)
+            {
+                Visible = bool.Parse(nl[0].InnerText);
+            }
 
-		}
+
+        }
 
 		#endregion
 

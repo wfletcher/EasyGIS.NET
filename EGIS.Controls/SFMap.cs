@@ -565,18 +565,10 @@ namespace EGIS.Controls
                 {
                     MapCoordinateReferenceSystem = BackgroundShapeFiles[0].CoordinateReferenceSystem;
                 }
-
-                //set centre point to centre of shapefile and adjust zoom level to fit entire shapefile
-                RectangleF r = ShapeFile.LLExtentToProjectedExtent(this.Extent, this.projectionType);
-
-                this._centrePoint = new PointD(r.Left + r.Width / 2, r.Top + r.Height / 2);
-                if (this.ClientSize.Width > 0) this._zoomLevel = this.ClientSize.Width / r.Width;
-                //dirtyScreenBuf = true;
-                refreshMode = RefreshMode.AllLayers;
-                Refresh();
+                
+                ZoomToFullExtent();
                 OnShapeFilesChanged();
                 OnZoomLevelChanged();
-
             }
 
         }

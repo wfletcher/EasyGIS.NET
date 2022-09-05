@@ -428,7 +428,7 @@ namespace EGIS.ShapeFileLib
         public bool IsVisibleAtZoomLevel(float zoom)
         {
             if (myRenderer == null ) return true;
-            bool ok = !(zoom < myRenderer.MinZoomLevel || (myRenderer.MaxZoomLevel > 0 && zoom > myRenderer.MaxZoomLevel));           
+            bool ok = myRenderer.Visible && !(zoom < myRenderer.MinZoomLevel || (myRenderer.MaxZoomLevel > 0 && zoom > myRenderer.MaxZoomLevel));           
             return ok;
         }
         
