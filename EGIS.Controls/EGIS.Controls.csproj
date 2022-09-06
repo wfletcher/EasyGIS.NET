@@ -6,7 +6,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
-    <Version>4.8.2</Version>
+    <Version>4.8.1</Version>
     <Authors>Winston Fletcher</Authors>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Description>Easy GIS .NET Desktop Map Controls</Description>
@@ -19,7 +19,7 @@
     <EnableNETAnalyzers>True</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <TargetFramework>net472</TargetFramework>
-    <PackageVersion>4.8.2</PackageVersion>
+    <PackageVersion>4.8.1</PackageVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DocumentationFile>bin\Debug\EGIS.Controls.XML</DocumentationFile>
