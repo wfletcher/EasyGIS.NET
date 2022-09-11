@@ -1512,6 +1512,9 @@ namespace EGIS.ShapeFileLib
             set { tVal = value; }
         }
 
+        /// <summary>
+        /// LineSegmentSide describing where the given point lies in relation to the closest line segment
+        /// </summary>
         public LineSegmentSide LineSegmentSide
         {
             get { return lineSegmentSide; }

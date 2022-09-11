@@ -621,57 +621,21 @@ namespace EGIS.ShapeFileLib
 
         void Render(Graphics g, Size clientArea, RectangleD extent, RenderSettings renderSettings, ProjectionType projectionType, ICoordinateTransformation coordinateTransformation)
         {
-            //convert extent from the target coordinates to the shapefile coordinates
-            //using (ICoordinateTransformation invTransformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(coordinateTransformation.TargetCRS, coordinateTransformation.SourceCRS))
+            //convert extent from the target coordinates to the shapefile coordinates                
+            RectangleD shapeFileExtent = coordinateTransformation.Transform(extent, TransformDirection.Inverse);
+            if (shapeFileExtent.IsValidExtent() && this.Extent.IsValidExtent())
             {
-                //covert the target extent and the shapefile's extent to geographic WGS84 and test if they intersect
-                //if (false)
-                //{
-                //    if (wgs84Crs == null) wgs84Crs = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
-
-                //    RectangleD targetWgs84 = ConvertExtentToWgs84(extent, coordinateTransformation.TargetCRS);
-
-                //    RectangleD shapeFileExtentWgs84 = ConvertExtentToWgs84(this.Extent, this.CoordinateReferenceSystem);
-
-                //    if (!shapeFileExtentWgs84.IntersectsWith(targetWgs84)) return;
-
-                //    RectangleD intersectingExtent = RectangleD.Intersect(targetWgs84, shapeFileExtentWgs84);
-                //    //convert the intersecting geographic coordinates to the shapefile coordinates
-
-                //    RectangleD r = intersectingExtent.Transform(wgs84Crs, this.CoordinateReferenceSystem);
-                //}
-
-                //extent.Transform(coordinateTransformation );
-                RectangleD shapeFileExtent = coordinateTransformation.Transform(extent, TransformDirection.Inverse);
-                if (shapeFileExtent.IsValidExtent() && this.Extent.IsValidExtent())
-                {
-                    shapeFileExtent = RectangleD.Intersect(Extent, shapeFileExtent);
-                }
-
-                if (sfRecordCol != null)
-                {
-                    //sfRecordCol.paint(g, clientArea, r, shapeFileStream, RenderSettings, projectionType, coordinateTransformation, extent);
-                    sfRecordCol.paint(g, clientArea, shapeFileExtent, shapeFileStream, RenderSettings, projectionType, coordinateTransformation, extent);
-                }
-
-                //double[] pts = new double[8];
-                //RectangleD r = extent;
-                //pts[0] = r.Left; pts[1] = r.Bottom;
-                //pts[2] = r.Right; pts[3] = r.Bottom;
-                //pts[4] = r.Right; pts[5] = r.Top;
-                //pts[6] = r.Left; pts[7] = r.Top;
-                ////invTransformation.Transform(pts, 4);
-                //coordinateTransformation.Transform(pts, 4, TransformDirection.Inverse);
-                //r = RectangleD.FromLTRB(Math.Min(pts[0], pts[6]),
-                //    Math.Min(pts[5], pts[7]), Math.Max(pts[2], pts[4]),
-                //    Math.Max(pts[1], pts[3]));
-
-                //if (!r.IntersectsWith(ShapeFile.LLExtentToProjectedExtent(Extent, projectionType))) return;
-                //if (sfRecordCol != null)
-                //{
-                //    sfRecordCol.paint(g, clientArea, r, shapeFileStream, RenderSettings, projectionType, coordinateTransformation, extent);
-                //}
+                shapeFileExtent = RectangleD.Intersect(Extent, shapeFileExtent);
+                //Isse #86.
+                //inflate extent by 0.5% so we don't miss points on the edge of the extent when
+                //testing if points intersect
+                shapeFileExtent.Inflate(shapeFileExtent.Width * 0.005, shapeFileExtent.Height * 0.005);
             }
+
+            if (sfRecordCol != null)
+            {
+                sfRecordCol.paint(g, clientArea, shapeFileExtent, shapeFileStream, RenderSettings, projectionType, coordinateTransformation, extent);
+            }                            
         }
 
 
@@ -4730,6 +4694,7 @@ namespace EGIS.ShapeFileLib
         {
             bool useGDI = (this.UseGDI(extent, renderSettings) && renderSettings.GetImageSymbol()==null);
 
+            
             if (useGDI)
             {
                 PaintLowQuality(g, clientArea, extent, shapeFileStream, renderSettings, projectionType, coordinateTransformation, targetExtent);
@@ -4769,7 +4734,7 @@ namespace EGIS.ShapeFileLib
                 //the actual intersecting extent in the shapefile CRS
                 actualExtent = extent;
             }
-
+           
             ICustomRenderSettings customRenderSettings = renderSettings.CustomRenderSettings;
             bool useCustomRenderSettings = (customRenderSettings != null);
             bool useCustomLabels = useCustomRenderSettings && customRenderSettings.UseCustomRecordLabels;
