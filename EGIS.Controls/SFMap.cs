@@ -2733,8 +2733,16 @@ namespace EGIS.Controls
             }
             else if ((this.MapCoordinateReferenceSystem as IProjectedCRS) != null)
             {
+                using (var transformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(
+                    this.MapCoordinateReferenceSystem,
+                    EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode)))
+                {
+                    p0 = transformation.Transform(p0);
+                    p1 = transformation.Transform(p1);
+                    distance = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                }
                 //calculate euclidean distance
-                distance = Math.Sqrt((p1.X - p0.X) * (p1.X - p0.X) + (p1.Y - p0.Y) * (p1.Y - p0.Y));
+                //distance = Math.Sqrt((p1.X - p0.X) * (p1.X - p0.X) + (p1.Y - p0.Y) * (p1.Y - p0.Y));
             }
             return distance;
         }

@@ -822,7 +822,7 @@ namespace egis
 
         private void UpdateVisibleAreaLabel()
         {
-            RectangleF r = this.sfMap1.VisibleExtent;
+            RectangleD r = this.sfMap1.VisibleExtent;
             double w, h;
             if (IsMapFitForMercator())
             {
@@ -834,9 +834,23 @@ namespace egis
             }
             else
             {
+                using (var transformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(
+                    sfMap1.MapCoordinateReferenceSystem,
+                    EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode)))
+                {
+                    PointD p0 = new PointD(r.Left, r.Bottom);
+                    PointD p1 = new PointD(r.Right, r.Bottom);
+                    p0 = transformation.Transform(p0);
+                    p1 = transformation.Transform(p1);
+                    w = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                    p1 = new PointD(r.Left, r.Top);
+                    p1 = transformation.Transform(p1);
+                    h = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+
+                }
                 //assume coord in meters
-                w = r.Width;
-                h = r.Height;
+                //w = r.Width;
+                //h = r.Height;
             }
             tsLabelVisibleArea.Text = w.ToString("0000000.000m") + " x " + h.ToString("0000000.000m");
         }
