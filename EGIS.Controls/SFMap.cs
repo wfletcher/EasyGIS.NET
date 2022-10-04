@@ -453,6 +453,7 @@ namespace EGIS.Controls
             {
             }
             MaxZoomLevel = double.MaxValue;
+            ZoomLevel = 1.0;
 
             MouseWheelZoomMode = MouseWheelZoomMode.Default;
         }
@@ -613,6 +614,7 @@ namespace EGIS.Controls
         /// <seealso cref="CentrePoint"/>
         /// <exception cref="System.ArgumentException"> if ZoomLevel less than or equal to zero</exception>        
         [Browsable(false)]
+        [DefaultValue(1.0)]
         public double ZoomLevel
         {
             get
@@ -621,7 +623,7 @@ namespace EGIS.Controls
             }
             set
             {
-                if (value < double.Epsilon) throw new ArgumentException("ZoomLevel can not be <= Zero");
+                if (value < double.Epsilon) value = double.Epsilon;//throw new ArgumentException("ZoomLevel can not be <= Zero");
 
                 //avoid overflow if zooming to less than 1mm
                 if (value > this._zoomLevel && this.mapCoordinateReferenceSystem is IProjectedCRS && (1 / value < 0.00001)) return;
