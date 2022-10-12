@@ -68,7 +68,7 @@ namespace EGIS.Controls
 			httpClient.DefaultRequestHeaders.Add("User-Agent", "C# App");			
 		}
 
-		public TileCollection(double mapScale, PointD mapCenter, int pixelWidth, int pixelHeight, EGIS.Controls.SFMap map, string[] imageUrlFormat, int tileSourceMaxZoomLevel=25)//, HttpClient httpClient)
+		public TileCollection(double mapScale, PointD mapCenter, int pixelWidth, int pixelHeight, EGIS.Controls.SFMap map, string[] imageUrlFormat, int tileSourceMaxZoomLevel=25, bool useWmsBoundingBoxFormat=false)//, HttpClient httpClient)
 		{
 			int zoomLevel = WebMercatorScaleToZoomLevel(mapScale);
 			long maxPixelsAtZoom = MaxPixelsAtTileZoomLevel(zoomLevel);
@@ -141,8 +141,14 @@ namespace EGIS.Controls
 
                         }
 
-
-                        tiles[tileIndex] = new Tile(tileCoord.X, tileCoord.Y, tileZCoord, dx, dy, imageOffset, scale, map, imageUrlFormat[x % imageUrlFormat.Length], httpClient);
+						if (useWmsBoundingBoxFormat)
+						{
+							tiles[tileIndex] = new WmsTile(tileCoord.X, tileCoord.Y, tileZCoord, dx, dy, imageOffset, scale, map, imageUrlFormat[x % imageUrlFormat.Length], httpClient);
+						}
+						else
+						{
+							tiles[tileIndex] = new Tile(tileCoord.X, tileCoord.Y, tileZCoord, dx, dy, imageOffset, scale, map, imageUrlFormat[x % imageUrlFormat.Length], httpClient);
+						}
                         dx += 256;
                         tileIndex++;
                     }
@@ -198,7 +204,7 @@ namespace EGIS.Controls
 			x = (long)Math.Floor(tileSize * (0.5 + coord.X / (Math.PI * 2 * Wgs84SemiMajorAxis)) * scale);
 			y = (long)Math.Floor(tileSize * (0.5 - coord.Y / (Math.PI * 2 * Wgs84SemiMajorAxis)) * scale);
 		}
-
+		
 
 		/// <summary>
 		/// Render the TileCollection
@@ -232,14 +238,14 @@ namespace EGIS.Controls
     class Tile
     {        
         private EGIS.Controls.SFMap map;
-        private int x, y;
-        private int zoomLevel;
+        protected int x, y;
+        protected int zoomLevel;
         private int pixOffX, pixOffY;
 		private Point imageOffset;
 		private float scale;
 		private HttpClient httpClient;
 
-        private string imageUrlFormat = "";
+        protected string imageUrlFormat = "";
 
         internal const string DefaultImageUrl = "https://a.tile.openstreetmap.org/{0}/{1}/{2}.png";
 
@@ -335,13 +341,21 @@ namespace EGIS.Controls
 			});
 
 		}
+		
 
+		protected virtual string FormatTileUrl()
+		{
+			string strUrl = string.Format(System.Globalization.CultureInfo.InvariantCulture, imageUrlFormat, this.zoomLevel, this.x, this.y);
+			return strUrl;
+		}
 
 		private System.Drawing.Bitmap CreateBitmap()
 		{			
 			try
 			{
-				string strUrl = string.Format(System.Globalization.CultureInfo.InvariantCulture,imageUrlFormat, this.zoomLevel, this.x, this.y);
+				//string strUrl = string.Format(System.Globalization.CultureInfo.InvariantCulture,imageUrlFormat, this.zoomLevel, this.x, this.y);
+				string strUrl = FormatTileUrl();
+
 				System.IO.MemoryStream bitmapStream = GetFromCache(strUrl);
 				if (bitmapStream != null)
 				{
@@ -438,6 +452,38 @@ namespace EGIS.Controls
 			RemovePendingRequest(strUrl);
 		}
     }
+
+	class WmsTile : Tile
+	{
+		public WmsTile(int x, int y, int zoomLevel, int pixOffX, int pixOffY, Point imageOffset, float scale, EGIS.Controls.SFMap map, string imageUrlFormat, HttpClient httpClient)
+			: base(x,y,zoomLevel,pixOffX,pixOffY, imageOffset, scale, map, imageUrlFormat, httpClient)
+		{
+		}
+
+		static RectangleD GetWebMercatorTileLatLonBounds(int tileX, int tileY, int zoomLevel, int tileSize = 256)
+		{
+			if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", nameof(zoomLevel));
+			PointD topLeft = TileUtil.PixelToWebMercator((tileX * tileSize), (tileY * tileSize), zoomLevel, tileSize);
+			PointD bottomRight = TileUtil.PixelToWebMercator(((tileX + 1) * tileSize), ((tileY + 1) * tileSize), zoomLevel, tileSize);
+			return RectangleD.FromLTRB(topLeft.X, bottomRight.Y, bottomRight.X, topLeft.Y);
+		}
+
+		protected override string FormatTileUrl()
+		{
+
+
+			//https://www.e-education.psu.edu/geog585/node/699
+			//bounding box specified by bottom left, top right coords
+			//create bounding box
+			var bounds = GetWebMercatorTileLatLonBounds(this.x, this.y, this.zoomLevel, 256);
+			//0,5009377.085697314,2504688.5428486555,7514065.628545967
+			string boundingBox = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:0.00000000},{1:0.00000000},{2:0.00000000},{3:0.00000000}",
+				bounds.Left, bounds.Top, bounds.Right, bounds.Bottom);
+			string strUrl = string.Format(System.Globalization.CultureInfo.InvariantCulture, imageUrlFormat, boundingBox);
+			return strUrl;
+		}
+
+	}
 
 	/// <summary>
 	/// simple class used to cache requested Tile responses 

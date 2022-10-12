@@ -252,7 +252,13 @@ namespace EGIS.ShapeFileLib
             return coord;
         }
 
-
+        public static RectangleD GetWebMercatorTileLatLonBounds(int tileX, int tileY, int zoomLevel, int tileSize = 256)
+        {
+            if (zoomLevel < 0) throw new System.ArgumentException("zoomLevel must be >=0", nameof(zoomLevel));
+            PointD topLeft = PixelToWebMercator((tileX * tileSize), (tileY * tileSize), zoomLevel, tileSize);
+            PointD bottomRight = PixelToWebMercator(((tileX + 1) * tileSize), ((tileY + 1) * tileSize), zoomLevel, tileSize);
+            return RectangleD.FromLTRB(topLeft.X, bottomRight.Y, bottomRight.X, topLeft.Y);
+        }
 
 
         public static void Test()

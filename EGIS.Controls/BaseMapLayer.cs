@@ -150,7 +150,7 @@ namespace EGIS.Controls
 		private void DrawMap(Graphics g, float transparency, TileSource tileSource, EGIS.Controls.SFMap map )
 		{
 			
-			TileCollection tiles = new TileCollection(map.ZoomLevel, map.CentrePoint2D, map.ClientSize.Width, map.ClientSize.Height, map, tileSource.Urls, tileSource.MaxZoomLevel);
+			TileCollection tiles = new TileCollection(map.ZoomLevel, map.CentrePoint2D, map.ClientSize.Width, map.ClientSize.Height, map, tileSource.Urls, tileSource.MaxZoomLevel, tileSource.UseWmsBoundingBoxFormat);
 			if (this.tileCollection != null)
 			{
 				//abort if our zoom level has changed

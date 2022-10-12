@@ -84,6 +84,13 @@ namespace EGIS.Controls
 			return this.Name;
 		}
 
+
+		public bool UseWmsBoundingBoxFormat
+		{
+			get;
+			set;
+		}
+
 		/// <summary>
 		/// returns an array of default TileSource objects
 		/// </summary>
@@ -137,6 +144,18 @@ namespace EGIS.Controls
 				MaxZoomLevel = 19
 			});
 
+			tileSourceList.Add(new TileSource()
+			{
+				Name="Test WMS Service",
+				Urls = new string[]
+				{
+					"https://ies-ows.jrc.ec.europa.eu/gwis?service=WMS&request=GetMap&layers=admin.countries_borders&styles=&format=image%2Fpng&transparent=true&version=1.1.1&singletile=false&width=256&height=256&srs=EPSG%3A3857&bbox={0}"
+				},
+				MaxZoomLevel= 19,
+				UseWmsBoundingBoxFormat = true
+			});
+
+			
 			// https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/0/0/0.jpg
 
 
