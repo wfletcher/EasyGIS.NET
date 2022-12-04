@@ -57,3 +57,5 @@ EGIS.Mapbox.Vector.Tile.nuspec
 ShapeFileTools/MainForm.cs.bak
 EGIS.Projections/SRID.csv.gz.6.1
 EGIS.Projections/SRID.csv.gz.9.0
+EGIS.Projections/Proj/proj.db.9.0
+EGIS.Projections/Proj/proj.db.9.1

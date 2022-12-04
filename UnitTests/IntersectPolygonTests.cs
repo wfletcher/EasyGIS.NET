@@ -14,7 +14,7 @@ namespace UnitTests
         PointD[] polygon;
         PointD[] polyline;
 
-        [SetUp]
+        [OneTimeSetUp]
         public void Prepare()
         {
             polygon = new PointD[]
@@ -98,5 +98,36 @@ namespace UnitTests
 
             Assert.That(intersects, Is.True);
         }
+
+        [Test]
+        public void PointInPolygonHole()
+        {
+            //construct a "hole" - points are counter-clockwise direction
+            PointD[] hole = new PointD[5];
+            hole[0] = new PointD(0, 1);
+            hole[1] = new PointD(8, 1);
+            hole[2] = new PointD(8, 4.5);
+            hole[3] = new PointD(0, 4.5);
+            hole[4] = hole[0];
+
+            bool isHole = false;
+            var intersects = GeometryAlgorithms.PointInPolygon(hole, 2.0, 2.0, true, ref isHole);
+
+            Assert.That(intersects, Is.True,"point should be in polygoe when Ignoreholes is true");
+
+            intersects = GeometryAlgorithms.PointInPolygon(hole, 2.0, 2.0, false, ref isHole);
+
+            Assert.That(intersects, Is.True, "point should be be in polygon when Ignoreholes is false");
+            Assert.That(isHole, Is.True, "polygon not detected as a hole");
+
+            isHole = GeometryAlgorithms.IsPolygonHole(hole, hole.Length);
+            Assert.That(isHole, Is.True, "polygon not detected as a hole");
+
+            //reverse the order of the points so that are now clock-wise
+            Array.Reverse(hole);
+            isHole = GeometryAlgorithms.IsPolygonHole(hole, hole.Length);
+            Assert.That(isHole, Is.False, "polygon detected as a hole");
+        }
+
     }
 }
