@@ -39,7 +39,8 @@ namespace EGIS.Projections
         //const string ProjDllName = "proj_5_2.dll";
         //const string ProjDllName = "proj_6_1.dll";
 
-       const string ProjDllName = "proj_9_0.dll";
+        const string ProjDllName = "proj_9_0.dll";
+        //const string ProjDllName = "proj_9_1.dll";
 
 
         #region dynamically load native x86/x64 dll
@@ -82,10 +83,10 @@ namespace EGIS.Projections
             Console.Out.WriteLine("proj dll is:" + ProjDllName);
 
             var dllPath = string.Format(@"Proj/{0}/{1}", (Environment.Is64BitProcess ? "x64" : "x86"), "sqlite3.dll");
-            LoadLibrary(System.IO.Path.Combine(startupPath, dllPath));
+            IntPtr p = LoadLibrary(System.IO.Path.Combine(startupPath, dllPath));
 
             dllPath = string.Format(@"Proj/{0}/{1}", (Environment.Is64BitProcess ? "x64" : "x86"), ProjDllName);
-            LoadLibrary(System.IO.Path.Combine(startupPath, dllPath));
+            p = LoadLibrary(System.IO.Path.Combine(startupPath, dllPath));
 
             string projDbPath = System.IO.Path.Combine(startupPath, "Proj", "proj.db");
             proj_context_set_database_path(IntPtr.Zero, projDbPath, null, null);
@@ -568,8 +569,114 @@ namespace EGIS.Projections
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
         internal static extern int proj_context_is_network_enabled(IntPtr ctx);
+
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr proj_create_operation_factory_context(IntPtr ctx, string authority);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void proj_operation_factory_context_destroy(IntPtr ctx);
+
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void proj_operation_factory_context_set_allow_ballpark_transformations(IntPtr ctx, IntPtr factory_ctx, int allow);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void proj_operation_factory_context_set_allow_use_intermediate_crs(IntPtr ctx, IntPtr factory_ctx, PROJ_INTERMEDIATE_CRS_USE use);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void proj_operation_factory_context_set_spatial_criterion(IntPtr ctx, IntPtr factory_ctx, PROJ_SPATIAL_CRITERION criterion);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void proj_operation_factory_context_set_grid_availability_use(IntPtr ctx, IntPtr factory_ctx, PROJ_GRID_AVAILABILITY_USE use);
+
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern IntPtr proj_create_operations(IntPtr ctx, IntPtr source_crs, IntPtr target_crs, IntPtr operationContext);
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern PJ_PROJ_INFO proj_pj_info(IntPtr pj);
+
+
         
 
+        /// <summary>
+        ///  Spatial criterion to restrict candidate operations.
+        /// </summary>
+        public enum PROJ_SPATIAL_CRITERION
+        {
+            /// <summary>
+            /// The area of validity of transforms should strictly contain the area of interest.
+            /// </summary>
+            PROJ_SPATIAL_CRITERION_STRICT_CONTAINMENT,
+            /// <summary>
+            /// The area of validity of transforms should at least intersect the area of interest.
+            /// </summary>
+            PROJ_SPATIAL_CRITERION_PARTIAL_INTERSECTION
+        }
+
+        public enum PROJ_INTERMEDIATE_CRS_USE
+        {
+            PROJ_INTERMEDIATE_CRS_USE_ALWAYS,
+            PROJ_INTERMEDIATE_CRS_USE_IF_NO_DIRECT_TRANSFORMATION,
+            PROJ_INTERMEDIATE_CRS_USE_NEVER
+        }
+
+        /// <summary>
+        /// Describe how grid availability is used.
+        /// </summary>
+        public enum PROJ_GRID_AVAILABILITY_USE
+        {
+            /// <summary>
+            /// Grid availability is only used for sorting results.Operations where some grids are missing will be sorted last.
+            /// </summary>
+            PROJ_GRID_AVAILABILITY_USED_FOR_SORTING,
+
+            /// <summary>
+            /// Completely discard an operation if a required grid is missing.
+            /// </summary>
+            PROJ_GRID_AVAILABILITY_DISCARD_OPERATION_IF_MISSING_GRID,
+
+            /// <summary>
+            /// Ignore grid availability at all.Results will be presented as if all grids were available.
+            /// </summary>
+            PROJ_GRID_AVAILABILITY_IGNORED,
+
+
+            /// <summary>
+            /// Results will be presented as if grids known to PROJ (that is registered in the grid_alternatives table of its database) were available.Used typically when networking is enabled.
+            /// </summary>
+            PROJ_GRID_AVAILABILITY_KNOWN_AVAILABLE
+        }
+
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    public unsafe struct PJ_PROJ_INFO
+    {
+        public byte* id;
+       // [MarshalAs(UnmanagedType.LPUTF8Str)]
+        public byte* description;
+        //[MarshalAs(UnmanagedType.LPUTF8Str)]
+        public byte* definition;
+        public int has_inverse;
+        public double accuracy;
+
+        public string Description
+        {
+            get
+            {
+                return new string((sbyte*)description);
+            }
+        }
+
+        public string Definition
+        {
+            get
+            {
+                return new string((sbyte*)definition);
+            }
+        }
     }
 }
 

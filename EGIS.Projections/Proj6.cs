@@ -387,6 +387,14 @@ namespace EGIS.Projections
                     {
                         throw new InvalidOperationException("Could not create coordinate transformation");
                     }
+
+                    IntPtr pjBest = CreateMostRelevantTransformation();
+                    if (pjBest != IntPtr.Zero)
+                    {
+                        Proj6Native.proj_destroy(pjNative);
+                        pjNative = pjBest;
+                    }
+
                     IntPtr pn = Proj6Native.proj_normalize_for_visualization(IntPtr.Zero, pjNative);
                     Proj6Native.proj_destroy(pjNative);
                     pjNative = IntPtr.Zero;
@@ -487,6 +495,75 @@ namespace EGIS.Projections
                 copy.pjNative = Proj6Native.proj_clone(IntPtr.Zero, this.pjNative);
                 return copy;
             }
+
+
+            private IntPtr CreateMostRelevantTransformation()
+            {
+                return IntPtr.Zero;
+                lock (Proj6Native._sync)
+                {
+                    IntPtr result = IntPtr.Zero;
+                    IntPtr factoryContext = IntPtr.Zero;
+                    IntPtr operationsList = IntPtr.Zero;
+                    IntPtr pjSource = IntPtr.Zero, pjTarget = IntPtr.Zero;
+
+
+                    const bool LoadFromCode = false;
+
+                    if (LoadFromCode && !string.IsNullOrEmpty(this.SourceCRS.Id))
+                    {
+                        pjSource = Proj6Native.proj_create_from_database(IntPtr.Zero, this.SourceCRS.Authority, this.SourceCRS.Id, Proj6Native.PJ_CATEGORY.PJ_CATEGORY_CRS, 0, null);
+                    }
+                    else
+                    {
+                        pjSource = Proj6Native.proj_create(IntPtr.Zero, this.SourceCRS.WKT);
+                    }
+                    //IntPtr pjTarget = Proj6Native.proj_create(IntPtr.Zero, this.TargetCRS.WKT);
+                    if (LoadFromCode && !string.IsNullOrEmpty(this.TargetCRS.Id))
+                    {
+                        pjTarget = Proj6Native.proj_create_from_database(IntPtr.Zero, this.TargetCRS.Authority, this.TargetCRS.Id, Proj6Native.PJ_CATEGORY.PJ_CATEGORY_CRS, 0, null);
+                    }
+                    else
+                    {
+                        pjTarget = Proj6Native.proj_create(IntPtr.Zero, this.TargetCRS.WKT);
+                    }
+
+                    try
+                    {
+                        if (pjSource != IntPtr.Zero && pjTarget != IntPtr.Zero)
+                        {
+                            factoryContext = Proj6Native.proj_create_operation_factory_context(IntPtr.Zero, null);
+                            //Proj6Native.proj_operation_factory_context_set_allow_ballpark_transformations(IntPtr.Zero, factoryContext, 0);
+                            //Proj6Native.proj_operation_factory_context_set_allow_use_intermediate_crs(IntPtr.Zero, factoryContext, Proj6Native.PROJ_INTERMEDIATE_CRS_USE.PROJ_INTERMEDIATE_CRS_USE_ALWAYS);
+
+                            Proj6Native.proj_operation_factory_context_set_spatial_criterion(IntPtr.Zero, factoryContext, Proj6Native.PROJ_SPATIAL_CRITERION.PROJ_SPATIAL_CRITERION_PARTIAL_INTERSECTION);
+
+                            Proj6Native.proj_operation_factory_context_set_grid_availability_use(IntPtr.Zero, factoryContext, Proj6Native.PROJ_GRID_AVAILABILITY_USE.PROJ_GRID_AVAILABILITY_IGNORED);
+
+                            operationsList = Proj6Native.proj_create_operations(IntPtr.Zero, pjSource, pjTarget, factoryContext);
+
+                            int count = Proj6Native.proj_list_get_count(operationsList);
+                            if (count > 0)
+                            {
+                                result = Proj6Native.proj_list_get(IntPtr.Zero, operationsList, 0);
+                                var info = Proj6Native.proj_pj_info(result);
+                                Console.Out.WriteLine(info.Description);
+                                Console.Out.WriteLine(info.Definition);
+                            }
+                        }                        
+                    }
+                    finally
+                    {
+                        if(operationsList != IntPtr.Zero) Proj6Native.proj_list_destroy(operationsList);
+                        if (factoryContext != IntPtr.Zero) Proj6Native.proj_operation_factory_context_destroy(factoryContext);
+                        if (pjSource != IntPtr.Zero) Proj6Native.proj_destroy(pjSource);
+                        if (pjTarget != IntPtr.Zero) Proj6Native.proj_destroy(pjTarget);                        
+                    }
+
+                    return result;
+                }
+            }
+
         }
 
     }
