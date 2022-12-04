@@ -48,17 +48,17 @@ namespace EGIS.Controls
         /// </summary>
         private void InitializeComponent()
         {
-            this.SuspendLayout();
-            // 
-            // SFMap
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.DoubleBuffered = true;
-            this.Name = "SFMap";
-            this.Size = new System.Drawing.Size(454, 322);
-            this.ResumeLayout(false);
+			this.SuspendLayout();
+			// 
+			// SFMap
+			// 
+			this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			this.DoubleBuffered = true;
+			this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+			this.Name = "SFMap";
+			this.Size = new System.Drawing.Size(607, 398);
+			this.ResumeLayout(false);
 
         }
 
