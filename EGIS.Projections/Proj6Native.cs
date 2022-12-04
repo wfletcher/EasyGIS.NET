@@ -98,23 +98,23 @@ namespace EGIS.Projections
 
         #endregion
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern IntPtr proj_context_create();
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern void proj_context_destroy(IntPtr context);
 
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern IntPtr proj_destroy(IntPtr PJ);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern IntPtr proj_clone(IntPtr ctx, IntPtr obj);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern IntPtr proj_create_crs_to_crs(IntPtr ctx, string source_crs, string target_crs, IntPtr area);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern IntPtr proj_create(IntPtr ctx, string definition);
 
         ///*
@@ -133,7 +133,7 @@ namespace EGIS.Projections
         //    P = P_for_GIS;
         // */
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern IntPtr proj_normalize_for_visualization(IntPtr ctx, IntPtr PJ);
 
 
@@ -163,12 +163,12 @@ namespace EGIS.Projections
 
         }
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         
         static extern PJ_COORD proj_trans(IntPtr p, PJ_DIRECTION direction, PJ_COORD coord);
 
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern unsafe int proj_trans_generic(IntPtr P,
     PJ_DIRECTION direction,
     double* x, int sx, int nx,
@@ -249,10 +249,10 @@ namespace EGIS.Projections
 
 #pragma warning restore CA1712
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern PJ_TYPE proj_get_type(IntPtr PJ);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static unsafe extern byte* proj_get_name(IntPtr PJobj);
 
         public static unsafe string GetName(IntPtr PJobj)
@@ -262,7 +262,7 @@ namespace EGIS.Projections
             return new string((sbyte*)name);
         }
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern unsafe byte* proj_get_id_auth_name(IntPtr PJobj, int index);
 
         public static unsafe string GetAuthName(IntPtr PJobj)
@@ -272,7 +272,7 @@ namespace EGIS.Projections
             return new string((sbyte*)name);
         }
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern unsafe byte* proj_get_id_code(IntPtr PJobj, int index);
 
         public static unsafe string ProjGetIdCode(IntPtr PJobj)
@@ -303,16 +303,16 @@ namespace EGIS.Projections
             PJ_COMP_EQUIVALENT_EXCEPT_AXIS_ORDER_GEOGCRS
         } ;
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern int proj_is_equivalent_to(IntPtr PJobj, IntPtr PJother,
                                                PJ_COMPARISON_CRITERION criterion);
 
 
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]        
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]        
         public static extern int proj_cs_get_axis_count(IntPtr ctx, IntPtr cs);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static unsafe extern int proj_cs_get_axis_info(IntPtr ctx,
                                        IntPtr cs, 
                                        int index,
@@ -371,10 +371,10 @@ namespace EGIS.Projections
         }
 
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         static extern double proj_lp_dist(IntPtr PJ, PJ_COORD a, PJ_COORD b);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         static extern double proj_lpz_dist(IntPtr P, PJ_COORD a, PJ_COORD b);
 
         public static double Proj_lp_dist(IntPtr PJ, double x0, double y0, double x1, double y1)
@@ -385,7 +385,7 @@ namespace EGIS.Projections
             return d;
         }
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         static extern double proj_xy_dist(PJ_COORD a, PJ_COORD b);
 
         public static double Proj_xy_dist(double x0, double y0, double x1, double y1)
@@ -397,28 +397,28 @@ namespace EGIS.Projections
 
         }
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, SetLastError = true)]
         public static extern int proj_context_set_database_path(IntPtr ctx, string dbPath, string auxDbPaths, string options);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern IntPtr proj_crs_get_geodetic_crs(IntPtr ctx, IntPtr crs);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern IntPtr proj_get_ellipsoid(IntPtr ctx, IntPtr pj);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern IntPtr proj_crs_get_coordinate_system(IntPtr ctx, IntPtr crs);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static extern IntPtr proj_crs_get_datum(IntPtr ctx, IntPtr crs);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, SetLastError = true)]
         public static extern IntPtr proj_create_from_database(IntPtr ctx, string auth_name, string code, PJ_CATEGORY category, int usePROJAlternativeGridNames, string options);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static unsafe extern byte** proj_get_authorities_from_database(IntPtr ctx);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         public static unsafe extern void proj_string_list_destroy(byte** list);
 
         public static unsafe List<string> Proj_get_authorities_from_database(IntPtr ctx)
@@ -448,7 +448,7 @@ namespace EGIS.Projections
             return result;
         }
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, SetLastError = true)]
         public static unsafe extern byte** proj_get_codes_from_database(IntPtr ctx, string auth_name, PJ_TYPE type, int allow_deprecated);
 
         public static unsafe List<string> Proj_get_codes_from_database(IntPtr ctx, string auth_name, PJ_TYPE type, int allow_deprecated)
@@ -479,7 +479,7 @@ namespace EGIS.Projections
         }
        
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         static unsafe extern byte* proj_as_wkt(IntPtr ctx, IntPtr pj, PJ_WKT_TYPE type, byte** options);
 
         public static unsafe string Proj_as_wkt(IntPtr ctx, IntPtr pj, PJ_WKT_TYPE type, bool indentText = true)
@@ -510,13 +510,11 @@ namespace EGIS.Projections
             }
         }
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
-
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern int proj_get_area_of_use(IntPtr ctx, IntPtr pjObj, ref double out_west_lon_degree, ref double out_south_lat_degree, ref double out_east_lon_degree, ref double out_north_lat_degree, IntPtr out_area_name);
 
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
-
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static unsafe extern IntPtr proj_create_from_wkt(IntPtr ctx, string wkt, byte** options, byte** out_warnings, byte** out_grammar_errors);
 
         internal static unsafe IntPtr Proj_create_from_wkt(IntPtr ctx, string wkt)
@@ -525,17 +523,16 @@ namespace EGIS.Projections
         }
 
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
-
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern int proj_list_get_count(IntPtr result);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern IntPtr proj_list_get(IntPtr ctx, IntPtr result, int index);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern void proj_list_destroy(IntPtr result);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static unsafe extern IntPtr proj_identify(IntPtr ctx, IntPtr pjObj, string auth_name, byte** options, int** out_confidence);
 
 
@@ -559,42 +556,42 @@ namespace EGIS.Projections
         }
 
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static unsafe extern void proj_int_list_destroy(int* list);
 
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static unsafe extern IntPtr proj_get_source_crs(IntPtr ctx, IntPtr pjObj);
 
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern int proj_context_is_network_enabled(IntPtr ctx);
 
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern IntPtr proj_create_operation_factory_context(IntPtr ctx, string authority);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern void proj_operation_factory_context_destroy(IntPtr ctx);
 
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern void proj_operation_factory_context_set_allow_ballpark_transformations(IntPtr ctx, IntPtr factory_ctx, int allow);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern void proj_operation_factory_context_set_allow_use_intermediate_crs(IntPtr ctx, IntPtr factory_ctx, PROJ_INTERMEDIATE_CRS_USE use);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern void proj_operation_factory_context_set_spatial_criterion(IntPtr ctx, IntPtr factory_ctx, PROJ_SPATIAL_CRITERION criterion);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern void proj_operation_factory_context_set_grid_availability_use(IntPtr ctx, IntPtr factory_ctx, PROJ_GRID_AVAILABILITY_USE use);
 
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern IntPtr proj_create_operations(IntPtr ctx, IntPtr source_crs, IntPtr target_crs, IntPtr operationContext);
 
-        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern PJ_PROJ_INFO proj_pj_info(IntPtr pj);
 
 
@@ -656,9 +653,9 @@ namespace EGIS.Projections
     {
         public byte* id;
        // [MarshalAs(UnmanagedType.LPUTF8Str)]
-        public byte* description;
+        public byte* _description;
         //[MarshalAs(UnmanagedType.LPUTF8Str)]
-        public byte* definition;
+        public byte* _definition;
         public int has_inverse;
         public double accuracy;
 
@@ -666,7 +663,7 @@ namespace EGIS.Projections
         {
             get
             {
-                return new string((sbyte*)description);
+                return new string((sbyte*)_description);
             }
         }
 
@@ -674,7 +671,7 @@ namespace EGIS.Projections
         {
             get
             {
-                return new string((sbyte*)definition);
+                return new string((sbyte*)_definition);
             }
         }
     }
