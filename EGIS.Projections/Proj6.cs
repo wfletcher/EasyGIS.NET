@@ -547,8 +547,8 @@ namespace EGIS.Projections
                             {
                                 result = Proj6Native.proj_list_get(IntPtr.Zero, operationsList, 0);
                                 var info = Proj6Native.proj_pj_info(result);
-                                Console.Out.WriteLine(info.Description);
-                                Console.Out.WriteLine(info.Definition);
+                               // Console.Out.WriteLine(info.Description);
+                                //Console.Out.WriteLine(info.Definition);
                             }
                         }                        
                     }
