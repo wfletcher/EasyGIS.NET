@@ -52,6 +52,7 @@
     <Compile Include="GeometryAlgorithmTests.cs" />
     <Compile Include="GeometryClippingTests.cs" />
     <Compile Include="IntersectPolygonTests.cs" />
+    <Compile Include="ProjectionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ShapeFileTests.cs" />
   </ItemGroup>

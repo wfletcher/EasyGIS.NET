@@ -499,7 +499,7 @@ namespace EGIS.Projections
 
             private IntPtr CreateMostRelevantTransformation()
             {
-                return IntPtr.Zero;
+                //return IntPtr.Zero;
                 lock (Proj6Native._sync)
                 {
                     IntPtr result = IntPtr.Zero;
@@ -508,7 +508,7 @@ namespace EGIS.Projections
                     IntPtr pjSource = IntPtr.Zero, pjTarget = IntPtr.Zero;
 
 
-                    const bool LoadFromCode = false;
+                    const bool LoadFromCode = true;
 
                     if (LoadFromCode && !string.IsNullOrEmpty(this.SourceCRS.Id))
                     {
