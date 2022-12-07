@@ -66,10 +66,16 @@
   <ItemGroup>    
     <None Include="build\net47\**" Pack="true" PackagePath="\build\net47" />    
   </ItemGroup>
+  <ItemGroup>    
+    <None Include="build\net6.0\**" Pack="true" PackagePath="\build\net6.0" />    
+  </ItemGroup>
+  <ItemGroup>    
+    <None Include="build\net6.0-windows\**" Pack="true" PackagePath="\build\net6.0-windows" />    
+  </ItemGroup>
   
   <PropertyGroup>
     <PackageId>$(AssemblyTitle)</PackageId>
-    <Version>4.8.4</Version>
+    <Version>4.8.5</Version>
     <Authors>Winston Fletcher</Authors>
     <Company>$(Company)</Company>
     <Description>Easy GIS .NET GIS Projections Class Library.
