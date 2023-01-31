@@ -9,7 +9,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
-    <Version>4.8.5</Version>
+    <Version>4.8.6</Version>
     <Authors>Winston Fletcher</Authors>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Description>Easy GIS .NET Desktop Map Controls</Description>
@@ -17,7 +17,7 @@
     <RepositoryUrl>https://github.com/wfletcher/EasyGIS.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://www.easygisdotnet.com/</PackageProjectUrl>
-    <Copyright>Copyright © 2008-2022 Winston Fletcher</Copyright>
+    <Copyright>Copyright © 2008-2023 Winston Fletcher</Copyright>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <EnableNETAnalyzers>True</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>

@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("EGIS.Web.Controls")]
-[assembly: AssemblyCopyright("Copyright © 2008-2022 Winston Fletcher")]
+[assembly: AssemblyCopyright("Copyright © 2008-2023 Winston Fletcher")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -31,6 +31,6 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("4.8.5.0")]
-[assembly: AssemblyFileVersion("4.8.5.0")]
+[assembly: AssemblyVersion("4.8.6.0")]
+[assembly: AssemblyFileVersion("4.8.6.0")]
 
