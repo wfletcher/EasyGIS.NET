@@ -55,6 +55,7 @@
     <Compile Include="ProjectionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ShapeFileTests.cs" />
+    <Compile Include="ShapeFileWriterTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="NUnit">

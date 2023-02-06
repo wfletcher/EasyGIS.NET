@@ -16,6 +16,7 @@
     <Compile Include="..\UnitTests\IntersectPolygonTests.cs" Link="IntersectPolygonTests.cs" />
     <Compile Include="..\UnitTests\ProjectionTests.cs" Link="ProjectionTests.cs" />
     <Compile Include="..\UnitTests\ShapeFileTests.cs" Link="ShapeFileTests.cs" />
+    <Compile Include="..\UnitTests\ShapeFileWriterTests.cs" Link="ShapeFileWriterTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
