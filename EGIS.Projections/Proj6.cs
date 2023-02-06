@@ -539,7 +539,8 @@ namespace EGIS.Projections
                             Proj6Native.proj_operation_factory_context_set_spatial_criterion(IntPtr.Zero, factoryContext, Proj6Native.PROJ_SPATIAL_CRITERION.PROJ_SPATIAL_CRITERION_PARTIAL_INTERSECTION);
 
                             //Proj6Native.proj_operation_factory_context_set_grid_availability_use(IntPtr.Zero, factoryContext, Proj6Native.PROJ_GRID_AVAILABILITY_USE.PROJ_GRID_AVAILABILITY_IGNORED);
-                            Proj6Native.proj_operation_factory_context_set_grid_availability_use(IntPtr.Zero, factoryContext, Proj6Native.PROJ_GRID_AVAILABILITY_USE.PROJ_GRID_AVAILABILITY_USED_FOR_SORTING);
+                            //Proj6Native.proj_operation_factory_context_set_grid_availability_use(IntPtr.Zero, factoryContext, Proj6Native.PROJ_GRID_AVAILABILITY_USE.PROJ_GRID_AVAILABILITY_USED_FOR_SORTING);
+                            Proj6Native.proj_operation_factory_context_set_grid_availability_use(IntPtr.Zero, factoryContext, Proj6Native.PROJ_GRID_AVAILABILITY_USE.PROJ_GRID_AVAILABILITY_DISCARD_OPERATION_IF_MISSING_GRID);
 
                             operationsList = Proj6Native.proj_create_operations(IntPtr.Zero, pjSource, pjTarget, factoryContext);
 
