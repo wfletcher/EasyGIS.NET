@@ -360,7 +360,7 @@ namespace EGIS.Projections
                     }
 
                     codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_CRS, 0);
-                    Console.Out.WriteLine("PJ_TYPE_CRS no depracated codes.Count: " + codes.Count);
+                    Console.Out.WriteLine("PJ_TYPE_CRS no deprecated codes.Count: " + codes.Count);
 
                     codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_2D_CRS, 1);
                     Console.Out.WriteLine("PJ_TYPE_GEOGRAPHIC_2D_CRS codes.Count: " + codes.Count);
