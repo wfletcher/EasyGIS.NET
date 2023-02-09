@@ -298,7 +298,7 @@ namespace EGIS.Projections
                                 };
 
                             }
-                            else if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_BOUND_CRS)
+                            else if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_BOUND_CRS || pType == Proj6Native.PJ_TYPE.PJ_TYPE_COMPOUND_CRS)
                             {
                                 if (wkt.IndexOf("PROJECTION", StringComparison.OrdinalIgnoreCase) >= 0)
                                 {
