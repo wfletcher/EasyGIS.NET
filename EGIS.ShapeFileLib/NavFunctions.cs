@@ -206,64 +206,88 @@ namespace EGIS.ShapeFileLib
 		/// <param name="lon0">longitude of first coordinate in decimal degrees</param>
 		/// <param name="lat1">latitude of second coordinate in decimal degrees</param>
 		/// <param name="lon1">longitude of second coordinate in decimal degrees</param>
-		/// <returns>Tuple. distance is stored in Item1, bearing in Item2 as decimal degrees</returns>
-		
+		/// <returns>Tuple. distance is stored in Item1, bearing in Item2 as decimal degrees</returns>		
 		public static Tuple<double, double> GeodesicDistanceAndBearingBetweenLatLonPoints(int referenceEllipsoid, double lat0, double lon0, double lat1, double lon1)
 		{
-			double req = EllipseCollection[referenceEllipsoid].EquatorialRadius;
-            double flat = EllipseCollection[referenceEllipsoid].InverseFlattening;
-			double rpol = (1 - flat) * req;
-
-			double u1, u2, lon, lam, tol, diff, sin_sigma = 0, cos_sigma = 0, sigma = 0, sin_alpha = 0, cos_sq_alpha = 0, cos2sigma = 0;
-			double A, B, C, lam_pre, delta_sig, dis, azi1, usq;
-
-			// convert to radians
-			lat0 = Math.PI * lat0 / 180.0;
-			lat1 = Math.PI * lat1 / 180.0;
-			lon0 = Math.PI * lon0 / 180.0;
-			lon1 = Math.PI * lon1 / 180.0;
-
-			u1 = Math.Atan((1 - flat) * Math.Tan(lat0));
-			u2 = Math.Atan((1 - flat) * Math.Tan(lat1));
-
-			lon = lon0 - lon1;
-			lam = lon;
-			tol = 1E-12;// 1E-12;// Math.Pow(10, -12.0); // iteration tolerance
-			diff = 1.0;
-            int iterations = 50;
-			while (diff > tol && iterations-- >=0)
-			{
-				sin_sigma = Math.Sqrt(Math.Pow((Math.Cos(u2) * Math.Sin(lam)), 2.0) + Math.Pow(Math.Cos(u1) * Math.Sin(u2) - Math.Sin(u1) * Math.Cos(u2) * Math.Cos(lam), 2.0));
-				cos_sigma = Math.Sin(u1) * Math.Sin(u2) + Math.Cos(u1) * Math.Cos(u2) * Math.Cos(lam);
-				sigma = Math.Atan2(sin_sigma , cos_sigma);
-				sin_alpha = (Math.Cos(u1) * Math.Cos(u2) * Math.Sin(lam)) / sin_sigma;
-				cos_sq_alpha = 1 - Math.Pow(sin_alpha, 2.0);
-                //(18) Vicenty observed that eqn (18) becomes indeterminate over equatorial lines since cos_sq_alpha above ->0
-                //in this case set cos2sigma to zero
-                cos2sigma = cos_sq_alpha != 0 ? cos_sigma - ((2 * Math.Sin(u1) * Math.Sin(u2)) / cos_sq_alpha) : 0;
-				C = (flat / 16) * cos_sq_alpha * (4 + flat * (4 - 3 * cos_sq_alpha));
-				lam_pre = lam;
-				lam = lon + (1 - C) * flat * sin_alpha * (sigma + C * sin_sigma * (cos2sigma + C * cos_sigma * (2 * Math.Pow(cos2sigma, 2.0) - 1)));
-				diff = Math.Abs(lam_pre - lam);
-			}
-
-			usq = cos_sq_alpha * ((Math.Pow(req, 2.0) - Math.Pow(rpol, 2.0)) / Math.Pow(rpol, 2.0));
-			A = 1 + (usq / 16384) * (4096 + usq * (-768 + usq * (320 - 175 * usq)));
-			B = (usq / 1024) * (256 + usq * (-128 + usq * (74 - 47 * usq)));
-			delta_sig = B * sin_sigma * (cos2sigma + 0.25 * B * (cos_sigma * (-1 + 2 * Math.Pow(cos2sigma, 2.0)) -
-																 (1 / 6) * B * cos2sigma * (-3 + 4 * Math.Pow(sin_sigma, 2.0)) *
-																 (-3 + 4 * Math.Pow(cos2sigma, 2.0))));
-			dis = rpol * A * (sigma - delta_sig);
-			
-            //initial bearing
-            azi1 = Math.Atan2((Math.Cos(u2) * Math.Sin(lam)), (Math.Cos(u1) * Math.Sin(u2) - Math.Sin(u1) * Math.Cos(u2) * Math.Cos(lam)));
-
-            //final bearing
-            //azi1 = Math.Atan2((Math.Cos(u1) * Math.Sin(lam)), (-Math.Sin(u1) * Math.Cos(u2) + Math.Cos(u1) * Math.Sin(u2) * Math.Cos(lam)));
-
-            return new Tuple<double, double>(dis, -azi1 * 180 / Math.PI);
-
+            return VicentyInverse(EllipseCollection[referenceEllipsoid].EquatorialRadius,
+                1/EllipseCollection[referenceEllipsoid].InverseFlattening,
+                lat0,
+                lon0,
+                lat1,
+                lon1);   
 		}
+
+        /// <summary>
+        /// Vicenty Inverse calculation
+        /// </summary>
+        /// <param name="ellipsoidRadius"></param>
+        /// <param name="f">flattening (for wgs84 this is 1/298.257223563)</param>
+        /// <param name="lat0">latitude of first coordinate in decimal degrees</param>
+        /// <param name="lon0">longitude of first coordinate in decimal degrees</param>
+        /// <param name="lat1">latitude of second coordinate in decimal degrees</param>
+        /// <param name="lon1">longitude of second coordinate in decimal degrees</param>
+        /// <returns></returns>
+        /// <remarks>This code derived from https://github.com/chrisveness/geodesy/blob/master/latlon-ellipsoidal-vincenty.js </remarks>
+        private static Tuple<double, double> VicentyInverse(double ellipsoidRadius, double f, double lat0, double lon0, double lat1, double lon1)
+        {         
+            double a = ellipsoidRadius;
+            double b = (1 - f) * a;
+
+            // convert to radians
+            lat0 = Math.PI * lat0 / 180.0;
+            lat1 = Math.PI * lat1 / 180.0;
+            lon0 = Math.PI * lon0 / 180.0;
+            lon1 = Math.PI * lon1 / 180.0;
+            
+            double L = lon1 - lon0; // L = difference in longitude, U = reduced latitude, defined by tan U = (1-f)·tan?.
+            double tanU1 = (1 - f) * Math.Tan(lat0), cosU1 = 1 / Math.Sqrt((1 + tanU1 * tanU1)), sinU1 = tanU1 * cosU1;
+            double tanU2 = (1 - f) * Math.Tan(lat1), cosU2 = 1 / Math.Sqrt((1 + tanU2 * tanU2)), sinU2 = tanU2 * cosU2;
+
+            bool antipodal = Math.Abs(L) > Math.PI / 2 || Math.Abs(lat1-lat0) > Math.PI/ 2;
+
+            double lambda = L, sinlambda = 0, coslambda = 0;    // lambda = difference in longitude on an auxiliary sphere
+            double sigma = (antipodal ? Math.PI : 0), sinsigma = 0, cossigma = antipodal ? -1 : 1; // sigma = angular distance on the sphere
+            double cos2sigma = 1;                      // sigma = angular distance on the sphere from the equator to the midpoint of the line
+            double cosSqalpha = 1;                     // alpha = azimuth of the geodesic at the equator
+
+            double lambdaPre = 0;
+
+            const double Tolerance = 1e-12;
+            const int MaxIterations = 100;
+
+            int iteration = MaxIterations;
+            
+            do
+            {
+                sinlambda = Math.Sin(lambda);
+                coslambda = Math.Cos(lambda);
+                double sinSqsigma = (cosU2 * sinlambda) * (cosU2 * sinlambda) + Math.Pow(cosU1 * sinU2 - sinU1 * cosU2 * coslambda,2);
+                if (Math.Abs(sinSqsigma) < 1e-24) break; //co-incident/antipodal points
+                sinsigma = Math.Sqrt(sinSqsigma);
+                cossigma = sinU1 * sinU2 + cosU1 * cosU2 * coslambda;
+                sigma = Math.Atan2(sinsigma, cossigma);
+                double sinalpha = cosU1 * cosU2 * sinlambda / sinsigma;
+                cosSqalpha = 1 - sinalpha * sinalpha;
+                cos2sigma = (cosSqalpha != 0) ? (cossigma - 2 * sinU1 * sinU2 / cosSqalpha) : 0; // on equatorial line cosSqalpha = 0
+                double C = f / 16 * cosSqalpha * (4 + f * (4 - 3 * cosSqalpha));
+                lambdaPre = lambda;
+                lambda = L + (1 - C) * f * sinalpha * (sigma + C * sinsigma * (cos2sigma + C * cossigma * (-1 + 2 * cos2sigma * cos2sigma)));
+            }
+            while (Math.Abs(lambda - lambdaPre) > Tolerance && --iteration > 0);
+
+            double uSq = cosSqalpha * (a * a - b * b) / (b * b);
+            double A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)));
+            double B = uSq / 1024 * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
+            double sigmaDelta = B * sinsigma * (cos2sigma + B / 4 * (cossigma * (-1 + 2 * cos2sigma * cos2sigma) - B / 6 * cos2sigma * (-3 + 4 * sinsigma * sinsigma) * (-3 + 4 * cos2sigma * cos2sigma)));
+
+            double s = b * A * (sigma - sigmaDelta); // s = length of the geodesic
+
+            double alpha1 = Math.Atan2(cosU2 * sinlambda, cosU1 * sinU2 - sinU1 * cosU2 * coslambda); // initial bearing
+            double alpha2 = Math.Atan2(cosU1 * sinlambda, -sinU1 * cosU2 + cosU1 * sinU2 * coslambda); // final bearing
+
+            return new Tuple<double, double>(s, 180*alpha1/Math.PI);
+        }
+
 
 		/// <summary>
 		/// returns the distance in meters between 2 lat/long double-precision points
@@ -1096,6 +1120,9 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        /// <summary>
+        /// 1/f 
+        /// </summary>        
         public double InverseFlattening
         {
             get
