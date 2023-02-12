@@ -671,6 +671,16 @@ namespace EGIS.Projections
 
         #endregion
 
+        public double Distance(ICRS crs, double x0, double y0, double x1, double y1)
+        {
+            return ((Proj6.CRS)crs).Distance(x0, y0, x1, y1);
+        }
+
+        public Tuple<double,double> DistanceAndBearing(ICRS crs, double x0, double y0, double x1, double y1)
+        {
+            return ((Proj6.CRS)crs).DistanceAndBearing(x0, y0, x1, y1);
+        }
+
     }
 
 

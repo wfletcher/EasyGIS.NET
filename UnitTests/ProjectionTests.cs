@@ -67,9 +67,9 @@ namespace UnitTests
 		[Test]
 		public void TransformWgs84To27700RoundTrip()
 		{
-			const double Delta = 0.00000001;
+			const double Delta = 0.0000001;
 			ICRS wgs84 = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
-			ICRS uk27700 = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode);
+			ICRS uk27700 = CoordinateReferenceSystemFactory.Default.GetCRSById(27700);
 
 			using (ICoordinateTransformation transformation = CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(wgs84, uk27700))
 			{
@@ -83,6 +83,258 @@ namespace UnitTests
 
 				Assert.AreEqual(wgs84Pt.X, roundTripPt.X, Delta);
 				Assert.AreEqual(wgs84Pt.Y, roundTripPt.Y, Delta);
+			}
+		}
+
+
+		[Test]
+		public void MeasureDistanceUsingUkNationalGrid27700()
+		{
+			const double Delta = 0.0000001;
+			ICRS wgs84 = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+			ICRS uk27700 = CoordinateReferenceSystemFactory.Default.GetCRSById(27700);
+
+			using (ICoordinateTransformation transformation = CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(wgs84, uk27700))
+			{
+				double dist1, dist2, dist3, dist4,dist5;
+				PointD wgs84PtA = new PointD(-5, 50);
+				PointD wgs84PtB = new PointD(0, 51.5);
+
+				PointD ptA = transformation.Transform(wgs84PtA);
+				PointD ptB = transformation.Transform(wgs84PtB);
+				
+				Console.Out.WriteLine("wgs84PtA: " + wgs84PtA);
+				Console.Out.WriteLine("wgs84Ptb: " + wgs84PtB);
+
+				Console.Out.WriteLine("PtA: " + ptA);
+				Console.Out.WriteLine("Ptb: " + ptB);
+
+
+				dist1 = Math.Sqrt(Math.Pow(ptA.X-ptB.X,2) + Math.Pow(ptA.Y - ptB.Y, 2));
+
+				dist2 = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(
+					ConversionFunctions.Wgs84RefEllipse,wgs84PtA.Y,wgs84PtA.X,
+					wgs84PtB.Y,wgs84PtB.X);
+
+
+				dist3 = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(
+					ConversionFunctions.Wgs84RefEllipse, wgs84PtA.Y, wgs84PtA.X,
+					wgs84PtB.Y, wgs84PtB.X);
+
+				dist4 = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(
+					ConversionFunctions.Wgs84RefEllipse, wgs84PtA.Y, wgs84PtA.X,
+					wgs84PtB.Y, wgs84PtB.X).Item1;
+
+				dist5 = ((EGIS.Projections.CoordinateReferenceSystemFactory)EGIS.Projections.CoordinateReferenceSystemFactory.Default).Distance(wgs84,
+					wgs84PtA.X, wgs84PtA.Y, wgs84PtB.X, wgs84PtB.Y);
+
+				Console.Out.WriteLine("dist1:{0:0.000000}km ", dist1 / 1000 );
+				Console.Out.WriteLine("dist2:{0:0.000000}km ", dist2 / 1000);
+				Console.Out.WriteLine("dist3:{0:0.000000}km ", dist3 / 1000);
+				Console.Out.WriteLine("dist4:{0:0.00000}km ", dist4 / 1000);
+				Console.Out.WriteLine("dist5:{0:0.00000}km ", dist5 / 1000);
+
+
+				wgs84PtA = new PointD(-5.539267, 50.118445);
+				wgs84PtB = new PointD(-0.127724, 51.507407);
+
+				ptA = transformation.Transform(wgs84PtA);
+				ptB = transformation.Transform(wgs84PtB);
+
+				Console.Out.WriteLine("wgs84PtA: " + wgs84PtA);
+				Console.Out.WriteLine("wgs84Ptb: " + wgs84PtB);
+
+
+				dist1 = Math.Sqrt(Math.Pow(ptA.X - ptB.X, 2) + Math.Pow(ptA.Y - ptB.Y, 2));
+
+				dist2 = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(
+					ConversionFunctions.Wgs84RefEllipse, wgs84PtA.Y, wgs84PtA.X,
+					wgs84PtB.Y, wgs84PtB.X);
+
+
+				dist3 = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPoints(
+					ConversionFunctions.Wgs84RefEllipse, wgs84PtA.Y, wgs84PtA.X,
+					wgs84PtB.Y, wgs84PtB.X);
+
+				dist4 = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(
+					ConversionFunctions.Wgs84RefEllipse, wgs84PtA.Y, wgs84PtA.X,
+					wgs84PtB.Y, wgs84PtB.X).Item1;
+
+				dist5 = ((EGIS.Projections.CoordinateReferenceSystemFactory)EGIS.Projections.CoordinateReferenceSystemFactory.Default).Distance(wgs84,
+					wgs84PtA.X, wgs84PtA.Y, wgs84PtB.X, wgs84PtB.Y);
+
+				Console.Out.WriteLine("dist1:{0:0.000000}km ", dist1 / 1000);
+				Console.Out.WriteLine("dist2:{0:0.000000}km ", dist2 / 1000);
+				Console.Out.WriteLine("dist3:{0:0.000000}km ", dist3 / 1000);
+				Console.Out.WriteLine("dist4:{0:0.00000}km ", dist4 / 1000);
+				Console.Out.WriteLine("dist5:{0:0.00000}km ", dist5 / 1000);
+
+
+				wgs84PtA = new PointD(0, 0);
+				wgs84PtB = new PointD(0, 1);
+
+				var db = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(
+					ConversionFunctions.Wgs84RefEllipse, wgs84PtA.Y, wgs84PtA.X,
+					wgs84PtB.Y, wgs84PtB.X);
+
+				dist4 = db.Item1;
+
+				double bearing = db.Item2;
+
+				dist5 = ((EGIS.Projections.CoordinateReferenceSystemFactory)EGIS.Projections.CoordinateReferenceSystemFactory.Default).Distance(wgs84,
+					wgs84PtA.X, wgs84PtA.Y, wgs84PtB.X, wgs84PtB.Y);
+
+
+				Console.Out.WriteLine("dist4:{0:0.00000}km ", dist4 / 1000);
+				Console.Out.WriteLine("bearing:{0:0.00000}deg ", bearing);
+
+				Console.Out.WriteLine("dist5:{0:0.00000}km ", dist5 / 1000);
+
+
+				wgs84PtA = new PointD(0, 0);
+				wgs84PtB = new PointD(1, 0);
+
+				db = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(
+					ConversionFunctions.Wgs84RefEllipse, wgs84PtA.Y, wgs84PtA.X,
+					wgs84PtB.Y, wgs84PtB.X);
+
+				dist4 = db.Item1;
+
+				bearing = db.Item2;
+
+				dist5 = ((EGIS.Projections.CoordinateReferenceSystemFactory)EGIS.Projections.CoordinateReferenceSystemFactory.Default).Distance(wgs84,
+					wgs84PtA.X, wgs84PtA.Y, wgs84PtB.X, wgs84PtB.Y);
+
+				Console.Out.WriteLine("ptA:" + wgs84PtA);
+				Console.Out.WriteLine("ptB:" + wgs84PtB);
+
+				Console.Out.WriteLine("dist4:{0:0.00000}km ", dist4 / 1000);
+				Console.Out.WriteLine("bearing:{0:0.00000}deg ", bearing);
+
+				Console.Out.WriteLine("dist5:{0:0.00000}km ", dist5 / 1000);
+
+
+				wgs84PtA = new PointD(0, 0);
+				wgs84PtB = new PointD(10, 10);
+
+				db = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(
+					ConversionFunctions.Wgs84RefEllipse, wgs84PtA.Y, wgs84PtA.X,
+					wgs84PtB.Y, wgs84PtB.X);
+
+				dist4 = db.Item1;
+
+				bearing = db.Item2;
+
+				dist5 = ((EGIS.Projections.CoordinateReferenceSystemFactory)EGIS.Projections.CoordinateReferenceSystemFactory.Default).Distance(wgs84,
+					wgs84PtA.X, wgs84PtA.Y, wgs84PtB.X, wgs84PtB.Y);
+
+				Console.Out.WriteLine("ptA:" + wgs84PtA);
+				Console.Out.WriteLine("ptB:" + wgs84PtB);
+
+				Console.Out.WriteLine("dist4:{0:0.00000}km ", dist4 / 1000);
+				Console.Out.WriteLine("bearing:{0:0.00000}deg ", bearing);
+
+				Console.Out.WriteLine("dist5:{0:0.00000}km ", dist5 / 1000);
+
+
+				wgs84PtA = new PointD(0, 0);
+				wgs84PtB = new PointD(10, 10);
+				db = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(
+					ConversionFunctions.Wgs84RefEllipse, wgs84PtA.Y, wgs84PtA.X,
+					wgs84PtB.Y, wgs84PtB.X);
+
+				dist4 = db.Item1;
+				bearing = db.Item2;
+				dist5 = ((EGIS.Projections.CoordinateReferenceSystemFactory)EGIS.Projections.CoordinateReferenceSystemFactory.Default).Distance(wgs84,
+					wgs84PtA.X, wgs84PtA.Y, wgs84PtB.X, wgs84PtB.Y);
+
+				Console.Out.WriteLine("dist4:{0:0.00000}km ", dist4 / 1000);
+				Console.Out.WriteLine("bearing:{0:0.00000}deg ", bearing);
+				Console.Out.WriteLine("dist5:{0:0.00000}km ", dist5 / 1000);
+
+				Assert.AreEqual(dist4, dist5, 0.001);
+
+				wgs84PtA = new PointD(145, -37);
+				wgs84PtB = new PointD(150, 10);
+				db = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(
+					ConversionFunctions.Wgs84RefEllipse, wgs84PtA.Y, wgs84PtA.X,
+					wgs84PtB.Y, wgs84PtB.X);
+
+				dist4 = db.Item1;
+				bearing = db.Item2;
+				dist5 = ((EGIS.Projections.CoordinateReferenceSystemFactory)EGIS.Projections.CoordinateReferenceSystemFactory.Default).Distance(wgs84,
+					wgs84PtA.X, wgs84PtA.Y, wgs84PtB.X, wgs84PtB.Y);
+
+				Console.Out.WriteLine("dist4:{0:0.00000}km ", dist4 / 1000);
+				Console.Out.WriteLine("bearing:{0:0.00000}deg ", bearing);
+				Console.Out.WriteLine("dist5:{0:0.00000}km ", dist5 / 1000);
+
+				Assert.AreEqual(dist4, dist5, 0.001);
+
+
+				wgs84PtA = new PointD(145, -37);
+				wgs84PtB = new PointD(100, -50);
+				db = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(
+					ConversionFunctions.Wgs84RefEllipse, wgs84PtA.Y, wgs84PtA.X,
+					wgs84PtB.Y, wgs84PtB.X);
+
+				dist4 = db.Item1;
+				bearing = db.Item2;
+				dist5 = ((EGIS.Projections.CoordinateReferenceSystemFactory)EGIS.Projections.CoordinateReferenceSystemFactory.Default).Distance(wgs84,
+					wgs84PtA.X, wgs84PtA.Y, wgs84PtB.X, wgs84PtB.Y);
+
+				Console.Out.WriteLine("\ndist4:{0:0.00000}km ", dist4 / 1000);
+				Console.Out.WriteLine("bearing:{0:0.00000}deg ", bearing);
+				Console.Out.WriteLine("dist5:{0:0.00000}km ", dist5 / 1000);
+
+				Tuple<double,double> pdb = ((EGIS.Projections.CoordinateReferenceSystemFactory)EGIS.Projections.CoordinateReferenceSystemFactory.Default).DistanceAndBearing(wgs84,
+					wgs84PtA.X, wgs84PtA.Y, wgs84PtB.X, wgs84PtB.Y);
+
+				Console.Out.WriteLine("proj bearing:{0:0.00000}deg ", pdb.Item2);
+
+
+				Assert.AreEqual(dist4, dist5, 0.001);
+
+
+				wgs84PtA = new PointD(-90, 0);
+				wgs84PtB = new PointD(90, 0);
+				db = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(
+					ConversionFunctions.Wgs84RefEllipse, wgs84PtA.Y, wgs84PtA.X,
+					wgs84PtB.Y, wgs84PtB.X);
+
+				dist4 = db.Item1;
+				bearing = db.Item2;
+				dist5 = ((EGIS.Projections.CoordinateReferenceSystemFactory)EGIS.Projections.CoordinateReferenceSystemFactory.Default).Distance(wgs84,
+					wgs84PtA.X, wgs84PtA.Y, wgs84PtB.X, wgs84PtB.Y);
+
+				Console.Out.WriteLine("ptA:" + wgs84PtA);
+				Console.Out.WriteLine("ptB:" + wgs84PtB);
+
+
+				Console.Out.WriteLine("\ndist4:{0:0.00000}km ", dist4 / 1000);
+				Console.Out.WriteLine("bearing:{0:0.00000}deg ", bearing);
+				Console.Out.WriteLine("dist5:{0:0.00000}km ", dist5 / 1000);
+
+				Assert.AreEqual(dist4, dist5, 0.001);
+
+				wgs84PtA = new PointD(-5, 70);
+				wgs84PtB = new PointD(5, 75);
+				db = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(
+					ConversionFunctions.Wgs84RefEllipse, wgs84PtA.Y, wgs84PtA.X,
+					wgs84PtB.Y, wgs84PtB.X);
+
+				dist4 = db.Item1;
+				bearing = db.Item2;
+				dist5 = ((EGIS.Projections.CoordinateReferenceSystemFactory)EGIS.Projections.CoordinateReferenceSystemFactory.Default).Distance(wgs84,
+					wgs84PtA.X, wgs84PtA.Y, wgs84PtB.X, wgs84PtB.Y);
+
+				Console.Out.WriteLine("\ndist4:{0:0.00000}km ", dist4 / 1000);
+				Console.Out.WriteLine("bearing:{0:0.00000}deg ", bearing);
+				Console.Out.WriteLine("dist5:{0:0.00000}km ", dist5 / 1000);
+
+				Assert.AreEqual(dist4, dist5, 0.001);
+
+				
 			}
 		}
 

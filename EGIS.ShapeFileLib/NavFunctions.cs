@@ -183,16 +183,98 @@ namespace EGIS.ShapeFileLib
             return DistanceBetweenLatLongPoints(referenceEllipsoid, origin.Latitude, origin.Longitude, destination.Latitude, destination.Longitude);
 		}
 
+
         /// <summary>
-        /// returns the distance in meters between 2 lat/long double-precision points
+        /// Calculate and return the distance(m) and bearing between 2 points in WGS84 geodetic (lat/lon) coordinates
         /// </summary>
-        /// <param name="referenceEllipsoid"></param>
-        /// <param name="latOrigin"></param>
-        /// <param name="longOrigin"></param>
-        /// <param name="latDestination"></param>
-        /// <param name="longDestination"></param>
-        /// <returns></returns>
-        public static double DistanceBetweenLatLongPoints(int referenceEllipsoid, double latOrigin, double longOrigin, double latDestination, double longDestination)
+        /// <param name="lat0">latitude of first coordinate in decimal degrees</param>
+        /// <param name="lon0">longitude of first coordinate in decimal degrees</param>
+        /// <param name="lat1">latitude of second coordinate in decimal degrees</param>
+        /// <param name="lon1">longitude of second coordinate in decimal degrees</param>
+        /// <returns>Tuple. distance is stored in Item1, bearing in Item2</returns>
+        public static Tuple<double, double> GeodesicDistanceAndBearingBetweenLatLonPoints(double lat0, double lon0, double lat1, double lon1)
+        {
+            return GeodesicDistanceAndBearingBetweenLatLonPoints(Wgs84RefEllipse, lat0, lon0, lat1, lon1);
+        }
+
+
+		/// <summary>
+		/// Calculate and return the distance(m) and bearing between 2 points in geodetic (lat/lon) coordinates
+		/// </summary>
+		/// <param name="referenceEllipsoid">EllipseCollection index. Use Wgs84RefEllipse for calculations using WGS84 coordinates</param>
+		/// <param name="lat0">latitude of first coordinate in decimal degrees</param>
+		/// <param name="lon0">longitude of first coordinate in decimal degrees</param>
+		/// <param name="lat1">latitude of second coordinate in decimal degrees</param>
+		/// <param name="lon1">longitude of second coordinate in decimal degrees</param>
+		/// <returns>Tuple. distance is stored in Item1, bearing in Item2 as decimal degrees</returns>
+		
+		public static Tuple<double, double> GeodesicDistanceAndBearingBetweenLatLonPoints(int referenceEllipsoid, double lat0, double lon0, double lat1, double lon1)
+		{
+			double req = EllipseCollection[referenceEllipsoid].EquatorialRadius;
+            double flat = EllipseCollection[referenceEllipsoid].InverseFlattening;
+			double rpol = (1 - flat) * req;
+
+			double u1, u2, lon, lam, tol, diff, sin_sigma = 0, cos_sigma = 0, sigma = 0, sin_alpha = 0, cos_sq_alpha = 0, cos2sigma = 0;
+			double A, B, C, lam_pre, delta_sig, dis, azi1, usq;
+
+			// convert to radians
+			lat0 = Math.PI * lat0 / 180.0;
+			lat1 = Math.PI * lat1 / 180.0;
+			lon0 = Math.PI * lon0 / 180.0;
+			lon1 = Math.PI * lon1 / 180.0;
+
+			u1 = Math.Atan((1 - flat) * Math.Tan(lat0));
+			u2 = Math.Atan((1 - flat) * Math.Tan(lat1));
+
+			lon = lon0 - lon1;
+			lam = lon;
+			tol = 1E-12;// 1E-12;// Math.Pow(10, -12.0); // iteration tolerance
+			diff = 1.0;
+            int iterations = 50;
+			while (diff > tol && iterations-- >=0)
+			{
+				sin_sigma = Math.Sqrt(Math.Pow((Math.Cos(u2) * Math.Sin(lam)), 2.0) + Math.Pow(Math.Cos(u1) * Math.Sin(u2) - Math.Sin(u1) * Math.Cos(u2) * Math.Cos(lam), 2.0));
+				cos_sigma = Math.Sin(u1) * Math.Sin(u2) + Math.Cos(u1) * Math.Cos(u2) * Math.Cos(lam);
+				sigma = Math.Atan2(sin_sigma , cos_sigma);
+				sin_alpha = (Math.Cos(u1) * Math.Cos(u2) * Math.Sin(lam)) / sin_sigma;
+				cos_sq_alpha = 1 - Math.Pow(sin_alpha, 2.0);
+                //(18) Vicenty observed that eqn (18) becomes indeterminate over equatorial lines since cos_sq_alpha above ->0
+                //in this case set cos2sigma to zero
+                cos2sigma = cos_sq_alpha != 0 ? cos_sigma - ((2 * Math.Sin(u1) * Math.Sin(u2)) / cos_sq_alpha) : 0;
+				C = (flat / 16) * cos_sq_alpha * (4 + flat * (4 - 3 * cos_sq_alpha));
+				lam_pre = lam;
+				lam = lon + (1 - C) * flat * sin_alpha * (sigma + C * sin_sigma * (cos2sigma + C * cos_sigma * (2 * Math.Pow(cos2sigma, 2.0) - 1)));
+				diff = Math.Abs(lam_pre - lam);
+			}
+
+			usq = cos_sq_alpha * ((Math.Pow(req, 2.0) - Math.Pow(rpol, 2.0)) / Math.Pow(rpol, 2.0));
+			A = 1 + (usq / 16384) * (4096 + usq * (-768 + usq * (320 - 175 * usq)));
+			B = (usq / 1024) * (256 + usq * (-128 + usq * (74 - 47 * usq)));
+			delta_sig = B * sin_sigma * (cos2sigma + 0.25 * B * (cos_sigma * (-1 + 2 * Math.Pow(cos2sigma, 2.0)) -
+																 (1 / 6) * B * cos2sigma * (-3 + 4 * Math.Pow(sin_sigma, 2.0)) *
+																 (-3 + 4 * Math.Pow(cos2sigma, 2.0))));
+			dis = rpol * A * (sigma - delta_sig);
+			
+            //initial bearing
+            azi1 = Math.Atan2((Math.Cos(u2) * Math.Sin(lam)), (Math.Cos(u1) * Math.Sin(u2) - Math.Sin(u1) * Math.Cos(u2) * Math.Cos(lam)));
+
+            //final bearing
+            //azi1 = Math.Atan2((Math.Cos(u1) * Math.Sin(lam)), (-Math.Sin(u1) * Math.Cos(u2) + Math.Cos(u1) * Math.Sin(u2) * Math.Cos(lam)));
+
+            return new Tuple<double, double>(dis, -azi1 * 180 / Math.PI);
+
+		}
+
+		/// <summary>
+		/// returns the distance in meters between 2 lat/long double-precision points
+		/// </summary>
+		/// <param name="referenceEllipsoid"></param>
+		/// <param name="latOrigin"></param>
+		/// <param name="longOrigin"></param>
+		/// <param name="latDestination"></param>
+		/// <param name="longDestination"></param>
+		/// <returns></returns>
+		public static double DistanceBetweenLatLongPoints(int referenceEllipsoid, double latOrigin, double longOrigin, double latDestination, double longDestination)
         {
             //Convert the latitude long decimal degrees to radians and apply the formula
             //use the proper ellipsoid to get raidus of the earth

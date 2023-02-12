@@ -348,7 +348,49 @@ namespace EGIS.Projections
                 }                
             }
 
-            
+
+            public double Distance(double x1, double y1, double x2, double y2)
+            {
+
+                lock (Proj6Native._sync)
+                {
+                    IntPtr pj = Proj6Native.proj_create(IntPtr.Zero, this.WKT);
+                    try
+                    {
+                        if (pj != IntPtr.Zero)
+                        {
+                            return Proj6Native.Proj_lp_dist(pj, x1, y1, x2, y2);
+                        }
+                    }
+                    finally
+                    {
+                        if (pj != IntPtr.Zero) Proj6Native.proj_destroy(pj);
+                    }
+                }
+                return -1;
+            }
+
+            public Tuple<double,double> DistanceAndBearing(double x1, double y1, double x2, double y2)
+            {
+
+                lock (Proj6Native._sync)
+                {
+                    IntPtr pj = Proj6Native.proj_create(IntPtr.Zero, this.WKT);
+                    try
+                    {
+                        if (pj != IntPtr.Zero)
+                        {
+                            return Proj6Native.Proj_geod(pj, x1, y1, x2, y2);
+                        }
+                    }
+                    finally
+                    {
+                        if (pj != IntPtr.Zero) Proj6Native.proj_destroy(pj);
+                    }
+                }
+                return new Tuple<double,double>(-1,0);
+            }
+
         }
 
         public class GeographicCRS : CRS, IGeographicCRS

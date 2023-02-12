@@ -149,7 +149,7 @@ namespace EGIS.Projections
         {            
             public double X;
             public double Y;
-            double extra1;
+            public double extra1;
             double extra2;
 
 
@@ -369,7 +369,7 @@ namespace EGIS.Projections
             }
             return result != 0;
         }
-
+        
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         static extern double proj_lp_dist(IntPtr PJ, PJ_COORD a, PJ_COORD b);
@@ -379,9 +379,9 @@ namespace EGIS.Projections
 
         public static double Proj_lp_dist(IntPtr PJ, double x0, double y0, double x1, double y1)
         {
-            PJ_COORD p1 = new PJ_COORD(x0, y0);
-            PJ_COORD p2 = new PJ_COORD(x1, y1);
-            double d = proj_lpz_dist(PJ, p1, p2);
+            PJ_COORD p1 = new PJ_COORD(Math.PI/180 * x0, Math.PI / 180 * y0);
+            PJ_COORD p2 = new PJ_COORD(Math.PI / 180 * x1, Math.PI / 180 * y1);
+            double d = proj_lp_dist(PJ, p1, p2);
             return d;
         }
 
@@ -396,6 +396,19 @@ namespace EGIS.Projections
             return d;
 
         }
+
+
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
+        static extern PJ_COORD proj_geod(IntPtr PJ, PJ_COORD a, PJ_COORD b);
+
+        public static Tuple<double, double> Proj_geod(IntPtr PJ, double x0, double y0, double x1, double y1)
+        {
+            PJ_COORD p1 = new PJ_COORD(Math.PI / 180 * x0, Math.PI / 180 * y0);
+            PJ_COORD p2 = new PJ_COORD(Math.PI / 180 * x1, Math.PI / 180 * y1);
+            PJ_COORD result= proj_geod(PJ, p1, p2);
+            return new Tuple<double, double>(result.X, result.Y);// extra1);
+        }
+
 
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi, SetLastError = true)]
         public static extern int proj_context_set_database_path(IntPtr ctx, string dbPath, string auxDbPaths, string options);
