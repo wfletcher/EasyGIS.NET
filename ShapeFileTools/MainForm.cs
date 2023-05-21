@@ -1175,12 +1175,20 @@ namespace egis
                     this.mainProgressBar.Maximum = files.Length;
                     this.mainProgressBar.Value = 0;
                     this.mainProgressBar.Visible = true;
-                    for (int n = 0; n < files.Length; n++)
+                    this.sfMap1.BeginUpdate();
+                    try
                     {
-                        if (string.Compare(System.IO.Path.GetExtension(files[n]), ".shp", StringComparison.OrdinalIgnoreCase) == 0)
-                            this.OpenShapeFile(files[n]);
-                        this.mainProgressBar.Increment(1);
-                        Refresh();
+                        for (int n = 0; n < files.Length; n++)
+                        {
+                            if (string.Compare(System.IO.Path.GetExtension(files[n]), ".shp", StringComparison.OrdinalIgnoreCase) == 0)
+                                this.OpenShapeFile(files[n]);
+                            this.mainProgressBar.Increment(1);
+                            Refresh();
+                        }
+                    }
+                    finally
+                    {
+                        this.sfMap1.EndUpdate(true);
                     }
                 }
                 catch (Exception ex)
