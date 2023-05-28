@@ -753,8 +753,8 @@ namespace EGIS.ShapeFileLib
                     //}
                     this.symbolImage = value;
 
-                    string s = EncodeImageAsBase64String(this.symbolImage);
-                    var img = DecodeImageFromBase64String(s);
+                   // string s = EncodeImageAsBase64String(this.symbolImage);
+                   // var img = DecodeImageFromBase64String(s);
 
                 }
             }
