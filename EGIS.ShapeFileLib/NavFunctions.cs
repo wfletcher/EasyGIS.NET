@@ -199,7 +199,7 @@ namespace EGIS.ShapeFileLib
 
 
 		/// <summary>
-		/// Calculate and return the distance(m) and bearing between 2 points in geodetic (lat/lon) coordinates
+		/// Calculate and return the distance(m) and bearing between 2 points in geodetic (lat/lon) coordinates.
 		/// </summary>
 		/// <param name="referenceEllipsoid">EllipseCollection index. Use Wgs84RefEllipse for calculations using WGS84 coordinates</param>
 		/// <param name="lat0">latitude of first coordinate in decimal degrees</param>
@@ -207,6 +207,11 @@ namespace EGIS.ShapeFileLib
 		/// <param name="lat1">latitude of second coordinate in decimal degrees</param>
 		/// <param name="lon1">longitude of second coordinate in decimal degrees</param>
 		/// <returns>Tuple. distance is stored in Item1, bearing in Item2 as decimal degrees</returns>		
+        /// <remarks>
+        /// <para>
+        /// This is the most accurate method to calculate the distance between 2 points, but the most computational expensive
+        /// </para>
+        /// </remarks>
 		public static Tuple<double, double> GeodesicDistanceAndBearingBetweenLatLonPoints(int referenceEllipsoid, double lat0, double lon0, double lat1, double lon1)
 		{
             return VicentyInverse(EllipseCollection[referenceEllipsoid].EquatorialRadius,
@@ -256,13 +261,16 @@ namespace EGIS.ShapeFileLib
             const int MaxIterations = 100;
 
             int iteration = MaxIterations;
-            
+            double sinSqsigma = 0;
+
+            const double Epsilon = 1e-24;
+
             do
             {
                 sinlambda = Math.Sin(lambda);
                 coslambda = Math.Cos(lambda);
-                double sinSqsigma = (cosU2 * sinlambda) * (cosU2 * sinlambda) + Math.Pow(cosU1 * sinU2 - sinU1 * cosU2 * coslambda,2);
-                if (Math.Abs(sinSqsigma) < 1e-24) break; //co-incident/antipodal points
+                sinSqsigma = (cosU2 * sinlambda) * (cosU2 * sinlambda) + Math.Pow(cosU1 * sinU2 - sinU1 * cosU2 * coslambda,2);
+                if (Math.Abs(sinSqsigma) < Epsilon) break; //co-incident/antipodal points
                 sinsigma = Math.Sqrt(sinSqsigma);
                 cossigma = sinU1 * sinU2 + cosU1 * cosU2 * coslambda;
                 sigma = Math.Atan2(sinsigma, cossigma);
@@ -282,8 +290,13 @@ namespace EGIS.ShapeFileLib
 
             double s = b * A * (sigma - sigmaDelta); // s = length of the geodesic
 
-            double alpha1 = Math.Atan2(cosU2 * sinlambda, cosU1 * sinU2 - sinU1 * cosU2 * coslambda); // initial bearing
-            double alpha2 = Math.Atan2(cosU1 * sinlambda, -sinU1 * cosU2 + cosU1 * sinU2 * coslambda); // final bearing
+            // note special handling of exactly antipodal points where sinSqsigma = 0 (due to discontinuity
+            // atan2(0, 0) = 0 but atan2(epsilon, 0) = PI/2) - in which case bearing is always meridional,
+            // due north (or due south!)
+
+            double alpha1 = sinSqsigma < Epsilon ? 0 : Math.Atan2(cosU2 * sinlambda, cosU1 * sinU2 - sinU1 * cosU2 * coslambda); // initial bearing
+            double alpha2 = sinSqsigma < Epsilon ? Math.PI : Math.Atan2(cosU1 * sinlambda, -sinU1 * cosU2 + cosU1 * sinU2 * coslambda); // final bearing
+
 
             return new Tuple<double, double>(s, 180*alpha1/Math.PI);
         }
