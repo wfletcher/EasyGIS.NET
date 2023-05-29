@@ -824,15 +824,15 @@ namespace egis
         {
             RectangleD r = this.sfMap1.VisibleExtent;
             double w, h;
-            if (IsMapFitForMercator())
-            {
-                //assume using latitude longitude
-                w = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse,
-                    r.Bottom, r.Left, r.Bottom, r.Right);
-                h = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse,
-                    r.Bottom, r.Left, r.Top, r.Left);
-            }
-            else
+            //if (IsMapFitForMercator())
+            //{
+            //    //assume using latitude longitude
+            //    w = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse,
+            //        r.Bottom, r.Left, r.Bottom, r.Right);
+            //    h = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(EGIS.ShapeFileLib.ConversionFunctions.RefEllipse,
+            //        r.Bottom, r.Left, r.Top, r.Left);
+            //}
+            //else
             {
                 using (var transformation = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(
                     sfMap1.MapCoordinateReferenceSystem,
@@ -842,10 +842,12 @@ namespace egis
                     PointD p1 = new PointD(r.Right, r.Bottom);
                     p0 = transformation.Transform(p0);
                     p1 = transformation.Transform(p1);
-                    w = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                    //w = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                    w = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X).Item1;
                     p1 = new PointD(r.Left, r.Top);
                     p1 = transformation.Transform(p1);
-                    h = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                    //h = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                    h = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X).Item1;
 
                 }
                 //assume coord in meters
