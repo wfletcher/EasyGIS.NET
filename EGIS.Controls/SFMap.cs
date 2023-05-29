@@ -2770,7 +2770,8 @@ namespace EGIS.Controls
             double distance = double.NaN;
             if ((this.MapCoordinateReferenceSystem as IGeographicCRS) != null)
             {
-                distance = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                //distance = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                distance = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X).Item1;
 
             }
             else if ((this.MapCoordinateReferenceSystem as IProjectedCRS) != null)
@@ -2781,7 +2782,8 @@ namespace EGIS.Controls
                 {
                     p0 = transformation.Transform(p0);
                     p1 = transformation.Transform(p1);
-                    distance = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                    //distance = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                    distance = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X).Item1;
                 }
                 //calculate euclidean distance
                 //distance = Math.Sqrt((p1.X - p0.X) * (p1.X - p0.X) + (p1.Y - p0.Y) * (p1.Y - p0.Y));

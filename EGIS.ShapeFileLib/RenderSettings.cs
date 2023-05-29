@@ -682,11 +682,18 @@ namespace EGIS.ShapeFileLib
         }
 
         /// <summary>
-        /// Gets/Sets the Image Symbol to use for Point records
+        /// Gets/Sets the Image Symbol to use for Point records supplying a file path
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This pr
+        /// </para>
+        /// </remarks>
         [Editor(typeof(ImageFileNameEditor), typeof(System.Drawing.Design.UITypeEditor)),
         Category("Point Render Settings"), Description("The symbol image used to label points (If not specified points will be drawn with a circle)." +
            "This settings is only used for Point type shapefiles")]
+        [BrowsableAttribute(false)]
+        [Obsolete("This property is obsolete. Use PointSymbol")]
         public string PointImageSymbol
         {
             get
@@ -717,12 +724,40 @@ namespace EGIS.ShapeFileLib
         }
 
         /// <summary>
-        /// Returns the symbol Image if PointImageSymbol has been set
+        /// Returns the symbol Image if ImageSymbol has been set
         /// </summary>
         /// <returns></returns>
         public Image GetImageSymbol()
         {
             return this.symbolImage;
+        }
+
+        /// <summary>
+        /// Gets/Sets the Image Symbol to use for Point records
+        /// </summary>
+        [Category("Point Render Settings"), Description("The symbol image used to label points (If not specified points will be drawn with a circle)." +
+           "This settings is only used for Point type shapefiles")]
+        public Image PointSymbol
+        {
+            get { return this.symbolImage; }
+            set
+            {
+                if (this.symbolImage != value)
+                {
+                    //don't dispose as the caller may set the same symbol in different RenderSettings objects
+                    //could clone the image in the set method but we'll keep it simple and let user handle this
+                    //or let the garbage collector take care of it 
+                    //if (this.symbolImage != null)
+                    //{
+                    //    this.symbolImage.Dispose();
+                    //}
+                    this.symbolImage = value;
+
+                   // string s = EncodeImageAsBase64String(this.symbolImage);
+                   // var img = DecodeImageFromBase64String(s);
+
+                }
+            }
         }
 
         /// <summary>
@@ -1007,10 +1042,17 @@ namespace EGIS.ShapeFileLib
             writer.WriteString(this.LineEndCap.ToString());
             writer.WriteEndElement();
 
-            if (!string.IsNullOrEmpty(PointImageSymbol) && System.IO.File.Exists(PointImageSymbol))
+            //if (!string.IsNullOrEmpty(PointImageSymbol) && System.IO.File.Exists(PointImageSymbol))
+            //{
+            //    writer.WriteStartElement("PointImageSymbol");
+            //    writer.WriteString(PointImageSymbol);
+            //    writer.WriteEndElement();
+            //}
+
+            if (PointSymbol != null)
             {
-                writer.WriteStartElement("PointImageSymbol");
-                writer.WriteString(PointImageSymbol);
+                writer.WriteStartElement("PointSymbol");
+                writer.WriteString(EncodeImageAsBase64String(PointSymbol));
                 writer.WriteEndElement();
             }
 
@@ -1164,6 +1206,8 @@ namespace EGIS.ShapeFileLib
                 FontColor = Color.Black;
             }
 
+            PointImageSymbol = null;
+
             nl = element.GetElementsByTagName("PointImageSymbol");
             if (nl != null && nl.Count > 0)
             {
@@ -1182,18 +1226,15 @@ namespace EGIS.ShapeFileLib
                 if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path))
                 {
                     PointImageSymbol = path;
-                }
-                else
-                {
-                    PointImageSymbol = null;
-                }                
+                }                               
             }
-            else
+            
+            nl = element.GetElementsByTagName("PointSymbol");
+            if (nl != null && nl.Count > 0)
             {
-                PointImageSymbol = null;
-            }
-
-
+                string base64String = nl[0].InnerText;
+                PointSymbol = DecodeImageFromBase64String(base64String);
+            }            
 
             nl = element.GetElementsByTagName("ShadowText");
             if (nl != null && nl.Count > 0)
@@ -1383,18 +1424,51 @@ namespace EGIS.ShapeFileLib
 
         }
 
-		#endregion
 
-		#region IDisposable Members
+        /// <summary>
+        /// Base64 Encode and image
+        /// </summary>
+        /// <param name="img"></param>
+        /// <returns></returns>
+        /// <remarks>
+        /// <para>Internally the image is saved as a PNG before converting
+        /// the PNG bytes to a base64 string</para>
+        /// </remarks>
+        protected static string EncodeImageAsBase64String(Image img)
+        {
+            if(img == null) return "";
 
-		/// <summary>
-		/// Dispose of the RenderSettings
-		/// </summary>
-		public void Dispose()
+            using (System.IO.MemoryStream m = new System.IO.MemoryStream())
+            {
+                img.Save(m, System.Drawing.Imaging.ImageFormat.Png);
+                                
+                // Convert byte[] to Base64 String
+                return Convert.ToBase64String(m.ToArray());                
+            }
+        }
+
+        /// <summary>
+        /// Decode an image from a base64 encoded image string
+        /// </summary>
+        /// <param name="base64String"></param>
+        /// <returns></returns>
+        protected static Image DecodeImageFromBase64String(string base64String)
+        {
+            if (string.IsNullOrEmpty(base64String)) return null;            
+            return Image.FromStream(new System.IO.MemoryStream(Convert.FromBase64String(base64String)));
+        }
+
+        #endregion
+
+        #region IDisposable Members
+
+        /// <summary>
+        /// Dispose of the RenderSettings
+        /// </summary>
+        public void Dispose()
         {
             Dispose(true);
-            GC.SuppressFinalize(this);
-            
+            GC.SuppressFinalize(this);            
         }
 
         /// <summary>
@@ -1408,6 +1482,13 @@ namespace EGIS.ShapeFileLib
             {
                 if (this.dbfReader != null && this.dbfReaderIsOwned) dbfReader.Dispose();
 				this.dbfReader = null;
+                //don't dispose as symbolImage may have been set 
+                //in multiple RenderSettings objects by the user 
+                //if (symbolImage != null)
+                //{
+                //    symbolImage.Dispose();
+                //}
+                symbolImage = null;
             }
         }
 
