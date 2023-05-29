@@ -10,7 +10,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>4.8.6</Version>
+    <Version>4.8.7</Version>
     <Authors>Winston Fletcher</Authors>
     <Description>Official version of EasyGIS.NET ShapeFileLib. Includes C# ShapeFile Reader Writer</Description>
     <RepositoryUrl>https://github.com/wfletcher/EasyGIS.NET</RepositoryUrl>
