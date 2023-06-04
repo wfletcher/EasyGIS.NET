@@ -32,7 +32,7 @@
   <PropertyGroup>
     <TargetFramework>net47</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <Version>4.8.6</Version>
+    <Version>4.8.7</Version>
     <Authors>Winston Fletcher</Authors>
     <Description>Easy GIS .NET Web Class Library</Description>
     <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
