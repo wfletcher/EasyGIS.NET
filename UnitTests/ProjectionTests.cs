@@ -175,7 +175,7 @@ namespace UnitTests
 		}
 
 		[Test]
-		public void TestEllipsoidDistanceCalculations()
+		public void TestEllipsoidAndGeodesicDistanceCalculations()
 		{
 			const double Delta = 0.001; //1mm
 			ICRS wgs84 = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
@@ -687,7 +687,31 @@ namespace UnitTests
 			
 		}
 
+		[Test]
+		public void TestWkt2018EsriIsEquivalent()
+		{
+			ICRS wgs84CRS = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
 
+			string wktEsri = wgs84CRS.GetWKT(PJ_WKT_TYPE.PJ_WKT1_ESRI, false);
+			string wkt2018 = wgs84CRS.GetWKT(PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED, false);
+
+			ICRS crsA = CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wktEsri);
+			ICRS crsB = CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt2018);
+
+			bool equivalent = crsA.IsEquivalent(crsB);
+
+			Assert.IsTrue(equivalent, "Expected result: CRS created from ESRI WKT format equivalent to CRS created from 2018 WKT2 format");
+		}
+
+		[Test]
+		public void TestICRSNotIsEquivalentToNullCRS()
+		{
+			ICRS wgs84CRS = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+			
+			bool equivalent = wgs84CRS.IsEquivalent(null);
+
+			Assert.IsFalse(equivalent, "Expected result: CRS not equivalent to null CRS");
+		}
 
 	}
 }

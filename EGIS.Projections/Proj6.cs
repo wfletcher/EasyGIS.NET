@@ -79,9 +79,15 @@ namespace EGIS.Projections
                                 string wkt1 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjThis, PJ_WKT_TYPE.PJ_WKT1_ESRI);
                                 string wkt2 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjOther, PJ_WKT_TYPE.PJ_WKT1_ESRI);
 
+                                if (wkt1 == null || wkt2 == null)
+                                {
+                                    wkt1 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjThis, PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED);
+                                    wkt2 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjOther, PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED);
+                                }
+
                                 same = string.Equals(wkt1, wkt2, StringComparison.OrdinalIgnoreCase);
 
-                                if (!same)
+                                if (!same && !(wkt1==null || wkt2==null))
                                 {
                                     IntPtr pjWkt1 = Proj6Native.proj_create(IntPtr.Zero, wkt1);
                                     IntPtr pjWkt2 = Proj6Native.proj_create(IntPtr.Zero, wkt2);
