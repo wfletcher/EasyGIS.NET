@@ -713,5 +713,28 @@ namespace UnitTests
 			Assert.IsFalse(equivalent, "Expected result: CRS not equivalent to null CRS");
 		}
 
-	}
+        [Test]
+        public void TransformWgs84ToNad83ArkNorthFtRoundTrip()
+        {
+            const double Delta = 0.0000001;
+            ICRS wgs84 = CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+            // EPSG:3433  NAD83 / Arkansas North (ftUS)
+            ICRS nad83ArkNFt = CoordinateReferenceSystemFactory.Default.GetCRSById(3433);
+
+            using (ICoordinateTransformation transformation = CoordinateReferenceSystemFactory.Default.CreateCoordinateTrasformation(wgs84, nad83ArkNFt))
+            {
+                PointD wgs84Pt = new PointD(-90.5806563, 35.8019722);
+                PointD arkansasPt = transformation.Transform(wgs84Pt);
+
+                Assert.True(Math.Abs(arkansasPt.X - 1733200.9) < 0.1);
+                Assert.True(Math.Abs(arkansasPt.Y - 537594.1) < 0.1);
+
+                PointD roundTripPt = transformation.Transform(arkansasPt, TransformDirection.Inverse);
+
+                Assert.True(Math.Abs(wgs84Pt.X - roundTripPt.X) < Delta);
+                Assert.True(Math.Abs(wgs84Pt.Y - roundTripPt.Y) < Delta);
+            }
+        }
+
+    }
 }
