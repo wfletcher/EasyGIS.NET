@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using EGIS.ShapeFileLib;
+using EGIS.Projections;
 
 namespace EGIS.Controls
 {
@@ -21,6 +22,11 @@ namespace EGIS.Controls
         public CsvToShapeFileControl()
         {
             InitializeComponent();
+
+            if (!DesignMode)
+            {
+                this.CoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+            }
         }
 
 		#region private methods
@@ -84,6 +90,24 @@ namespace EGIS.Controls
 
         }
 
+
+        private ICRS crs = null;
+        /// <summary>
+        /// The CoordinateRefereneSystem of the XY data
+        /// </summary>
+        public EGIS.Projections.ICRS CoordinateReferenceSystem
+        {
+            get
+            { 
+                return crs; 
+            }
+            set
+            {
+                crs = value;
+                this.lblCrsId.Text = string.Format(System.Globalization.CultureInfo.InvariantCulture, "[CRS ID:{0}]", crs!= null? crs.Id : "?");
+            }
+        }
+
         /// <summary>
         /// ConvertShapeFileProgress event
         /// </summary>
@@ -142,7 +166,7 @@ namespace EGIS.Controls
                 {
                     btnConvert.Enabled = false;
                     this.Cursor = Cursors.WaitCursor;
-                    CsvUtil.ConvertCsvToShapeFile(SourceDataFile, DestinationShapeFile, cbXCoordField.SelectedItem as string, cbYCoordField.SelectedItem as string, true, OnProgressChanged);
+                    CsvUtil.ConvertCsvToShapeFile(SourceDataFile, DestinationShapeFile, cbXCoordField.SelectedItem as string, cbYCoordField.SelectedItem as string, true, OnProgressChanged, true, this.CoordinateReferenceSystem);
                 }
                 catch (Exception ex)
                 {
@@ -177,5 +201,16 @@ namespace EGIS.Controls
 
         #endregion
 
+        private void btnSelectCRS_Click(object sender, EventArgs e)
+        {
+            using (EGIS.Controls.CRSSelectionForm f = new CRSSelectionForm(EGIS.Projections.CoordinateReferenceSystemFactory.Default))
+            {
+                f.SelectedCRS = this.CoordinateReferenceSystem;
+                if (f.ShowDialog(this) == DialogResult.OK)
+                {
+                    this.CoordinateReferenceSystem = f.SelectedCRS;
+                }
+            }
+        }
     }
 }

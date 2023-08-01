@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EGIS.Projections;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -107,10 +108,11 @@ namespace EGIS.ShapeFileLib
         /// <param name="matchFieldsExact"></param>
         /// <param name="progressHandler"></param>
         /// <param name="trimQuotesFromValues"></param>
+        /// <param name="coordinateReferenceSystem"></param>
         /// <remarks>
         /// CSV data must contain fields with point coordinates
         /// </remarks>
-        public static void ConvertCsvToShapeFile(string csvPath, string shapefilePath, string xCoordFieldName, string yCoordFieldName, bool matchFieldsExact = true,ConvertShapeFileProgress progressHandler = null, bool trimQuotesFromValues=true)
+        public static void ConvertCsvToShapeFile(string csvPath, string shapefilePath, string xCoordFieldName, string yCoordFieldName, bool matchFieldsExact = true,ConvertShapeFileProgress progressHandler = null, bool trimQuotesFromValues=true, ICRS coordinateReferenceSystem = null)
         {
             string[] fieldNames = CsvUtil.ReadFieldHeaders(csvPath);
             CsvUtil.TrimValues(fieldNames);
@@ -184,7 +186,7 @@ namespace EGIS.ShapeFileLib
                 }
             }
 
-            using (ShapeFileWriter writer = ShapeFileWriter.CreateWriter(System.IO.Path.GetDirectoryName(shapefilePath), System.IO.Path.GetFileNameWithoutExtension(shapefilePath), ShapeType.Point, fields))
+            using (ShapeFileWriter writer = ShapeFileWriter.CreateWriter(System.IO.Path.GetDirectoryName(shapefilePath), System.IO.Path.GetFileNameWithoutExtension(shapefilePath), ShapeType.Point, fields,coordinateReferenceSystem!= null? coordinateReferenceSystem.GetWKT(PJ_WKT_TYPE.PJ_WKT1_GDAL, false) : null))
             {
                 using (System.IO.StreamReader reader = new StreamReader(new FileStream(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
                 {

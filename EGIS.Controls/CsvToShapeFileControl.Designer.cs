@@ -41,6 +41,8 @@
             this.btnConvert = new System.Windows.Forms.Button();
             this.ofdCsv = new System.Windows.Forms.OpenFileDialog();
             this.sfdShapeFile = new System.Windows.Forms.SaveFileDialog();
+            this.lblCrsId = new System.Windows.Forms.Label();
+            this.btnSelectCRS = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -142,7 +144,7 @@
             // btnConvert
             // 
             this.btnConvert.Enabled = false;
-            this.btnConvert.Location = new System.Drawing.Point(115, 108);
+            this.btnConvert.Location = new System.Drawing.Point(115, 137);
             this.btnConvert.Name = "btnConvert";
             this.btnConvert.Size = new System.Drawing.Size(112, 23);
             this.btnConvert.TabIndex = 10;
@@ -158,10 +160,31 @@
             // 
             this.sfdShapeFile.Filter = "ShapeFile(*.shp)|*.shp";
             // 
+            // lblCrsId
+            // 
+            this.lblCrsId.AutoSize = true;
+            this.lblCrsId.Location = new System.Drawing.Point(4, 113);
+            this.lblCrsId.Name = "lblCrsId";
+            this.lblCrsId.Size = new System.Drawing.Size(72, 13);
+            this.lblCrsId.TabIndex = 12;
+            this.lblCrsId.Text = "[CRS ID xxxx]";
+            // 
+            // btnSelectCRS
+            // 
+            this.btnSelectCRS.Location = new System.Drawing.Point(82, 108);
+            this.btnSelectCRS.Name = "btnSelectCRS";
+            this.btnSelectCRS.Size = new System.Drawing.Size(64, 23);
+            this.btnSelectCRS.TabIndex = 13;
+            this.btnSelectCRS.Text = "Select..";
+            this.btnSelectCRS.UseVisualStyleBackColor = true;
+            this.btnSelectCRS.Click += new System.EventHandler(this.btnSelectCRS_Click);
+            // 
             // CsvToShapeFileControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.btnSelectCRS);
+            this.Controls.Add(this.lblCrsId);
             this.Controls.Add(this.btnConvert);
             this.Controls.Add(this.btnBrowseShapeFile);
             this.Controls.Add(this.txtDestination);
@@ -174,7 +197,7 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Name = "CsvToShapeFileControl";
-            this.Size = new System.Drawing.Size(343, 150);
+            this.Size = new System.Drawing.Size(343, 165);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -195,5 +218,7 @@
         private System.Windows.Forms.Button btnConvert;
         private System.Windows.Forms.OpenFileDialog ofdCsv;
         private System.Windows.Forms.SaveFileDialog sfdShapeFile;
+        private System.Windows.Forms.Label lblCrsId;
+        private System.Windows.Forms.Button btnSelectCRS;
     }
 }

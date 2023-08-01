@@ -1837,16 +1837,16 @@ namespace egis
             }
         }
 
-		private void cbBaseMapLayer_SelectedIndexChanged(object sender, EventArgs e)
-		{
-            if (baseMapLayer != null)
-            {
-                baseMapLayer.TileSource = SelectedBaseMapLayerTileSource;
-               // sfMap1.Refresh();
-            }
+		//private void cbBaseMapLayer_SelectedIndexChanged(object sender, EventArgs e)
+		//{
+  //          if (baseMapLayer != null)
+  //          {
+  //              baseMapLayer.TileSource = SelectedBaseMapLayerTileSource;
+  //             // sfMap1.Refresh();
+  //          }
 
 
-        }
+  //      }
 
 		private void cbBaseMapLayerDataSource_SelectedIndexChanged(object sender, EventArgs e)
 		{
