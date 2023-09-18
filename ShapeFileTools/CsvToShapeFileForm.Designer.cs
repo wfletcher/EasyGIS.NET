@@ -36,7 +36,7 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(271, 147);
+            this.button1.Location = new System.Drawing.Point(271, 177);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 1;
@@ -50,7 +50,7 @@
             this.csvToShapeFileControl1.DestinationShapeFile = "";
             this.csvToShapeFileControl1.Location = new System.Drawing.Point(3, 2);
             this.csvToShapeFileControl1.Name = "csvToShapeFileControl1";
-            this.csvToShapeFileControl1.Size = new System.Drawing.Size(343, 138);
+            this.csvToShapeFileControl1.Size = new System.Drawing.Size(343, 168);
             this.csvToShapeFileControl1.SourceDataFile = "";
             this.csvToShapeFileControl1.TabIndex = 0;
             this.csvToShapeFileControl1.ConvertShapeFileProgressChanged += new System.EventHandler<EGIS.ShapeFileLib.ConvertShapeFileEventArgs>(this.csvToShapeFileControl1_ConvertShapeFileProgressChanged);
@@ -60,7 +60,7 @@
             // 
             this.convertProgressBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.convertProgressBar.Location = new System.Drawing.Point(3, 147);
+            this.convertProgressBar.Location = new System.Drawing.Point(3, 177);
             this.convertProgressBar.Name = "convertProgressBar";
             this.convertProgressBar.Size = new System.Drawing.Size(262, 23);
             this.convertProgressBar.TabIndex = 2;
@@ -69,7 +69,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(349, 175);
+            this.ClientSize = new System.Drawing.Size(349, 205);
             this.Controls.Add(this.convertProgressBar);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.csvToShapeFileControl1);

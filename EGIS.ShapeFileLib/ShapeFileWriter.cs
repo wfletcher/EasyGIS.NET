@@ -833,7 +833,9 @@ namespace EGIS.ShapeFileLib
                 case ShapeType.NullShape:
                     throw new ArgumentException("Can not create shapefile using NullShape ShapeType");
                 case ShapeType.Point:
-                    return new PointShapeFileWriter(baseDir, shapeFileName, dataFields); 
+                    return new PointShapeFileWriter(baseDir, shapeFileName, dataFields);
+                case ShapeType.MultiPoint:
+                    return new MultiPointShapeFileWriter(baseDir, shapeFileName, dataFields);
                 case ShapeType.PolyLine:
                     return new PolyLineShapeFileWriter(baseDir, shapeFileName, dataFields);
                 case ShapeType.PolyLineM:
@@ -908,7 +910,9 @@ namespace EGIS.ShapeFileLib
 					throw new ArgumentException("Can not create shapefile using NullShape ShapeType");
 				case ShapeType.Point:
 					return new PointShapeFileWriter(shxStream, shpStream, dbfStream, prjStream, dataFields, false);
-				case ShapeType.PolyLine:
+                case ShapeType.MultiPoint:
+                    return new MultiPointShapeFileWriter(shxStream, shpStream, dbfStream, prjStream, dataFields, false);
+                case ShapeType.PolyLine:
 					return new PolyLineShapeFileWriter(shxStream, shpStream, dbfStream, prjStream, dataFields, false, false,false);
 				case ShapeType.PolyLineM:
 					return new PolyLineShapeFileWriter(shxStream, shpStream, dbfStream, prjStream, dataFields, true, false, false);
@@ -991,6 +995,8 @@ namespace EGIS.ShapeFileLib
                     throw new ArgumentException("Can not create shapefile using NullShape ShapeType");
                 case ShapeType.Point:
                     return new PointShapeFileWriter(baseDir, shapeFileName, fieldDescriptions, true);
+                case ShapeType.MultiPoint:
+                    return new MultiPointShapeFileWriter(baseDir, shapeFileName, fieldDescriptions, true);
                 case ShapeType.PolyLine:
                     return new PolyLineShapeFileWriter(baseDir, shapeFileName, fieldDescriptions, true);
                 case ShapeType.PolyLineM:
@@ -2499,6 +2505,267 @@ namespace EGIS.ShapeFileLib
 
     
 }
+
+    [ObfuscationAttribute(Exclude = true, ApplyToMembers = true)]
+    class MultiPointShapeFileWriter : ShapeFileWriter
+    {
+
+        internal MultiPointShapeFileWriter(String baseDir, String shapeFileName, DbfFieldDesc[] datafields, bool append)
+            : base(baseDir, shapeFileName, datafields, append)
+        {
+            this.ShapeType = ShapeType.MultiPoint;
+            if (!append) WriteFileHeaders();
+        }
+
+        internal MultiPointShapeFileWriter(String baseDir, String shapeFileName, DbfFieldDesc[] datafields)
+            : this(baseDir, shapeFileName, datafields, false)
+        {
+        }
+
+        internal MultiPointShapeFileWriter(Stream shxStream, Stream shpStream, Stream dbfStream, Stream prjStream, DbfFieldDesc[] datafields, bool append)
+            : base(shxStream, shpStream, dbfStream, prjStream, datafields, append)
+        {
+            this.ShapeType = ShapeType.MultiPoint;
+            if (!append) WriteFileHeaders();
+        }
+
+        public override void AddRecord(double[] pts, int numPoints, String[] fieldData)
+        {
+            RecordCount++;
+            WriteShapeRecord(pts, numPoints);
+            WriteDbfRecord(fieldData);
+        }
+
+
+
+        public override void AddRecord(PointF[] pts, int numPoints, string[] fieldData)
+        {
+            RecordCount++;
+            WriteShapeRecord(pts, numPoints);
+            WriteDbfRecord(fieldData);
+        }
+
+        public override void AddRecord(PointD[] pts, int numPoints, string[] fieldData)
+        {
+            RecordCount++;
+            WriteShapeRecord(pts, numPoints);
+            WriteDbfRecord(fieldData);
+        }
+
+        public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointF[]> parts, string[] fieldData)
+        {
+            if (parts.Count > 1) throw new NotSupportedException("MultiPoint Shapes do not support multi parts");
+            if (parts.Count == 1) AddRecord(parts[0], 1, fieldData);
+        }
+
+        public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts, string[] fieldData)
+        {
+            if(parts.Count > 1) throw new NotSupportedException("MultiPoint Shapes do not support multi parts");
+            if (parts.Count == 1) AddRecord(parts[0], 1, fieldData);
+        }
+
+        public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<double[]> parts, string[] fieldData)
+        {
+            if (parts.Count > 1) throw new NotSupportedException("MultiPoint Shapes do not support multi parts");
+            if (parts.Count == 1) AddRecord(parts[0], 1, fieldData);
+        }
+
+        public override void AddRecord(PointD[] points, int pointCount, double[] measures, double[] zValues, string[] fieldData)
+        {
+            throw new NotSupportedException("MultiPoint Shapes do not support measures");
+        }
+
+        public override void AddRecord(System.Collections.ObjectModel.ReadOnlyCollection<PointD[]> parts, System.Collections.ObjectModel.ReadOnlyCollection<double[]> measures, System.Collections.ObjectModel.ReadOnlyCollection<double[]> zValues, string[] fieldData)
+        {
+            throw new NotSupportedException("MultiPoint Shapes do not support measures");
+        }
+
+
+        private void WriteShapeRecord(double[] pts, int numPoints)
+        {
+            int recordOffset = (int)ShapeStream.Position / 2;
+
+            //output the record number
+            ShapeStream.Write(EndianUtils.GetBytesBE(RecordCount), 0, 4);
+            //output the content length in words = [ 4 (shapetype) + 32 (box) + 4 + 16*numPoints]/2
+            int contentLength = (4 + 32 + 4 + (16 * numPoints)) / 2;
+            ShapeStream.Write(EndianUtils.GetBytesBE(contentLength), 0, 4);
+
+            //write the shapeType (LE)
+            ShapeStream.Write(BitConverter.GetBytes((int)EGIS.ShapeFileLib.ShapeType.MultiPoint), 0, 4);
+
+            //calculate and write the bounding box
+            double minX = Double.PositiveInfinity, minY = Double.PositiveInfinity, maxX = Double.NegativeInfinity, maxY = Double.NegativeInfinity;
+            int index = 0;
+            for (int n = 0; n < numPoints; n++)
+            {
+                double x = pts[index++];
+                double y = pts[index++];
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+            }
+            if (numPoints == 1)
+            {
+                maxX = minX + double.Epsilon;
+                maxY = minY + double.Epsilon;
+            }
+
+            ShapeStream.Write(BitConverter.GetBytes(minX), 0, 8);
+            ShapeStream.Write(BitConverter.GetBytes(minY), 0, 8);
+            ShapeStream.Write(BitConverter.GetBytes(maxX), 0, 8);
+            ShapeStream.Write(BitConverter.GetBytes(maxY), 0, 8);
+
+            //update the entire shapefile bounds
+            if (RecordCount == 1)
+            {
+                ShapeBounds = new RectangleD(minX, minY, (maxX - minX), (maxY - minY));
+            }
+            else
+            {
+                ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
+            }
+            //write number of points
+            ShapeStream.Write(BitConverter.GetBytes(numPoints), 0, 4);
+           
+            //now write the point data
+            index = 0;
+            for (int n = 0; n < numPoints; n++)
+            {
+                ShapeStream.Write(BitConverter.GetBytes(pts[index++]), 0, 8);
+                ShapeStream.Write(BitConverter.GetBytes(pts[index++]), 0, 8);
+
+            }
+            //now write to the index file
+            IndexStream.Write(EndianUtils.GetBytesBE(recordOffset), 0, 4);
+            IndexStream.Write(EndianUtils.GetBytesBE(contentLength), 0, 4);                     
+        }
+
+        private void WriteShapeRecord(PointF[] pts, int numPoints)
+        {
+            int recordOffset = (int)ShapeStream.Position / 2;
+
+            //output the record number
+            ShapeStream.Write(EndianUtils.GetBytesBE(RecordCount), 0, 4);
+            //output the content length in words = [ 4 (shapetype) + 32 (box) + 4 + 16*numPoints]/2
+            int contentLength = (4 + 32 + 4 + (16 * numPoints)) / 2;
+            ShapeStream.Write(EndianUtils.GetBytesBE(contentLength), 0, 4);
+
+            //write the shapeType (LE)
+            ShapeStream.Write(BitConverter.GetBytes((int)EGIS.ShapeFileLib.ShapeType.MultiPoint), 0, 4);
+
+            //calculate and write the bounding box
+            double minX = Double.PositiveInfinity, minY = Double.PositiveInfinity, maxX = Double.NegativeInfinity, maxY = Double.NegativeInfinity;
+            for (int n = 0; n < numPoints; n++)
+            {
+                double x = pts[n].X;
+                double y = pts[n].Y;
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+            }
+            if (numPoints == 1)
+            {
+                maxX = minX + double.Epsilon;
+                maxY = minY + double.Epsilon;
+            }
+
+            ShapeStream.Write(BitConverter.GetBytes(minX), 0, 8);
+            ShapeStream.Write(BitConverter.GetBytes(minY), 0, 8);
+            ShapeStream.Write(BitConverter.GetBytes(maxX), 0, 8);
+            ShapeStream.Write(BitConverter.GetBytes(maxY), 0, 8);
+
+            //update the entire shapefile bounds
+            if (RecordCount == 1)
+            {
+                ShapeBounds = new RectangleD(minX, minY, (maxX - minX), (maxY - minY));
+            }
+            else
+            {
+                ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
+            }
+            //write number of points
+            ShapeStream.Write(BitConverter.GetBytes(numPoints), 0, 4);
+
+            //now write the point data
+            for (int n = 0; n < numPoints; n++)
+            {
+                double x = (double)pts[n].X;
+                double y = (double)pts[n].Y;
+                ShapeStream.Write(BitConverter.GetBytes(x), 0, 8);
+                ShapeStream.Write(BitConverter.GetBytes(y), 0, 8);
+
+            }
+            //now write to the index file
+            IndexStream.Write(EndianUtils.GetBytesBE(recordOffset), 0, 4);
+            IndexStream.Write(EndianUtils.GetBytesBE(contentLength), 0, 4);         
+        }
+
+        private void WriteShapeRecord(PointD[] pts, int numPoints)
+        {
+            int recordOffset = (int)ShapeStream.Position / 2;
+
+            //output the record number
+            ShapeStream.Write(EndianUtils.GetBytesBE(RecordCount), 0, 4);
+            //output the content length in words = [ 4 (shapetype) + 32 (box) + 4 + 16*numPoints]/2
+            int contentLength = (4 + 32 + 4 + (16 * numPoints)) / 2;
+            ShapeStream.Write(EndianUtils.GetBytesBE(contentLength), 0, 4);
+
+            //write the shapeType (LE)
+            ShapeStream.Write(BitConverter.GetBytes((int)EGIS.ShapeFileLib.ShapeType.MultiPoint), 0, 4);
+
+            //calculate and write the bounding box
+            double minX = Double.PositiveInfinity, minY = Double.PositiveInfinity, maxX = Double.NegativeInfinity, maxY = Double.NegativeInfinity;
+            for (int n = 0; n < numPoints; n++)
+            {
+                double x = pts[n].X;
+                double y = pts[n].Y;
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+            }
+            if (numPoints == 1)
+            {
+                maxX = minX + double.Epsilon;
+                maxY = minY + double.Epsilon;
+            }
+
+            ShapeStream.Write(BitConverter.GetBytes(minX), 0, 8);
+            ShapeStream.Write(BitConverter.GetBytes(minY), 0, 8);
+            ShapeStream.Write(BitConverter.GetBytes(maxX), 0, 8);
+            ShapeStream.Write(BitConverter.GetBytes(maxY), 0, 8);
+
+            //update the entire shapefile bounds
+            if (RecordCount == 1)
+            {
+                ShapeBounds = new RectangleD(minX, minY, (maxX - minX), (maxY - minY));
+            }
+            else
+            {
+                ShapeBounds = RectangleD.Union(ShapeBounds, new RectangleD(minX, minY, (maxX - minX), (maxY - minY)));
+            }
+            //write number of points
+            ShapeStream.Write(BitConverter.GetBytes(numPoints), 0, 4);
+
+            //now write the point data
+            for (int n = 0; n < numPoints; n++)
+            {
+                double x = pts[n].X;
+                double y = pts[n].Y;
+                ShapeStream.Write(BitConverter.GetBytes(x), 0, 8);
+                ShapeStream.Write(BitConverter.GetBytes(y), 0, 8);
+
+            }
+            //now write to the index file
+            IndexStream.Write(EndianUtils.GetBytesBE(recordOffset), 0, 4);
+            IndexStream.Write(EndianUtils.GetBytesBE(contentLength), 0, 4);
+        }
+
+
+    }
 
 
 

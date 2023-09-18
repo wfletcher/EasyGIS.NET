@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\EGIS.ShapeFileLib\NativeMethods.cs" Link="NativeMethods.cs" />
+    <Compile Include="..\UnitTests\GeometryAlgorithmTests.cs" Link="GeometryAlgorithmTests.cs" />
+    <Compile Include="..\UnitTests\GeometryClippingTests.cs" Link="GeometryClippingTests.cs" />
+    <Compile Include="..\UnitTests\IntersectPolygonTests.cs" Link="IntersectPolygonTests.cs" />
+    <Compile Include="..\UnitTests\ProjectionTests.cs" Link="ProjectionTests.cs" />
+    <Compile Include="..\UnitTests\ShapeFileTests.cs" Link="ShapeFileTests.cs" />
+    <Compile Include="..\UnitTests\ShapeFileWriterTests.cs" Link="ShapeFileWriterTests.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
+    <PackageReference Include="NUnit" Version="3.13.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.0.0" />
+    <PackageReference Include="coverlet.collector" Version="3.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\egis.controls\EGIS.Controls.csproj" />
+    <ProjectReference Include="..\EGIS.Projections\EGIS.Projections.csproj" />
+    <ProjectReference Include="..\egis.ShapeFileLib\EGIS.ShapeFileLib.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -453,6 +453,7 @@ namespace EGIS.Controls
             {
             }
             MaxZoomLevel = double.MaxValue;
+            ZoomLevel = 1.0;
 
             MouseWheelZoomMode = MouseWheelZoomMode.Default;
         }
@@ -613,6 +614,7 @@ namespace EGIS.Controls
         /// <seealso cref="CentrePoint"/>
         /// <exception cref="System.ArgumentException"> if ZoomLevel less than or equal to zero</exception>        
         [Browsable(false)]
+        [DefaultValue(1.0)]
         public double ZoomLevel
         {
             get
@@ -621,7 +623,7 @@ namespace EGIS.Controls
             }
             set
             {
-                if (value < double.Epsilon) throw new ArgumentException("ZoomLevel can not be <= Zero");
+                if (value < double.Epsilon) value = double.Epsilon;//throw new ArgumentException("ZoomLevel can not be <= Zero");
 
                 //avoid overflow if zooming to less than 1mm
                 if (value > this._zoomLevel && this.mapCoordinateReferenceSystem is IProjectedCRS && (1 / value < 0.00001)) return;
@@ -1540,6 +1542,40 @@ namespace EGIS.Controls
             }
         }
 
+
+        /// <summary>
+        /// protected property set to true when BeginUpdate is called and fasle when EndUpdate is called. No drawing
+        /// is performed when UpdatingLayers is true
+        /// </summary>
+        protected bool UpdatingLayers
+        {
+            get;
+            set;
+        }
+
+
+        /// <summary>
+        /// Maintains performance while ShapeFiles are added or removed from the SFMap by preventing the control from drawing until the EndUpdate() method is called.
+        /// </summary>
+        public void BeginUpdate()
+        {
+            UpdatingLayers = true;
+        }
+
+        /// <summary>
+        /// Resumes drawing the SFMap control after drawing is suspended by the BeginUpdate() method.
+        /// </summary>
+        /// <param name="refresh">if true the control will be refreshed immediately</param>
+        public void EndUpdate(bool refresh=false)
+        {
+            UpdatingLayers = false;
+            if (refresh)
+            {
+                this.Refresh();
+            }
+        }
+
+
         /// <summary>
         /// Creates a Graphics object from the SFMap's internal Image used for double buffering. 
         /// </summary>
@@ -1880,7 +1916,13 @@ namespace EGIS.Controls
         /// <param name="e"></param>
         protected override void OnPaint(PaintEventArgs e)
         {
-            if (/* dirtyScreenBuf || */ refreshMode != RefreshMode.None)
+            if (UpdatingLayers)
+            {
+                base.OnPaint(e);
+                return;
+            }
+
+            if (refreshMode != RefreshMode.None)
             {
                 RenderShapefiles();
             }
@@ -2728,7 +2770,8 @@ namespace EGIS.Controls
             double distance = double.NaN;
             if ((this.MapCoordinateReferenceSystem as IGeographicCRS) != null)
             {
-                distance = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                //distance = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                distance = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X).Item1;
 
             }
             else if ((this.MapCoordinateReferenceSystem as IProjectedCRS) != null)
@@ -2739,7 +2782,8 @@ namespace EGIS.Controls
                 {
                     p0 = transformation.Transform(p0);
                     p1 = transformation.Transform(p1);
-                    distance = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                    //distance = EGIS.ShapeFileLib.ConversionFunctions.DistanceBetweenLatLongPointsHaversine(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X);
+                    distance = EGIS.ShapeFileLib.ConversionFunctions.GeodesicDistanceAndBearingBetweenLatLonPoints(ConversionFunctions.Wgs84RefEllipse, p0.Y, p0.X, p1.Y, p1.X).Item1;
                 }
                 //calculate euclidean distance
                 //distance = Math.Sqrt((p1.X - p0.X) * (p1.X - p0.X) + (p1.Y - p0.Y) * (p1.Y - p0.Y));

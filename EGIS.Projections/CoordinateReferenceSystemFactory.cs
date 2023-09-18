@@ -350,8 +350,17 @@ namespace EGIS.Projections
                         LoadCRS(authority, code);
                     }
 
+                    codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_COMPOUND_CRS, 1);
+                    Console.Out.WriteLine("PJ_TYPE_COMPOUND_CRS codes.Count: " + codes.Count);
+
+                    for (int n = 0; n < codes.Count; ++n)
+                    {
+                        string code = codes[n];
+                        LoadCRS(authority, code);
+                    }
+
                     codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_CRS, 0);
-                    Console.Out.WriteLine("PJ_TYPE_CRS no depracated codes.Count: " + codes.Count);
+                    Console.Out.WriteLine("PJ_TYPE_CRS no deprecated codes.Count: " + codes.Count);
 
                     codes = Proj6Native.Proj_get_codes_from_database(IntPtr.Zero, authority, Proj6Native.PJ_TYPE.PJ_TYPE_GEOGRAPHIC_2D_CRS, 1);
                     Console.Out.WriteLine("PJ_TYPE_GEOGRAPHIC_2D_CRS codes.Count: " + codes.Count);
@@ -461,7 +470,7 @@ namespace EGIS.Projections
                             AreaOfUse = areaOfUse
                         };
                     }
-                    else if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_BOUND_CRS)
+                    else if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_BOUND_CRS || pType == Proj6Native.PJ_TYPE.PJ_TYPE_COMPOUND_CRS)
                     {
                         if (wkt.IndexOf("PROJECTION", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
@@ -670,6 +679,16 @@ namespace EGIS.Projections
 
 
         #endregion
+
+        public double Distance(ICRS crs, double x0, double y0, double x1, double y1)
+        {
+            return ((Proj6.CRS)crs).Distance(x0, y0, x1, y1);
+        }
+
+        public Tuple<double,double> DistanceAndBearing(ICRS crs, double x0, double y0, double x1, double y1)
+        {
+            return ((Proj6.CRS)crs).DistanceAndBearing(x0, y0, x1, y1);
+        }
 
     }
 
