@@ -2011,6 +2011,52 @@ namespace EGIS.ShapeFileLib
             }
         }
 
+        #region Intersecting polygon
+
+        public void GetShapeIndiciesIntersectingPolygon(List<int> indicies, PointD[] polygon, RectangleD bounds)
+        {
+            if ((indicies == null) || (polygon.Length < 3)) return;
+
+            GetShapeIndiciesIntersectingRect(indicies, bounds);
+
+            if (indicies.Count > 0)
+            {
+                switch (sfRecordCol.MainHeader.ShapeType)
+                {
+                    default:
+                        GetShapeIndiciesIntersectingPolygon(indicies, polygon, sfRecordCol);
+                        break;
+                }
+            }
+        }
+
+        private void GetShapeIndiciesIntersectingPolygon(List<int> indices, PointD[] polygon, SFRecordCol col)
+        {
+            List<int> remove = new List<int>();
+
+            foreach (int i in indices)
+            {
+                if (!col.IntersectPolygon(i, polygon, shapeFileStream))
+                {
+                    remove.Add(i);
+                }
+            }
+
+            if (remove.Count > 0)
+            {
+                if (remove.Count == indices.Count)
+                {
+                    indices.Clear();
+                }
+                else
+                {
+                    indices.RemoveAll(i => remove.Contains(i));
+                }
+            }
+        }
+
+        #endregion
+
 
         /// <summary>
         /// Gets index of closest record from a given point and search radius
@@ -2968,6 +3014,8 @@ namespace EGIS.ShapeFileLib
         public abstract bool IntersectRect(int recordIndex, ref RectangleD rect, System.IO.Stream shapeFileStream);
         
         public abstract unsafe bool IntersectCircle(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream);
+
+        public abstract unsafe bool IntersectPolygon(int recordIndex, PointD[] polygon, System.IO.Stream shapeFileStream);
 
         public abstract double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream);
 
@@ -4518,6 +4566,12 @@ namespace EGIS.ShapeFileLib
             //return false;
         }
 
+        public override bool IntersectPolygon(int recordIndex, PointD[] polygon, Stream shapeFileStream)
+        {
+            List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
+            return NativeMethods.PolygonPolygonIntersect(pts[0], pts[0].Length, polygon, polygon.Length);
+        }
+
         public unsafe override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with the circle
@@ -5252,6 +5306,12 @@ namespace EGIS.ShapeFileLib
             return (pt.X - centre.X) * (pt.X - centre.X) + (pt.Y - centre.Y) * (pt.Y - centre.Y) < (radius * radius);
         }
         
+        public override bool IntersectPolygon(int recordIndex, PointD[] polygon, Stream shapeFileStream)
+        {
+            PointD pt = GetPointD(recordIndex, shapeFileStream);
+            return GeometryAlgorithms.PointInPolygon(polygon, pt.X, pt.Y);
+        }
+
        
 
         #endregion
@@ -5400,6 +5460,12 @@ namespace EGIS.ShapeFileLib
         {
             PointD pt = GetPointD(recordIndex, shapeFileStream);
             return (pt.X - centre.X) * (pt.X - centre.X) + (pt.Y - centre.Y) * (pt.Y - centre.Y) < (radius * radius);
+        }
+
+        public override bool IntersectPolygon(int recordIndex, PointD[] polygon, Stream shapeFileStream)
+        {
+            PointD pt = GetPointD(recordIndex, shapeFileStream);
+            return GeometryAlgorithms.PointInPolygon(polygon, pt.X, pt.Y);
         }
 
         public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
@@ -6641,6 +6707,23 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
+        public override bool IntersectPolygon(int recordIndex, PointD[] polygon, Stream shapeFileStream)
+        {
+            List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
+            if (pts != null && pts.Count > 0)
+            {
+                for (int n = pts[0].Length - 1; n >= 0; --n)
+                {
+                    if (GeometryAlgorithms.PointInPolygon(polygon, pts[0][n].X, pts[0][n].X))
+                    {
+                        return true;
+                    }
+
+                }
+            }
+            return false;
+        }
+
         public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             double distance = double.PositiveInfinity;
@@ -7379,6 +7462,23 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
+        public override bool IntersectPolygon(int recordIndex, PointD[] polygon, Stream shapeFileStream)
+        {
+            List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
+            if (pts != null && pts.Count > 0)
+            {
+                for (int n = pts[0].Length - 1; n >= 0; --n)
+                {
+                    if (GeometryAlgorithms.PointInPolygon(polygon, pts[0][n].X, pts[0][n].X))
+                    {
+                        return true;
+                    }
+
+                }
+            }
+            return false;
+        }
+
 
         public override double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
@@ -8080,6 +8180,12 @@ namespace EGIS.ShapeFileLib
                 }
             }
             return false;
+        }
+
+        public override bool IntersectPolygon(int recordIndex, PointD[] polygon, Stream shapeFileStream)
+        {
+            List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
+            return NativeMethods.PolyLinePolygonIntersect(pts[0], pts[0].Length, polygon, polygon.Length);
         }
 
 
@@ -8882,6 +8988,12 @@ namespace EGIS.ShapeFileLib
             return false;
         }
 
+        public override bool IntersectPolygon(int recordIndex, PointD[] polygon, Stream shapeFileStream)
+        {
+            List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
+            return NativeMethods.PolyLinePolygonIntersect(pts[0], pts[0].Length, polygon, polygon.Length);
+        }
+
         public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)
         {
             //first check if the record's bounds intersects with the circle
@@ -9573,6 +9685,12 @@ namespace EGIS.ShapeFileLib
                 return intersectsNonHolePolygon;
             }
             //return false;
+        }
+       
+        public override bool IntersectPolygon(int recordIndex, PointD[] polygon, Stream shapeFileStream)
+        {
+            List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
+            return NativeMethods.PolygonPolygonIntersect(pts[0], pts[0].Length, polygon, polygon.Length);
         }
        
 
@@ -10401,6 +10519,12 @@ namespace EGIS.ShapeFileLib
                 }
             }
             return false;
+        }
+
+        public override bool IntersectPolygon(int recordIndex, PointD[] polygon, Stream shapeFileStream)
+        {
+            List<PointD[]> pts = GetShapeDataD(recordIndex, shapeFileStream);
+            return NativeMethods.PolyLinePolygonIntersect(pts[0], pts[0].Length, polygon, polygon.Length);
         }
 
         public override unsafe double GetDistanceToShape(int shapeIndex, PointD centre, double radius, System.IO.Stream shapeFileStream)

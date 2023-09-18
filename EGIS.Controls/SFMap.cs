@@ -62,6 +62,10 @@ namespace EGIS.Controls
         /// </summary>
         Pan, 
         /// <summary>
+        /// Click select mode
+        /// </summary>
+        ClickSelect,
+        /// <summary>
         /// Rectangular select mode
         /// </summary>
         SelectRectangle, 
@@ -69,6 +73,10 @@ namespace EGIS.Controls
         /// Circular select mode
         /// </summary>
         SelectCircle,
+        /// <summary>
+        /// Polygon select mode
+        /// </summary>
+        SelectPolygon,
         /// <summary>
         /// Zoom map to selected rectangle
         /// </summary>
@@ -1025,6 +1033,19 @@ namespace EGIS.Controls
         }
 
         /// <summary>
+        /// Clears the selection.
+        /// </summary>
+        public void ClearSelection()
+        {
+            var layers = this.ShapeFilesLayers;
+            for (int i = 0; i < ShapeFileCount; i++)
+            {
+                layers[i].ClearSelectedRecords();
+            }
+            Refresh(true);
+        }
+
+        /// <summary>
         /// Converts a MousePoint (in pixel coords) to a map coordinate point
         /// </summary>
         /// <remarks>
@@ -1355,6 +1376,62 @@ namespace EGIS.Controls
             else
             {
                 this.ForegroundShapeFiles.Add(shapeFile);
+            }
+
+            if (fitMapToLayerExtent)
+            {
+                RectangleD extent = shapeFile.Extent.Transform(shapeFile.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem);
+                FitToExtent(extent);
+            }
+            else
+            {
+                //refresh so the layer is drawn
+                if (refreshImmediately)
+                {
+                    //Refresh(true);
+                    Refresh(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
+                }
+                else
+                {
+                    //InvalidateAndClearBackground();
+                    Invalidate(this.refreshMode | (layerPosition == LayerPositionEnum.Background ? RefreshMode.BackgroundLayers : RefreshMode.ForegroundLayers));
+                }
+            }
+            OnShapeFilesChanged();
+            return shapeFile;
+        }
+
+
+        /// <summary>
+        /// Adds a new ShapeFile layer to the map at the specified layer index
+        /// </summary>
+        /// <param name="shapeFile">ShapeFile object to add to the map</param>
+        /// <param name="index">The layer index to insert the ShapeFile object to add to the map</param>
+        /// <param name="fitMapToLayerExtent">optional parameter to fit the map to the shapefile's extent. Default is true</param>
+        /// <returns>Returns the shapeFile which was added to the SFMap</returns>
+        public EGIS.ShapeFileLib.ShapeFile InsertShapeFile(EGIS.ShapeFileLib.ShapeFile shapeFile, int index, bool fitMapToLayerExtent = true, bool refreshImmediately = true, LayerPositionEnum layerPosition = LayerPositionEnum.Background)
+        {
+            if (layerPosition == LayerPositionEnum.Background)
+            {
+                if (index < this.BackgroundShapeFiles.Count)
+                {
+                    this.BackgroundShapeFiles.Insert(index, shapeFile);
+                }
+                else
+                {
+                    this.BackgroundShapeFiles.Add(shapeFile);
+                }
+            }
+            else
+            {
+                if (index < this.ForegroundShapeFiles.Count)
+                {
+                    this.ForegroundShapeFiles.Insert(index, shapeFile);
+                }
+                else
+                {
+                    this.ForegroundShapeFiles.Add(shapeFile);
+                }
             }
 
             if (fitMapToLayerExtent)
@@ -1971,7 +2048,8 @@ namespace EGIS.Controls
                     }
                 }
                 //else if (InternalPanSelectMode == PanSelectMode.SelectCircle)
-                else if ((InternalPanSelectMode == PanSelectMode.SelectCircle) || (InternalPanSelectMode == PanSelectMode.ZoomCircle))
+                else if ((InternalPanSelectMode == PanSelectMode.SelectCircle) ||
+                         (InternalPanSelectMode == PanSelectMode.ZoomCircle))
                 {
                     e.Graphics.DrawImage(ScreenBuffer, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
                     using (Pen p = new Pen(Color.Red, 1))
@@ -1980,7 +2058,8 @@ namespace EGIS.Controls
                         {
                             p.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
 
-                            int radius = (int)Math.Round(Math.Sqrt(MouseOffsetPoint.X * MouseOffsetPoint.X + MouseOffsetPoint.Y * MouseOffsetPoint.Y));
+                            int radius = (int)Math.Round(Math.Sqrt(MouseOffsetPoint.X * MouseOffsetPoint.X +
+                                                                   MouseOffsetPoint.Y * MouseOffsetPoint.Y));
                             Rectangle selectRect = new Rectangle(MouseDownPoint.X - radius,
                                 MouseDownPoint.Y - radius,
                                 radius * 2,
@@ -1992,15 +2071,49 @@ namespace EGIS.Controls
                             if (!MouseOffsetPoint.IsEmpty)
                             {
                                 PointD p0 = PixelCoordToGisPoint(MouseDownPoint);
-                                PointD p1 = PixelCoordToGisPoint(new Point(MouseDownPoint.X + MouseOffsetPoint.X, MouseDownPoint.Y + MouseOffsetPoint.Y));
+                                PointD p1 = PixelCoordToGisPoint(new Point(MouseDownPoint.X + MouseOffsetPoint.X,
+                                    MouseDownPoint.Y + MouseOffsetPoint.Y));
                                 double dist = DistanceBetweenPoints(p0, p1);
 
-                                e.Graphics.DrawLine(p, MouseDownPoint, new Point(MouseDownPoint.X + MouseOffsetPoint.X, MouseDownPoint.Y + MouseOffsetPoint.Y));
-                                e.Graphics.DrawString(string.Format(System.Globalization.CultureInfo.CurrentCulture,"{0:0.000}m", dist), this.Font, Brushes.Red, new PointF(0.5F * (MouseDownPoint.X + MouseDownPoint.X + MouseOffsetPoint.X), 0.5F * (MouseDownPoint.Y + MouseDownPoint.Y + MouseOffsetPoint.Y)));
+                                e.Graphics.DrawLine(p, MouseDownPoint,
+                                    new Point(MouseDownPoint.X + MouseOffsetPoint.X,
+                                        MouseDownPoint.Y + MouseOffsetPoint.Y));
+                                e.Graphics.DrawString(
+                                    string.Format(System.Globalization.CultureInfo.CurrentCulture, "{0:0.000}m", dist),
+                                    this.Font, Brushes.Red,
+                                    new PointF(0.5F * (MouseDownPoint.X + MouseDownPoint.X + MouseOffsetPoint.X),
+                                        0.5F * (MouseDownPoint.Y + MouseDownPoint.Y + MouseOffsetPoint.Y)));
                             }
                         }
                     }
+                }
+                else if (InternalPanSelectMode == PanSelectMode.SelectPolygon)
+                {
+                    e.Graphics.DrawImage(screenBuf, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
+                    if (_MousePoints.Count > 1)
+                    {
+                        Point[] pts = new Point[_MousePoints.Count];
+                        for (int i = 0; i < _MousePoints.Count; i++)
+                        {
+                            pts[i] = GisPointToPixelCoord(_MousePoints[i]);
+                        }
 
+                        using (Pen p = new Pen(Color.Red, 1))
+                        {
+                            using (Brush b = new SolidBrush(Color.FromArgb(20, Color.Red)))
+                            {
+
+                                e.Graphics.FillPolygon(b, pts);
+                            }
+
+                            p.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+                            e.Graphics.DrawPolygon(p, pts);
+                        }
+                    }
+                }
+                else if (InternalPanSelectMode == PanSelectMode.ClickSelect)
+                {
+                    e.Graphics.DrawImage(screenBuf, e.ClipRectangle, e.ClipRectangle, GraphicsUnit.Pixel);
                 }
                 else// if (InternalPanSelectMode == PanSelectMode.Pan)
                 {
@@ -2150,6 +2263,7 @@ namespace EGIS.Controls
         {
             base.OnKeyDown(e);
 
+            AltKeyDown = (e.KeyCode == Keys.Menu);
             CtrlKeyDown = (e.KeyCode == Keys.ControlKey || e.KeyCode == Keys.LControlKey || e.KeyCode == Keys.RControlKey);
             ShiftKeyDown = (e.KeyCode == Keys.ShiftKey);
             switch (e.KeyCode)
@@ -2176,8 +2290,48 @@ namespace EGIS.Controls
         protected override void OnKeyUp(KeyEventArgs e)
         {
             base.OnKeyUp(e);
+            AltKeyDown = false;
             CtrlKeyDown = false;
             ShiftKeyDown = false;
+
+            if ((InternalPanSelectMode == PanSelectMode.SelectPolygon) && (_MousePoints.Count > 2))
+            {
+                var layers = this.ShapeFilesLayers;
+                bool fireEvent = false;
+                // Close the polygon so the intersection functions work correctly
+                _MousePoints.Add(new PointD(_MousePoints[0].X, _MousePoints[0].Y));
+                for (int n = 0; n < this.ShapeFileCount; ++n)
+                {
+                    if (!layers[n].IsSelectable) continue;
+                    fireEvent = true;
+                    List<int> ind = new List<int>();
+                    layers[n].GetShapeIndiciesIntersectingPolygon(ind, _MousePoints.ToArray(), _MousePointsBounds);
+
+                    if (ToggleSelect)
+                    {
+                        foreach (int index in ind)
+                        {
+                            layers[n].SelectRecord(index, !layers[n].IsRecordSelected(index));
+                        }
+                    }
+                    else
+                    {
+                        layers[n].ClearSelectedRecords();
+                        foreach (int index in ind)
+                        {
+                            layers[n].SelectRecord(index, true);
+                        }
+                    }
+                }
+
+                MouseOffsetPoint = new Point(0, 0);
+
+                InternalPanSelectMode = PanSelectMode.None;
+                Refresh(true);
+
+                if (fireEvent) OnSelectedRecordChanged(new EventArgs());
+            }
+            _MousePoints.Clear();
         }
 
         /// <summary>
@@ -2187,6 +2341,7 @@ namespace EGIS.Controls
 		protected override void OnLostFocus(EventArgs e)
 		{
 			base.OnLostFocus(e);
+            AltKeyDown = false;
             CtrlKeyDown = false;
             ShiftKeyDown = false;
         }
@@ -2255,6 +2410,7 @@ namespace EGIS.Controls
 
         private PanSelectMode _panSelectMode = PanSelectMode.Pan;
 
+        private bool _altDown;
         private bool _ctrlDown;
         private bool _shiftDown;
         private bool _toggleSelect;
@@ -2263,7 +2419,22 @@ namespace EGIS.Controls
         private Point _mouseDownPt = Point.Empty;
         private Point _mouseOffPt = new Point(0, 0);
 
+        private List<PointD> _MousePoints = new List<PointD>();
+        private RectangleD _MousePointsBounds = new RectangleD();
+
         #region protected mouse handling properties
+
+        protected bool AltKeyDown
+        {
+            get
+            {
+                return _altDown;
+            }
+            set
+            {
+                _altDown = value;
+            }
+        }
 
         protected bool CtrlKeyDown
         {
@@ -2390,6 +2561,10 @@ namespace EGIS.Controls
                 {
                     InternalPanSelectMode = (e.Button == MouseButtons.Left) ? PanSelectMode.SelectRectangle : PanSelectMode.SelectCircle;
                     ToggleSelect = false;
+                }
+                else if (AltKeyDown)
+                {
+                    InternalPanSelectMode = PanSelectMode.SelectPolygon;
                 }
                 else if (CtrlKeyDown)
                 {
@@ -2547,6 +2722,52 @@ namespace EGIS.Controls
 
                     if (fireEvent) OnSelectedRecordChanged(new EventArgs());
 
+                }
+                else if (InternalPanSelectMode == PanSelectMode.SelectPolygon)
+                {
+                    PointD pt = PixelCoordToGisPoint(e.X, e.Y);
+                    _MousePoints.Add(pt);
+                    if (_MousePoints.Count > 1)
+                    {
+                        _MousePointsBounds = RectangleD.FromLTRB(Math.Min(_MousePointsBounds.Left, pt.X),
+                           Math.Min(_MousePointsBounds.Top, pt.Y),
+                           Math.Max(_MousePointsBounds.Right, pt.X),
+                           Math.Max(_MousePointsBounds.Bottom, pt.Y));
+                    }
+                    else
+                    {
+                        _MousePointsBounds.Location = pt;
+                        _MousePointsBounds.Width = 0;
+                        _MousePointsBounds.Height = 0;
+                    }
+                    Refresh(true);
+                }
+                else if (InternalPanSelectMode == PanSelectMode.ClickSelect)
+                {
+                    var layers = this.ShapeFilesLayers;
+                    bool fireEvent = false;
+                    for (int n = 0; n < this.ShapeFileCount; ++n)
+                    {
+                        if (!layers[n].IsSelectable) continue;
+                        fireEvent = true;
+                        int index = GetShapeIndexAtPixelCoord(n, e.Location, 10);
+
+                        if (ToggleSelect)
+                        {
+                            layers[n].SelectRecord(index, !layers[n].IsRecordSelected(index));
+                        }
+                        else
+                        {
+                            layers[n].ClearSelectedRecords();
+                            layers[n].SelectRecord(index, true);
+                        }
+                    }
+
+                    MouseOffsetPoint = new Point(0, 0);
+
+                    Refresh(true);
+
+                    if (fireEvent) OnSelectedRecordChanged(new EventArgs());
                 }
                 else
                 {
