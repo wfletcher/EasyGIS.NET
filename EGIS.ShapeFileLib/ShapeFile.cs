@@ -570,6 +570,22 @@ namespace EGIS.ShapeFileLib
         }
 
         /// <summary>
+        /// Gets all of the Attribute Types contained in the shapefile's DBF file
+        /// </summary>        
+        /// <returns></returns>
+        public DbfFieldType[] GetAttributeFieldTypes()
+        {
+            DbfFieldType[] result = null;
+
+            if (myRenderer != null)
+            {
+                result = myRenderer.DbfReader.GetFieldTypes();
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// Gets all of the Attribute values contained in the shapefile's DBF file        
         /// </summary>
         /// <param name="recordNumber">zero based index of the required record/shape</param>
@@ -11078,6 +11094,21 @@ namespace EGIS.ShapeFileLib
                 names[n] = DbfRecordHeader.GetFieldDescriptions()[n].FieldName;
             }
             return names;
+        }
+
+        /// <summary>
+        /// Utility method to return the types of the fields in the DBF file
+        /// Internally extracts the field types from the DBFRecordHeader
+        /// </summary>
+        /// <returns></returns>
+        public DbfFieldType[] GetFieldTypes()
+        {
+            DbfFieldType[] result = new DbfFieldType[DbfRecordHeader.FieldCount];
+            for (int n = result.Length - 1; n >= 0; n--)
+            {
+                result[n] = DbfRecordHeader.GetFieldDescriptions()[n].FieldType;
+            }
+            return result;
         }
 
         private void CreateFieldIndex(int fieldIndex)
