@@ -549,14 +549,14 @@ namespace EGIS.ShapeFileLib
         }
 
         /// <summary>
-        /// Gets all of the records at fieldIndex in the DBF file
+        /// Gets all of the attribute records at fieldIndex in the DBF file
         /// </summary>
         /// <param name="fieldIndex">zero based index of the required field</param>
         /// <returns></returns>
         public string[] GetRecords(int fieldIndex)
         {
-            if (myRenderer == null) return null;
-            return myRenderer.DbfReader.GetRecords(fieldIndex);
+            if (DbfReader == null) return null;
+            return DbfReader.GetRecords(fieldIndex);
         }
 
         /// <summary>
@@ -565,8 +565,8 @@ namespace EGIS.ShapeFileLib
         /// <returns></returns>
         public string[] GetAttributeFieldNames()
         {
-            if (myRenderer == null) return null;
-            return myRenderer.DbfReader.GetFieldNames();
+            if (DbfReader == null) return null;
+            return DbfReader.GetFieldNames();
         }
 
         /// <summary>
@@ -574,15 +574,11 @@ namespace EGIS.ShapeFileLib
         /// </summary>        
         /// <returns></returns>
         public DbfFieldType[] GetAttributeFieldTypes()
-        {
-            DbfFieldType[] result = null;
-
-            if (myRenderer != null)
+        {            
+            if (DbfReader == null) return null;
             {
-                result = myRenderer.DbfReader.GetFieldTypes();
+                return DbfReader.GetFieldTypes();
             }
-
-            return result;
         }
 
         /// <summary>
@@ -11102,11 +11098,12 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         /// <returns></returns>
         public DbfFieldType[] GetFieldTypes()
-        {
+        {            
             DbfFieldType[] result = new DbfFieldType[DbfRecordHeader.FieldCount];
+            var fieldDescs = DbfRecordHeader.GetFieldDescriptions();
             for (int n = result.Length - 1; n >= 0; n--)
             {
-                result[n] = DbfRecordHeader.GetFieldDescriptions()[n].FieldType;
+                result[n] = fieldDescs[n].FieldType;
             }
             return result;
         }
