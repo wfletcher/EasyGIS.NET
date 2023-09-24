@@ -588,8 +588,8 @@ namespace EGIS.ShapeFileLib
         /// <returns></returns>
         public string[] GetAttributeFieldValues(int recordNumber)
         {
-            if (myRenderer == null) return null;
-            return myRenderer.DbfReader.GetFields(recordNumber);
+            if (DbfReader == null) return null;
+            return DbfReader.GetFields(recordNumber);
         }
 
 		/// <summary>
