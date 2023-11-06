@@ -9,6 +9,14 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="..\EGIS.ShapeFileLib\NativeMethods.cs" Link="NativeMethods.cs" />
     <Compile Include="..\UnitTests\GeometryAlgorithmTests.cs" Link="GeometryAlgorithmTests.cs" />
@@ -21,8 +29,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
-    <PackageReference Include="NUnit" Version="3.13.2" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.0.0" />
+    <PackageReference Include="NUnit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageReference Include="coverlet.collector" Version="3.1.0" />
   </ItemGroup>
 
@@ -30,6 +38,28 @@
     <ProjectReference Include="..\egis.controls\EGIS.Controls.csproj" />
     <ProjectReference Include="..\EGIS.Projections\EGIS.Projections.csproj" />
     <ProjectReference Include="..\egis.ShapeFileLib\EGIS.ShapeFileLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="data\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\UnitTests\data\pmar.cpg" Link="data\pmar.cpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\UnitTests\data\pmar.dbf" Link="data\pmar.dbf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\UnitTests\data\pmar.prj" Link="data\pmar.prj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\UnitTests\data\pmar.shp" Link="data\pmar.shp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\UnitTests\data\pmar.shx" Link="data\pmar.shx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

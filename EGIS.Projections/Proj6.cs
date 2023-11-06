@@ -26,6 +26,7 @@
 #endregion
 
 using System;
+using System.Diagnostics;
 
 namespace EGIS.Projections
 {
@@ -163,6 +164,7 @@ namespace EGIS.Projections
             {                
                 lock (Proj6Native._sync)
                 {
+                    
                     //although using proj_context_create will make proj6 thread safe
                     //it is expensive (10x). Faster to use .net lock and just use the default context
                     IntPtr context = IntPtr.Zero;// Proj6Native.proj_context_create();
@@ -171,9 +173,27 @@ namespace EGIS.Projections
 
                         IntPtr p = Proj6Native.proj_create(context, wkt);
 
-						//this code returns null?
-						//IntPtr p = Proj6Native.Proj_create_from_wkt(IntPtr.Zero, wkt);						
-						if (p != IntPtr.Zero && identify)
+                        CRSBoundingBox areaOfUse = new CRSBoundingBox()
+                        {
+                            WestLongitudeDegrees = -1000,
+                            NorthLatitudeDegrees = -1000,
+                            EastLongitudeDegrees = -1000,
+                            SouthLatitudeDegrees = -1000
+                        };
+
+                        if (p != IntPtr.Zero)
+                        {
+                            int res = Proj6Native.proj_get_area_of_use(context, p,
+                                ref areaOfUse.WestLongitudeDegrees,
+                                ref areaOfUse.SouthLatitudeDegrees,
+                                ref areaOfUse.EastLongitudeDegrees,
+                                ref areaOfUse.NorthLatitudeDegrees,
+                                IntPtr.Zero);
+                            Debug.WriteLine(res);
+                        }
+                        //this code returns null?
+                        //IntPtr p = Proj6Native.Proj_create_from_wkt(IntPtr.Zero, wkt);						
+                        if (p != IntPtr.Zero && identify)
                         {
                             string name = Proj6Native.GetAuthName(p);
                            // if (string.IsNullOrEmpty(name)) name = "EPSG";
@@ -225,7 +245,7 @@ namespace EGIS.Projections
                                 }
                             }
 
-                            CRSBoundingBox areaOfUse = new CRSBoundingBox()
+                            CRSBoundingBox identifiedAreaOfUse = new CRSBoundingBox()
                             {
                                 WestLongitudeDegrees = -1000,
                                 NorthLatitudeDegrees = -1000,
@@ -233,12 +253,16 @@ namespace EGIS.Projections
                                 SouthLatitudeDegrees = -1000
                             };
 
-                            Proj6Native.proj_get_area_of_use(context, p,
-                                ref areaOfUse.WestLongitudeDegrees,
-                                ref areaOfUse.SouthLatitudeDegrees,
-                                ref areaOfUse.EastLongitudeDegrees,
-                                ref areaOfUse.NorthLatitudeDegrees,
+                            int areaOfUseResult = Proj6Native.proj_get_area_of_use(context, p,
+                                ref identifiedAreaOfUse.WestLongitudeDegrees,
+                                ref identifiedAreaOfUse.SouthLatitudeDegrees,
+                                ref identifiedAreaOfUse.EastLongitudeDegrees,
+                                ref identifiedAreaOfUse.NorthLatitudeDegrees,
                                 IntPtr.Zero);
+                            if(areaOfUseResult != 0)
+                            {
+                                areaOfUse = identifiedAreaOfUse;
+                            }
 
 
                             if (identify)

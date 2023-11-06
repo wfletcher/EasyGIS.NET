@@ -736,5 +736,27 @@ namespace UnitTests
             }
         }
 
+		[Test]
+		public void TestEPSG32636AreaOfUse()
+		{
+			var crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(32636);
+
+			Console.Out.WriteLine(crs.AreaOfUse);
+
+            crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode);
+
+            Console.Out.WriteLine(crs.AreaOfUse);
+            //EGIS.Projections.CoordinateReferenceSystemFactory.GetWgs84UtmEpsgCode(
+
+            crs = CoordinateReferenceSystemFactory.Default.GetCRSById(3433);
+            Console.Out.WriteLine(crs.AreaOfUse);
+
+
+			int utmCode = EGIS.Projections.CoordinateReferenceSystemFactory.GetWgs84UtmEpsgCode(145, -37);
+            crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(utmCode);
+
+            Console.Out.WriteLine(crs.AreaOfUse);
+        }
+
     }
 }

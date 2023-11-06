@@ -62,7 +62,7 @@
       <Version>3.13.3</Version>
     </PackageReference>
     <PackageReference Include="NUnit3TestAdapter">
-      <Version>4.2.1</Version>
+      <Version>4.5.0</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
@@ -74,6 +74,23 @@
       <Project>{c89deb9b-4dca-4792-b216-f00808606af7}</Project>
       <Name>EGIS.ShapeFileLib</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="data\pmar.cpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="data\pmar.dbf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="data\pmar.prj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="data\pmar.shp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="data\pmar.shx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
