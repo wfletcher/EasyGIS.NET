@@ -1,0 +1,17 @@
+
+
+#ignore this file
+#.gitignore
+#ignore shapefiles
+*.shp
+*.dbf
+*.shx
+*.shpx
+*.egp
+*.prj
+#exception - incude this shapefile
+!pmar.shp
+!pmar.dbf
+!pmar.shx
+!pmar.prj
+
