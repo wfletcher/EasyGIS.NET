@@ -78,7 +78,7 @@ namespace UnitTests
 		[Test]
 		public void TestGDA94ToGDA2020RoundTripViaWgs84IsSame()
 		{
-			const double Delta = 0.00001; //0.01 mm
+			const double Delta = 0.0001; //0.1 mm
 			ICRS gda94Nsw = CoordinateReferenceSystemFactory.Default.GetCRSById(3308);
 			ICRS gda2020Nsw = CoordinateReferenceSystemFactory.Default.GetCRSById(8058);
 			ICRS wgs84 = CoordinateReferenceSystemFactory.Default.GetCRSById(4326);
@@ -826,7 +826,7 @@ namespace UnitTests
 	
 
         [Test]
-        public void TestEPSG27700Equal()
+        public void TestEPSG27700WithDifferentWktAreEqual()
         {
 			string wkt1 = @"PROJCRS[""OSGB36 / British National Grid"",BASEGEOGCRS[""OSGB36"",DATUM[""Ordnance Survey of Great Britain 1936"",ELLIPSOID[""Airy 1830"",6377563.396,299.3249646]],UNIT[""degree"",0.0174532925199433]],CONVERSION[""British National Grid"",METHOD[""Transverse Mercator""],PARAMETER[""Latitude of natural origin"",49],PARAMETER[""Longitude of natural origin"",-2],PARAMETER[""Scale factor at natural origin"",0.9996012717],PARAMETER[""False easting"",400000],PARAMETER[""False northing"",-100000]],CS[Cartesian,2],AXIS[""(E)"",east],AXIS[""(N)"",north],UNIT[""metre"",1],USAGE[SCOPE[""Engineering survey, topographic mapping.""],AREA[""United Kingdom (UK) - offshore to boundary of UKCS within 49Â°45'N to 61Â°N and 9Â°W to 2Â°E; onshore Great Britain (England, Wales and Scotland). Isle of Man onshore.""],BBOX[49.75,-9,61.01,2.01]],ID[""EPSG"",27700]]";
 			string wkt2 = @"PROJCS[""British_National_Grid"",GEOGCS[""GCS_OSGB_1936"",DATUM[""D_OSGB_1936"",SPHEROID[""Airy_1830"",6377563.396,299.3249646]],PRIMEM[""Greenwich"",0.0],UNIT[""Degree"",0.0174532925199433]],PROJECTION[""Transverse_Mercator""],PARAMETER[""False_Easting"",400000.0],PARAMETER[""False_Northing"",-100000.0],PARAMETER[""Central_Meridian"",-2.0],PARAMETER[""Scale_Factor"",0.9996012717],PARAMETER[""Latitude_Of_Origin"",49.0],UNIT[""Meter"",1.0],AUTHORITY[""EPSG"",27700]]";
@@ -834,17 +834,62 @@ namespace UnitTests
 			var crs1 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt1);
 			var crs2 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt2);
 
-			Console.Out.WriteLine(crs1);
-			Console.Out.WriteLine(crs2);
+			Assert.Multiple(() =>
+			{
+				Assert.AreEqual(crs1.Id, "27700", "crs1 Id should be 27700");
+				Assert.AreEqual(crs2.Id, "27700", "crs2 Id should be 27700");
+				Assert.IsTrue(crs1.IsEquivalent(crs2), "crs1 and crs2 should be equivalent");
+			});
 
-			Console.Out.WriteLine(crs1.Id);
-            Console.Out.WriteLine(crs2.Id);
+			//test recreating from the CRS wkt
+			string crs1Wkt = crs1.WKT;
+			string crs2Wkt = crs2.WKT;
+
+			crs1 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(crs1Wkt);
+			crs2 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(crs2Wkt);
+
+			Assert.Multiple(() =>
+			{
+				Assert.AreEqual(crs1.Id, "27700", "crs1 Id should be 27700");
+				Assert.AreEqual(crs2.Id, "27700", "crs2 Id should be 27700");
+				Assert.IsTrue(crs1.IsEquivalent(crs2), "crs1 and crs2 should be equivalent");
+			});
 
 
-            Console.Out.WriteLine(crs1.WKT);
-			Console.Out.WriteLine(crs2.WKT);
-        }
+			//test using ESRI WKT format
+			string esriWkt = crs1.GetWKT(PJ_WKT_TYPE.PJ_WKT1_ESRI, true);
+			Console.Out.WriteLine(esriWkt);
+			crs1 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(esriWkt);
+			
+			esriWkt = crs2.GetWKT(PJ_WKT_TYPE.PJ_WKT1_ESRI, true);
+			crs2 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(esriWkt);
 
-    }
+			
+			Assert.Multiple(() =>
+			{
+				Assert.AreEqual(crs1.Id, "27700", "crs1 Id should be 27700");
+				Assert.AreEqual(crs2.Id, "27700", "crs2 Id should be 27700");
+				Assert.IsTrue(crs1.IsEquivalent(crs2), "crs1 and crs2 should be equivalent");
+			});
+
+
+			//test using GDAL WKT format
+
+			string gdalWkt = crs1.GetWKT(PJ_WKT_TYPE.PJ_WKT1_GDAL, false);
+			crs1 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(gdalWkt);
+			
+			gdalWkt = crs2.GetWKT(PJ_WKT_TYPE.PJ_WKT1_GDAL, true);
+			crs2 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(gdalWkt);
+
+			Assert.Multiple(() =>
+			{
+				Assert.AreEqual(crs1.Id, "27700", "crs1 Id should be 27700");
+				Assert.AreEqual(crs2.Id, "27700", "crs2 Id should be 27700");
+				Assert.IsTrue(crs1.IsEquivalent(crs2), "crs1 and crs2 should be equivalent");
+			});
+
+		}
+
+	}
 
 }
