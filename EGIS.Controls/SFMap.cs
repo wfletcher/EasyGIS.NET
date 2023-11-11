@@ -88,6 +88,38 @@ namespace EGIS.Controls
     };
 
     /// <summary>
+    /// Enumeration defining enabled keys used for mouse selection
+    /// </summary>
+    [Flags]
+    public enum SelectKeys
+    {
+        /// <summary>
+        /// No keys used for selection
+        /// </summary>
+        None = 0,
+        /// <summary>
+        /// Toggle selection enabled when control key is down and the mouse is dragged.
+        /// </summary>
+        ControlKey=1,
+        /// <summary>
+        /// Selection enabled when shift key is down and the mouse is dragged
+        /// </summary>
+        ShiftKey=2,
+        /// <summary>
+        /// Polgon selection enabled when the alt key is down and the mouse is clicked
+        /// </summary>
+        AltKey=4,
+        /// <summary>
+        /// control and shift keys enabled
+        /// </summary>
+        ControlAndShiftKeys = ControlKey|ShiftKey,
+        /// <summary>
+        /// Control Shift And Alt Keys enabled
+        /// </summary>
+        AllKeys = ControlKey|ShiftKey|AltKey
+    }
+
+    /// <summary>
     /// enumeration defining which layers should be redrawn when the map is refreshed 
     /// </summary>
     [Flags]
@@ -2399,6 +2431,23 @@ namespace EGIS.Controls
         }
 
         /// <summary>
+        /// Enabled Keys used for map selection
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The SFMap control performs record selection when the 
+        /// Control, Shift and Alt Keys are pressed and the mouse is dragged.
+        /// To Disable the use of these keys EnabledSelectKeys can be set to enable/disable
+        /// the use of these keys individually
+        /// </para>
+        /// </remarks>
+        public SelectKeys EnabledSelectKeys
+        {
+            get;
+            set;
+        } = SelectKeys.AllKeys;
+
+        /// <summary>
         /// Mouse Wheel Zoom mode used to control zoom behaviour 
         /// </summary>
         public MouseWheelZoomMode MouseWheelZoomMode
@@ -2424,11 +2473,14 @@ namespace EGIS.Controls
 
         #region protected mouse handling properties
 
+        /// <summary>
+        /// Whether the Alt Key is currently down
+        /// </summary>
         protected bool AltKeyDown
         {
             get
             {
-                return _altDown;
+                return _altDown && EnabledSelectKeys.HasFlag(SelectKeys.AltKey);
             }
             set
             {
@@ -2436,11 +2488,14 @@ namespace EGIS.Controls
             }
         }
 
+        /// <summary>
+        /// Whether Control Key Is Currently Down
+        /// </summary>
         protected bool CtrlKeyDown
         {
             get
             {
-                return _ctrlDown;
+                return _ctrlDown && EnabledSelectKeys.HasFlag(SelectKeys.ControlKey); 
             }
             set
             {
@@ -2455,7 +2510,7 @@ namespace EGIS.Controls
         {
             get
             {
-                return _shiftDown;
+                return _shiftDown && EnabledSelectKeys.HasFlag(SelectKeys.ShiftKey);
             }
             set
             {
