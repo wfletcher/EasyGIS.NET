@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using EGIS.Projections;
 using EGIS.ShapeFileLib;
+using System.Reflection;
 
 namespace UnitTests
 {
@@ -888,6 +889,16 @@ namespace UnitTests
 				Assert.IsTrue(crs1.IsEquivalent(crs2), "crs1 and crs2 should be equivalent");
 			});
 
+			string prjFile1 = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "data", "27700", "TV69_line_ERROR.prj");
+			string prjFile2 = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "data", "27700", "WatercourseLink_OK.prj");
+			crs1 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromPrjFile(prjFile1);
+			crs2 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromPrjFile(prjFile2);
+			Assert.Multiple(() =>
+			{
+				Assert.AreEqual(crs1.Id, "27700", "crs1 Id should be 27700");
+				Assert.AreEqual(crs2.Id, "27700", "crs2 Id should be 27700");
+				Assert.IsTrue(crs1.IsEquivalent(crs2), "crs1 and crs2 should be equivalent");
+			});
 		}
 
 	}

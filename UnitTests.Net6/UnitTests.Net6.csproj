@@ -41,10 +41,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="data\" />
+    <Folder Include="data\27700\" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\UnitTests\data\27700\TV69_line_ERROR.prj" Link="data\27700\TV69_line_ERROR.prj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\UnitTests\data\27700\WatercourseLink_OK.prj" Link="data\27700\WatercourseLink_OK.prj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="..\UnitTests\data\pmar.cpg" Link="data\pmar.cpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
