@@ -153,6 +153,12 @@ namespace EGIS.Projections
         /// <param name="indentText"></param>
         /// <returns></returns>
         string GetWKT(PJ_WKT_TYPE wktType, bool indentText);
+
+        /// <summary>
+        /// returns true if CRS is deprecated
+        /// </summary>
+        bool IsDeprecated { get; }
+            
     }
 
     /// <summary>

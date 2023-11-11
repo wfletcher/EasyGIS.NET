@@ -129,9 +129,15 @@ namespace EGIS.Projections
                 internal set;
             }
 
+            public bool IsDeprecated
+            {
+                get;
+                internal set;
+            }
+
             public override string ToString()
             {
-                if (!string.IsNullOrEmpty(Authority)) return string.Format(System.Globalization.CultureInfo.InvariantCulture,"{0} [{1}:{2}]", Name, Authority, Id);
+                if (!string.IsNullOrEmpty(Authority)) return string.Format(System.Globalization.CultureInfo.InvariantCulture,"{0} [{1}:{2}]{3}", Name, Authority, Id, IsDeprecated?"[DEPRECATED]":"");
                 if( !string.IsNullOrEmpty(Id)) return string.Format(System.Globalization.CultureInfo.InvariantCulture,"{0} [{1}]", Name, Id);
                 return Name;
             }
@@ -228,6 +234,9 @@ namespace EGIS.Projections
                             string authName = Proj6Native.GetAuthName(p);
                             string id = Proj6Native.ProjGetIdCode(p);
 
+                            int dep = Proj6Native.proj_is_deprecated(p);
+                            bool isDeprecated = dep != 0;
+
                             if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_BOUND_CRS && string.IsNullOrEmpty(id))
                             {
                                 IntPtr srcCrs = Proj6Native.proj_get_source_crs(context, p);
@@ -311,7 +320,8 @@ namespace EGIS.Projections
                                     Name = name,
                                     Authority = authName,
                                     WKT = wkt,
-                                    AreaOfUse = areaOfUse
+                                    AreaOfUse = areaOfUse,
+                                    IsDeprecated = isDeprecated
                                 };
                             }
                             else if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_PROJECTED_CRS)
@@ -324,7 +334,8 @@ namespace EGIS.Projections
                                     Authority = authName,
                                     WKT = wkt,
                                     UnitsToMeters = 1,
-                                    AreaOfUse = areaOfUse
+                                    AreaOfUse = areaOfUse,
+                                    IsDeprecated = isDeprecated
                                 };
 
                             }
@@ -339,7 +350,8 @@ namespace EGIS.Projections
                                         Authority = authName,
                                         WKT = wkt,
                                         UnitsToMeters = 1,
-                                        AreaOfUse = areaOfUse
+                                        AreaOfUse = areaOfUse,
+                                        IsDeprecated = isDeprecated
                                     };
                                 }
                                 else
@@ -350,7 +362,8 @@ namespace EGIS.Projections
                                         Name = name,
                                         Authority = authName,
                                         WKT = wkt,
-                                        AreaOfUse = areaOfUse
+                                        AreaOfUse = areaOfUse,
+                                        IsDeprecated = isDeprecated
                                     };
                                 }
                             }
@@ -455,16 +468,21 @@ namespace EGIS.Projections
                 {
                     pjNative = Proj6Native.proj_create_crs_to_crs(IntPtr.Zero, source.WKT, target.WKT, IntPtr.Zero);
 
-                    if (pjNative == IntPtr.Zero)
-                    {
-                        throw new InvalidOperationException("Could not create coordinate transformation");
-                    }
+                    //if (pjNative == IntPtr.Zero)
+                    //{
+                    //    throw new InvalidOperationException("Could not create coordinate transformation");
+                    //}
 
                     IntPtr pjBest = CreateMostRelevantTransformation();
                     if (pjBest != IntPtr.Zero)
                     {
-                        Proj6Native.proj_destroy(pjNative);
+                        if(pjNative != IntPtr.Zero) Proj6Native.proj_destroy(pjNative);
                         pjNative = pjBest;
+                    }
+
+                    if (pjNative == IntPtr.Zero)
+                    {
+                        throw new InvalidOperationException("Could not create coordinate transformation");
                     }
 
                     IntPtr pn = Proj6Native.proj_normalize_for_visualization(IntPtr.Zero, pjNative);

@@ -404,6 +404,8 @@ namespace EGIS.Projections
                     string authName = authority;// Proj6Native.GetAuthName(p);
                     string id = Proj6Native.ProjGetIdCode(p);
 
+                    int deprecated = Proj6Native.proj_is_deprecated(p);
+
                     //this seems to be only needed if the crs was loaded from wkt
                     if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_BOUND_CRS && string.IsNullOrEmpty(id))
                     {
@@ -455,7 +457,8 @@ namespace EGIS.Projections
                             Name = name,
                             Authority = authName,
                             WKT = wkt,
-                            AreaOfUse = areaOfUse
+                            AreaOfUse = areaOfUse,
+                            IsDeprecated = deprecated!=0
                         };
                     }
                     else if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_PROJECTED_CRS)
@@ -467,7 +470,8 @@ namespace EGIS.Projections
                             Authority = authName,
                             WKT = wkt,
                             UnitsToMeters = 1,
-                            AreaOfUse = areaOfUse
+                            AreaOfUse = areaOfUse,
+                            IsDeprecated = deprecated != 0
                         };
                     }
                     else if (pType == Proj6Native.PJ_TYPE.PJ_TYPE_BOUND_CRS || pType == Proj6Native.PJ_TYPE.PJ_TYPE_COMPOUND_CRS)
@@ -481,7 +485,8 @@ namespace EGIS.Projections
                                 Authority = authName,
                                 WKT = wkt,
                                 UnitsToMeters = 1,
-                                AreaOfUse = areaOfUse
+                                AreaOfUse = areaOfUse,
+                                IsDeprecated = deprecated != 0
                             };
                         }
                         else
@@ -492,7 +497,8 @@ namespace EGIS.Projections
                                 Name = name,
                                 Authority = authName,
                                 WKT = wkt,
-                                AreaOfUse = areaOfUse
+                                AreaOfUse = areaOfUse,
+                                IsDeprecated = deprecated != 0
                             };
                         }
                     }

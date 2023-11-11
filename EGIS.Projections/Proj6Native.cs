@@ -41,6 +41,9 @@ namespace EGIS.Projections
 
         const string ProjDllName = "proj_9_0.dll";
         //const string ProjDllName = "proj_9_1.dll";
+        //const string ProjDllName = "proj_9_3.dll";
+        //const string ProjDbName = "proj.db.9.0";
+        const string ProjDbName = "proj.db";
 
 
         #region dynamically load native x86/x64 dll
@@ -88,7 +91,7 @@ namespace EGIS.Projections
             dllPath = string.Format(@"Proj/{0}/{1}", (Environment.Is64BitProcess ? "x64" : "x86"), ProjDllName);
             p = LoadLibrary(System.IO.Path.Combine(startupPath, dllPath));
 
-            string projDbPath = System.IO.Path.Combine(startupPath, "Proj", "proj.db");
+            string projDbPath = System.IO.Path.Combine(startupPath, "Proj", ProjDbName);
             proj_context_set_database_path(IntPtr.Zero, projDbPath, null, null);
 
         }
@@ -607,8 +610,8 @@ namespace EGIS.Projections
         [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]
         internal static extern PJ_PROJ_INFO proj_pj_info(IntPtr pj);
 
-
-        
+        [DllImport(ProjDllName, CallingConvention = CallingConvention.Cdecl, SetLastError = true)]        
+        internal static extern int proj_is_deprecated(IntPtr pj);
 
         /// <summary>
         ///  Spatial criterion to restrict candidate operations.
