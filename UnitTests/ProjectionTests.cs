@@ -802,6 +802,7 @@ namespace UnitTests
             Console.Out.WriteLine(crs.AreaOfUse);
         }
 
+
 		[Test]
 		public void TestTransformEPSG3052ToEPSG4326()
 		{
@@ -822,5 +823,28 @@ namespace UnitTests
 			}
 		}
 
-	}
+	
+
+        [Test]
+        public void TestEPSG27700Equal()
+        {
+			string wkt1 = @"PROJCRS[""OSGB36 / British National Grid"",BASEGEOGCRS[""OSGB36"",DATUM[""Ordnance Survey of Great Britain 1936"",ELLIPSOID[""Airy 1830"",6377563.396,299.3249646]],UNIT[""degree"",0.0174532925199433]],CONVERSION[""British National Grid"",METHOD[""Transverse Mercator""],PARAMETER[""Latitude of natural origin"",49],PARAMETER[""Longitude of natural origin"",-2],PARAMETER[""Scale factor at natural origin"",0.9996012717],PARAMETER[""False easting"",400000],PARAMETER[""False northing"",-100000]],CS[Cartesian,2],AXIS[""(E)"",east],AXIS[""(N)"",north],UNIT[""metre"",1],USAGE[SCOPE[""Engineering survey, topographic mapping.""],AREA[""United Kingdom (UK) - offshore to boundary of UKCS within 49Â°45'N to 61Â°N and 9Â°W to 2Â°E; onshore Great Britain (England, Wales and Scotland). Isle of Man onshore.""],BBOX[49.75,-9,61.01,2.01]],ID[""EPSG"",27700]]";
+			string wkt2 = @"PROJCS[""British_National_Grid"",GEOGCS[""GCS_OSGB_1936"",DATUM[""D_OSGB_1936"",SPHEROID[""Airy_1830"",6377563.396,299.3249646]],PRIMEM[""Greenwich"",0.0],UNIT[""Degree"",0.0174532925199433]],PROJECTION[""Transverse_Mercator""],PARAMETER[""False_Easting"",400000.0],PARAMETER[""False_Northing"",-100000.0],PARAMETER[""Central_Meridian"",-2.0],PARAMETER[""Scale_Factor"",0.9996012717],PARAMETER[""Latitude_Of_Origin"",49.0],UNIT[""Meter"",1.0],AUTHORITY[""EPSG"",27700]]";
+
+			var crs1 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt1);
+			var crs2 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt2);
+
+			Console.Out.WriteLine(crs1);
+			Console.Out.WriteLine(crs2);
+
+			Console.Out.WriteLine(crs1.Id);
+            Console.Out.WriteLine(crs2.Id);
+
+
+            Console.Out.WriteLine(crs1.WKT);
+			Console.Out.WriteLine(crs2.WKT);
+        }
+
+    }
+
 }
