@@ -15,3 +15,8 @@
 !pmar.shx
 !pmar.prj
 
+#exception - incude these prjfiles
+!27700/*
+
+
+

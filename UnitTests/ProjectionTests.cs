@@ -7,6 +7,7 @@ using NUnit.Framework;
 using EGIS.Projections;
 using EGIS.ShapeFileLib;
 using System.Reflection;
+using System.IO;
 
 namespace UnitTests
 {
@@ -827,7 +828,8 @@ namespace UnitTests
 	
 
         [Test]
-        public void TestEPSG27700WithDifferentWktAreEqual()
+		//[SetCulture("cs-CZ")]
+		public void TestEPSG27700WithDifferentWktAreEqual()
         {
 			string wkt1 = @"PROJCRS[""OSGB36 / British National Grid"",BASEGEOGCRS[""OSGB36"",DATUM[""Ordnance Survey of Great Britain 1936"",ELLIPSOID[""Airy 1830"",6377563.396,299.3249646]],UNIT[""degree"",0.0174532925199433]],CONVERSION[""British National Grid"",METHOD[""Transverse Mercator""],PARAMETER[""Latitude of natural origin"",49],PARAMETER[""Longitude of natural origin"",-2],PARAMETER[""Scale factor at natural origin"",0.9996012717],PARAMETER[""False easting"",400000],PARAMETER[""False northing"",-100000]],CS[Cartesian,2],AXIS[""(E)"",east],AXIS[""(N)"",north],UNIT[""metre"",1],USAGE[SCOPE[""Engineering survey, topographic mapping.""],AREA[""United Kingdom (UK) - offshore to boundary of UKCS within 49Â°45'N to 61Â°N and 9Â°W to 2Â°E; onshore Great Britain (England, Wales and Scotland). Isle of Man onshore.""],BBOX[49.75,-9,61.01,2.01]],ID[""EPSG"",27700]]";
 			string wkt2 = @"PROJCS[""British_National_Grid"",GEOGCS[""GCS_OSGB_1936"",DATUM[""D_OSGB_1936"",SPHEROID[""Airy_1830"",6377563.396,299.3249646]],PRIMEM[""Greenwich"",0.0],UNIT[""Degree"",0.0174532925199433]],PROJECTION[""Transverse_Mercator""],PARAMETER[""False_Easting"",400000.0],PARAMETER[""False_Northing"",-100000.0],PARAMETER[""Central_Meridian"",-2.0],PARAMETER[""Scale_Factor"",0.9996012717],PARAMETER[""Latitude_Of_Origin"",49.0],UNIT[""Meter"",1.0],AUTHORITY[""EPSG"",27700]]";
@@ -891,14 +893,42 @@ namespace UnitTests
 
 			string prjFile1 = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "data", "27700", "TV69_line_ERROR.prj");
 			string prjFile2 = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "data", "27700", "WatercourseLink_OK.prj");
+			string prjFile3 = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "data", "27700", "HU14_line.prj");
 			crs1 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromPrjFile(prjFile1);
 			crs2 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromPrjFile(prjFile2);
+						
+			//EGIS.Projections.CoordinateReferenceSystemFactory.IdentificationConfidenceThreshold = 25;
+			var crs3 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromPrjFile(prjFile3);
+			Assert.Multiple(() =>
+			{
+				Assert.AreEqual(crs1.Id, "27700", "crs1 Id should be 27700");
+				Assert.AreEqual(crs2.Id, "27700", "crs2 Id should be 27700");
+			    //Assert.AreEqual(crs3.Id, "27700", "crs3 Id should be 27700");
+				Assert.IsTrue(crs1.IsEquivalent(crs2), "crs1 and crs2 should be equivalent");
+				//Assert.IsTrue(crs1.IsEquivalent(crs3), "crs1 and crs3 should be equivalent");
+			});
+
+
+			using (System.IO.StreamReader reader = new StreamReader(prjFile1))
+			{
+				wkt1 = reader.ReadToEnd().Trim();
+				crs1 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt1);
+			}
+			using (System.IO.StreamReader reader = new StreamReader(prjFile2))
+			{
+				wkt2 = reader.ReadToEnd().Trim();
+				crs2 = EGIS.Projections.CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wkt1);
+			}
+			
+
 			Assert.Multiple(() =>
 			{
 				Assert.AreEqual(crs1.Id, "27700", "crs1 Id should be 27700");
 				Assert.AreEqual(crs2.Id, "27700", "crs2 Id should be 27700");
 				Assert.IsTrue(crs1.IsEquivalent(crs2), "crs1 and crs2 should be equivalent");
 			});
+
+
 		}
 
 	}

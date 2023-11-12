@@ -45,6 +45,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\UnitTests\data\27700\HU14_line.prj" Link="data\27700\HU14_line.prj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="..\UnitTests\data\27700\TV69_line_ERROR.prj" Link="data\27700\TV69_line_ERROR.prj">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
