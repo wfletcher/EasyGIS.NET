@@ -10,7 +10,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>4.8.7</Version>
+    <Version>4.8.8</Version>
     <Authors>Winston Fletcher</Authors>
     <Description>Official version of EasyGIS.NET ShapeFileLib. Includes C# ShapeFile Reader Writer</Description>
     <RepositoryUrl>https://github.com/wfletcher/EasyGIS.NET</RepositoryUrl>
@@ -20,6 +20,7 @@
     <PackageTags>C# shapefile library; Easy GIS .NET; C# GIS library shapefile reader writer</PackageTags>
     <EnableNETAnalyzers>True</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
