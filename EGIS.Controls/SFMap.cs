@@ -3041,7 +3041,18 @@ namespace EGIS.Controls
 
         #region distance calculations
 
-        private double DistanceBetweenPoints(PointD p0, PointD p1)
+        /// <summary>
+        /// return distance in meters between 2 points on the map
+        /// </summary>
+        /// <param name="p0">First point</param>
+        /// <param name="p1">Second point</param>
+        /// <returns>distance in meters</returns>
+        /// <remarks>
+        /// <para>
+        /// p0 and p1 units are in the SFMap MapCoordinateReferenceSystem units
+        /// </para>
+        /// </remarks>
+        public double DistanceBetweenPoints(PointD p0, PointD p1)
         {
             double distance = double.NaN;
             if ((this.MapCoordinateReferenceSystem as IGeographicCRS) != null)
