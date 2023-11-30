@@ -26,6 +26,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace EGIS.Projections
@@ -61,6 +62,8 @@ namespace EGIS.Projections
 
             public bool IsEquivalent(ICRS other)
             {
+                return IsEquivalent(this, other);
+
                 if (other == null) return false;
 
                 lock (Proj6Native._sync)
@@ -432,6 +435,97 @@ namespace EGIS.Projections
                     }
                 }
                 return new Tuple<double,double>(-1,0);
+            }
+
+            private static Dictionary<string, bool> equivalentCache = new Dictionary<string, bool>();
+            private static object _sync = new object();
+            private const bool UseCache = true;
+
+            static internal bool IsEquivalent(ICRS crs, ICRS other)
+            {
+                if (crs == null || other == null) return false;
+
+                string key = string.Join("->", crs.WKT, other.WKT);                
+
+                bool same = false;
+                lock (_sync)
+                {
+                    if (UseCache)
+                    {
+                        //check if already in cache
+                        if (equivalentCache.TryGetValue(key, out same))
+                        {
+                            return same;
+                        }                        
+                    }
+                }
+
+                
+                lock (Proj6Native._sync)
+                {
+
+                    IntPtr pjThis = Proj6Native.proj_create(IntPtr.Zero, crs.WKT);
+                    IntPtr pjOther = Proj6Native.proj_create(IntPtr.Zero, other.WKT);
+                    try
+                    {
+                        if (pjThis != IntPtr.Zero && pjOther != IntPtr.Zero)
+                        {
+                            same = Proj6Native.proj_is_equivalent_to(pjThis, pjOther, Proj6Native.PJ_COMPARISON_CRITERION.PJ_COMP_EQUIVALENT_EXCEPT_AXIS_ORDER_GEOGCRS) != 0;
+                            if (!same)
+                            {
+                                //proj_is_equivalent_to doesn't seem to compare different WKT representations
+                                //convert both to ESRI WKT and compare
+                                string wkt1 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjThis, PJ_WKT_TYPE.PJ_WKT1_ESRI);
+                                string wkt2 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjOther, PJ_WKT_TYPE.PJ_WKT1_ESRI);
+
+                                if (wkt1 == null || wkt2 == null)
+                                {
+                                    wkt1 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjThis, PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED);
+                                    wkt2 = Proj6Native.Proj_as_wkt(IntPtr.Zero, pjOther, PJ_WKT_TYPE.PJ_WKT2_2018_SIMPLIFIED);
+                                }
+
+                                same = string.Equals(wkt1, wkt2, StringComparison.OrdinalIgnoreCase);
+
+                                if (!same && !(wkt1 == null || wkt2 == null))
+                                {
+                                    IntPtr pjWkt1 = Proj6Native.proj_create(IntPtr.Zero, wkt1);
+                                    IntPtr pjWkt2 = Proj6Native.proj_create(IntPtr.Zero, wkt2);
+                                    try
+                                    {
+                                        if (pjWkt1 != IntPtr.Zero && pjWkt2 != IntPtr.Zero)
+                                        {
+                                            same = Proj6Native.proj_is_equivalent_to(pjWkt1, pjWkt2, Proj6Native.PJ_COMPARISON_CRITERION.PJ_COMP_EQUIVALENT_EXCEPT_AXIS_ORDER_GEOGCRS) != 0;
+                                        }
+
+                                    }
+                                    finally
+                                    {
+                                        if (pjWkt1 != IntPtr.Zero) Proj6Native.proj_destroy(pjWkt1);
+                                        if (pjWkt2 != IntPtr.Zero) Proj6Native.proj_destroy(pjWkt2);
+                                    }
+
+                                }
+
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        if (pjThis != IntPtr.Zero) Proj6Native.proj_destroy(pjThis);
+                        if (pjOther != IntPtr.Zero) Proj6Native.proj_destroy(pjOther);
+                    }
+                }
+
+                lock (_sync)
+                {
+                    if (UseCache)
+                    {
+                        equivalentCache[key] = same;
+                    }
+                }
+
+                return same;
+
             }
 
         }

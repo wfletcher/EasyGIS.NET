@@ -741,6 +741,52 @@ namespace UnitTests
 			bool equivalent = crsA.IsEquivalent(crsB);
 
 			Assert.IsTrue(equivalent, "Expected result: CRS created from ESRI WKT format equivalent to CRS created from 2018 WKT2 format");
+
+			//DateTime tick = DateTime.Now;
+			//const int Iterations = 10000;
+			//for (int n = 0; n < Iterations; ++n)
+			//{
+			//	equivalent = crsA.IsEquivalent(crsB);
+			//}
+			//DateTime tock = DateTime.Now;
+			//Console.WriteLine("same:{0}. time:{1:0.0000}s", equivalent, tock.Subtract(tick).TotalSeconds/ Iterations);
+
+		}
+
+		[Test]
+		public void TestGda94FromWktAndGda94FromIdIsEquivalent()
+		{			
+			string wktGda94 = "PROJCS[\"RTA Lambert on GDA94\",GEOGCS[\"GCS_GDA_1994\",DATUM[\"D_GDA_1994\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Decimal Degree\",0.0174532925199433]],PROJECTION[\"Lambert_Conformal_Conic\"],PARAMETER[\"False_Easting\",9300000.0],PARAMETER[\"False_Northing\",4500000.0],PARAMETER[\"Central_Meridian\",147.0],PARAMETER[\"Standard_Parallel_1\",-30.75],PARAMETER[\"Standard_Parallel_2\",-35.75],PARAMETER[\"Latitude_Of_Origin\",-33.25],UNIT[\"Meter\",1.0]]";
+			
+			ICRS crsA = CoordinateReferenceSystemFactory.Default.GetCRSById(3308);
+			ICRS crsB = CoordinateReferenceSystemFactory.Default.CreateCRSFromWKT(wktGda94);
+
+			bool equivalent = crsA.IsEquivalent(crsB);
+
+			Assert.IsTrue(equivalent, "Expected result: CRS created from WKT format equivalent to CRS created from id 3308");
+
+			DateTime tick = DateTime.Now;
+			const int Iterations = 5000;
+			for (int n = 0; n < Iterations; ++n)
+			{
+				equivalent = crsA.IsEquivalent(crsB);
+			}
+			DateTime tock = DateTime.Now;
+			Console.WriteLine("same:{0}. time:{1:0.0000}s", equivalent, tock.Subtract(tick).TotalSeconds / Iterations);
+
+			equivalent = crsB.IsEquivalent(crsA);
+
+			Assert.IsTrue(equivalent, "Expected result: CRS created from WKT format equivalent to CRS created from id 3308");
+
+			tick = DateTime.Now;
+			for (int n = 0; n < Iterations; ++n)
+			{
+				equivalent = crsB.IsEquivalent(crsA);
+			}
+			tock = DateTime.Now;
+			Console.WriteLine("same:{0}. time:{1:0.0000}s", equivalent, tock.Subtract(tick).TotalSeconds / Iterations);
+
+
 		}
 
 		[Test]
