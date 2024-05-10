@@ -176,8 +176,8 @@ namespace egis
 
         private void SelectAndCenterRecord(int index, ShapeFile sf)
         {
-            RectangleF bounds = sf.GetShapeBounds(index);
-            if (bounds != RectangleF.Empty)
+            RectangleD bounds = sf.GetShapeBoundsD(index);
+            if (bounds != RectangleD.Empty)
             {
                 if (ClientSize.Width > 0 && ClientSize.Height > 0)
                 {
@@ -923,8 +923,8 @@ namespace egis
             int index = shapeFileListControl1.SelectedShapeFile.RenderSettings.DbfReader.IndexOf(recordValue, shapeFileListControl1.SelectedShapeFile.RenderSettings.FieldIndex, true);
             if (index >= 0)
             {
-                RectangleF bounds = shapeFileListControl1.SelectedShapeFile.GetShapeBounds(index);
-                if (bounds != RectangleF.Empty)
+                RectangleD bounds = shapeFileListControl1.SelectedShapeFile.GetShapeBoundsD(index);
+                if (bounds != RectangleD.Empty)
                 {
                     //shapeFileListControl1.SelectedShapeFile.SelectedRecordIndex = index;
                     shapeFileListControl1.SelectedShapeFile.ClearSelectedRecords();

@@ -1480,10 +1480,10 @@ namespace EGIS.ShapeFileLib
         /// </summary>
         /// <param name="recordIndex">Zero based index of shape bounds to return</param>
         /// <returns></returns>
-        public RectangleF GetShapeBounds(int recordIndex)
-        {
-            return sfRecordCol.GetRecordBounds(recordIndex, shapeFileStream);
-        }
+        //public RectangleF GetShapeBounds(int recordIndex)
+        //{
+        //    return sfRecordCol.GetRecordBounds(recordIndex, shapeFileStream);
+        //}
 
         /// <summary>
         /// Gets the rectangular bounds of an individual shape in the ShapeFile in double precision coordinates
@@ -1830,7 +1830,7 @@ namespace EGIS.ShapeFileLib
                 {
                     if (!col.IsRecordVisible(indices[n])) continue;
 
-                    if (col.GetRecordBounds(indices[n], this.shapeFileStream).IntersectsWith(r))                    
+                    if (col.GetRecordBoundsD(indices[n], this.shapeFileStream).IntersectsWith(r))                    
                     {
                         if (col.ContainsPoint(indices[n], pt, shapeFileStream, buffer, minDistance))
                         {
@@ -1859,7 +1859,7 @@ namespace EGIS.ShapeFileLib
                 {
                     if (!col.IsRecordVisible(indices[n])) continue;
 
-                    if (col.GetRecordBounds(indices[n], this.shapeFileStream).IntersectsWith(r))
+                    if (col.GetRecordBoundsD(indices[n], this.shapeFileStream).IntersectsWith(r))
                     {
                         if (col.ContainsPoint(indices[n], pt, shapeFileStream, buffer, minDistance))
                         {
@@ -1888,7 +1888,7 @@ namespace EGIS.ShapeFileLib
                 {
                     if (!col.IsRecordVisible(indices[n])) continue;
 
-                    if (col.GetRecordBounds(indices[n], this.shapeFileStream).IntersectsWith(r))
+                    if (col.GetRecordBoundsD(indices[n], this.shapeFileStream).IntersectsWith(r))
                     {
                         if (col.ContainsPoint(indices[n], pt, shapeFileStream, buffer, minDistance))
                         {
