@@ -131,6 +131,10 @@ namespace EGIS.Controls
         /// </summary>
         None = 0,
         /// <summary>
+        /// Only BaseMap layers are re-drawn when the map is refreshed
+        /// </summary>
+        BaseMapLayer = 1,
+        /// <summary>
         /// Only Background layers are re-drawn when the map is refreshed
         /// </summary>
         BackgroundLayers = 2,
@@ -2236,7 +2240,8 @@ namespace EGIS.Controls
         public void InvalidateAndClearBackground()
         {
             //this.dirtyScreenBuf = true;
-            refreshMode = RefreshMode.AllLayers;
+            //refreshMode = RefreshMode.AllLayers;
+            refreshMode = RefreshMode.BaseMapLayer;
             Invalidate();
         }
 
