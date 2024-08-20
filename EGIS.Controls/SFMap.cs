@@ -476,7 +476,7 @@ namespace EGIS.Controls
         /// <summary>
         /// SFMap contructor
         /// </summary>
-        public SFMap()
+        public SFMap(int CRSById = EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode)
         {
             InitializeComponent();
             this.SetStyle(ControlStyles.ResizeRedraw, true);
@@ -490,7 +490,7 @@ namespace EGIS.Controls
             //set default CRS to WGS84
             try
             {
-                var crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84EpsgCode);
+                var crs = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(CRSById);
                 MapCoordinateReferenceSystem = crs;
             }
             catch
