@@ -74,14 +74,14 @@ namespace EGIS.Controls
 			if (!LayerIsValid()) return;
 
 			//check zoom level is ok
-			double currentZoom = mapReference.ZoomLevel;
+			/*double currentZoom = mapReference.ZoomLevel;
 			int zoomLevel = TileCollection.WebMercatorScaleToZoomLevel(currentZoom);
 			if (zoomLevel < 0) zoomLevel = 0;
 			double requiredZoom = TileCollection.ZoomLevelToWebMercatorScale(zoomLevel);
 			if (Math.Abs(currentZoom - requiredZoom) > double.Epsilon)
 			{
 				mapReference.ZoomLevel = requiredZoom;
-			}
+			}*/
 
 		}
 
