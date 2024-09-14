@@ -71,6 +71,8 @@ namespace EGIS.Controls
 		public TileCollection(double mapScale, PointD mapCenter, int pixelWidth, int pixelHeight, EGIS.Controls.SFMap map, string[] imageUrlFormat, int tileSourceMaxZoomLevel=25)//, HttpClient httpClient)
 		{
 			int zoomLevel = WebMercatorScaleToZoomLevel(mapScale);
+			double mapScaleFromZoomLevel = ZoomLevelToWebMercatorScale(zoomLevel);
+		        double scaleFactor = mapScale / mapScaleFromZoomLevel;//added
 			long maxPixelsAtZoom = MaxPixelsAtTileZoomLevel(zoomLevel);
 			long centerPixelX, centerPixelY, topPixel, bottomPixel, leftPixel, rightPixel;
 		
@@ -78,18 +80,30 @@ namespace EGIS.Controls
 
             this.ZoomLevel = zoomLevel;
 			//Console.Out.WriteLine("ZoomLevel:" + ZoomLevel);
+
+		        int pixelHeightForSetZoomLevel = (int)Math.Round(pixelHeight / scaleFactor);
+		        int pixelWidthForSetZoomLevel = (int)Math.Round(pixelWidth / scaleFactor);
 			
 			//calculate tlrb mercator pixel coords
-			topPixel = centerPixelY - (pixelHeight >> 1);
-			bottomPixel = topPixel + pixelHeight;			
-			leftPixel = centerPixelX - (pixelWidth >> 1);
-			rightPixel = leftPixel + pixelWidth;		
+		        topPixel = centerPixelY - (pixelHeightForSetZoomLevel >> 1);
+			bottomPixel = topPixel + pixelHeightForSetZoomLevel;
+			leftPixel = centerPixelX - (pixelWidthForSetZoomLevel >> 1);
+			rightPixel = leftPixel + pixelWidthForSetZoomLevel;	
 
 			Point topLeftTile = new Point((int)Math.Floor(leftPixel / 256.0), (int)Math.Floor(Math.Max(0,topPixel) / 256.0));
 			Point bottomRightTile = new Point((int)Math.Floor(rightPixel / 256.0), (int)Math.Floor(Math.Min(bottomPixel, maxPixelsAtZoom-1) / 256.0));
 
-			Point topLeftTilePixelOffset = new Point((int)((long)topLeftTile.X * 256 - leftPixel),
+			/*Point topLeftTilePixelOffset = new Point((int)((long)topLeftTile.X * 256 - leftPixel),
 				(int)((long)topLeftTile.Y * 256 - topPixel));
+		        topLeftTilePixelOffset = new Point(
+				(int)Math.Round(topLeftTilePixelOffset.X * (scaleFactor)),
+				(int)Math.Round(topLeftTilePixelOffset.Y * (scaleFactor))
+			);*/
+
+			Point topLeftTilePixelOffset = new Point(
+			    (int)Math.Round(((long)topLeftTile.X * 256 - ((double)centerPixelX - ((double)pixelWidthForSetZoomLevel /2))) * scaleFactor),
+			    (int)Math.Round(((long)topLeftTile.Y * 256 - ((double)centerPixelY - ((double)pixelHeightForSetZoomLevel /2))) * scaleFactor)
+			);
 
 			this.tileCountX = bottomRightTile.X - topLeftTile.X + 1;
 			this.tileCountY = bottomRightTile.Y - topLeftTile.Y + 1;
@@ -141,12 +155,15 @@ namespace EGIS.Controls
 
                         }
 
+                        scale *= (float)scaleFactor;
 
                         tiles[tileIndex] = new Tile(tileCoord.X, tileCoord.Y, tileZCoord, dx, dy, imageOffset, scale, map, imageUrlFormat[x % imageUrlFormat.Length], httpClient);
-                        dx += 256;
+                        //dx += 256;
+                        dx += (int)Math.Round(256 * scaleFactor); 
                         tileIndex++;
                     }
-                    dy += 256;
+                    //dy += 256;
+		    dy += (int)Math.Round(256 * scaleFactor);
                 }
 
             }
@@ -400,8 +417,10 @@ namespace EGIS.Controls
 
 				imgAttributes.SetWrapMode(System.Drawing.Drawing2D.WrapMode.TileFlipXY);
 
-				float sw = bm.Width / scale;
-				float sh = bm.Height / scale;
+				//float sw = bm.Width / scale;
+				//float sh = bm.Height / scale;
+				float sw = bm.Width;
+				float sh = bm.Height;
 				float sx = imageOffset.X;
 				float sy = imageOffset.Y;
 
@@ -410,9 +429,11 @@ namespace EGIS.Controls
 					g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
 				}
 
-				g.DrawImage(bm, new Rectangle(pixOffX, pixOffY, bm.Width, bm.Height), sx, sy,
-					sw, sh, GraphicsUnit.Pixel, imgAttributes);
+				//g.DrawImage(bm, new Rectangle(pixOffX, pixOffY, bm.Width, bm.Height), sx, sy,
+				//	sw, sh, GraphicsUnit.Pixel, imgAttributes);
 
+				g.DrawImage(bm, new Rectangle(pixOffX, pixOffY, (int)Math.Round(bm.Width * scale), (int)Math.Round(bm.Height * scale)), sx, sy,
+				 	sw, sh, GraphicsUnit.Pixel, imgAttributes);
 
 				//g.DrawImage(bm, new RectangleF(pixOffX, pixOffY, bm.Width, bm.Height), new RectangleF(imageOffset.X, imageOffset.Y,
 				//	sw, sh), GraphicsUnit.Pixel);
