@@ -2240,8 +2240,7 @@ namespace EGIS.Controls
         public void InvalidateAndClearBackground()
         {
             //this.dirtyScreenBuf = true;
-            //refreshMode = RefreshMode.AllLayers;
-            refreshMode = RefreshMode.BaseMapLayer;
+            refreshMode = RefreshMode.AllLayers;
             Invalidate();
         }
 

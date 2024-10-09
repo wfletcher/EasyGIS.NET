@@ -72,7 +72,7 @@ namespace EGIS.Controls
 		{
 			int zoomLevel = WebMercatorScaleToZoomLevel(mapScale);
 			double mapScaleFromZoomLevel = ZoomLevelToWebMercatorScale(zoomLevel);
-		        double scaleFactor = mapScale / mapScaleFromZoomLevel;//added
+		    double scaleFactor = mapScale / mapScaleFromZoomLevel;//added
 			long maxPixelsAtZoom = MaxPixelsAtTileZoomLevel(zoomLevel);
 			long centerPixelX, centerPixelY, topPixel, bottomPixel, leftPixel, rightPixel;
 		
@@ -81,11 +81,11 @@ namespace EGIS.Controls
             this.ZoomLevel = zoomLevel;
 			//Console.Out.WriteLine("ZoomLevel:" + ZoomLevel);
 
-		        int pixelHeightForSetZoomLevel = (int)Math.Round(pixelHeight / scaleFactor);
-		        int pixelWidthForSetZoomLevel = (int)Math.Round(pixelWidth / scaleFactor);
+		    int pixelHeightForSetZoomLevel = (int)Math.Round(pixelHeight / scaleFactor);
+		    int pixelWidthForSetZoomLevel = (int)Math.Round(pixelWidth / scaleFactor);
 			
 			//calculate tlrb mercator pixel coords
-		        topPixel = centerPixelY - (pixelHeightForSetZoomLevel >> 1);
+		    topPixel = centerPixelY - (pixelHeightForSetZoomLevel >> 1);
 			bottomPixel = topPixel + pixelHeightForSetZoomLevel;
 			leftPixel = centerPixelX - (pixelWidthForSetZoomLevel >> 1);
 			rightPixel = leftPixel + pixelWidthForSetZoomLevel;	
@@ -120,7 +120,7 @@ namespace EGIS.Controls
                 //Console.Out.WriteLine("topLeftTile:{0},{1}", topLeftTile.X, topLeftTile.Y);
                 //Console.Out.WriteLine("bottomRightTile:{0},{1}", bottomRightTile.X, bottomRightTile.Y);
                 //Console.Out.WriteLine("topLeftTilePixelOffset:{0},{1}", topLeftTilePixelOffset.X, topLeftTilePixelOffset.Y);
-                //Console.Out.WriteLine("tile count:{0},{1}\n", tileCountX, tileCountY);
+                Console.Out.WriteLine("tile count:{0},{1}\n", tileCountX, tileCountY);
 
 
                 int dy = topLeftTilePixelOffset.Y;
@@ -347,7 +347,7 @@ namespace EGIS.Controls
 				var bitmapStream = new System.IO.MemoryStream();
 				responseStream.CopyTo(bitmapStream);				
 				PutInCache(url, bitmapStream);
-				this.map.Invoke(new Action(() => this.map.InvalidateAndClearBackground()));
+				this.map.Invoke(new Action(() => this.map.Invalidate(RefreshMode.BaseMapLayer)));
 				RemovePendingRequest(url);
 			});
 

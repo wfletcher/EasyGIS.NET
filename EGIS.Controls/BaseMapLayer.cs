@@ -69,21 +69,40 @@ namespace EGIS.Controls
 			map.Invalidate();
 		}
 
+		/// <summary>
+		/// Constrain SFMap zoom level to match The TileSource zoom levels. If false then
+		/// the map can be zoomed to any scale and the TileSource tiles will be resized 
+		/// to fit the maps ZoomLevel. Default value is true
+		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// Prior to EGIS version 4.8.9 the SFMap ZoomLevel was always constrained to match
+		/// the TileSource zoom levels. The default may change to false in future versions
+		/// </para>
+		/// </remarks>
+		public bool ConstrainZoomLevel
+		{
+			get;
+			set;
+		} = true;
+
 		private void Map_ZoomLevelChanged(object sender, EventArgs e)
 		{
 			if (!LayerIsValid()) return;
 
-			//check zoom level is ok
-			/*double currentZoom = mapReference.ZoomLevel;
-			int zoomLevel = TileCollection.WebMercatorScaleToZoomLevel(currentZoom);
-			if (zoomLevel < 0) zoomLevel = 0;
-			double requiredZoom = TileCollection.ZoomLevelToWebMercatorScale(zoomLevel);
-			if (Math.Abs(currentZoom - requiredZoom) > double.Epsilon)
+			if (ConstrainZoomLevel)
 			{
-				mapReference.ZoomLevel = requiredZoom;
-			}*/
-
-		}
+				//check zoom level is ok
+				double currentZoom = mapReference.ZoomLevel;
+				int zoomLevel = TileCollection.WebMercatorScaleToZoomLevel(currentZoom);
+				if (zoomLevel < 0) zoomLevel = 0;
+				double requiredZoom = TileCollection.ZoomLevelToWebMercatorScale(zoomLevel);
+				if (Math.Abs(currentZoom - requiredZoom) > double.Epsilon)
+				{
+					mapReference.ZoomLevel = requiredZoom;
+				}
+			}
+        }
 
 		private TileSource _tileSource;
 		private bool disposedValue;
@@ -108,7 +127,7 @@ namespace EGIS.Controls
 						//if TileSource changed from null set the maps CRS to Wgs84PseudoMercator
 						mapReference.MapCoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode);
 					}
-					mapReference.InvalidateAndClearBackground();
+					mapReference.Invalidate(RefreshMode.BaseMapLayer);
 				}
 			}
 
@@ -124,7 +143,7 @@ namespace EGIS.Controls
 		}
 
 		/// <summary>
-		/// checks if TileSource and map refererence in validd state
+		/// checks if TileSource and map refererence in valid state
 		/// </summary>
 		/// <returns></returns>
 		private bool LayerIsValid()
