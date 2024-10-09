@@ -120,7 +120,7 @@ namespace EGIS.Controls
                 //Console.Out.WriteLine("topLeftTile:{0},{1}", topLeftTile.X, topLeftTile.Y);
                 //Console.Out.WriteLine("bottomRightTile:{0},{1}", bottomRightTile.X, bottomRightTile.Y);
                 //Console.Out.WriteLine("topLeftTilePixelOffset:{0},{1}", topLeftTilePixelOffset.X, topLeftTilePixelOffset.Y);
-                Console.Out.WriteLine("tile count:{0},{1}\n", tileCountX, tileCountY);
+                //Console.Out.WriteLine("tile count:{0},{1}\n", tileCountX, tileCountY);
 
 
                 int dy = topLeftTilePixelOffset.Y;
