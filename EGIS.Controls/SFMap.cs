@@ -1044,22 +1044,13 @@ namespace EGIS.Controls
             var layers = ShapeFilesLayers;
             foreach (ShapeFile layer in layers.ToArray())
             {
-                System.Collections.ObjectModel.ReadOnlyCollection<int> selectedIndicies = layer.SelectedRecordIndices;
-                if (selectedIndicies.Count > 0)
+                System.Collections.ObjectModel.ReadOnlyCollection<int> selectedIndicies = layer.SelectedRecordIndices;				
+				if (selectedIndicies.Count > 0)
                 {
-                    RectangleD selExtent = RectangleD.Empty;
-                    bool selExtentSet = false;
-                    for (int n = 0; n < selectedIndicies.Count; ++n)
-                    {
-                        if (selExtentSet)
-                        {
-                            selExtent = RectangleD.Union(selExtent, layer.GetShapeBoundsD(selectedIndicies[n]));
-                        }
-                        else
-                        {
-                            selExtent = layer.GetShapeBoundsD(selectedIndicies[n]);
-                            selExtentSet = true;
-                        }
+					RectangleD selExtent = layer.GetShapeBoundsD(selectedIndicies[0]);
+					for (int n = 1; n < selectedIndicies.Count; ++n)
+					{                        
+                        selExtent = RectangleD.Union(selExtent, layer.GetShapeBoundsD(selectedIndicies[n]));                        
                     }
 
                     if (extentSet)
