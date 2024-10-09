@@ -1048,23 +1048,29 @@ namespace EGIS.Controls
             var layers = ShapeFilesLayers;
             foreach (ShapeFile layer in layers.ToArray())
             {
-                System.Collections.ObjectModel.ReadOnlyCollection<int> selectedIndicies = layer.SelectedRecordIndices;
-                if (selectedIndicies.Count > 0)
+                System.Collections.ObjectModel.ReadOnlyCollection<int> selectedIndicies = layer.SelectedRecordIndices;				
+				if (selectedIndicies.Count > 0)
                 {
-                    for (int n = 0; n < selectedIndicies.Count; ++n)
+					RectangleD selExtent = layer.GetShapeBoundsD(selectedIndicies[0]);
+					for (int n = 1; n < selectedIndicies.Count; ++n)
+					{                        
+                        selExtent = RectangleD.Union(selExtent, layer.GetShapeBoundsD(selectedIndicies[n]));                        
+                    }
+
+                    if (extentSet)
                     {
-                        if (extentSet)
-                        {
-                            extent = RectangleD.Union(extent, layer.GetShapeBoundsD(selectedIndicies[n]));
-                        }
-                        else
-                        {
-                            extent = layer.GetShapeBoundsD(selectedIndicies[n]);
-                            extentSet = true;
-                        }
+                        extent = RectangleD.Union(extent,
+                            selExtent.Transform(layer.CoordinateReferenceSystem, this.MapCoordinateReferenceSystem));
+                    }
+                    else
+                    {
+                        extent = selExtent.Transform(layer.CoordinateReferenceSystem,
+                            this.MapCoordinateReferenceSystem);
+                        extentSet = true;
                     }
                 }
             }
+
             if (extentSet) FitToExtent(extent);
         }
 
