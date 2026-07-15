@@ -32,6 +32,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EGIS.Projections;
 
 
 namespace EGIS.Controls
@@ -105,6 +106,7 @@ namespace EGIS.Controls
         }
 
 		private TileSource _tileSource;
+		private ICRS _initialMapReferenceSystem;
 		private bool disposedValue;
 
 		/// <summary>
@@ -124,8 +126,13 @@ namespace EGIS.Controls
 					_tileSource = value;
 					if (previousTileSource == null)
 					{
+						_initialMapReferenceSystem = mapReference.MapCoordinateReferenceSystem;
 						//if TileSource changed from null set the maps CRS to Wgs84PseudoMercator
 						mapReference.MapCoordinateReferenceSystem = EGIS.Projections.CoordinateReferenceSystemFactory.Default.GetCRSById(EGIS.Projections.CoordinateReferenceSystemFactory.Wgs84PseudoMercatorEpsgCode);
+					}
+					else if (_tileSource == null)
+					{
+						mapReference.MapCoordinateReferenceSystem = _initialMapReferenceSystem;
 					}
 					mapReference.Invalidate(RefreshMode.BaseMapLayer);
 				}
